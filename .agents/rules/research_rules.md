@@ -12,3 +12,4 @@ Always follow the rules below for all research and financial analysis tasks:
 8. **Balanced Perspective**: Impartial analysis only (no direct buy/sell recommendations). Present bull case, bear case, and key monitoring catalysts.
 9. **Standardized Reports**: Save research reports to `reports/TICKER_task_YYYY-MM-DD.md`.
 10. **Sandbox Confinement**: Remain confined to this project directory.
+11. **Calculation Toolkit Enforcement**: Never perform mental or rough arithmetic. Always call the deterministic calculation toolkit in `/tools/calc/` (`yoy_growth`, `cagr`, `margin`, `roic`, `roe`, `free_cash_flow`, `fcf_yield`, `net_debt_to_ebitda`, `interest_coverage`, `cash_conversion`, `enterprise_value`, `ev_multiples`, `dcf`, `reverse_dcf`, `convert_currency`).
