@@ -1,13 +1,30 @@
 """
-Provenance Ledger System
+Provenance Ledger System with Cryptographic Integrity Verification
 Tracks every financial data extraction and calculation with an immutable ledger ID,
-source URL, input parameters, timestamp, and raw output.
+source URL, input parameters, timestamp, raw output, and SHA-256 integrity signature.
 """
 
 import json
 import os
+import hashlib
 import datetime
 from typing import Dict, Any, Optional, List
+
+# Project salt for ledger integrity signing
+_LEDGER_SALT = "antigravity-finance-ledger-v1"
+
+def compute_entry_hash(
+    ledger_id: str,
+    tool: str,
+    inputs: Dict[str, Any],
+    raw_value: Any,
+    source: str,
+    timestamp: str
+) -> str:
+    """Compute SHA-256 cryptographic hash of ledger entry fields to prevent manual tampering."""
+    serialized_inputs = json.dumps(inputs, sort_keys=True)
+    payload = f"{ledger_id}|{tool}|{serialized_inputs}|{raw_value}|{source}|{timestamp}|{_LEDGER_SALT}"
+    return hashlib.sha256(payload.encode("utf-8")).hexdigest()
 
 class ProvenanceLedger:
     def __init__(self, run_id: Optional[str] = None):
@@ -24,28 +41,59 @@ class ProvenanceLedger:
         form: Optional[str] = None,
         period: Optional[str] = None,
         raw_value: Optional[Any] = None,
-        notes: Optional[str] = None
+        notes: Optional[str] = None,
+        ticker: Optional[str] = None
     ) -> str:
         """Record a data extraction or calculation in the provenance ledger.
-        Returns the unique ledger ID (e.g., 'LEDGER_001').
+        Generates a unique ledger ID and cryptographic integrity signature.
         """
         ledger_id = f"LEDGER_{self._counter:04d}"
         self._counter += 1
         
+        val = raw_value if raw_value is not None else output
+        ts = datetime.datetime.now().isoformat()
+        
+        entry_hash = compute_entry_hash(
+            ledger_id=ledger_id,
+            tool=tool,
+            inputs=inputs,
+            raw_value=val,
+            source=source,
+            timestamp=ts
+        )
+        
         entry = {
             "ledger_id": ledger_id,
             "tool": tool,
+            "ticker": ticker or inputs.get("ticker") or inputs.get("symbol"),
             "inputs": inputs,
             "output": output,
-            "raw_value": raw_value if raw_value is not None else output,
+            "raw_value": val,
             "source": source,
             "form": form,
             "period": period,
             "notes": notes,
-            "timestamp": datetime.datetime.now().isoformat()
+            "timestamp": ts,
+            "integrity_hash": entry_hash
         }
         self.entries[ledger_id] = entry
         return ledger_id
+
+    def verify_entry_integrity(self, ledger_id: str) -> bool:
+        """Verify that a ledger entry has not been modified after creation."""
+        entry = self.entries.get(ledger_id)
+        if not entry or "integrity_hash" not in entry:
+            return False
+            
+        expected_hash = compute_entry_hash(
+            ledger_id=entry["ledger_id"],
+            tool=entry["tool"],
+            inputs=entry["inputs"],
+            raw_value=entry["raw_value"],
+            source=entry["source"],
+            timestamp=entry["timestamp"]
+        )
+        return entry["integrity_hash"] == expected_hash
 
     def get(self, ledger_id: str) -> Optional[Dict[str, Any]]:
         return self.entries.get(ledger_id)
@@ -74,6 +122,6 @@ class ProvenanceLedger:
         instance = cls(run_id=data.get("run_id"))
         instance.entries = data.get("entries", {})
         if instance.entries:
-            max_id = max([int(k.split("_")[-1]) for k in instance.entries.keys() if "_" in k] or [0])
-            instance._counter = max_id + 1
+            ids = [int(k.split("_")[-1]) for k in instance.entries.keys() if "_" in k and k.split("_")[-1].isdigit()]
+            instance._counter = (max(ids) + 1) if ids else 1
         return instance
