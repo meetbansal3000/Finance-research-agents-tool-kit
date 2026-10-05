@@ -13,29 +13,30 @@ def convert_currency(
     custom_rate: Optional[float] = None,
     rate_date: Optional[str] = None
 ) -> Dict[str, Any]:
-    """Convert an amount from one currency to another, displaying the exact FX rate and date.
+    """Convert an amount from one currency to another, displaying the exact FX rate, source, and date.
     
-    If custom_rate is not provided, fetches current spot rate from yfinance (e.g., GBPUSD=X, USDINR=X).
+    If custom_rate is not provided, fetches current spot rate from Yahoo Finance (e.g., GBPUSD=X, USDINR=X).
     """
     from_curr = from_currency.upper().strip()
     to_curr = to_currency.upper().strip()
     
-    # Handle GBp (pence) vs GBP (pounds)
-    pence_multiplier = 1.0
-    if from_curr == "GBP" or from_curr == "GBP":
-        pass
-    elif from_curr == "GBX" or from_curr == "GBP":
-        # 100 pence = 1 pound
-        pence_multiplier = 0.01
+    # Handle GBp / GBX (Pence Sterling) vs GBP (Pounds)
+    adjusted_amount = amount
+    prefix_note = ""
+    if from_curr in ("GBP_PENCE", "GBX", "GBp".upper()):
+        adjusted_amount = amount / 100.0
+        from_curr = "GBP"
+        prefix_note = f" (Converted {amount:,.2f} Pence to {adjusted_amount:,.2f} GBP)"
         
     if from_curr == to_curr:
         return {
-            "result": amount,
-            "formula": "amount * 1.0 (Identical currencies)",
+            "result": adjusted_amount,
             "rate": 1.0,
             "rate_date": rate_date or datetime.date.today().isoformat(),
+            "source": "Identity (1:1)",
+            "formula": f"amount * 1.0{prefix_note}",
             "inputs": {"amount": amount, "from_currency": from_currency, "to_currency": to_currency},
-            "formatted": f"{amount:,.2f} {to_curr}"
+            "formatted": f"{adjusted_amount:,.2f} {to_curr}"
         }
         
     effective_rate = custom_rate
@@ -43,7 +44,6 @@ def convert_currency(
     source = "Custom Input"
     
     if effective_rate is None:
-        # Standard FX pair ticker on Yahoo Finance
         pair = f"{from_curr}{to_curr}=X"
         try:
             ticker = yf.Ticker(pair)
@@ -53,33 +53,32 @@ def convert_currency(
                 effective_date = hist.index[-1].strftime("%Y-%m-%d")
                 source = f"Yahoo Finance ({pair})"
             else:
-                # Try inverse pair
                 inv_pair = f"{to_curr}{from_curr}=X"
                 inv_ticker = yf.Ticker(inv_pair)
                 inv_hist = inv_ticker.history(period="5d")
                 if not inv_hist.empty:
                     effective_rate = 1.0 / float(inv_hist["Close"].iloc[-1])
                     effective_date = inv_hist.index[-1].strftime("%Y-%m-%d")
-                    source = f"Yahoo Finance (1 / {inv_pair})"
+                    source = f"Yahoo Finance (Derived 1 / {inv_pair})"
         except Exception as e:
             raise ValueError(f"Could not automatically fetch FX rate for {from_curr}->{to_curr}: {e}. Provide custom_rate.")
             
     if effective_rate is None:
         raise ValueError(f"No exchange rate found for {from_curr} to {to_curr}.")
         
-    converted_amount = amount * effective_rate
+    converted_amount = adjusted_amount * effective_rate
     
     return {
         "result": converted_amount,
         "rate": effective_rate,
         "rate_date": effective_date or datetime.date.today().isoformat(),
         "source": source,
-        "formula": f"amount ({amount:,.2f} {from_curr}) * exchange_rate ({effective_rate:.4f})",
+        "formula": f"amount ({adjusted_amount:,.2f} {from_curr}) * exchange_rate ({effective_rate:.4f}){prefix_note}",
         "inputs": {
             "amount": amount,
             "from_currency": from_currency,
             "to_currency": to_currency,
             "exchange_rate": effective_rate
         },
-        "formatted": f"{converted_amount:,.2f} {to_curr} (Rate: 1 {from_curr} = {effective_rate:.4f} {to_curr}, Date: {effective_date})"
+        "formatted": f"{converted_amount:,.2f} {to_curr} (Rate: 1 {from_curr} = {effective_rate:.4f} {to_curr}, Date: {effective_date}, Source: {source})"
     }

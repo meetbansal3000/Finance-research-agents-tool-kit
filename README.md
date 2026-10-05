@@ -4,39 +4,49 @@ A modular stock, market, and financial research environment powered by **OpenBB 
 
 ---
 
-## 📁 Project Structure
+## 📁 Clean Project Structure
 
 ```
 D:\AI-Workspace\finance agents for research\
 ├── .agents\
 │   ├── rules\
 │   │   └── research_rules.md  # Antigravity standing rules & calculation enforcement
-│   └── mcp_config.json        # Project-level MCP configuration for Antigravity
-├── .env                       # Environment variables (SEC User Agent, UTF-8)
+│   └── mcp_config.json        # Workspace-level MCP configuration for Antigravity
+├── .env                       # Environment variables (SEC User Agent, UTF-8) - NOT committed
+├── .env.example               # Template environment configuration
 ├── .gitignore                 # Git ignore file
-├── mcp_config.json            # Root MCP server registration file
 ├── pytest.ini                 # Pytest configuration
-├── requirements.txt           # Python dependency lockfile
+├── requirements.txt           # Pinned Python dependency lockfile
 ├── research_playbook_v2.md    # Master research workflows and standing rules
-├── test_queries.py            # Verification script for SEC & OpenBB queries
 ├── watchlist.txt              # Active research coverage watchlist
+├── agents\                    # Agent specification and prompts directory (/agents)
+├── library\                   # Document store directory
+│   ├── filings\               # Ingested regulatory filings (10-K, 10-Q, 20-F)
+│   ├── transcripts\           # Earnings call transcripts
+│   └── notes\                 # Analyst and research notes
+├── alerts\                    # Automated event and filing alert monitor files
+├── journal\                   # Investment decision journal and review files
+├── backtests\                 # Quantitative screening and backtesting sandbox
+├── reports\                   # Saved verified institutional research memos
+├── scripts\                   # Utility and testing scripts
+│   ├── generate_report.py
+│   ├── generate_multi_stock_reports.py
+│   └── test_queries.py
 ├── tools\
 │   └── calc\                  # Tested deterministic financial calculation toolkit
 │       ├── __init__.py
 │       ├── metrics.py         # YoY, CAGR, Margins, ROIC, ROE, FCF, Net Debt/EBITDA, EV
 │       ├── dcf.py             # Customizable DCF & Reverse DCF (implied growth)
-│       └── fx.py              # Timestamped multi-currency conversion
-├── tests\
-│   └── test_calc.py           # Unit test suite for calculation tools
-├── reports\                   # Saved institutional research memos & deep dives
-└── README.md                  # Setup, restart, and operational documentation
+│       └── fx.py              # Timestamped multi-currency conversion with source tracking
+└── tests\
+    └── test_calc.py           # Unit test suite for calculation tools
 ```
 
 ---
 
 ## 🧮 Calculation Toolkit (`/tools/calc/`)
 
-To ensure mathematical precision across all research tasks, **agents never calculate numbers manually**. All metrics are computed using deterministic, tested functions that return exact outputs, formulas, and inputs:
+Agents never perform mental or rough arithmetic. All metrics are computed using deterministic functions:
 
 | Function | Module | Description | Formula / Output |
 | :--- | :--- | :--- | :--- |
@@ -66,20 +76,9 @@ To ensure mathematical precision across all research tasks, **agents never calcu
 ## 🚀 Quick Setup & Restart Instructions
 
 ### 1. Activate the Python Virtual Environment
-Open PowerShell in this directory:
 ```powershell
 .\.venv\Scripts\Activate.ps1
 ```
-*(If recreating from scratch)*:
-```powershell
-python -m venv .venv
-.\.venv\Scripts\Activate.ps1
-pip install --upgrade pip
-pip install -r requirements.txt
-openbb-build
-```
-
----
 
 ### 2. Environment Configuration (`.env`)
 ```env
@@ -88,29 +87,17 @@ EDGAR_IDENTITY="Research Analyst research.analyst@example.com"
 PYTHONUTF8="1"
 ```
 
----
-
 ### 3. Starting the MCP Servers
 
-#### Option A: OpenBB MCP Server (1,188 Tools)
+#### OpenBB MCP Server (1,188 Tools)
 ```powershell
 $env:PYTHONUTF8="1"
 .\.venv\Scripts\openbb-mcp.exe --transport stdio
 ```
 
-#### Option B: SEC EDGAR MCP Server
+#### SEC EDGAR MCP Server
 ```powershell
 $env:SEC_EDGAR_USER_AGENT="Research Analyst research.analyst@example.com"
 $env:PYTHONUTF8="1"
 .\.venv\Scripts\sec-edgar-mcp.exe --transport stdio
-```
-
----
-
-## 🧪 Testing with Real Queries
-
-Run the automated verification suite:
-```powershell
-$env:PYTHONUTF8="1"
-.\.venv\Scripts\python.exe test_queries.py
 ```
