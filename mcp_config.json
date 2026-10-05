@@ -1,0 +1,26 @@
+{
+  "mcpServers": {
+    "openbb": {
+      "command": "D:\\AI-Workspace\\finance agents for research\\.venv\\Scripts\\openbb-mcp.exe",
+      "args": [
+        "--transport",
+        "stdio"
+      ],
+      "env": {
+        "PYTHONUTF8": "1"
+      }
+    },
+    "sec-edgar": {
+      "command": "D:\\AI-Workspace\\finance agents for research\\.venv\\Scripts\\sec-edgar-mcp.exe",
+      "args": [
+        "--transport",
+        "stdio"
+      ],
+      "env": {
+        "SEC_EDGAR_USER_AGENT": "Research Analyst research.analyst@example.com",
+        "EDGAR_IDENTITY": "Research Analyst research.analyst@example.com",
+        "PYTHONUTF8": "1"
+      }
+    }
+  }
+}
