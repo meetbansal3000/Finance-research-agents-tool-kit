@@ -52,15 +52,21 @@ D:\AI-Workspace\finance agents for research\
 
 ## 🔍 Verifier Agent & Provenance Ledger (`/agents/verifier.py`)
 
-Every financial figure and calculation is tracked in an immutable **Provenance Ledger** (`.provenance.json`) secured with SHA-256 HMAC integrity signatures:
+Every financial figure and calculation is tracked in an immutable **Provenance Ledger** (`.provenance.json`) secured with true HMAC-SHA256 integrity signatures:
 
-1. **Cryptographic Ledger Integrity**: Tool wrappers compute SHA-256 hashes per entry. Hand-edited or injected ledger records fail immediately with `LEDGER_TAMPERED`.
-2. **Independent Re-Fetch**: The verifier independently re-fetches cited SEC XBRL facts or yFinance market prices, catching discrepancies (`SOURCE_REFETCH_DISCREPANCY`) even if the report and local ledger agree.
-3. **Strict Rounding Tolerance**:
-   - Currency/Unit amounts: Relative error $|stated - raw| / raw \le 0.5\%$ (`0.005`).
-   - Percentages/Ratios: Absolute margin error $|stated - raw| \le 0.10$ percentage points.
-4. **Memory Tagging & Untracked Detection**: Qualitative claims from model memory must carry `[UNVERIFIED: model memory]`. Untagged narrative assertions trigger `UNTAGGED_MEMORY_CLAIM`, while numbers missing ledger IDs trigger `UNTRACKED_FIGURE`.
-5. **Audit Reports**: Produces a companion audit file (`<REPORT>.audit.md`) with three structured sections:
+1. **Cryptographic HMAC Ledger Integrity**: Tool wrappers sign every ledger record with HMAC-SHA256 using `LEDGER_HMAC_KEY` from `.env`. **Plainly stated: this HMAC signature catches accidental or sloppy edits; the live re-fetch check is the real protection.**
+2. **Independent Re-Fetch**: The verifier independently re-fetches primary SEC XBRL filings (filtering by form type `10-K` and exact period end date, e.g., `2025-09-27`) or yFinance quotes. Discrepancies between the live source and the ledger fail immediately as `SOURCE_REFETCH_DISCREPANCY`.
+3. **Stated-Precision Half-Unit Rounding Tolerance**:
+   - Tolerance dynamically depends on the number of decimal digits shown: $\Delta = 0.5 \times 10^{-d} \times \text{Scale}$.
+   - `$416.2B` ($d=1, \text{scale}=10^9$) allows $\pm \$0.05\text{B}$ ($\pm \$50\text{M}$).
+   - `46.91%` ($d=2, \text{scale}=1.0$) allows $\pm 0.005\%$ ($\pm 0.5\text{ bps}$).
+   - Integer `12,715` ($d=0, \text{scale}=1.0$) allows $\pm 0.5$.
+4. **Default-Deny Claim Detection**: Every sentence and table row must carry:
+   - A valid ledger citation `[LEDGER_XXXX]`, OR
+   - An `[ANALYSIS]` tag (deductive reasoning from verified data), OR
+   - An `[UNVERIFIED: model memory]` tag (qualitative historical memory).
+   - Any untagged figure, untracked cell, spelled-out word number (`six percent`, `93.7 billion dollars`), or malformed citation (`[ledger_0001]`) fails.
+5. **Audit Reports**: Produces a companion audit file (`<REPORT>.audit.md`) with:
    - `### ✅ 1. Confirmed Claims`
    - `### ❌ 2. Wrong / Discrepant Figures`
    - `### ⚠️ 3. Unverifiable / Failed Claims`
@@ -69,19 +75,26 @@ Every financial figure and calculation is tracked in an immutable **Provenance L
 
 ## 🥊 Skeptic Agent (`/agents/skeptic.py`)
 
-The **Skeptic Agent** acts as an adversarial red-team auditor designed to destroy bull/bear investment theses before capital is committed:
+The **Skeptic Agent** acts as an adversarial red-team auditor designed to stress-test investment theses against DCF sensitivity models and empirical SEC filing evidence:
 
-1. **Hurdle Rate & Growth Feasibility**: Uses `reverse_dcf` to solve for the implied FCF growth rate embedded in current market prices, comparing it to historical 3-5Y CAGRs and industry averages.
-2. **Stress Testing**: Applies quantitative shock models:
-   - `-200 bps` structural operating margin contraction.
+1. **Dynamic Thesis Extraction**: Automatically extracts stated growth rates, operating margins, and discount rates from thesis reports.
+2. **Adversarial Stress Testing**:
+   - Implied 5-year FCF CAGR via Reverse DCF.
+   - `-200 bps` structural operating margin compression haircut.
    - `+100 bps` increase in discount rate / cost of capital (WACC).
-3. **Full Provenance**: Every figure cited by the skeptic carries its own valid ledger ID. Qualitative historical citations use `[UNVERIFIED: model memory]`.
-4. **Output Format**:
-   - `### 1. Counter-Evidence` (contradictory data points with ledger IDs)
-   - `### 2. Under-appreciated Risks` (structural, regulatory, customer concentration)
-   - `### 3. Alternative Explanations` (cyclical vs. secular, accounting vs. operational)
-   - `### 4. What Would Change My Mind` (falsifiable quantitative triggers)
-   - If the thesis withstands scrutiny and no counter-evidence exists: outputs `"No strong counter-evidence found."`
+3. **Empirical Filing Evidence**:
+   - Working Capital Divergence: Receivables YoY vs Revenue YoY ($\Delta > 5.0\text{ pp}$ flags collection friction / DSO expansion) and Inventory YoY vs Revenue YoY.
+   - Customer Concentration: Flags if single customer accounts for $> 10\%$ revenue.
+   - Refinancing Risk: Short-term debt due in 12 months vs Cash & Equivalents ($> 50\%$ flags rollover risk).
+4. **Quantitative Definition of "No Strong Counter-Evidence Found"**:
+   A thesis qualifies for `"No strong counter-evidence found."` if and only if ALL criteria pass:
+   - Implied 5Y FCF CAGR $\le \text{Historical 3Y FCF CAGR} + 2.0\text{ percentage points}$.
+   - Valuation drop under $-200\text{ bps}$ margin shock is $\le 15\%$.
+   - Valuation drop under $+100\text{ bps}$ WACC shock is $\le 15\%$.
+   - Working capital divergence $\le 5.0\text{ pp}$.
+   - Short-term debt due within 12 months $\le 50\%$ of liquid cash.
+   - Max customer concentration $\le 10\%$.
+   - Zero unaddressed empirical filing headwinds.
 
 ---
 

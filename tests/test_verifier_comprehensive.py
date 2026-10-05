@@ -2,9 +2,10 @@
 Comprehensive Test Suite for Verifier Agent & Provenance Ledger
 Verifies:
 1. Re-fetch check (source vs ledger discrepancy)
-2. Cryptographic ledger integrity (tamper detection)
-3. 8+ Flawed Sentences Suite (claim detection, rounding, ticker mismatch, untagged memory)
-4. Strict rounding tolerances
+2. Cryptographic HMAC ledger integrity (tamper detection)
+3. 10 Prompt sentences (a) to (j) under default-deny
+4. 10 New Hold-Out sentences in different style
+5. Precision-aware half-unit rounding tolerance boundaries
 """
 
 import os
@@ -14,7 +15,7 @@ from tools.ledger import ProvenanceLedger
 from agents.verifier import ReportVerifier
 
 def test_ledger_tamper_detection(tmp_path):
-    """Test that manual hand-editing of ledger fields is caught by SHA-256 integrity checks."""
+    """Test that manual hand-editing of ledger fields is caught by cryptographic HMAC integrity checks."""
     ledger = ProvenanceLedger(run_id="tamper_test")
     l_id = ledger.record(
         tool="tools.calc.margin",
@@ -45,7 +46,7 @@ def test_ledger_tamper_detection(tmp_path):
     # Verifier MUST catch the tampered ledger entry
     tampered_errors = [w for w in audit_res["wrong"] if w.get("error_type") == "LEDGER_TAMPERED"]
     assert len(tampered_errors) == 1
-    assert "Cryptographic signature mismatch" in tampered_errors[0]["failure_reason"]
+    assert "Cryptographic HMAC signature mismatch" in tampered_errors[0]["failure_reason"]
 
 def test_refetch_discrepancy_detection(tmp_path):
     """Test catching when report and ledger agree with each other, but live re-fetch differs."""
@@ -75,106 +76,191 @@ def test_refetch_discrepancy_detection(tmp_path):
     # Verifier MUST catch the discrepancy via live calculation re-fetch
     refetch_errors = [w for w in audit_res["wrong"] if w.get("error_type") == "SOURCE_REFETCH_DISCREPANCY"]
     assert len(refetch_errors) == 1
-    assert refetch_errors[0]["correct_value"] == 15.0  # Live tool recomputed true value
+    assert refetch_errors[0]["correct_value"] == 15.0
 
-def test_comprehensive_eight_flawed_sentences(tmp_path):
-    """Test detection across 8+ diverse financial sentence types and error patterns."""
-    ledger = ProvenanceLedger(run_id="eight_sentences_test")
+def test_prompt_ten_sentences_audit(tmp_path):
+    """Test the 10 benchmark sentences (a) to (j) from the user prompt."""
+    ledger = ProvenanceLedger(run_id="ten_prompt_sentences")
     
-    # Entry 1: AAPL Revenue = 416,161,000,000.0
-    l_aapl_rev = ledger.record(
+    # LEDGER_0001: AAPL FY2025 Revenue = 416,161,000,000.0
+    l1 = ledger.record(
         tool="edgar.get_facts",
         ticker="AAPL",
         inputs={"ticker": "AAPL", "concept": "us-gaap:Revenues"},
         output=416161000000.0,
         raw_value=416161000000.0,
-        source="https://www.sec.gov/Archives/edgar/data/320193/0000320193-25-000079-index.html",
+        source="SEC 10-K",
         period="FY2025"
     )
     
-    # Entry 2: AAPL Gross Margin = 46.91%
-    l_aapl_gm = ledger.record(
+    # LEDGER_0002: AAPL Gross Margin = 46.91%
+    l2 = ledger.record(
         tool="tools.calc.margin",
         ticker="AAPL",
         inputs={"numerator": 195201000000.0, "revenue": 416161000000.0},
         output=46.90516,
         raw_value=46.90516,
-        source="https://www.sec.gov/Archives/edgar/data/320193/0000320193-25-000079-index.html",
+        source="SEC 10-K",
         period="FY2025"
     )
     
-    report_file = tmp_path / "multi_sentence_report.md"
-    ledger_file = tmp_path / "multi_sentence_report.provenance.json"
+    report_file = tmp_path / "prompt_ten.md"
+    ledger_file = tmp_path / "prompt_ten.provenance.json"
     ledger.save_sidecar(str(ledger_file))
     
-    # Construct 8+ sentences covering all test conditions
     report_lines = [
-        f"1. Apple reported FY2025 total revenue of $416.2B [{l_aapl_rev}].",  # S1: Valid rounding $416.2B -> PASS
-        f"2. Gross margin expanded to 46.91% [{l_aapl_gm}].",                  # S2: Valid percentage -> PASS
-        "3. Operating margin collapsed to 12.5% in the fourth quarter.",        # S3: Untracked percentage -> FAIL (UNTRACKED_FIGURE)
-        "4. Capital expenditures surged to $45.8B without justification.",      # S4: Untracked dollar figure -> FAIL (UNTRACKED_FIGURE)
-        "5. The company's auditor is Ernst & Young LLP since 2009.",            # S5: Untagged auditor claim -> FAIL (UNTAGGED_MEMORY_CLAIM)
-        "6. Apple maintains a dominant position in search and smartphones.",    # S6: Untagged market position -> FAIL (UNTAGGED_MEMORY_CLAIM)
-        "7. Revenue reached $100B, and [UNVERIFIED: model memory] the founder resigned in 2011.", # S7: Mixed -> FAIL (UNTRACKED_FIGURE)
-        f"8. Microsoft (MSFT) delivered record revenue of $416.2B [{l_aapl_rev}].", # S8: Valid ID but wrong ticker (MSFT vs AAPL) -> FAIL (TICKER_MISMATCH)
-        f"9. Apple reported FY2025 revenue of $550.0B [{l_aapl_rev}]."         # S9: Blatant value mismatch ($550B vs $416.2B) -> FAIL (VALUE_MISMATCH)
+        "Apple's revenue grew about six percent last year.",                         # (a) Word number 'six percent' -> UNTRACKED_FIGURE
+        "Net income was 93.7 billion dollars.",                                     # (b) Words '93.7 billion dollars' -> UNTRACKED_FIGURE
+        f"Apple reported FY2024 revenue of $416.2B [{l1}].",                        # (c) FY2024 vs FY2025 -> PERIOD_MISMATCH
+        "The audit committee changed auditors in 2023.",                            # (d) Auditor claim -> UNTAGGED_MEMORY_CLAIM
+        "Samsung has been losing share to Apple in premium phones.",                # (e) Competitor/share claim -> UNTAGGED_MEMORY_CLAIM
+        f"Gross margin was 46.9% [{l2}], and services margin is above 70%.",        # (f) 70% untracked -> UNTRACKED_FIGURE
+        f"Revenue rose 4% year over year [{l1}].",                                  # (g) Growth claim against level ledger -> METRIC_TYPE_MISMATCH
+        "The iPhone is the largest contributor to Apple's profit.",                 # (h) Untagged narrative assertion -> UNTAGGED_MEMORY_CLAIM
+        "| Capex | 12,715 |",                                                       # (i) Table cell bare number -> UNTRACKED_FIGURE
+        "Management expects a stronger December quarter. [ledger_0001]"             # (j) Lowercase citation syntax -> MALFORMED_CITATION
     ]
     
     with open(report_file, "w", encoding="utf-8") as f:
         f.write("\n".join(report_lines))
         
     verifier = ReportVerifier(report_path=str(report_file), ledger_path=str(ledger_file))
-    audit_res = verifier.audit()
+    audit = verifier.audit()
     
-    confirmed_lines = [c["line"] for c in audit_res["confirmed"]]
-    wrong_by_line = {w["line"]: w["error_type"] for w in audit_res["wrong"]}
-    unverif_errors_by_line = {}
-    for u in audit_res["unverifiable"]:
-        unverif_errors_by_line.setdefault(u["line"], []).append(u["error_type"])
+    unverif_errors = {u["line"]: u["error_type"] for u in audit["unverifiable"]}
+    wrong_errors = {w["line"]: w["error_type"] for w in audit["wrong"]}
     
-    # S1 & S2 passed
-    assert 1 in confirmed_lines
-    assert 2 in confirmed_lines
-    
-    # S3: Untracked percentage caught
-    assert 3 in unverif_errors_by_line and "UNTRACKED_FIGURE" in unverif_errors_by_line[3]
-    
-    # S4: Untracked currency caught
-    assert 4 in unverif_errors_by_line and "UNTRACKED_FIGURE" in unverif_errors_by_line[4]
-    
-    # S5: Untagged auditor claim caught
-    assert 5 in unverif_errors_by_line and "UNTAGGED_MEMORY_CLAIM" in unverif_errors_by_line[5]
-    
-    # S6: Untagged market position claim caught
-    assert 6 in unverif_errors_by_line and "UNTAGGED_MEMORY_CLAIM" in unverif_errors_by_line[6]
-    
-    # S7: Untracked $100B caught in mixed sentence
-    assert 7 in unverif_errors_by_line and "UNTRACKED_FIGURE" in unverif_errors_by_line[7]
-    
-    # S8: Ticker mismatch caught
-    assert 8 in wrong_by_line and wrong_by_line[8] == "TICKER_MISMATCH"
-    
-    # S9: Value mismatch caught
-    assert 9 in wrong_by_line and wrong_by_line[9] == "VALUE_MISMATCH"
+    # (a) Caught: line 1
+    assert 1 in unverif_errors and unverif_errors[1] == "UNTRACKED_FIGURE"
+    # (b) Caught: line 2
+    assert 2 in unverif_errors and unverif_errors[2] == "UNTRACKED_FIGURE"
+    # (c) Caught: line 3 (PERIOD_MISMATCH)
+    assert 3 in wrong_errors and wrong_errors[3] == "PERIOD_MISMATCH"
+    # (d) Caught: line 4 (UNTAGGED_MEMORY_CLAIM)
+    assert 4 in unverif_errors and unverif_errors[4] == "UNTAGGED_MEMORY_CLAIM"
+    # (e) Caught: line 5 (UNTAGGED_MEMORY_CLAIM)
+    assert 5 in unverif_errors and unverif_errors[5] == "UNTAGGED_MEMORY_CLAIM"
+    # (f) Caught: line 6 (UNTRACKED_FIGURE for 70%)
+    assert 6 in unverif_errors and unverif_errors[6] == "UNTRACKED_FIGURE"
+    # (g) Caught: line 7 (METRIC_TYPE_MISMATCH)
+    assert 7 in wrong_errors and wrong_errors[7] == "METRIC_TYPE_MISMATCH"
+    # (h) Caught: line 8 (UNTAGGED_MEMORY_CLAIM)
+    assert 8 in unverif_errors and unverif_errors[8] == "UNTAGGED_MEMORY_CLAIM"
+    # (i) Caught: line 9 (UNTRACKED_FIGURE in table row)
+    assert 9 in unverif_errors and unverif_errors[9] == "UNTRACKED_FIGURE"
+    # (j) Caught: line 10 (MALFORMED_CITATION)
+    assert 10 in unverif_errors and unverif_errors[10] == "MALFORMED_CITATION"
 
-def test_rounding_tolerance_boundaries():
-    """Test exact mathematical boundary behavior of rounding tolerance checks."""
+def test_holdout_ten_sentences_audit(tmp_path):
+    """Test 10 new hold-out test sentences in a different linguistic and structural style."""
+    ledger = ProvenanceLedger(run_id="holdout_ten_sentences")
+    
+    l_cfo = ledger.record(
+        tool="edgar.get_facts",
+        ticker="AAPL",
+        inputs={"ticker": "AAPL", "concept": "us-gaap:NetCashProvidedByUsedInOperatingActivities"},
+        output=118300000000.0,
+        raw_value=118300000000.0,
+        source="SEC 10-K",
+        period="FY2025"
+    )
+    
+    l_eps = ledger.record(
+        tool="tools.calc.yoy_growth",
+        ticker="AAPL",
+        inputs={"current_period": 6.08, "prior_period": 5.43},
+        output=11.97,
+        raw_value=11.97,
+        source="tools.calc.metrics",
+        period="FY2025"
+    )
+    
+    report_file = tmp_path / "holdout_ten.md"
+    ledger_file = tmp_path / "holdout_ten.provenance.json"
+    ledger.save_sidecar(str(ledger_file))
+    
+    holdout_lines = [
+        "Apple's operating cash flow reached 118.3 billion dollars in the fiscal year.",     # 1. Spelled-out units without ID -> UNTRACKED_FIGURE
+        "Diluted earnings per share increased by twelve percent year over year.",           # 2. Spelled-out words without ID -> UNTRACKED_FIGURE
+        "| R&D Expense | $31,370M |",                                                       # 3. Table row with unreferenced currency value -> UNTRACKED_FIGURE
+        "Tim Cook succeeded Steve Jobs as CEO in August 2011.",                             # 4. Untagged historical assertion -> UNTAGGED_CLAIM
+        "The company faces intense competition from Google in mobile operating systems.",   # 5. Untagged market narrative -> UNTAGGED_MEMORY_CLAIM
+        f"Total liabilities stand at $300B [{l_cfo}], while cash is $30B.",                 # 6. Mixed line with 1 valid ID and 1 unreferenced figure -> UNTRACKED_FIGURE
+        f"Operating margin expanded to 31.97% [{l_cfo}].",                                  # 7. Level ledger ID cited for growth claim -> METRIC_TYPE_MISMATCH
+        f"Apple reported FY2023 net income of $96.99B [{l_cfo}].",                          # 8. FY2023 vs FY2025 -> PERIOD_MISMATCH
+        "Supply chain disruptions could materially impact holiday hardware shipments.",     # 9. Untagged forward-looking narrative -> UNTAGGED_CLAIM
+        "Services segment generated strong recurring subscription revenues. (Ledger_0002)"  # 10. Malformed citation with parentheses -> MALFORMED_CITATION
+    ]
+    
+    with open(report_file, "w", encoding="utf-8") as f:
+        f.write("\n".join(holdout_lines))
+        
+    verifier = ReportVerifier(report_path=str(report_file), ledger_path=str(ledger_file))
+    audit = verifier.audit()
+    
+    unverif_errors = {u["line"]: u["error_type"] for u in audit["unverifiable"]}
+    wrong_errors = {w["line"]: w["error_type"] for w in audit["wrong"]}
+    
+    # 1. Caught
+    assert 1 in unverif_errors and unverif_errors[1] == "UNTRACKED_FIGURE"
+    # 2. Caught
+    assert 2 in unverif_errors and unverif_errors[2] == "UNTRACKED_FIGURE"
+    # 3. Caught
+    assert 3 in unverif_errors and unverif_errors[3] == "UNTRACKED_FIGURE"
+    # 4. Caught
+    assert 4 in unverif_errors and unverif_errors[4] in ("UNTAGGED_CLAIM", "UNTAGGED_MEMORY_CLAIM")
+    # 5. Caught
+    assert 5 in unverif_errors and unverif_errors[5] == "UNTAGGED_MEMORY_CLAIM"
+    # 6. Caught
+    assert 6 in unverif_errors and unverif_errors[6] == "UNTRACKED_FIGURE"
+    # 7. Caught
+    assert 7 in wrong_errors and wrong_errors[7] == "METRIC_TYPE_MISMATCH"
+    # 8. Caught
+    assert 8 in wrong_errors and wrong_errors[8] == "PERIOD_MISMATCH"
+    # 9. Caught
+    assert 9 in unverif_errors and unverif_errors[9] in ("UNTAGGED_CLAIM", "UNTAGGED_MEMORY_CLAIM")
+    # 10. Caught
+    assert 10 in unverif_errors and unverif_errors[10] == "MALFORMED_CITATION"
+
+def test_precision_aware_half_unit_tolerance():
+    """Test exact half-unit rounding tolerance based on stated precision."""
     verifier = ReportVerifier.__new__(ReportVerifier)
     
-    # Currency: $416,161,000,000 vs $416.2B (diff = 0.0093% <= 0.5% -> True)
-    assert verifier.verify_value_with_tolerance(416.2 * 1e9, 416161000000.0, is_ratio=False) is True
+    # 1. $416.2B (d=1, scale=1e9 -> unit=0.1B -> tolerance = ±$0.05B = ±$50M)
+    # Raw $416,161,000,000 ($416.161B): diff is $0.039B <= $0.05B -> PASS
+    passes, _, tol = verifier.verify_value_with_precision("416.2", "B", 416161000000.0)
+    assert passes is True
+    assert tol == 50000000.0  # 0.05B
     
-    # Currency: $416,161,000,000 vs $416.16B (diff = 0.0002% <= 0.5% -> True)
-    assert verifier.verify_value_with_tolerance(416.16 * 1e9, 416161000000.0, is_ratio=False) is True
+    # Planted error $416.3B: diff is $0.139B > $0.05B -> FAIL
+    passes, _, _ = verifier.verify_value_with_precision("416.3", "B", 416161000000.0)
+    assert passes is False
     
-    # Currency: $416,161,000,000 vs $420.0B (diff = 0.92% > 0.5% -> False)
-    assert verifier.verify_value_with_tolerance(420.0 * 1e9, 416161000000.0, is_ratio=False) is False
+    # 2. $416.16B (d=2, scale=1e9 -> unit=0.01B -> tolerance = ±$0.005B = ±$5M)
+    # Raw $416,161,000,000 ($416.161B): diff is $0.001B <= $0.005B -> PASS
+    passes, _, tol = verifier.verify_value_with_precision("416.16", "B", 416161000000.0)
+    assert passes is True
+    assert tol == 5000000.0  # 0.005B
     
-    # Ratios: 46.905% vs 46.91% (diff = 0.005 <= 0.10 -> True)
-    assert verifier.verify_value_with_tolerance(46.91, 46.905, is_ratio=True) is True
+    # 3. 46.9% (d=1, unit=0.1% -> tolerance = ±0.05%)
+    # Raw 46.90516%: diff is 0.00516% <= 0.05% -> PASS
+    passes, _, tol = verifier.verify_value_with_precision("46.9", "%", 46.90516, is_ratio=True)
+    assert passes is True
+    assert tol == 0.05
     
-    # Ratios: 46.905% vs 46.9% (diff = 0.005 <= 0.10 -> True)
-    assert verifier.verify_value_with_tolerance(46.90, 46.905, is_ratio=True) is True
+    # 4. 46.91% (d=2, unit=0.01% -> tolerance = ±0.005%)
+    # Raw 46.90516%: diff is 0.00484% <= 0.005% -> PASS
+    passes, _, tol = verifier.verify_value_with_precision("46.91", "%", 46.90516, is_ratio=True)
+    assert passes is True
+    assert tol == 0.005
     
-    # Ratios: 46.905% vs 47.5% (diff = 0.595 > 0.10 -> False)
-    assert verifier.verify_value_with_tolerance(47.50, 46.905, is_ratio=True) is False
+    # Stated 47.0% on raw 46.90516%: diff is 0.0948% > 0.05% -> FAIL
+    passes, _, _ = verifier.verify_value_with_precision("47.0", "%", 46.90516, is_ratio=True)
+    assert passes is False
+    
+    # 5. Table row integer 12,715 (d=0, unit=1 -> tolerance = ±0.5)
+    passes, _, tol = verifier.verify_value_with_precision("12,715", "", 12715.0)
+    assert passes is True
+    assert tol == 0.5
+    passes, _, _ = verifier.verify_value_with_precision("12,715", "", 12716.0)
+    assert passes is False

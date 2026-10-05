@@ -6,12 +6,15 @@ source URL, input parameters, timestamp, raw output, and SHA-256 integrity signa
 
 import json
 import os
+import hmac
 import hashlib
 import datetime
 from typing import Dict, Any, Optional, List
 
-# Project salt for ledger integrity signing
-_LEDGER_SALT = "antigravity-finance-ledger-v1"
+def get_hmac_key() -> bytes:
+    """Load HMAC signing key from environment or fallback key."""
+    key_str = os.getenv("LEDGER_HMAC_KEY", "antigravity-finance-hmac-key-v1")
+    return key_str.encode("utf-8")
 
 def compute_entry_hash(
     ledger_id: str,
@@ -21,10 +24,10 @@ def compute_entry_hash(
     source: str,
     timestamp: str
 ) -> str:
-    """Compute SHA-256 cryptographic hash of ledger entry fields to prevent manual tampering."""
+    """Compute true HMAC-SHA256 signature of ledger entry fields to detect tampering."""
     serialized_inputs = json.dumps(inputs, sort_keys=True)
-    payload = f"{ledger_id}|{tool}|{serialized_inputs}|{raw_value}|{source}|{timestamp}|{_LEDGER_SALT}"
-    return hashlib.sha256(payload.encode("utf-8")).hexdigest()
+    payload = f"{ledger_id}|{tool}|{serialized_inputs}|{raw_value}|{source}|{timestamp}"
+    return hmac.new(get_hmac_key(), payload.encode("utf-8"), hashlib.sha256).hexdigest()
 
 class ProvenanceLedger:
     def __init__(self, run_id: Optional[str] = None):

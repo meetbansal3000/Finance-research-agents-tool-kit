@@ -1,0 +1,144 @@
+{
+  "run_id": "skeptic_weak_demo",
+  "saved_at": "2026-10-06T00:43:00.666065",
+  "total_records": 8,
+  "entries": {
+    "LEDGER_0001": {
+      "ledger_id": "LEDGER_0001",
+      "tool": "yfinance.quote",
+      "ticker": "HYPER_GROWTH_TECH",
+      "inputs": {
+        "ticker": "HYPER_GROWTH_TECH",
+        "price": 280.0
+      },
+      "output": 280.0,
+      "raw_value": 280.0,
+      "source": "Market Quote (HYPER_GROWTH_TECH)",
+      "form": null,
+      "period": null,
+      "notes": "Current trading price",
+      "timestamp": "2026-10-06T00:43:00.665065",
+      "integrity_hash": "6100ac193e199d41ba4f95d36182aa30735144f73bed8ab9f2291c7f847ceb2d"
+    },
+    "LEDGER_0002": {
+      "ledger_id": "LEDGER_0002",
+      "tool": "tools.calc.reverse_dcf",
+      "ticker": "HYPER_GROWTH_TECH",
+      "inputs": {
+        "current_price": 280.0,
+        "base_fcf": 4.0,
+        "WACC": 0.09
+      },
+      "output": 41.5699303150177,
+      "raw_value": 41.5699303150177,
+      "source": "tools.calc.dcf.reverse_dcf",
+      "form": null,
+      "period": null,
+      "notes": "Market implied 5-year FCF CAGR",
+      "timestamp": "2026-10-06T00:43:00.665065",
+      "integrity_hash": "d80129276dfe4c846d1d365b92e42c50a894f51bfa3c470dd6ae07c28d58b9e6"
+    },
+    "LEDGER_0003": {
+      "ledger_id": "LEDGER_0003",
+      "tool": "tools.calc.dcf",
+      "ticker": "HYPER_GROWTH_TECH",
+      "inputs": {
+        "growth": 0.1,
+        "wacc": 0.09,
+        "term_g": 0.025
+      },
+      "output": 86.58117846428142,
+      "raw_value": 86.58117846428142,
+      "source": "tools.calc.dcf.dcf",
+      "form": null,
+      "period": null,
+      "notes": "Baseline fair value per share",
+      "timestamp": "2026-10-06T00:43:00.665065",
+      "integrity_hash": "744cd909d6816fc7b4f62337203152105deafff48d2b980c3fb38eed652500bf"
+    },
+    "LEDGER_0004": {
+      "ledger_id": "LEDGER_0004",
+      "tool": "tools.calc.dcf",
+      "ticker": "HYPER_GROWTH_TECH",
+      "inputs": {
+        "stressed_fcf": 3.555555555555556,
+        "margin_delta_bps": -200
+      },
+      "output": 76.96104752380572,
+      "raw_value": 76.96104752380572,
+      "source": "tools.calc.dcf.dcf",
+      "form": null,
+      "period": null,
+      "notes": "Fair value under margin compression",
+      "timestamp": "2026-10-06T00:43:00.665065",
+      "integrity_hash": "c95f0918c9a0967d060b9454e9368d6a806e6eefc94fe8a12970ed2234117b6d"
+    },
+    "LEDGER_0005": {
+      "ledger_id": "LEDGER_0005",
+      "tool": "tools.calc.margin_stress_impact",
+      "ticker": "HYPER_GROWTH_TECH",
+      "inputs": {
+        "baseline": 86.58117846428142,
+        "stressed": 76.96104752380572
+      },
+      "output": -11.1111111111111,
+      "raw_value": -11.1111111111111,
+      "source": "tools.calc.metrics",
+      "form": null,
+      "period": null,
+      "notes": "Margin stress impact percentage",
+      "timestamp": "2026-10-06T00:43:00.665065",
+      "integrity_hash": "fc44643ef3d21b0038b7e4180aa583ae4a3ea51bbd365c6602dc31ebe9983608"
+    },
+    "LEDGER_0006": {
+      "ledger_id": "LEDGER_0006",
+      "tool": "tools.calc.dcf",
+      "ticker": "HYPER_GROWTH_TECH",
+      "inputs": {
+        "wacc_stressed": 0.09999999999999999
+      },
+      "output": 74.66666666666669,
+      "raw_value": 74.66666666666669,
+      "source": "tools.calc.dcf.dcf",
+      "form": null,
+      "period": null,
+      "notes": "Fair value under WACC elevation",
+      "timestamp": "2026-10-06T00:43:00.665065",
+      "integrity_hash": "ae4040bc30a5e1ff9979b3471b849a6e0f27127875145d4c2b6efc3ecce28917"
+    },
+    "LEDGER_0007": {
+      "ledger_id": "LEDGER_0007",
+      "tool": "tools.calc.wacc_stress_impact",
+      "ticker": "HYPER_GROWTH_TECH",
+      "inputs": {
+        "baseline": 86.58117846428142,
+        "stressed": 74.66666666666669
+      },
+      "output": -13.761087581557927,
+      "raw_value": -13.761087581557927,
+      "source": "tools.calc.metrics",
+      "form": null,
+      "period": null,
+      "notes": "WACC stress impact percentage",
+      "timestamp": "2026-10-06T00:43:00.665065",
+      "integrity_hash": "87b5faf8c2efe6b6791bc2f8e811659b40f4cfa618265f4e909bae59946afdd5"
+    },
+    "LEDGER_0008": {
+      "ledger_id": "LEDGER_0008",
+      "tool": "tools.calc.working_capital_divergence",
+      "ticker": "HYPER_GROWTH_TECH",
+      "inputs": {
+        "rec_yoy": 0.16,
+        "rev_yoy": 0.06
+      },
+      "output": 10.0,
+      "raw_value": 10.0,
+      "source": "tools.calc.metrics",
+      "form": null,
+      "period": null,
+      "notes": "Receivables vs Revenue YoY divergence (pp)",
+      "timestamp": "2026-10-06T00:43:00.665065",
+      "integrity_hash": "2f63dc56655191073cc248e38de18b2d351f04058cbed502f711e69ec248a4c1"
+    }
+  }
+}
