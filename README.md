@@ -1,6 +1,6 @@
 # Open-Source Stock and Market Research Toolkit
 
-A modular stock, market, and financial research environment powered by **OpenBB Platform**, **yFinance**, **Federal Reserve (FRED)**, **SEC EDGAR**, **Calculation Toolkit**, and **Model Context Protocol (MCP)** servers.
+A modular stock, market, and financial research environment powered by **OpenBB Platform**, **yFinance**, **Federal Reserve (FRED)**, **SEC EDGAR**, **Calculation Toolkit**, **Verifier & Provenance Ledger**, and **Model Context Protocol (MCP)** servers.
 
 ---
 
@@ -19,7 +19,9 @@ D:\AI-Workspace\finance agents for research\
 ├── requirements.txt           # Pinned Python dependency lockfile
 ├── research_playbook_v2.md    # Master research workflows and standing rules
 ├── watchlist.txt              # Active research coverage watchlist
-├── agents\                    # Agent specification and prompts directory (/agents)
+├── agents\
+│   ├── verifier.md            # Verifier agent specification & audit rules
+│   └── verifier.py            # Automated verification engine
 ├── library\                   # Document store directory
 │   ├── filings\               # Ingested regulatory filings (10-K, 10-Q, 20-F)
 │   ├── transcripts\           # Earnings call transcripts
@@ -27,20 +29,34 @@ D:\AI-Workspace\finance agents for research\
 ├── alerts\                    # Automated event and filing alert monitor files
 ├── journal\                   # Investment decision journal and review files
 ├── backtests\                 # Quantitative screening and backtesting sandbox
-├── reports\                   # Saved verified institutional research memos
-├── scripts\                   # Utility and testing scripts
-│   ├── generate_report.py
-│   ├── generate_multi_stock_reports.py
+├── reports\                   # Saved verified research reports & sidecar audits
+├── scripts\                   # Utility and live-extraction scripts
 │   └── test_queries.py
 ├── tools\
+│   ├── ledger.py              # Immutable Provenance Ledger system
 │   └── calc\                  # Tested deterministic financial calculation toolkit
 │       ├── __init__.py
 │       ├── metrics.py         # YoY, CAGR, Margins, ROIC, ROE, FCF, Net Debt/EBITDA, EV
 │       ├── dcf.py             # Customizable DCF & Reverse DCF (implied growth)
-│       └── fx.py              # Timestamped multi-currency conversion with source tracking
+│       └── fx.py              # Timestamped multi-currency conversion with quote dates
 └── tests\
-    └── test_calc.py           # Unit test suite for calculation tools
+    ├── test_calc.py           # Unit test suite for calculation tools
+    └── test_verifier.py       # Unit test suite for Verifier agent & ledger
 ```
+
+---
+
+## 🔍 Verifier Agent & Provenance Ledger (`/agents/verifier.py`)
+
+Every financial figure and calculation is tracked in an immutable **Provenance Ledger** (`.provenance.json`). The **Verifier Agent** audits research reports without modifying the original:
+
+1. **Figure Provenance**: Matches every stated figure against its `LEDGER_XXXX` entry.
+2. **Value Precision**: Discrepancies between report values and ledger records trigger a `VALUE_MISMATCH` flag with the true value and source.
+3. **Memory Tagging**: Narrative claims stemming from model memory must be tagged `[UNVERIFIED: model memory]`. Untagged assertions trigger an `UNTAGGED_MEMORY_CLAIM` flag.
+4. **Audit Reports**: Produces a companion audit file (`<REPORT>.audit.md`) with three structured sections:
+   - `### ✅ 1. Confirmed Claims`
+   - `### ❌ 2. Wrong / Discrepant Figures`
+   - `### ⚠️ 3. Unverifiable / Failed Claims`
 
 ---
 
@@ -68,36 +84,5 @@ Agents never perform mental or rough arithmetic. All metrics are computed using 
 
 ### Running Unit Tests:
 ```powershell
-.\.venv\Scripts\pytest.exe tests/test_calc.py -v
-```
-
----
-
-## 🚀 Quick Setup & Restart Instructions
-
-### 1. Activate the Python Virtual Environment
-```powershell
-.\.venv\Scripts\Activate.ps1
-```
-
-### 2. Environment Configuration (`.env`)
-```env
-SEC_EDGAR_USER_AGENT="Research Analyst research.analyst@example.com"
-EDGAR_IDENTITY="Research Analyst research.analyst@example.com"
-PYTHONUTF8="1"
-```
-
-### 3. Starting the MCP Servers
-
-#### OpenBB MCP Server (1,188 Tools)
-```powershell
-$env:PYTHONUTF8="1"
-.\.venv\Scripts\openbb-mcp.exe --transport stdio
-```
-
-#### SEC EDGAR MCP Server
-```powershell
-$env:SEC_EDGAR_USER_AGENT="Research Analyst research.analyst@example.com"
-$env:PYTHONUTF8="1"
-.\.venv\Scripts\sec-edgar-mcp.exe --transport stdio
+.\.venv\Scripts\pytest.exe tests/ -v
 ```
