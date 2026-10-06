@@ -5,53 +5,65 @@
 
 ---
 
-### 1. DCF Model Assumptions & Parameters
+### 1. DCF Model Assumptions & Balance Sheet Net Debt Table
 
-| Parameter | Value | Ledger Citation | Primary Source |
+| Parameter | Value | Type | Ledger Citation | Primary Source |
+| :--- | :--- | :--- | :--- | :--- |
+| Base Free Cash Flow | $98,767,000,000 | AUDITED DATA | [LEDGER_0003] | Audited Statement of Cash Flows |
+| Assumed 5Y FCF Growth Rate | 8.00% | ASSUMPTION | [LEDGER_0007] | Model Assumption (Unanchored Parameter) |
+| Discount Rate (WACC) | 8.50% | ASSUMPTION | [LEDGER_0008] | Model Assumption (Unanchored Parameter) |
+| Terminal Growth Rate | 2.50% | ASSUMPTION | [LEDGER_0009] | Model Assumption (Unanchored Parameter) |
+| Shares Outstanding | 14,594,180,000 | MARKET DATA | [LEDGER_0002] | Share Registry & Market Data |
+| Liquid Cash & Securities | $138,638,000,000 | AUDITED DATA | [LEDGER_0004] | Audited Balance Sheet |
+| Total Debt | $101,650,000,000 | AUDITED DATA | [LEDGER_0005] | Audited Balance Sheet |
+| Balance Sheet Net Debt | $-36,988,000,000 | AUDITED DATA | [LEDGER_0006] | Audited Balance Sheet (Debt - Cash) |
+
+---
+
+### 2. Valuation Sensitivity Grid (Growth Rate × Cost of Capital)
+
+| Growth Rate \ WACC | 7.5% WACC | 8.5% WACC (Base) | 9.5% WACC |
 | :--- | :--- | :--- | :--- |
-| Base Free Cash Flow | $98,767,000,000 | [LEDGER_0002] | Audited Statement of Cash Flows |
-| Assumed 5Y FCF Growth Rate | 8.00% | [LEDGER_0003] | Analyst Thesis Model |
-| Discount Rate (WACC) | 8.50% | [LEDGER_0004] | Cost of Capital Model |
-| Terminal Growth Rate | 2.50% | [LEDGER_0005] | Long-term GDP Baseline |
-| Shares Outstanding | 14,594,180,000 | [LEDGER_0006] | Market & Share Registry Data |
-| Net Debt | $0 | [LEDGER_0007] | Audited Balance Sheet |
+| **6.0% Growth** [LEDGER_0018] | $164.30 [LEDGER_0020] | $137.00 [LEDGER_0021] | $117.50 [LEDGER_0022] |
+| **8.0% Growth (Base)** [LEDGER_0007] | $178.84 [LEDGER_0023] | $148.88 [LEDGER_0011] | $127.50 [LEDGER_0025] |
+| **10.0% Growth** [LEDGER_0019] | $194.44 [LEDGER_0026] | $161.63 [LEDGER_0027] | $138.22 [LEDGER_0028] |
 
 ---
 
-### 2. Stress Testing Top 3 Thesis Assumptions
+### 3. Stress Testing Top 3 Thesis Assumptions
 
-- Current Market Price: $332.77 USD [LEDGER_0001]
-- Implied 5-Year FCF CAGR (Reverse DCF): **28.96%** [LEDGER_0008]
-- Baseline Fair Value (DCF): **$146.35** [LEDGER_0009]
-- Stressed Fair Value (-200 bps Margin): **$137.19** [LEDGER_0010]
-- Margin Stress Valuation Impact: **-6.26%** [LEDGER_0011]
-- Stressed Fair Value (+100 bps WACC): **$124.96** [LEDGER_0012]
-- WACC Stress Valuation Impact: **-14.61%** [LEDGER_0013]
-- Stressed Fair Value (Half-Growth): **$123.40** [LEDGER_0014]
-- Half-Growth Valuation Impact: **-15.68%** [LEDGER_0015]
+- Current Market Price: $333.85 USD [LEDGER_0001]
+- Implied 5-Year FCF CAGR (Reverse DCF): **28.84%** [LEDGER_0010]
+- Baseline Fair Value (DCF): **$148.88** [LEDGER_0011]
+- Stressed Fair Value (-200 bps Margin): **$139.73** [LEDGER_0012]
+- Margin Stress Valuation Impact: **-6.15%** [LEDGER_0013]
+- Stressed Fair Value (+100 bps WACC): **$127.50** [LEDGER_0014]
+- WACC Stress Valuation Impact: **-14.36%** [LEDGER_0015]
+- Stressed Fair Value (Half-Growth): **$125.93** [LEDGER_0016]
+- Half-Growth Valuation Impact: **-15.41%** [LEDGER_0017]
 
 ---
 
-### 3. Adversarial Stress Test Checklist
+### 4. Adversarial Stress Test Checklist
 
 | Check Name | Metric Value | Ledger Citation | Status |
 | :--- | :--- | :--- | :--- |
-| Valuation Feasibility | Implied CAGR 28.96% [LEDGER_0008] vs Hist -3.95% [LEDGER_0020] | [LEDGER_0008], [LEDGER_0020] | **FAIL** |
-| Margin Shock (-200 bps) | Impact -6.26% [LEDGER_0011] ($137.19 [LEDGER_0010]) | [LEDGER_0011], [LEDGER_0010] | **PASS** |
-| WACC Shock (+100 bps) | Impact -14.61% [LEDGER_0013] ($124.96 [LEDGER_0012]) | [LEDGER_0013], [LEDGER_0012] | **PASS** |
-| Half-Growth Stress | Stressed Fair Value $123.40 [LEDGER_0014] (-15.68% [LEDGER_0015]) | [LEDGER_0014], [LEDGER_0015] | **PASS** |
-| Receivables Divergence | Divergence -6.80% [LEDGER_0021] | [LEDGER_0021] | **PASS** |
-| Inventory Divergence | Divergence +6.44% [LEDGER_0022] | [LEDGER_0022] | **FAIL** |
-| Refinancing / Debt Risk | ST Debt / Cash = 36.44% [LEDGER_0023] | [LEDGER_0023] | **PASS** |
+| Valuation Feasibility | Implied CAGR 28.84% [LEDGER_0010] vs Hist -3.95% [LEDGER_0033] | [LEDGER_0010], [LEDGER_0033] | **FAIL** |
+| Margin Shock (-200 bps) | Impact -6.15% [LEDGER_0013] ($139.73 [LEDGER_0012]) | [LEDGER_0013], [LEDGER_0012] | **PASS** |
+| WACC Shock (+100 bps) | Impact -14.36% [LEDGER_0015] ($127.50 [LEDGER_0014]) | [LEDGER_0015], [LEDGER_0014] | **PASS** |
+| Half-Growth Stress | Stressed Fair Value $125.93 [LEDGER_0016] (-15.41% [LEDGER_0017]) | [LEDGER_0016], [LEDGER_0017] | **PASS** |
+| Receivables Divergence | Divergence -6.79% [LEDGER_0040] | [LEDGER_0040] | **PASS** |
+| Inventory Divergence | Divergence +6.45% [LEDGER_0044] | [LEDGER_0044] | **FAIL** |
+| Refinancing / Debt Risk | ST Debt / Cash = 7.87% [LEDGER_0045] | [LEDGER_0045] | **PASS** |
 | Customer Concentration | Data Not Disclosed in Filings | N/A | **NOT CHECKED (data unavailable)** |
 
 ---
 
-### 4. Adversarial Findings & Conclusion
+### 5. Adversarial Findings & Conclusion
 
 - [ANALYSIS] VULNERABLE: Found 2 quantitative failure(s) across 7 performed checks.
-- Valuation Stretch: Market implied 5Y FCF CAGR of 28.96% [LEDGER_0008] exceeds historical CAGR of -3.95% [LEDGER_0020].
-- Inventory Divergence: Inventory growth diverged from revenue by +6.44% [LEDGER_0022].
+- Valuation Stretch: Market implied 5Y FCF CAGR of 28.84% [LEDGER_0010] exceeds historical CAGR of -3.95% [LEDGER_0033].
+- Inventory Divergence: Inventory growth (+12.87% [LEDGER_0043]) diverged from revenue by +6.45% [LEDGER_0044].
 - Unverified context: [UNVERIFIED: model memory] Greater China net sales experienced selective deceleration in recent quarterly periods.
 - Unverified context: [UNVERIFIED: model memory] Regulatory antitrust inquiries in EU and US pose long-term services gross margin headwinds.
 

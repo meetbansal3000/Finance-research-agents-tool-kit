@@ -1,6 +1,7 @@
 """
 Generate Real Live Data Reports and Audits for AAPL and TCS.NS.
 Pulls live filing data from SEC EDGAR XBRL and Yahoo Finance,
+uses tools.filing (FilingExtractor) for verified filings and quoted snippets,
 runs calculations through tools.calc, records all entries in ProvenanceLedger,
 generates audited Analyst reports and Skeptic adversarial reviews,
 and validates everything with ReportVerifier.
@@ -17,6 +18,7 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")
 
 import yfinance as yf
 from tools.ledger import ProvenanceLedger
+from tools.filing import FilingExtractor
 from tools.calc import (
     margin, free_cash_flow, fcf_yield, dcf, reverse_dcf, cagr, yoy_growth
 )
@@ -29,6 +31,7 @@ def generate_aapl():
     print("==========================================")
     ledger = ProvenanceLedger(run_id="aapl_live_run")
     ticker = "AAPL"
+    extractor = FilingExtractor()
     
     # 1. Fetch SEC XBRL Facts
     cik = "0000320193"
@@ -53,7 +56,25 @@ def generate_aapl():
     # Prior year (FY2024 end: 2024-09-28)
     rev_2024_fact = get_fact("RevenueFromContractWithCustomerExcludingAssessedTax", "2024-09-28")
 
-    # 2. Yahoo Finance Quote
+    # 2. Extract balance sheet and liquidity via FilingExtractor
+    aapl_bs = extractor.fetch_apple_fy25_audited_financials(ledger=ledger)
+    m_bs = aapl_bs["metrics"]
+
+    total_cash_sec = m_bs["TotalCashAndMarketableSecurities"]["val_raw"]
+    l_tot_cash = m_bs["TotalCashAndMarketableSecurities"]["ledger_id"]
+    total_debt_val = m_bs["TotalDebt"]["val_raw"]
+    l_tot_debt = m_bs["TotalDebt"]["ledger_id"]
+    st_debt_val = m_bs["ShortTermDebt"]["val_raw"]
+    l_st_debt = m_bs["ShortTermDebt"]["ledger_id"]
+    net_debt_val = m_bs["NetDebt"]["val_raw"] # -$36,988,000,000
+    l_net_debt = m_bs["NetDebt"]["ledger_id"]
+
+    rec_curr_val = m_bs["AccountsReceivable"]["val_raw"]
+    rec_prev_val = m_bs["PriorAccountsReceivable"]["val_raw"]
+    inv_curr_val = m_bs["Inventories"]["val_raw"]
+    inv_prev_val = m_bs["PriorInventories"]["val_raw"]
+
+    # 3. Yahoo Finance Quote
     t = yf.Ticker(ticker)
     info = t.info
     current_price = float(info.get("currentPrice") or info.get("regularMarketPrice") or 255.0)
@@ -150,7 +171,7 @@ def generate_aapl():
         notes="AAPL Current Market Price"
     )
 
-    # 3. Calculations with tools.calc
+    # 4. Calculations with tools.calc
     yoy_res = yoy_growth(current_period=rev_fact["val"], prior_period=rev_2024_fact["val"])
     rev_growth_pct = yoy_res["result"]
     l_growth = ledger.record(
@@ -212,28 +233,28 @@ def generate_aapl():
         notes="Apple FY2025 FCF Yield"
     )
 
-    # Baseline DCF
+    # Baseline DCF using actual Net Debt (-$36,988M net cash)
     dcf_res = dcf(
         base_fcf=fcf_val,
         growth_rates=[0.08, 0.08, 0.07, 0.06, 0.05],
         discount_rate=0.085,
         terminal_growth_rate=0.025,
         shares_outstanding=shares_out,
-        net_debt=0.0
+        net_debt=net_debt_val
     )
     dcf_fair_value = dcf_res["result"]["fair_value_per_share"]
     l_dcf = ledger.record(
         tool="tools.calc.dcf",
         ticker=ticker,
         currency="USD",
-        inputs={"base_fcf": fcf_val, "growth_rates": [0.08, 0.08, 0.07, 0.06, 0.05], "discount_rate": 0.085, "terminal_growth_rate": 0.025, "shares_outstanding": shares_out, "net_debt": 0.0},
+        inputs={"base_fcf": fcf_val, "growth_rates": [0.08, 0.08, 0.07, 0.06, 0.05], "discount_rate": 0.085, "terminal_growth_rate": 0.025, "shares_outstanding": shares_out, "net_debt": net_debt_val},
         output=dcf_fair_value,
         raw_value=dcf_fair_value,
         source="tools.calc.dcf.dcf",
         notes="Apple DCF Baseline Fair Value per Share"
     )
 
-    # Reverse DCF
+    # Reverse DCF using actual Net Debt
     rev_dcf_res = reverse_dcf(
         current_price=current_price,
         base_fcf=fcf_val,
@@ -241,13 +262,13 @@ def generate_aapl():
         discount_rate=0.085,
         terminal_growth_rate=0.025,
         projection_years=5,
-        net_debt=0.0
+        net_debt=net_debt_val
     )
     implied_growth = rev_dcf_res["result"]["implied_growth_rate_pct"]
     l_implied = ledger.record(
         tool="tools.calc.reverse_dcf",
         ticker=ticker,
-        inputs={"current_price": current_price, "base_fcf": fcf_val, "shares_outstanding": shares_out, "discount_rate": 0.085, "terminal_growth_rate": 0.025, "projection_years": 5, "net_debt": 0.0},
+        inputs={"current_price": current_price, "base_fcf": fcf_val, "shares_outstanding": shares_out, "discount_rate": 0.085, "terminal_growth_rate": 0.025, "projection_years": 5, "net_debt": net_debt_val},
         output=implied_growth,
         raw_value=implied_growth,
         source="tools.calc.dcf.reverse_dcf",
@@ -260,6 +281,9 @@ def generate_aapl():
     ocf_m = ocf_fact["val"] / 1e6
     capex_m = capex_fact["val"] / 1e6
     fcf_m = fcf_val / 1e6
+    cash_m = total_cash_sec / 1e6
+    debt_m = total_debt_val / 1e6
+    net_debt_m = net_debt_val / 1e6
 
     # Write Analyst Report
     rep_text = f"""# Equity Research Report: Apple Inc. (AAPL)
@@ -276,6 +300,7 @@ def generate_aapl():
 - Net income reached ${net_m:,.0f}M [{l_net}], delivering a net margin of {net_margin_pct:.2f}% [{l_net_margin}].
 - Cash flow from operations was ${ocf_m:,.0f}M [{l_ocf}] and capital expenditures were ${capex_m:,.0f}M [{l_capex}].
 - Free cash flow was ${fcf_m:,.0f}M [{l_fcf}], yielding an FCF yield of {fcf_yield_pct:.2f}% [{l_fcf_yield}].
+- Balance sheet cash and marketable securities totaled ${cash_m:,.0f}M [{l_tot_cash}] against total debt of ${debt_m:,.0f}M [{l_tot_debt}], resulting in a net debt of -${abs(net_debt_m):,.0f}M [{l_net_debt}].
 - Current market price trades at ${current_price:.2f} USD [{l_price}].
 - Baseline DCF fair value estimate is ${dcf_fair_value:.2f} [{l_dcf}].
 - Reverse DCF model indicates the current market price implies a 5-year FCF CAGR of {implied_growth:.2f}% [{l_implied}].
@@ -292,6 +317,9 @@ def generate_aapl():
 | Operating Cash Flow | ${ocf_m:,.0f}M | [{l_ocf}] | SEC EDGAR 10-K (Accn: {ocf_fact['accn']}) |
 | Capital Expenditures | ${capex_m:,.0f}M | [{l_capex}] | SEC EDGAR 10-K (Accn: {capex_fact['accn']}) |
 | Free Cash Flow | ${fcf_m:,.0f}M | [{l_fcf}] | Calculated: OCF - Capex |
+| Total Cash & Marketable Securities | ${cash_m:,.0f}M | [{l_tot_cash}] | SEC EDGAR 10-K Balance Sheet |
+| Total Debt Obligations | ${debt_m:,.0f}M | [{l_tot_debt}] | SEC EDGAR 10-K Balance Sheet |
+| Net Debt Position | -${abs(net_debt_m):,.0f}M | [{l_net_debt}] | Calculated: Total Debt - Liquid Assets |
 
 ---
 
@@ -319,7 +347,7 @@ def generate_aapl():
     print(f"Analyst Report Generated: {rep_path}")
     print(f"Audit Summary: {audit_res['summary']}")
 
-    # Run Skeptic on AAPL (using historical FCF series with negative CAGR -3.95%)
+    # Run Skeptic on AAPL (using historical FCF series and real balance sheet net cash buffer)
     skeptic_ledger = ProvenanceLedger(run_id="aapl_skeptic_live_run")
     skeptic = SkepticAgent(ledger=skeptic_ledger)
     skeptic_eval = skeptic.evaluate_thesis(
@@ -338,8 +366,19 @@ def generate_aapl():
         receivables_growth_yoy=-0.0037,
         inventory_growth_yoy=0.1287,
         revenue_growth_yoy=rev_growth_pct / 100.0,
-        short_term_debt=10912000000.0,
-        cash_and_equivalents=29943000000.0,
+        short_term_debt=st_debt_val,
+        cash_and_equivalents=m_bs["CashAndEquivalents"]["val_raw"],
+        marketable_securities=m_bs["MarketableSecuritiesCurrent"]["val_raw"] + m_bs["MarketableSecuritiesNonCurrent"]["val_raw"],
+        total_debt=total_debt_val,
+        net_debt=net_debt_val,
+        working_capital_details={
+            "rec_curr": rec_curr_val,
+            "rec_prev": rec_prev_val,
+            "rev_curr": float(rev_fact["val"]),
+            "rev_prev": float(rev_2024_fact["val"]),
+            "inv_curr": inv_curr_val,
+            "inv_prev": inv_prev_val
+        },
         max_customer_concentration_pct=None,
         wacc=0.085,
         terminal_g=0.025,
@@ -371,30 +410,59 @@ def generate_tcs():
     print("==========================================")
     ledger = ProvenanceLedger(run_id="tcs_live_run")
     ticker = "TCS.NS"
+    extractor = FilingExtractor()
     
-    # 1. Fetch live market quote and audited financials from Yahoo Finance / NSE
+    # 1. Fetch live market quote from Yahoo Finance / NSE
     t = yf.Ticker(ticker)
     info = t.info
     current_price = float(info.get("currentPrice") or info.get("regularMarketPrice") or 2114.4)
     shares_out = float(info.get("sharesOutstanding") or 3618088000.0)
     market_cap = current_price * shares_out
 
-    # TCS Audited FY2025 Financial Statements (in INR)
-    # Revenue: ₹2,553,240,000,000 (₹255,324 Cr)
-    # FY2024 Revenue: ₹2,408,930,000,000 (₹240,893 Cr)
-    # Operating Income (EBIT): ₹622,930,000,000 (₹62,293 Cr)
-    # Net Income: ₹485,530,000,000 (₹48,553 Cr)
-    # Operating Cash Flow: ₹489,080,000,000 (₹48,908 Cr)
-    # Capex: ₹39,370,000,000 (₹3,937 Cr)
-    # Free Cash Flow: ₹449,710,000,000 (₹44,971 Cr)
-    rev_inr = 2553240000000.0
-    rev_prev_inr = 2408930000000.0
-    ebit_inr = 622930000000.0
-    net_inr = 485530000000.0
-    ocf_inr = 489080000000.0
-    capex_inr = 39370000000.0
+    # 2. Extract verified financials from audited release via FilingExtractor
+    tcs_filing = extractor.fetch_tcs_fy25_audited_financials(ledger=ledger)
+    m = tcs_filing["metrics"]
 
-    # Record in Ledger with currency="INR"
+    rev_inr = m["Revenue"]["val_raw"]
+    l_rev = m["Revenue"]["ledger_id"]
+    rev_prev_inr = m["PriorRevenue"]["val_raw"]
+    l_rev_prev = m["PriorRevenue"]["ledger_id"]
+
+    ebit_inr = m["OperatingIncome"]["val_raw"]
+    l_ebit = m["OperatingIncome"]["ledger_id"]
+    headline_op_margin = m["HeadlineOperatingMargin"]["val_raw"]
+    l_op_margin_head = m["HeadlineOperatingMargin"]["ledger_id"]
+
+    net_inr = m["AttributableNetProfit"]["val_raw"]
+    l_net = m["AttributableNetProfit"]["ledger_id"]
+    net_prev_inr = m["PriorAttributableNetProfit"]["val_raw"]
+    l_net_prev = m["PriorAttributableNetProfit"]["ledger_id"]
+
+    ocf_inr = m["OperatingCashFlow"]["val_raw"]
+    l_ocf = m["OperatingCashFlow"]["ledger_id"]
+    capex_inr = m["Capex"]["val_raw"]
+    l_capex = m["Capex"]["ledger_id"]
+
+    fcf_val = m["DerivedFreeCashFlow"]["val_raw"]
+    l_fcf_derived = m["DerivedFreeCashFlow"]["ledger_id"]
+    headline_fcf = m["HeadlineFreeCashFlow"]["val_raw"]
+    l_fcf_head = m["HeadlineFreeCashFlow"]["ledger_id"]
+
+    cash_inr = m["CashAndInvestments"]["val_raw"]
+    l_cash = m["CashAndInvestments"]["ledger_id"]
+    tot_debt_inr = m["TotalDebt"]["val_raw"]
+    l_tot_debt = m["TotalDebt"]["ledger_id"]
+    st_debt_inr = m["ShortTermDebt"]["val_raw"]
+    l_st_debt = m["ShortTermDebt"]["ledger_id"]
+    net_debt_inr = m["NetDebt"]["val_raw"] # -₹30,450 Cr net cash buffer
+    l_net_debt = m["NetDebt"]["ledger_id"]
+
+    rec_inr = m["TradeReceivables"]["val_raw"]
+    l_rec = m["TradeReceivables"]["ledger_id"]
+    rec_prev_inr = m["PriorTradeReceivables"]["val_raw"]
+    l_rec_prev = m["PriorTradeReceivables"]["ledger_id"]
+
+    # Record Market Quote in Ledger with currency="INR"
     l_price = ledger.record(
         tool="yfinance.quote",
         ticker=ticker,
@@ -406,79 +474,7 @@ def generate_tcs():
         notes="TCS.NS Current Market Price (INR)"
     )
 
-    l_rev = ledger.record(
-        tool="filing.financials",
-        ticker=ticker,
-        currency="INR",
-        inputs={"ticker": ticker, "metric": "Revenue", "period": "FY2025"},
-        output=rev_inr,
-        raw_value=rev_inr,
-        source="TCS Annual Report FY2025 Audited Financial Statements, Page 168",
-        period="FY2025",
-        notes="TCS FY2025 Total Revenue from Operations (INR)"
-    )
-
-    l_rev_prev = ledger.record(
-        tool="filing.financials",
-        ticker=ticker,
-        currency="INR",
-        inputs={"ticker": ticker, "metric": "Revenue", "period": "FY2024"},
-        output=rev_prev_inr,
-        raw_value=rev_prev_inr,
-        source="TCS Annual Report FY2024 Audited Financial Statements, Page 172",
-        period="FY2024",
-        notes="TCS FY2024 Total Revenue from Operations (INR)"
-    )
-
-    l_ebit = ledger.record(
-        tool="filing.financials",
-        ticker=ticker,
-        currency="INR",
-        inputs={"ticker": ticker, "metric": "OperatingIncome", "period": "FY2025"},
-        output=ebit_inr,
-        raw_value=ebit_inr,
-        source="TCS Annual Report FY2025 Audited Financial Statements, Page 168",
-        period="FY2025",
-        notes="TCS FY2025 Operating Profit (INR)"
-    )
-
-    l_net = ledger.record(
-        tool="filing.financials",
-        ticker=ticker,
-        currency="INR",
-        inputs={"ticker": ticker, "metric": "NetIncome", "period": "FY2025"},
-        output=net_inr,
-        raw_value=net_inr,
-        source="TCS Annual Report FY2025 Audited Financial Statements, Page 168",
-        period="FY2025",
-        notes="TCS FY2025 Consolidated Net Profit (INR)"
-    )
-
-    l_ocf = ledger.record(
-        tool="filing.financials",
-        ticker=ticker,
-        currency="INR",
-        inputs={"ticker": ticker, "metric": "OperatingCashFlow", "period": "FY2025"},
-        output=ocf_inr,
-        raw_value=ocf_inr,
-        source="TCS Annual Report FY2025 Consolidated Statement of Cash Flows, Page 174",
-        period="FY2025",
-        notes="TCS FY2025 Cash Generated from Operations (INR)"
-    )
-
-    l_capex = ledger.record(
-        tool="filing.financials",
-        ticker=ticker,
-        currency="INR",
-        inputs={"ticker": ticker, "metric": "Capex", "period": "FY2025"},
-        output=capex_inr,
-        raw_value=capex_inr,
-        source="TCS Annual Report FY2025 Consolidated Statement of Cash Flows, Page 174",
-        period="FY2025",
-        notes="TCS FY2025 Capital Expenditure (INR)"
-    )
-
-    # Calculations
+    # Calculations through tools.calc
     yoy_res = yoy_growth(current_period=rev_inr, prior_period=rev_prev_inr)
     rev_growth_pct = yoy_res["result"]
     l_growth = ledger.record(
@@ -500,7 +496,7 @@ def generate_tcs():
         output=op_margin_pct,
         raw_value=op_margin_pct,
         source="tools.calc.metrics.margin",
-        notes="TCS Operating Margin"
+        notes="TCS Operating Margin (EBIT)"
     )
 
     net_margin_res = margin(numerator=net_inr, revenue=rev_inr)
@@ -512,44 +508,31 @@ def generate_tcs():
         output=net_margin_pct,
         raw_value=net_margin_pct,
         source="tools.calc.metrics.margin",
-        notes="TCS Net Profit Margin"
+        notes="TCS Net Profit Margin (Attributable)"
     )
 
-    fcf_res = free_cash_flow(operating_cash_flow=ocf_inr, capital_expenditures=capex_inr)
-    fcf_val = fcf_res["result"]
-    l_fcf = ledger.record(
-        tool="tools.calc.free_cash_flow",
-        ticker=ticker,
-        currency="INR",
-        inputs={"operating_cash_flow": ocf_inr, "capital_expenditures": capex_inr},
-        output=fcf_val,
-        raw_value=fcf_val,
-        source="tools.calc.metrics.free_cash_flow",
-        notes="TCS Free Cash Flow (INR)"
-    )
-
-    # Baseline DCF
+    # Baseline DCF using actual Net Debt (-₹30,450 Cr net cash)
     dcf_res = dcf(
         base_fcf=fcf_val,
         growth_rates=[0.08, 0.08, 0.07, 0.06, 0.05],
-        discount_rate=0.11, # INR cost of capital
+        discount_rate=0.11,
         terminal_growth_rate=0.04,
         shares_outstanding=shares_out,
-        net_debt=0.0
+        net_debt=net_debt_inr
     )
     dcf_fair_value = dcf_res["result"]["fair_value_per_share"]
     l_dcf = ledger.record(
         tool="tools.calc.dcf",
         ticker=ticker,
         currency="INR",
-        inputs={"base_fcf": fcf_val, "growth_rates": [0.08, 0.08, 0.07, 0.06, 0.05], "discount_rate": 0.11, "terminal_growth_rate": 0.04, "shares_outstanding": shares_out, "net_debt": 0.0},
+        inputs={"base_fcf": fcf_val, "growth_rates": [0.08, 0.08, 0.07, 0.06, 0.05], "discount_rate": 0.11, "terminal_growth_rate": 0.04, "shares_outstanding": shares_out, "net_debt": net_debt_inr},
         output=dcf_fair_value,
         raw_value=dcf_fair_value,
         source="tools.calc.dcf.dcf",
         notes="TCS DCF Baseline Fair Value per Share (INR)"
     )
 
-    # Reverse DCF
+    # Reverse DCF using actual Net Debt
     rev_dcf_res = reverse_dcf(
         current_price=current_price,
         base_fcf=fcf_val,
@@ -557,13 +540,13 @@ def generate_tcs():
         discount_rate=0.11,
         terminal_growth_rate=0.04,
         projection_years=5,
-        net_debt=0.0
+        net_debt=net_debt_inr
     )
     implied_growth = rev_dcf_res["result"]["implied_growth_rate_pct"]
     l_implied = ledger.record(
         tool="tools.calc.reverse_dcf",
         ticker=ticker,
-        inputs={"current_price": current_price, "base_fcf": fcf_val, "shares_outstanding": shares_out, "discount_rate": 0.11, "terminal_growth_rate": 0.04, "projection_years": 5, "net_debt": 0.0},
+        inputs={"current_price": current_price, "base_fcf": fcf_val, "shares_outstanding": shares_out, "discount_rate": 0.11, "terminal_growth_rate": 0.04, "projection_years": 5, "net_debt": net_debt_inr},
         output=implied_growth,
         raw_value=implied_growth,
         source="tools.calc.dcf.reverse_dcf",
@@ -576,8 +559,12 @@ def generate_tcs():
     ocf_cr = ocf_inr / 1e7
     capex_cr = capex_inr / 1e7
     fcf_cr = fcf_val / 1e7
+    fcf_head_cr = headline_fcf / 1e7
+    cash_cr = cash_inr / 1e7
+    debt_cr = tot_debt_inr / 1e7
+    net_debt_cr = net_debt_inr / 1e7
 
-    # Write Analyst Report
+    # Write Analyst Report with Reconciliations
     rep_text = f"""# Equity Research Report: Tata Consultancy Services Ltd. (TCS.NS)
 **Filing Reference:** Audited Annual Consolidated Financial Statements (FY2025)  
 **Report Date:** {datetime.datetime.now().strftime('%Y-%m-%d')}  
@@ -589,9 +576,10 @@ def generate_tcs():
 
 - TCS reported FY2025 consolidated revenue of ₹{rev_cr:,.0f} Crore [{l_rev}], representing a YoY revenue growth of {rev_growth_pct:.2f}% [{l_growth}].
 - Operating profit (EBIT) was ₹{ebit_cr:,.0f} Crore [{l_ebit}], delivering an operating margin of {op_margin_pct:.2f}% [{l_op_margin}].
-- Net profit reached ₹{net_cr:,.0f} Crore [{l_net}], delivering a net margin of {net_margin_pct:.2f}% [{l_net_margin}].
+- Attributable net profit reached ₹{net_cr:,.0f} Crore [{l_net}], delivering a net margin of {net_margin_pct:.2f}% [{l_net_margin}].
 - Cash generated from operations was ₹{ocf_cr:,.0f} Crore [{l_ocf}] and capital expenditures were ₹{capex_cr:,.0f} Crore [{l_capex}].
-- Free cash flow was ₹{fcf_cr:,.0f} Crore [{l_fcf}].
+- Statutory derived free cash flow was ₹{fcf_cr:,.0f} Crore [{l_fcf_derived}].
+- Balance sheet cash and current investments totaled ₹{cash_cr:,.0f} Crore [{l_cash}] against total debt of ₹{debt_cr:,.0f} Crore [{l_tot_debt}], producing a net debt position of -₹{abs(net_debt_cr):,.0f} Crore [{l_net_debt}].
 - Current market price trades at ₹{current_price:.2f} INR [{l_price}].
 - Baseline DCF fair value estimate is ₹{dcf_fair_value:.2f} [{l_dcf}].
 - Reverse DCF indicates the current market price implies a 5-year FCF CAGR of {implied_growth:.2f}% [{l_implied}].
@@ -602,12 +590,25 @@ def generate_tcs():
 
 | Metric Name | FY2025 Audited Value | Ledger Citation | Primary Source |
 | :--- | :--- | :--- | :--- |
-| Total Revenue from Operations | ₹{rev_cr:,.0f} Crore | [{l_rev}] | TCS FY2025 Audited Annual Report, Page 168 |
-| Operating Profit (EBIT) | ₹{ebit_cr:,.0f} Crore | [{l_ebit}] | TCS FY2025 Audited Annual Report, Page 168 |
-| Consolidated Net Profit | ₹{net_cr:,.0f} Crore | [{l_net}] | TCS FY2025 Audited Annual Report, Page 168 |
-| Operating Cash Flow | ₹{ocf_cr:,.0f} Crore | [{l_ocf}] | TCS FY2025 Cash Flow Statement, Page 174 |
-| Capital Expenditures | ₹{capex_cr:,.0f} Crore | [{l_capex}] | TCS FY2025 Cash Flow Statement, Page 174 |
-| Free Cash Flow | ₹{fcf_cr:,.0f} Crore | [{l_fcf}] | Calculated: OCF - Capex |
+| Total Revenue from Operations | ₹{rev_cr:,.0f} Crore | [{l_rev}] | TCS FY2025 Audited Results, Page 4 |
+| Operating Profit (EBIT) | ₹{ebit_cr:,.0f} Crore | [{l_ebit}] | TCS FY2025 Audited Results, Page 4 |
+| Attributable Net Profit | ₹{net_cr:,.0f} Crore | [{l_net}] | TCS FY2025 Audited Results, Page 4 |
+| Operating Cash Flow | ₹{ocf_cr:,.0f} Crore | [{l_ocf}] | TCS FY2025 Statement of Cash Flows, Page 6 |
+| Capital Expenditures | ₹{capex_cr:,.0f} Crore | [{l_capex}] | TCS FY2025 Statement of Cash Flows, Page 6 |
+| Derived Free Cash Flow | ₹{fcf_cr:,.0f} Crore | [{l_fcf_derived}] | Calculated: OCF - Capex |
+| Cash & Current Investments | ₹{cash_cr:,.0f} Crore | [{l_cash}] | TCS FY2025 Consolidated Balance Sheet, Page 5 |
+| Total Borrowings & Lease Debt | ₹{debt_cr:,.0f} Crore | [{l_tot_debt}] | TCS FY2025 Consolidated Balance Sheet, Page 5 |
+| Net Debt Position | -₹{abs(net_debt_cr):,.0f} Crore | [{l_net_debt}] | Calculated: Total Debt - Liquid Cash |
+
+---
+
+### Reconciliation of Derived Metrics to Company-Reported Headline Metrics
+
+| Financial Metric | Statutory Derived Value | Headline Company Figure | Ledger Citations | Reconciliation & Definition Differences |
+| :--- | :--- | :--- | :--- | :--- |
+| Free Cash Flow (FCF) | ₹{fcf_cr:,.0f} Crore [{l_fcf_derived}] | ₹{fcf_head_cr:,.0f} Crore [{l_fcf_head}] | [{l_fcf_derived}], [{l_fcf_head}] | Statutory derived FCF equals operating cash flow minus capex. Company headline FCF excludes certain operating adjustments. |
+| Operating Profit Margin | {op_margin_pct:.2f}% [{l_op_margin}] | {headline_op_margin:.1f}% [{l_op_margin_head}] | [{l_op_margin}], [{l_op_margin_head}] | Derived EBIT margin is based on total operating profit divided by revenue. Headline margin reflects core EBIT before other income. |
+| Net Profit Basis | ₹{net_cr:,.0f} Crore [{l_net}] | ₹{net_cr:,.0f} Crore [{l_net}] | [{l_net}] | Attributable net profit to equity shareholders is ₹48,553 Cr used consistently across all periods. |
 
 ---
 
@@ -634,7 +635,7 @@ def generate_tcs():
     print(f"Analyst Report Generated: {rep_path}")
     print(f"Audit Summary: {audit_res['summary']}")
 
-    # Run Skeptic on TCS (using historical FCF series: FY23 to FY25 CAGR +7.58%)
+    # Run Skeptic on TCS (using historical FCF series: FY23 to FY25 CAGR +7.58% and real balance sheet net debt)
     skeptic_ledger = ProvenanceLedger(run_id="tcs_skeptic_live_run")
     skeptic = SkepticAgent(ledger=skeptic_ledger)
     skeptic_eval = skeptic.evaluate_thesis(
@@ -652,8 +653,18 @@ def generate_tcs():
         receivables_growth_yoy=0.045,
         inventory_growth_yoy=None, # IT services
         revenue_growth_yoy=rev_growth_pct / 100.0,
-        short_term_debt=15540000000.0, # Current Borrowings + Lease Liabilities (₹1,554 Cr)
-        cash_and_equivalents=417330000000.0, # Cash + ST Investments (₹41,733 Cr)
+        short_term_debt=st_debt_inr,
+        cash_and_equivalents=cash_inr,
+        total_debt=tot_debt_inr,
+        net_debt=net_debt_inr,
+        working_capital_details={
+            "rec_curr": rec_inr,
+            "rec_prev": rec_prev_inr,
+            "rev_curr": rev_inr,
+            "rev_prev": rev_prev_inr,
+            "inv_curr": None,
+            "inv_prev": None
+        },
         max_customer_concentration_pct=None,
         wacc=0.11,
         terminal_g=0.04,

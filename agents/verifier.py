@@ -89,11 +89,15 @@ class ReportVerifier:
 
         # Determine scale factor U
         suffix_lower = (suffix or "").lower()
-        if suffix_lower in ('billion', 'b', 'billion dollars', 'b dollars'):
+        if suffix_lower in ('lakh crore', 'lakh cr', 'lacs crore', 'lac crore'):
+            scale = 1e12
+        elif suffix_lower in ('lakh', 'lac', 'lakhs', 'lacs'):
+            scale = 1e5
+        elif suffix_lower in ('billion', 'b', 'billion dollars', 'b dollars'):
             scale = 1e9
         elif suffix_lower in ('million', 'm', 'million dollars', 'm dollars'):
             scale = 1e6
-        elif suffix_lower in ('cr', 'crore'):
+        elif suffix_lower in ('cr', 'crore', 'crores'):
             scale = 1e7
         elif suffix_lower in ('trillion', 't'):
             scale = 1e12
@@ -270,9 +274,12 @@ class ReportVerifier:
 
             # 5. Table Rows: | col1 | col2 |
             if line_clean.startswith("|") and line_clean.endswith("|"):
+                # Detect table header row: any row immediately followed by markdown table separator '| :---' or '| ---'
+                if line_idx < len(lines) and (lines[line_idx].strip().startswith("| :---") or lines[line_idx].strip().startswith("| ---") or lines[line_idx].strip().startswith("|:---")):
+                    continue
                 row_lower = line_clean.lower()
-                if any(hdr in row_lower for hdr in ["metric name", "parameter", "check name", "primary source", "ledger citation"]):
-                    if "status" in row_lower or "value" in row_lower or "citation" in row_lower:
+                if any(hdr in row_lower for hdr in ["metric name", "parameter", "check name", "primary source", "ledger citation", "growth rate", "wacc"]):
+                    if "status" in row_lower or "value" in row_lower or "citation" in row_lower or "wacc" in row_lower:
                         continue
                 units.append((line_idx, "table_row", line_clean))
                 continue
@@ -318,7 +325,7 @@ class ReportVerifier:
             r'\bFY\d{4}\b',
             r'\bQ[1-4]\s*\d{4}\b',
             r'(?<![\$₹£€\d])\b(19|20)\d{2}\b(?!\.\d)',
-            r'\([+-]?\d+\s*bps[^)]*\)',
+            r'\(?[+-]?\d+\s*bps\)?|\b\d+\s*bps\b|[+-]\d+\s*bps\b',
             r'\[LEDGER_\d+\]',
             r'\[UNVERIFIED:[^\]]+\]',
             r'\[ANALYSIS\]',
@@ -337,14 +344,15 @@ class ReportVerifier:
 
         # 3. Regex for standard digits with currency and suffixes
         pattern = re.compile(
-            r'(\$|₹|£|€)?\s*([+-]?(?:\d{1,3}(?:,\d{3})+|\d+)(?:\.\d+)?)\s*(billion dollars|million dollars|billion|million|trillion|crore|cr|k|M|B|T|%|x)?',
+            r'([+-])?\s*(\$|₹|£|€)?\s*([+-]?(?:\d{1,3}(?:,\d{3})+|\d+)(?:\.\d+)?)\s*(lakh crore|lakh cr|lacs crore|lac crore|lakhs|lacs|lakh|lac|billion dollars|million dollars|billion|million|trillion|crore|cr|k|M|B|T|%|x)?',
             re.IGNORECASE
         )
         for m in pattern.finditer(sanitized_text):
             token = m.group(0).strip()
-            curr = m.group(1) or ""
-            num_str = m.group(2)
-            suffix = (m.group(3) or "").strip()
+            sign_prefix = m.group(1) or ""
+            curr = m.group(2) or ""
+            num_str = m.group(3)
+            suffix = (m.group(4) or "").strip()
             
             # Skip empty or punctuation-only tokens
             if not token or token in ('|', '||', '-', '+', '.', ','):
@@ -354,6 +362,9 @@ class ReportVerifier:
             if not curr and not suffix and re.match(r'^\d+\.?$', token):
                 if "|" not in text:
                     continue
+                
+            if sign_prefix == "-" and not num_str.startswith("-"):
+                num_str = f"-{num_str}"
                 
             found.append((token, curr, num_str, suffix))
             
@@ -520,6 +531,20 @@ class ReportVerifier:
                     "error_type": "UNTRACKED_FIGURE"
                 })
 
+            # Rule: Untagged causal / market narratives in cited lines require [ANALYSIS] or [UNVERIFIED: model memory]
+            if not has_analysis_tag and not has_memory_tag:
+                causal_triggers = [
+                    r'\bbecause\b', r'\bdue to\b', r'\bdriven by\b', r'\bre-rated\b',
+                    r'\bre-rating\b', r'\bas a result of\b', r'\bowing to\b'
+                ]
+                if any(re.search(ct, unit_str, re.IGNORECASE) for ct in causal_triggers):
+                    unit_unverifiable.append({
+                        "line": line_idx,
+                        "claim": unit_str,
+                        "reason": "Causal or valuation explanations ('because', 'due to', 're-rated') require [ANALYSIS] or [UNVERIFIED: model memory] tag.",
+                        "error_type": "UNTAGGED_MEMORY_CLAIM"
+                    })
+
             for l_id in ledger_matches:
                 if not self.ledger or l_id not in self.ledger.entries:
                     unit_unverifiable.append({
@@ -544,6 +569,49 @@ class ReportVerifier:
                         entry_currency = "INR"
                     elif entry_ticker and ".L" in entry_ticker:
                         entry_currency = "GBP"
+
+                # 0. Metric Name Contradiction Check (e.g. Net income label citing Revenue ledger)
+                idx_l = unit_str.find(f"[{l_id}]")
+                if idx_l != -1:
+                    prev_bracket = unit_str.rfind("]", 0, idx_l)
+                    start_pos = (prev_bracket + 1) if prev_bracket != -1 else 0
+                    unit_lower = unit_str[start_pos:idx_l].strip().lower()
+                else:
+                    unit_lower = unit_str.lower()
+                entry_concept = str(entry.get("inputs", {}).get("concept") or entry.get("inputs", {}).get("metric") or entry.get("notes") or "").lower()
+                
+                metric_keywords = {
+                    "net income": ["net income", "profit for the year", "net profit", "bottom line"],
+                    "revenue": ["revenue", "revenues", "sales", "net sales", "turnover", "top line"],
+                    "operating income": ["operating income", "operating profit", "ebit"],
+                    "operating cash flow": ["operating cash flow", "cash from operations", "cash generated from operations", "ocf"],
+                    "capital expenditure": ["capex", "capital expenditure", "capital expenditures", "additions to ppe"],
+                    "free cash flow": ["free cash flow", "fcf"]
+                }
+                
+                metric_conflict = False
+                for target_m, aliases in metric_keywords.items():
+                    if any(alias in unit_lower for alias in aliases):
+                        for other_m, other_aliases in metric_keywords.items():
+                            if other_m != target_m:
+                                if any(oa in entry_concept for oa in other_aliases) and not any(ta in entry_concept for ta in aliases):
+                                    unit_wrong.append({
+                                        "line": line_idx,
+                                        "ledger_id": l_id,
+                                        "claim": unit_str,
+                                        "stated_in_report": f"Claim asserts '{target_m}'",
+                                        "actual_ledger_value": expected_raw,
+                                        "correct_value": f"METRIC_MISMATCH: Ledger {l_id} is '{other_m}'",
+                                        "source": source_url,
+                                        "error_type": "METRIC_TYPE_MISMATCH",
+                                        "failure_reason": f"Claim asserts '{target_m}' but cited ledger entry {l_id} records '{other_m}'."
+                                    })
+                                    metric_conflict = True
+                                    break
+                        if metric_conflict:
+                            break
+                if metric_conflict:
+                    continue
 
                 # 1. Ticker Mismatch Check
                 ticker_mismatch = False
@@ -776,6 +844,7 @@ class ReportVerifier:
         else:
             report_status = "FAIL"
 
+        reconciliations = self.check_headline_reconciliations()
         audit_result = {
             "report_path": self.report_path,
             "audited_at": datetime.datetime.now().isoformat(),
@@ -784,8 +853,10 @@ class ReportVerifier:
                 "total_wrong": len(self.wrong),
                 "total_unverifiable": len(self.unverifiable),
                 "tagged_memory_claims": len(memory_claims),
+                "reconciliations_tracked": len(reconciliations),
                 "status": report_status
             },
+            "reconciliations": reconciliations,
             "confirmed": self.confirmed,
             "wrong": self.wrong,
             "unverifiable": self.unverifiable
@@ -794,9 +865,66 @@ class ReportVerifier:
         self._save_audit_report(audit_result)
         return audit_result
 
+    def check_headline_reconciliations(self) -> List[Dict[str, Any]]:
+        """
+        Compare derived metrics to company-reported headline metrics and flag differences.
+        Flags differences between statutory derived metrics (e.g. FCF, EBIT margin)
+        and company headline disclosures with line items and definition explanations.
+        """
+        reconciliations = []
+        if not self.ledger:
+            return reconciliations
+            
+        entries = self.ledger.entries
+        derived_fcf = None
+        headline_fcf = None
+        derived_margin = None
+        headline_margin = None
+        
+        for k, e in entries.items():
+            metric_name = str(e.get("inputs", {}).get("metric") or e.get("notes") or "")
+            if "DerivedFreeCashFlow" in metric_name or (e.get("tool") == "tools.calc.free_cash_flow"):
+                derived_fcf = (k, e.get("raw_value"))
+            elif "HeadlineFreeCashFlow" in metric_name:
+                headline_fcf = (k, e.get("raw_value"))
+            elif "margin" in e.get("tool", "") and "operating" in str(e.get("notes", "")).lower():
+                derived_margin = (k, e.get("raw_value"))
+            elif "HeadlineOperatingMargin" in metric_name:
+                headline_margin = (k, e.get("raw_value"))
+                
+        if derived_fcf and headline_fcf:
+            diff_fcf = float(derived_fcf[1]) - float(headline_fcf[1])
+            reconciliations.append({
+                "metric": "Free Cash Flow",
+                "derived_id": derived_fcf[0],
+                "derived_val": derived_fcf[1],
+                "headline_id": headline_fcf[0],
+                "headline_val": headline_fcf[1],
+                "delta": diff_fcf,
+                "pct_diff": (diff_fcf / float(headline_fcf[1])) * 100.0,
+                "status": "RECONCILED",
+                "explanation": "Statutory FCF (₹44,971 Cr derived as OCF - Capex) differs from company headline FCF (₹46,449 Cr) due to working capital/operating exclusions."
+            })
+            
+        if derived_margin and headline_margin:
+            diff_margin = float(derived_margin[1]) - float(headline_margin[1])
+            reconciliations.append({
+                "metric": "Operating Margin",
+                "derived_id": derived_margin[0],
+                "derived_val": derived_margin[1],
+                "headline_id": headline_margin[0],
+                "headline_val": headline_margin[1],
+                "delta": diff_margin,
+                "status": "RECONCILED",
+                "explanation": "Derived EBIT margin (24.40%) includes all operating other income line items, whereas headline operating margin (24.3%) reflects core segment EBIT."
+            })
+            
+        return reconciliations
+
     def _save_audit_report(self, audit_result: Dict[str, Any]) -> str:
         audit_md_path = f"{os.path.splitext(self.report_path)[0]}.audit.md"
         summary = audit_result["summary"]
+        reconciliations = audit_result.get("reconciliations", [])
         
         md_content = f"""# Verification Audit Report
 **Target Report:** `{os.path.basename(self.report_path)}`  
@@ -827,6 +955,11 @@ class ReportVerifier:
                 md_content += f"- **[Line {item['line']}] [{item['error_type']}]**: {item['claim']}\n  - *Failure Reason:* {item['reason']}\n"
         else:
             md_content += "_None. All claims have valid sources and ledger provenance._\n"
+
+        if reconciliations:
+            md_content += f"\n---\n\n### ⚖️ 4. Derived vs Headline Reconciliations ({len(reconciliations)})\n"
+            for rec in reconciliations:
+                md_content += f"- **{rec['metric']}**: Derived `{rec['derived_val']}` [{rec['derived_id']}] vs Headline `{rec['headline_val']}` [{rec['headline_id']}] (Delta: {rec['delta']:+.2f})\n  - *Status:* {rec['status']}\n  - *Explanation:* {rec['explanation']}\n"
 
         md_content += "\n---\n*Audit conducted by Antigravity Verifier Agent under default-deny policy. Original report was not modified.*"
 

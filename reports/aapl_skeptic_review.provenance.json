@@ -1,7 +1,7 @@
 {
   "run_id": "aapl_skeptic_live_run",
-  "saved_at": "2026-10-06T15:09:29.961254",
-  "total_records": 23,
+  "saved_at": "2026-10-06T15:43:41.268316",
+  "total_records": 45,
   "entries": {
     "LEDGER_0001": {
       "ledger_id": "LEDGER_0001",
@@ -11,92 +11,19 @@
       "unit": "base",
       "inputs": {
         "ticker": "AAPL",
-        "price": 332.7738
+        "price": 333.85
       },
-      "output": 332.7738,
-      "raw_value": 332.7738,
+      "output": 333.85,
+      "raw_value": 333.85,
       "source": "Market Quote (AAPL)",
       "form": null,
       "period": null,
       "notes": "Current trading price (USD)",
-      "timestamp": "2026-10-06T15:09:29.960252",
-      "integrity_hash": "f0494ad0cb352ae8c74cbe666cbbf2e7afce09238d4e1c9b0f2eb005a204bb4b"
+      "timestamp": "2026-10-06T15:43:41.267401",
+      "integrity_hash": "1ddfdb4566373011f04cb106a4e2e5b46584378ba592d60049ece6ada5a339c5"
     },
     "LEDGER_0002": {
       "ledger_id": "LEDGER_0002",
-      "tool": "filing.cash_flow",
-      "ticker": "AAPL",
-      "currency": "USD",
-      "unit": "base",
-      "inputs": {
-        "ticker": "AAPL",
-        "metric": "FreeCashFlow"
-      },
-      "output": 98767000000,
-      "raw_value": 98767000000,
-      "source": "Audited Cash Flow Statement",
-      "form": null,
-      "period": null,
-      "notes": "Base Free Cash Flow (USD)",
-      "timestamp": "2026-10-06T15:09:29.960252",
-      "integrity_hash": "17f23a1cf772b183a7e265bada9ea688fc9f7ba6baa69fffb5db009bfcebb428"
-    },
-    "LEDGER_0003": {
-      "ledger_id": "LEDGER_0003",
-      "tool": "thesis.assumption",
-      "ticker": "AAPL",
-      "currency": "USD",
-      "unit": "base",
-      "inputs": {
-        "growth_rate": 0.08
-      },
-      "output": 8.0,
-      "raw_value": 8.0,
-      "source": "Analyst Thesis Model Assumption",
-      "form": null,
-      "period": null,
-      "notes": "Assumed 5Y FCF Growth Rate (%)",
-      "timestamp": "2026-10-06T15:09:29.960252",
-      "integrity_hash": "386694a6a79cc0a5cbc71fabc5f5b0dde8c5e8370e30db8805a05eac7dfe6955"
-    },
-    "LEDGER_0004": {
-      "ledger_id": "LEDGER_0004",
-      "tool": "thesis.assumption",
-      "ticker": "AAPL",
-      "currency": "USD",
-      "unit": "base",
-      "inputs": {
-        "wacc": 0.085
-      },
-      "output": 8.5,
-      "raw_value": 8.5,
-      "source": "Cost of Capital Assumption",
-      "form": null,
-      "period": null,
-      "notes": "Assumed Discount Rate WACC (%)",
-      "timestamp": "2026-10-06T15:09:29.960252",
-      "integrity_hash": "e72d9111692d6ed48ab7d9c71ec7fc098495882fce40377f708a548a70733c2b"
-    },
-    "LEDGER_0005": {
-      "ledger_id": "LEDGER_0005",
-      "tool": "thesis.assumption",
-      "ticker": "AAPL",
-      "currency": "USD",
-      "unit": "base",
-      "inputs": {
-        "terminal_g": 0.025
-      },
-      "output": 2.5,
-      "raw_value": 2.5,
-      "source": "Terminal Growth Assumption",
-      "form": null,
-      "period": null,
-      "notes": "Assumed Terminal Growth Rate (%)",
-      "timestamp": "2026-10-06T15:09:29.960252",
-      "integrity_hash": "f961ff70844fecdb8f107ea0c3c18ada745f000e87b27af1266f56206c2671e7"
-    },
-    "LEDGER_0006": {
-      "ledger_id": "LEDGER_0006",
       "tool": "yfinance.quote",
       "ticker": "AAPL",
       "currency": "USD",
@@ -110,49 +37,161 @@
       "form": null,
       "period": null,
       "notes": "Diluted Shares Outstanding",
-      "timestamp": "2026-10-06T15:09:29.960252",
-      "integrity_hash": "9ea03351ed48a85bfe85c327544a7017b8d78b35541a4acb955ef4dfdb24e3a0"
+      "timestamp": "2026-10-06T15:43:41.267401",
+      "integrity_hash": "aedd135b7b8b48623968e4ef4ca03b3d845607f92ba5c52205873629d94e506f"
     },
-    "LEDGER_0007": {
-      "ledger_id": "LEDGER_0007",
+    "LEDGER_0003": {
+      "ledger_id": "LEDGER_0003",
+      "tool": "filing.cash_flow",
+      "ticker": "AAPL",
+      "currency": "USD",
+      "unit": "base",
+      "inputs": {
+        "ticker": "AAPL",
+        "metric": "FreeCashFlow"
+      },
+      "output": 98767000000,
+      "raw_value": 98767000000,
+      "source": "Audited Statement of Cash Flows",
+      "form": null,
+      "period": null,
+      "notes": "Base Free Cash Flow (USD)",
+      "timestamp": "2026-10-06T15:43:41.267401",
+      "integrity_hash": "93872f2dd45d376f273ed720d64e20ffcfb6c25aaf53cdb57e4992b4946838a0"
+    },
+    "LEDGER_0004": {
+      "ledger_id": "LEDGER_0004",
       "tool": "filing.balance_sheet",
       "ticker": "AAPL",
       "currency": "USD",
       "unit": "base",
       "inputs": {
-        "net_debt": 0.0
+        "cash_and_equivalents": 29943000000.0,
+        "marketable_securities": 108695000000.0
       },
-      "output": 0.0,
-      "raw_value": 0.0,
+      "output": 138638000000.0,
+      "raw_value": 138638000000.0,
       "source": "Audited Balance Sheet",
       "form": null,
       "period": null,
-      "notes": "Net Debt (USD)",
-      "timestamp": "2026-10-06T15:09:29.960252",
-      "integrity_hash": "737759585f2b53089517b5d3ab7a7976ae4c5984fd3bf6e46d2609406195f680"
+      "notes": "Total Liquid Cash and Marketable Securities (USD)",
+      "timestamp": "2026-10-06T15:43:41.267401",
+      "integrity_hash": "b716cb17465d91e7bda57b6ff55a0e08a8e0674399f019f73901c3d5b9d54308"
+    },
+    "LEDGER_0005": {
+      "ledger_id": "LEDGER_0005",
+      "tool": "filing.balance_sheet",
+      "ticker": "AAPL",
+      "currency": "USD",
+      "unit": "base",
+      "inputs": {
+        "total_debt": 101650000000.0
+      },
+      "output": 101650000000.0,
+      "raw_value": 101650000000.0,
+      "source": "Audited Balance Sheet",
+      "form": null,
+      "period": null,
+      "notes": "Total Borrowings and Debt (USD)",
+      "timestamp": "2026-10-06T15:43:41.267401",
+      "integrity_hash": "2dbbe97cbebff79a626f48cb701c35dfe0750f184e5ff20489e8d79bf6297b21"
+    },
+    "LEDGER_0006": {
+      "ledger_id": "LEDGER_0006",
+      "tool": "filing.balance_sheet",
+      "ticker": "AAPL",
+      "currency": "USD",
+      "unit": "base",
+      "inputs": {
+        "total_debt": 101650000000.0,
+        "liquid_cash": 138638000000.0
+      },
+      "output": -36988000000.0,
+      "raw_value": -36988000000.0,
+      "source": "Audited Balance Sheet",
+      "form": null,
+      "period": null,
+      "notes": "Calculated Net Debt: Total Debt - Liquid Cash (USD)",
+      "timestamp": "2026-10-06T15:43:41.267401",
+      "integrity_hash": "4b4bfdd9b223358e34236b7b49f6a03ab6d43af2cb18f5c1b5d5561f2853894c"
+    },
+    "LEDGER_0007": {
+      "ledger_id": "LEDGER_0007",
+      "tool": "thesis.assumption",
+      "ticker": "AAPL",
+      "currency": "USD",
+      "unit": "base",
+      "inputs": {
+        "growth_rate": 0.08
+      },
+      "output": 8.0,
+      "raw_value": 8.0,
+      "source": "Model Assumption (Unanchored Parameter)",
+      "form": null,
+      "period": null,
+      "notes": "Assumed 5Y FCF Growth Rate (%)",
+      "timestamp": "2026-10-06T15:43:41.267401",
+      "integrity_hash": "02e44159ce2342fa880309ce9fad4049403b3ce6e3673517b14857fdd877a12a"
     },
     "LEDGER_0008": {
       "ledger_id": "LEDGER_0008",
+      "tool": "thesis.assumption",
+      "ticker": "AAPL",
+      "currency": "USD",
+      "unit": "base",
+      "inputs": {
+        "wacc": 0.085
+      },
+      "output": 8.5,
+      "raw_value": 8.5,
+      "source": "Model Assumption (Unanchored Parameter)",
+      "form": null,
+      "period": null,
+      "notes": "Assumed Discount Rate WACC (%)",
+      "timestamp": "2026-10-06T15:43:41.267401",
+      "integrity_hash": "8dae585d66db1d1f6893ff28dde73b7f57b1a2a7f8cfa19c0650c9b06ad17709"
+    },
+    "LEDGER_0009": {
+      "ledger_id": "LEDGER_0009",
+      "tool": "thesis.assumption",
+      "ticker": "AAPL",
+      "currency": "USD",
+      "unit": "base",
+      "inputs": {
+        "terminal_g": 0.025
+      },
+      "output": 2.5,
+      "raw_value": 2.5,
+      "source": "Model Assumption (Unanchored Parameter)",
+      "form": null,
+      "period": null,
+      "notes": "Assumed Terminal Growth Rate (%)",
+      "timestamp": "2026-10-06T15:43:41.267401",
+      "integrity_hash": "2983d1bd00a209645768be3c0d3c8a0ffafaafc75e12dd3b66e14d33b2ff4b15"
+    },
+    "LEDGER_0010": {
+      "ledger_id": "LEDGER_0010",
       "tool": "tools.calc.reverse_dcf",
       "ticker": "AAPL",
       "currency": "USD",
       "unit": "base",
       "inputs": {
-        "current_price": 332.7738,
+        "current_price": 333.85,
         "base_fcf": 98767000000,
-        "WACC": 0.085
+        "WACC": 0.085,
+        "net_debt": -36988000000.0
       },
-      "output": 28.960567712783813,
-      "raw_value": 28.960567712783813,
+      "output": 28.840285539627075,
+      "raw_value": 28.840285539627075,
       "source": "tools.calc.dcf.reverse_dcf",
       "form": null,
       "period": null,
       "notes": "Market implied 5-year FCF CAGR",
-      "timestamp": "2026-10-06T15:09:29.960252",
-      "integrity_hash": "095b6296d16ca38cb999dd06045fe835d3d197c8b3eadba1754c504aaad4e1f0"
+      "timestamp": "2026-10-06T15:43:41.267401",
+      "integrity_hash": "68526baa278662756af983b745ed4856cda893422e53995271c06f0882cd7c1d"
     },
-    "LEDGER_0009": {
-      "ledger_id": "LEDGER_0009",
+    "LEDGER_0011": {
+      "ledger_id": "LEDGER_0011",
       "tool": "tools.calc.dcf",
       "ticker": "AAPL",
       "currency": "USD",
@@ -160,54 +199,17 @@
       "inputs": {
         "growth": 0.08,
         "wacc": 0.085,
-        "term_g": 0.025
+        "term_g": 0.025,
+        "net_debt": -36988000000.0
       },
-      "output": 146.3459176168883,
-      "raw_value": 146.3459176168883,
+      "output": 148.8803525765777,
+      "raw_value": 148.8803525765777,
       "source": "tools.calc.dcf.dcf",
       "form": null,
       "period": null,
       "notes": "Baseline fair value per share (USD)",
-      "timestamp": "2026-10-06T15:09:29.960252",
-      "integrity_hash": "bfe9a3a763fb2d9362544ba17fb9a7b8b6572d10ea1459bed1253f668ebadfc6"
-    },
-    "LEDGER_0010": {
-      "ledger_id": "LEDGER_0010",
-      "tool": "tools.calc.dcf",
-      "ticker": "AAPL",
-      "currency": "USD",
-      "unit": "base",
-      "inputs": {
-        "stressed_fcf": 92588424504.02104,
-        "margin_delta_bps": -200
-      },
-      "output": 137.19094378428977,
-      "raw_value": 137.19094378428977,
-      "source": "tools.calc.dcf.dcf",
-      "form": null,
-      "period": null,
-      "notes": "Fair value under margin compression (USD)",
-      "timestamp": "2026-10-06T15:09:29.960252",
-      "integrity_hash": "de8c7a278710abd91a6c7763f5c2c5a0a9707d0c54dfe71cc513ee73488ea395"
-    },
-    "LEDGER_0011": {
-      "ledger_id": "LEDGER_0011",
-      "tool": "tools.calc.margin_stress_impact",
-      "ticker": "AAPL",
-      "currency": "USD",
-      "unit": "base",
-      "inputs": {
-        "baseline": 146.3459176168883,
-        "stressed": 137.19094378428977
-      },
-      "output": -6.255708380308141,
-      "raw_value": -6.255708380308141,
-      "source": "tools.calc.metrics",
-      "form": null,
-      "period": null,
-      "notes": "Margin stress impact percentage",
-      "timestamp": "2026-10-06T15:09:29.960252",
-      "integrity_hash": "2d52b0637108478a4eb9ab7680079dc02d542f360c760c8fea4fcaf6b3ecdeec"
+      "timestamp": "2026-10-06T15:43:41.267401",
+      "integrity_hash": "398b4f545107ab63fce878a4b03875041605d3afc6e986e05494cc040a29f716"
     },
     "LEDGER_0012": {
       "ledger_id": "LEDGER_0012",
@@ -216,35 +218,37 @@
       "currency": "USD",
       "unit": "base",
       "inputs": {
-        "wacc_stressed": 0.095
+        "stressed_fcf": 92588424504.02104,
+        "margin_delta_bps": -200,
+        "net_debt": -36988000000.0
       },
-      "output": 124.96477467593226,
-      "raw_value": 124.96477467593226,
+      "output": 139.72537874397918,
+      "raw_value": 139.72537874397918,
       "source": "tools.calc.dcf.dcf",
       "form": null,
       "period": null,
-      "notes": "Fair value under WACC elevation (USD)",
-      "timestamp": "2026-10-06T15:09:29.960252",
-      "integrity_hash": "1a4251d29a9cfc6e7abb1588d2e3249f94165ff71ed4ef6202d48ba6adc10207"
+      "notes": "Fair value under margin compression (USD)",
+      "timestamp": "2026-10-06T15:43:41.267401",
+      "integrity_hash": "d30e3a57ae70bcfe7ee00f98d18ab90dfcb0b06acef71b9205c9e65d2fd587ae"
     },
     "LEDGER_0013": {
       "ledger_id": "LEDGER_0013",
-      "tool": "tools.calc.wacc_stress_impact",
+      "tool": "tools.calc.margin_stress_impact",
       "ticker": "AAPL",
       "currency": "USD",
       "unit": "base",
       "inputs": {
-        "baseline": 146.3459176168883,
-        "stressed": 124.96477467593226
+        "baseline": 148.8803525765777,
+        "stressed": 139.72537874397918
       },
-      "output": -14.61000299094688,
-      "raw_value": -14.61000299094688,
+      "output": -6.149215577582408,
+      "raw_value": -6.149215577582408,
       "source": "tools.calc.metrics",
       "form": null,
       "period": null,
-      "notes": "WACC stress impact percentage",
-      "timestamp": "2026-10-06T15:09:29.960252",
-      "integrity_hash": "acd9e727ed710c35150432c620a0b2bf1cd7bd8d781027ab600e3f5952abf807"
+      "notes": "Margin stress impact percentage",
+      "timestamp": "2026-10-06T15:43:41.267401",
+      "integrity_hash": "85c7ae8cf1d4ca2c1085a37b38654ffd0e4145f2235b65f63e9efe47370f60a7"
     },
     "LEDGER_0014": {
       "ledger_id": "LEDGER_0014",
@@ -253,38 +257,293 @@
       "currency": "USD",
       "unit": "base",
       "inputs": {
-        "half_growth": 0.04
+        "wacc_stressed": 0.095,
+        "net_debt": -36988000000.0
       },
-      "output": 123.39874627773258,
-      "raw_value": 123.39874627773258,
+      "output": 127.49920963562167,
+      "raw_value": 127.49920963562167,
+      "source": "tools.calc.dcf.dcf",
+      "form": null,
+      "period": null,
+      "notes": "Fair value under WACC elevation (USD)",
+      "timestamp": "2026-10-06T15:43:41.267401",
+      "integrity_hash": "8b4d9cc933dc59930a44646729095450c542a308ab0caff497344f5d08a3787a"
+    },
+    "LEDGER_0015": {
+      "ledger_id": "LEDGER_0015",
+      "tool": "tools.calc.wacc_stress_impact",
+      "ticker": "AAPL",
+      "currency": "USD",
+      "unit": "base",
+      "inputs": {
+        "baseline": 148.8803525765777,
+        "stressed": 127.49920963562167
+      },
+      "output": -14.36129252176407,
+      "raw_value": -14.36129252176407,
+      "source": "tools.calc.metrics",
+      "form": null,
+      "period": null,
+      "notes": "WACC stress impact percentage",
+      "timestamp": "2026-10-06T15:43:41.267401",
+      "integrity_hash": "f441991557faaaaa0886551c0e9220c222672c0bf3b75d5b91ccf53617080491"
+    },
+    "LEDGER_0016": {
+      "ledger_id": "LEDGER_0016",
+      "tool": "tools.calc.dcf",
+      "ticker": "AAPL",
+      "currency": "USD",
+      "unit": "base",
+      "inputs": {
+        "half_growth": 0.04,
+        "net_debt": -36988000000.0
+      },
+      "output": 125.93318123742199,
+      "raw_value": 125.93318123742199,
       "source": "tools.calc.dcf.dcf",
       "form": null,
       "period": null,
       "notes": "Fair value at half assumed growth rate (USD)",
-      "timestamp": "2026-10-06T15:09:29.960252",
-      "integrity_hash": "4e280c5578490bd3e45de0b35f8db6f048b85134427b0e201bdddf1162433259"
+      "timestamp": "2026-10-06T15:43:41.267401",
+      "integrity_hash": "1975af76564e32b58bd39913755070d08d7a167da7303ca882133cb42fff3c7c"
     },
-    "LEDGER_0015": {
-      "ledger_id": "LEDGER_0015",
+    "LEDGER_0017": {
+      "ledger_id": "LEDGER_0017",
       "tool": "tools.calc.growth_stress_impact",
       "ticker": "AAPL",
       "currency": "USD",
       "unit": "base",
       "inputs": {
-        "baseline": 146.3459176168883,
-        "stressed": 123.39874627773258
+        "baseline": 148.8803525765777,
+        "stressed": 125.93318123742199
       },
-      "output": -15.680089826098174,
-      "raw_value": -15.680089826098174,
+      "output": -15.41316294730876,
+      "raw_value": -15.41316294730876,
       "source": "tools.calc.metrics",
       "form": null,
       "period": null,
       "notes": "Half-growth valuation impact",
-      "timestamp": "2026-10-06T15:09:29.960252",
-      "integrity_hash": "0420818727eee3b73403ac0c190e32c0ca53a7689341097914c8129874d4e2d6"
+      "timestamp": "2026-10-06T15:43:41.267401",
+      "integrity_hash": "7c152d266a055942b1ede4c249f16c96cdfab4b27d1f0d86d147d2d40ed3c2f9"
     },
-    "LEDGER_0016": {
-      "ledger_id": "LEDGER_0016",
+    "LEDGER_0018": {
+      "ledger_id": "LEDGER_0018",
+      "tool": "thesis.assumption",
+      "ticker": "AAPL",
+      "currency": "USD",
+      "unit": "base",
+      "inputs": {
+        "growth_rate": 0.06
+      },
+      "output": 6.0,
+      "raw_value": 6.0,
+      "source": "Model Sensitivity Parameter (Downside)",
+      "form": null,
+      "period": null,
+      "notes": "Sensitivity Downside 5Y FCF Growth Rate (%)",
+      "timestamp": "2026-10-06T15:43:41.267401",
+      "integrity_hash": "3df199321baf629626e35007de66fb714ca486c297f0242e2735206e7970af3f"
+    },
+    "LEDGER_0019": {
+      "ledger_id": "LEDGER_0019",
+      "tool": "thesis.assumption",
+      "ticker": "AAPL",
+      "currency": "USD",
+      "unit": "base",
+      "inputs": {
+        "growth_rate": 0.1
+      },
+      "output": 10.0,
+      "raw_value": 10.0,
+      "source": "Model Sensitivity Parameter (Upside)",
+      "form": null,
+      "period": null,
+      "notes": "Sensitivity Upside 5Y FCF Growth Rate (%)",
+      "timestamp": "2026-10-06T15:43:41.267401",
+      "integrity_hash": "646d29b34c0f62c67e829d485c01fb8ccdf654c6bdba8201bdcec5758e034a15"
+    },
+    "LEDGER_0020": {
+      "ledger_id": "LEDGER_0020",
+      "tool": "tools.calc.dcf",
+      "ticker": "AAPL",
+      "currency": "USD",
+      "unit": "base",
+      "inputs": {
+        "growth": 0.06,
+        "wacc": 0.07500000000000001,
+        "net_debt": -36988000000.0
+      },
+      "output": 164.3040351438087,
+      "raw_value": 164.3040351438087,
+      "source": "tools.calc.dcf.dcf",
+      "form": null,
+      "period": null,
+      "notes": "Sensitivity fair value: Growth 6.0%, WACC 7.5% (USD)",
+      "timestamp": "2026-10-06T15:43:41.267401",
+      "integrity_hash": "4d5e9f4ba91dc60c596fac57c13591579f3f3a1d1742b7bba85bdaeef2b84608"
+    },
+    "LEDGER_0021": {
+      "ledger_id": "LEDGER_0021",
+      "tool": "tools.calc.dcf",
+      "ticker": "AAPL",
+      "currency": "USD",
+      "unit": "base",
+      "inputs": {
+        "growth": 0.06,
+        "wacc": 0.085,
+        "net_debt": -36988000000.0
+      },
+      "output": 136.99675052356162,
+      "raw_value": 136.99675052356162,
+      "source": "tools.calc.dcf.dcf",
+      "form": null,
+      "period": null,
+      "notes": "Sensitivity fair value: Growth 6.0%, WACC 8.5% (USD)",
+      "timestamp": "2026-10-06T15:43:41.267401",
+      "integrity_hash": "5470a8cd6b4eae3321c9c6dc20ccb7c5e50b4188fc6dba9f0620ff0b36f87381"
+    },
+    "LEDGER_0022": {
+      "ledger_id": "LEDGER_0022",
+      "tool": "tools.calc.dcf",
+      "ticker": "AAPL",
+      "currency": "USD",
+      "unit": "base",
+      "inputs": {
+        "growth": 0.06,
+        "wacc": 0.095,
+        "net_debt": -36988000000.0
+      },
+      "output": 117.50221063852604,
+      "raw_value": 117.50221063852604,
+      "source": "tools.calc.dcf.dcf",
+      "form": null,
+      "period": null,
+      "notes": "Sensitivity fair value: Growth 6.0%, WACC 9.5% (USD)",
+      "timestamp": "2026-10-06T15:43:41.267401",
+      "integrity_hash": "2938cde63c110a8cbfaa661bf357107ece6efb23a59de3cd9e2d1b89e4ceda10"
+    },
+    "LEDGER_0023": {
+      "ledger_id": "LEDGER_0023",
+      "tool": "tools.calc.dcf",
+      "ticker": "AAPL",
+      "currency": "USD",
+      "unit": "base",
+      "inputs": {
+        "growth": 0.08,
+        "wacc": 0.07500000000000001,
+        "net_debt": -36988000000.0
+      },
+      "output": 178.83887640775623,
+      "raw_value": 178.83887640775623,
+      "source": "tools.calc.dcf.dcf",
+      "form": null,
+      "period": null,
+      "notes": "Sensitivity fair value: Growth 8.0%, WACC 7.5% (USD)",
+      "timestamp": "2026-10-06T15:43:41.267401",
+      "integrity_hash": "7e81a383269b4c48d6959353eae9dbea2d94da1b349bd88f19b4475447282cc0"
+    },
+    "LEDGER_0024": {
+      "ledger_id": "LEDGER_0024",
+      "tool": "tools.calc.dcf",
+      "ticker": "AAPL",
+      "currency": "USD",
+      "unit": "base",
+      "inputs": {
+        "growth": 0.08,
+        "wacc": 0.085,
+        "net_debt": -36988000000.0
+      },
+      "output": 148.8803525765777,
+      "raw_value": 148.8803525765777,
+      "source": "tools.calc.dcf.dcf",
+      "form": null,
+      "period": null,
+      "notes": "Sensitivity fair value: Growth 8.0%, WACC 8.5% (USD)",
+      "timestamp": "2026-10-06T15:43:41.267401",
+      "integrity_hash": "5b91019d6e7a092b51c22a733a356824774c20da14fd57abdcc6dbe252932b04"
+    },
+    "LEDGER_0025": {
+      "ledger_id": "LEDGER_0025",
+      "tool": "tools.calc.dcf",
+      "ticker": "AAPL",
+      "currency": "USD",
+      "unit": "base",
+      "inputs": {
+        "growth": 0.08,
+        "wacc": 0.095,
+        "net_debt": -36988000000.0
+      },
+      "output": 127.49920963562167,
+      "raw_value": 127.49920963562167,
+      "source": "tools.calc.dcf.dcf",
+      "form": null,
+      "period": null,
+      "notes": "Sensitivity fair value: Growth 8.0%, WACC 9.5% (USD)",
+      "timestamp": "2026-10-06T15:43:41.267401",
+      "integrity_hash": "f6cce57f69434d87447cf82a8b12768bf61edbc3cb691fc64333951154a8f417"
+    },
+    "LEDGER_0026": {
+      "ledger_id": "LEDGER_0026",
+      "tool": "tools.calc.dcf",
+      "ticker": "AAPL",
+      "currency": "USD",
+      "unit": "base",
+      "inputs": {
+        "growth": 0.1,
+        "wacc": 0.07500000000000001,
+        "net_debt": -36988000000.0
+      },
+      "output": 194.44245661120877,
+      "raw_value": 194.44245661120877,
+      "source": "tools.calc.dcf.dcf",
+      "form": null,
+      "period": null,
+      "notes": "Sensitivity fair value: Growth 10.0%, WACC 7.5% (USD)",
+      "timestamp": "2026-10-06T15:43:41.267401",
+      "integrity_hash": "ced3fcacaf94d0abe23c756fd43082e3c57225c6992a916521676353f514322f"
+    },
+    "LEDGER_0027": {
+      "ledger_id": "LEDGER_0027",
+      "tool": "tools.calc.dcf",
+      "ticker": "AAPL",
+      "currency": "USD",
+      "unit": "base",
+      "inputs": {
+        "growth": 0.1,
+        "wacc": 0.085,
+        "net_debt": -36988000000.0
+      },
+      "output": 161.62997595132745,
+      "raw_value": 161.62997595132745,
+      "source": "tools.calc.dcf.dcf",
+      "form": null,
+      "period": null,
+      "notes": "Sensitivity fair value: Growth 10.0%, WACC 8.5% (USD)",
+      "timestamp": "2026-10-06T15:43:41.267401",
+      "integrity_hash": "6aef82716244e827f673b2377429ad5e0c63f9fc2c5fd4532a9d9132642fcb8e"
+    },
+    "LEDGER_0028": {
+      "ledger_id": "LEDGER_0028",
+      "tool": "tools.calc.dcf",
+      "ticker": "AAPL",
+      "currency": "USD",
+      "unit": "base",
+      "inputs": {
+        "growth": 0.1,
+        "wacc": 0.095,
+        "net_debt": -36988000000.0
+      },
+      "output": 138.21825957765265,
+      "raw_value": 138.21825957765265,
+      "source": "tools.calc.dcf.dcf",
+      "form": null,
+      "period": null,
+      "notes": "Sensitivity fair value: Growth 10.0%, WACC 9.5% (USD)",
+      "timestamp": "2026-10-06T15:43:41.267401",
+      "integrity_hash": "9f487add4745d6b39c8ac5478994026d30604b3c2ea957afb2c0169fd931e12f"
+    },
+    "LEDGER_0029": {
+      "ledger_id": "LEDGER_0029",
       "tool": "filing.cash_flow",
       "ticker": "AAPL",
       "currency": "USD",
@@ -300,11 +559,11 @@
       "form": null,
       "period": "FY2022",
       "notes": "AAPL FY2022 Free Cash Flow (USD)",
-      "timestamp": "2026-10-06T15:09:29.960252",
-      "integrity_hash": "f9a5b6f1e54a50eb509516c7afe4aa58d715c7584e49dc484c1e6000f87025d2"
+      "timestamp": "2026-10-06T15:43:41.267401",
+      "integrity_hash": "9b732fb1101fc20dda57794ff9f8e16ac970ce46f590d181012160d5f7387dd5"
     },
-    "LEDGER_0017": {
-      "ledger_id": "LEDGER_0017",
+    "LEDGER_0030": {
+      "ledger_id": "LEDGER_0030",
       "tool": "filing.cash_flow",
       "ticker": "AAPL",
       "currency": "USD",
@@ -320,11 +579,11 @@
       "form": null,
       "period": "FY2023",
       "notes": "AAPL FY2023 Free Cash Flow (USD)",
-      "timestamp": "2026-10-06T15:09:29.960252",
-      "integrity_hash": "12dd19d53694e0af15a214fec7e8432ccbc8753e5c8b43cbfa7cba4325ff8860"
+      "timestamp": "2026-10-06T15:43:41.267401",
+      "integrity_hash": "5828af712072ffddf1ef35e365c404e652f2b0678fb470fcfcb1420d02f7011e"
     },
-    "LEDGER_0018": {
-      "ledger_id": "LEDGER_0018",
+    "LEDGER_0031": {
+      "ledger_id": "LEDGER_0031",
       "tool": "filing.cash_flow",
       "ticker": "AAPL",
       "currency": "USD",
@@ -340,11 +599,11 @@
       "form": null,
       "period": "FY2024",
       "notes": "AAPL FY2024 Free Cash Flow (USD)",
-      "timestamp": "2026-10-06T15:09:29.960252",
-      "integrity_hash": "8dfa400e40633870e603d915a884c3db6adb88c1588c50f1360e4346a514834d"
+      "timestamp": "2026-10-06T15:43:41.267401",
+      "integrity_hash": "3c4b245160d6065bebe68015db484e7e264dde3985807d84db2d48068ffc1a19"
     },
-    "LEDGER_0019": {
-      "ledger_id": "LEDGER_0019",
+    "LEDGER_0032": {
+      "ledger_id": "LEDGER_0032",
       "tool": "filing.cash_flow",
       "ticker": "AAPL",
       "currency": "USD",
@@ -360,11 +619,11 @@
       "form": null,
       "period": "FY2025",
       "notes": "AAPL FY2025 Free Cash Flow (USD)",
-      "timestamp": "2026-10-06T15:09:29.960252",
-      "integrity_hash": "46277bd85d2faf7f229efd13feee7ecfde710980942f86dfcb5044168eb7589c"
+      "timestamp": "2026-10-06T15:43:41.267401",
+      "integrity_hash": "78882d2f3ac5926971fd0b1be47db56f52e9ba1f1bb275d27f39fe167c314ba0"
     },
-    "LEDGER_0020": {
-      "ledger_id": "LEDGER_0020",
+    "LEDGER_0033": {
+      "ledger_id": "LEDGER_0033",
       "tool": "tools.calc.cagr",
       "ticker": "AAPL",
       "currency": "USD",
@@ -380,65 +639,230 @@
       "form": null,
       "period": null,
       "notes": "Historical 3-year FCF CAGR (FY2022 to FY2025)",
-      "timestamp": "2026-10-06T15:09:29.960252",
-      "integrity_hash": "45566ab10136228c435ff3239d935b1cfcd6c6f5507e4b02f32ca95441ec2538"
+      "timestamp": "2026-10-06T15:43:41.267401",
+      "integrity_hash": "9e0c957bccfa80124e8e86e655facd533a3f32f27e3cbfa1a65c61aa645139c6"
     },
-    "LEDGER_0021": {
-      "ledger_id": "LEDGER_0021",
+    "LEDGER_0034": {
+      "ledger_id": "LEDGER_0034",
+      "tool": "filing.income_statement",
+      "ticker": "AAPL",
+      "currency": "USD",
+      "unit": "base",
+      "inputs": {
+        "rev_curr": 416161000000.0
+      },
+      "output": 416161000000.0,
+      "raw_value": 416161000000.0,
+      "source": "Audited Income Statement",
+      "form": null,
+      "period": null,
+      "notes": "FY2025 Revenue",
+      "timestamp": "2026-10-06T15:43:41.267401",
+      "integrity_hash": "5f538d59df1afb5d43cc5f8a5b5d748be238b3adcb02ee08d0d1ead093f1df6d"
+    },
+    "LEDGER_0035": {
+      "ledger_id": "LEDGER_0035",
+      "tool": "filing.income_statement",
+      "ticker": "AAPL",
+      "currency": "USD",
+      "unit": "base",
+      "inputs": {
+        "rev_prev": 391035000000.0
+      },
+      "output": 391035000000.0,
+      "raw_value": 391035000000.0,
+      "source": "Audited Income Statement",
+      "form": null,
+      "period": null,
+      "notes": "FY2024 Revenue",
+      "timestamp": "2026-10-06T15:43:41.267401",
+      "integrity_hash": "1dd60ca49098c57d48d289845638a0b8ad5474d729341e29db9246e07e9abc45"
+    },
+    "LEDGER_0036": {
+      "ledger_id": "LEDGER_0036",
+      "tool": "tools.calc.yoy_growth",
+      "ticker": "AAPL",
+      "currency": "USD",
+      "unit": "base",
+      "inputs": {
+        "current": 416161000000.0,
+        "prior": 391035000000.0
+      },
+      "output": 6.425511782832739,
+      "raw_value": 6.425511782832739,
+      "source": "tools.calc.metrics.yoy_growth",
+      "form": null,
+      "period": null,
+      "notes": "Revenue YoY Growth (%)",
+      "timestamp": "2026-10-06T15:43:41.267401",
+      "integrity_hash": "4a55fa48ce90e91eaaacedd14531ae2edff94683f6bfaf8078ef55033eb48e7b"
+    },
+    "LEDGER_0037": {
+      "ledger_id": "LEDGER_0037",
+      "tool": "filing.balance_sheet",
+      "ticker": "AAPL",
+      "currency": "USD",
+      "unit": "base",
+      "inputs": {
+        "rec_curr": 29433000000.0
+      },
+      "output": 29433000000.0,
+      "raw_value": 29433000000.0,
+      "source": "Audited Balance Sheet",
+      "form": null,
+      "period": null,
+      "notes": "FY2025 Trade Receivables",
+      "timestamp": "2026-10-06T15:43:41.267401",
+      "integrity_hash": "b6344b091f2530b6f794b0db0611998d14e5a369d69a8023d2aac1bb2368bff9"
+    },
+    "LEDGER_0038": {
+      "ledger_id": "LEDGER_0038",
+      "tool": "filing.balance_sheet",
+      "ticker": "AAPL",
+      "currency": "USD",
+      "unit": "base",
+      "inputs": {
+        "rec_prev": 29542000000.0
+      },
+      "output": 29542000000.0,
+      "raw_value": 29542000000.0,
+      "source": "Audited Balance Sheet",
+      "form": null,
+      "period": null,
+      "notes": "FY2024 Trade Receivables",
+      "timestamp": "2026-10-06T15:43:41.267401",
+      "integrity_hash": "2d5f6204f695d0dd795b336f4160664961055be1ecbb3cbe72cb5a487993dbcc"
+    },
+    "LEDGER_0039": {
+      "ledger_id": "LEDGER_0039",
+      "tool": "tools.calc.yoy_growth",
+      "ticker": "AAPL",
+      "currency": "USD",
+      "unit": "base",
+      "inputs": {
+        "current": 29433000000.0,
+        "prior": 29542000000.0
+      },
+      "output": -0.36896621758851805,
+      "raw_value": -0.36896621758851805,
+      "source": "tools.calc.metrics.yoy_growth",
+      "form": null,
+      "period": null,
+      "notes": "Receivables YoY Growth (%)",
+      "timestamp": "2026-10-06T15:43:41.267401",
+      "integrity_hash": "5a6dd689455bca29772b7f1a8eac074808666c8f6b57d6c46ea2ef1197b26df5"
+    },
+    "LEDGER_0040": {
+      "ledger_id": "LEDGER_0040",
       "tool": "tools.calc.working_capital",
       "ticker": "AAPL",
       "currency": "USD",
       "unit": "base",
       "inputs": {
-        "rec_yoy": -0.0037,
-        "rev_yoy": 0.0642551178283274
+        "rec_yoy": -0.36896621758851805,
+        "rev_yoy": 6.425511782832739
       },
-      "output": -6.7955117828327385,
-      "raw_value": -6.7955117828327385,
-      "source": "Annual Filings",
+      "output": -6.7944780004212575,
+      "raw_value": -6.7944780004212575,
+      "source": "tools.calc.working_capital",
       "form": null,
       "period": null,
       "notes": "Receivables vs Revenue YoY divergence (pp)",
-      "timestamp": "2026-10-06T15:09:29.960252",
-      "integrity_hash": "9d04d1a514d50eae5d3a38217af21cee6f16b630cb07d844717aab1a283dcb66"
+      "timestamp": "2026-10-06T15:43:41.267401",
+      "integrity_hash": "0cbe48033d30d58d63ebaf586ebbe10e375c5f9deebcb16a20bf90d89b4f886c"
     },
-    "LEDGER_0022": {
-      "ledger_id": "LEDGER_0022",
+    "LEDGER_0041": {
+      "ledger_id": "LEDGER_0041",
+      "tool": "filing.balance_sheet",
+      "ticker": "AAPL",
+      "currency": "USD",
+      "unit": "base",
+      "inputs": {
+        "inv_curr": 7286000000.0
+      },
+      "output": 7286000000.0,
+      "raw_value": 7286000000.0,
+      "source": "Audited Balance Sheet",
+      "form": null,
+      "period": null,
+      "notes": "FY2025 Inventories",
+      "timestamp": "2026-10-06T15:43:41.267401",
+      "integrity_hash": "785c4e822f5460b34a46cfcd685ceeff5dfbdd12f8596365ef8368e402c4aab2"
+    },
+    "LEDGER_0042": {
+      "ledger_id": "LEDGER_0042",
+      "tool": "filing.balance_sheet",
+      "ticker": "AAPL",
+      "currency": "USD",
+      "unit": "base",
+      "inputs": {
+        "inv_prev": 6455000000.0
+      },
+      "output": 6455000000.0,
+      "raw_value": 6455000000.0,
+      "source": "Audited Balance Sheet",
+      "form": null,
+      "period": null,
+      "notes": "FY2024 Inventories",
+      "timestamp": "2026-10-06T15:43:41.267401",
+      "integrity_hash": "07710af7992addaa618eae50d8684ef46a15c5e910da8af8877836ea1b1c51b5"
+    },
+    "LEDGER_0043": {
+      "ledger_id": "LEDGER_0043",
+      "tool": "tools.calc.yoy_growth",
+      "ticker": "AAPL",
+      "currency": "USD",
+      "unit": "base",
+      "inputs": {
+        "current": 7286000000.0,
+        "prior": 6455000000.0
+      },
+      "output": 12.873741285824941,
+      "raw_value": 12.873741285824941,
+      "source": "tools.calc.metrics.yoy_growth",
+      "form": null,
+      "period": null,
+      "notes": "Inventory YoY Growth (%)",
+      "timestamp": "2026-10-06T15:43:41.267401",
+      "integrity_hash": "0d3f8737b347bbeda8368bdb3de782765fad64ddf8fb8fd7b25eba5ebc350e6a"
+    },
+    "LEDGER_0044": {
+      "ledger_id": "LEDGER_0044",
       "tool": "tools.calc.working_capital",
       "ticker": "AAPL",
       "currency": "USD",
       "unit": "base",
       "inputs": {
-        "inv_yoy": 0.1287,
-        "rev_yoy": 0.0642551178283274
+        "inv_yoy": 12.873741285824941,
+        "rev_yoy": 6.425511782832739
       },
-      "output": 6.444488217167262,
-      "raw_value": 6.444488217167262,
-      "source": "Annual Filings",
+      "output": 6.448229502992202,
+      "raw_value": 6.448229502992202,
+      "source": "tools.calc.working_capital",
       "form": null,
       "period": null,
       "notes": "Inventory vs Revenue YoY divergence (pp)",
-      "timestamp": "2026-10-06T15:09:29.960252",
-      "integrity_hash": "99ff887360b9b30b63f711c90ac712f83be5cecf2747674768e181c44a603af6"
+      "timestamp": "2026-10-06T15:43:41.267401",
+      "integrity_hash": "9fe19adaec3912ddd3752df7dd2a187fe69d32f86ef4bba60789d6500af668be"
     },
-    "LEDGER_0023": {
-      "ledger_id": "LEDGER_0023",
+    "LEDGER_0045": {
+      "ledger_id": "LEDGER_0045",
       "tool": "tools.calc.liquidity",
       "ticker": "AAPL",
       "currency": "USD",
       "unit": "base",
       "inputs": {
         "st_debt": 10912000000.0,
-        "cash": 29943000000.0
+        "cash": 138638000000.0
       },
-      "output": 36.44257422435962,
-      "raw_value": 36.44257422435962,
+      "output": 7.87085791774261,
+      "raw_value": 7.87085791774261,
       "source": "Annual Balance Sheet",
       "form": null,
       "period": null,
       "notes": "Short-term debt to cash ratio",
-      "timestamp": "2026-10-06T15:09:29.960252",
-      "integrity_hash": "6efbf2b91597a75c7d1372b509d5fb98404ab790f008590042a12187af9de8aa"
+      "timestamp": "2026-10-06T15:43:41.267401",
+      "integrity_hash": "1c8e6d3b7f821d08fc860db66b90ffc9e7ddebec7666ecf2892c42e03f48f9b8"
     }
   }
 }

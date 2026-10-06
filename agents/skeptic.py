@@ -1,23 +1,9 @@
 """
 Skeptic Agent Engine (/agents/skeptic.py)
-Adversarial research agent that dynamically extracts top 3 investment thesis assumptions,
-stresses them against DCF models (including half-growth stress), and audits empirical filing evidence
-with a structured checklist table and explicit conclusive thresholds.
-
-Checklist Rules:
-1. Valuation Feasibility (Reverse DCF): Implied 5Y FCF CAGR <= Historical 3Y FCF CAGR + 2.0 pp.
-2. Margin Shock (-200 bps): Valuation drop <= 15%.
-3. WACC Shock (+100 bps): Valuation drop <= 15%.
-4. Half-Growth Stress: Fair value at half assumed growth rate compared against baseline and historical growth.
-5. Receivables Divergence: |Receivables YoY - Revenue YoY| <= 5.0 pp.
-6. Inventory Divergence: |Inventory YoY - Revenue YoY| <= 5.0 pp (or NOT CHECKED if service company).
-7. Refinancing / Liquidity Risk: Short-term debt due <= 50% of liquid cash.
-8. Customer Concentration: Max customer revenue share <= 10%.
-
-Verdict Rules:
-- If > 2 checks are NOT CHECKED (data unavailable): Verdict = INCONCLUSIVE
-- If any performed check FAILS: Verdict = VULNERABLE / STRETCHED
-- If all performed checks PASS: Verdict = ROBUST / NO STRONG COUNTER-EVIDENCE FOUND AMONG THE CHECKS PERFORMED
+Adversarial research agent that stress-tests investment thesis assumptions,
+constructs a multi-scenario sensitivity grid (growth x WACC),
+audits empirical balance sheet liquidity and working capital divergence,
+and categorizes inputs strictly into ASSUMPTION vs AUDITED DATA vs MARKET DATA.
 """
 
 import os
@@ -69,10 +55,13 @@ class SkepticAgent:
         receivables_growth_yoy: Optional[float] = None,
         inventory_growth_yoy: Optional[float] = None,
         revenue_growth_yoy: Optional[float] = None,
+        working_capital_details: Optional[Dict[str, Any]] = None,
         short_term_debt: Optional[float] = None,
         cash_and_equivalents: Optional[float] = None,
+        marketable_securities: Optional[float] = None,
+        total_debt: Optional[float] = None,
         max_customer_concentration_pct: Optional[float] = None,
-        net_debt: float = 0.0,
+        net_debt: Optional[float] = None,
         wacc: float = 0.09,
         terminal_g: float = 0.025,
         currency: Optional[str] = None,
@@ -89,7 +78,7 @@ class SkepticAgent:
 
         # Determine currency & symbol
         if not currency:
-            if ticker == "AAPL" or (ticker and not "." in ticker and not ticker.endswith(".NS") and not ticker.endswith(".L")):
+            if ticker == "AAPL" or (ticker and "." not in ticker and not ticker.endswith(".NS") and not ticker.endswith(".L")):
                 currency = "USD"
             elif ticker and (".NS" in ticker or ".BO" in ticker):
                 currency = "INR"
@@ -104,7 +93,13 @@ class SkepticAgent:
         else:
             curr_sym = currency_symbol
 
-        # 1. Price Record
+        # Balance Sheet Debt & Cash derivation (never default to $0 net debt if cash/debt provided)
+        liquid_cash = (cash_and_equivalents or 0.0) + (marketable_securities or 0.0)
+        tot_debt = total_debt or (short_term_debt or 0.0)
+        if net_debt is None:
+            net_debt = tot_debt - liquid_cash
+
+        # 1. Price Record (MARKET DATA)
         l_price = self.ledger.record(
             tool="yfinance.quote",
             ticker=ticker,
@@ -116,46 +111,7 @@ class SkepticAgent:
             notes=f"Current trading price ({currency})"
         )
 
-        # 2. Base FCF Record
-        l_base_fcf = self.ledger.record(
-            tool="filing.cash_flow",
-            ticker=ticker,
-            currency=currency,
-            inputs={"ticker": ticker, "metric": "FreeCashFlow"},
-            output=base_fcf,
-            raw_value=base_fcf,
-            source="Audited Cash Flow Statement",
-            notes=f"Base Free Cash Flow ({currency})"
-        )
-
-        # Assumptions Ledger Records
-        l_growth_assump = self.ledger.record(
-            tool="thesis.assumption",
-            ticker=ticker,
-            inputs={"growth_rate": stated_growth_rate},
-            output=stated_growth_rate * 100.0,
-            raw_value=stated_growth_rate * 100.0,
-            source="Analyst Thesis Model Assumption",
-            notes="Assumed 5Y FCF Growth Rate (%)"
-        )
-        l_wacc_assump = self.ledger.record(
-            tool="thesis.assumption",
-            ticker=ticker,
-            inputs={"wacc": wacc},
-            output=wacc * 100.0,
-            raw_value=wacc * 100.0,
-            source="Cost of Capital Assumption",
-            notes="Assumed Discount Rate WACC (%)"
-        )
-        l_term_g_assump = self.ledger.record(
-            tool="thesis.assumption",
-            ticker=ticker,
-            inputs={"terminal_g": terminal_g},
-            output=terminal_g * 100.0,
-            raw_value=terminal_g * 100.0,
-            source="Terminal Growth Assumption",
-            notes="Assumed Terminal Growth Rate (%)"
-        )
+        # 2. Shares Outstanding Record (MARKET DATA)
         l_shares = self.ledger.record(
             tool="yfinance.quote",
             ticker=ticker,
@@ -165,18 +121,81 @@ class SkepticAgent:
             source="Share Registry / Market Data",
             notes="Diluted Shares Outstanding"
         )
+
+        # 3. Base FCF Record (AUDITED DATA)
+        l_base_fcf = self.ledger.record(
+            tool="filing.cash_flow",
+            ticker=ticker,
+            currency=currency,
+            inputs={"ticker": ticker, "metric": "FreeCashFlow"},
+            output=base_fcf,
+            raw_value=base_fcf,
+            source="Audited Statement of Cash Flows",
+            notes=f"Base Free Cash Flow ({currency})"
+        )
+
+        # 4. Balance Sheet Records (AUDITED DATA)
+        l_cash = self.ledger.record(
+            tool="filing.balance_sheet",
+            ticker=ticker,
+            currency=currency,
+            inputs={"cash_and_equivalents": cash_and_equivalents or 0.0, "marketable_securities": marketable_securities or 0.0},
+            output=liquid_cash,
+            raw_value=liquid_cash,
+            source="Audited Balance Sheet",
+            notes=f"Total Liquid Cash and Marketable Securities ({currency})"
+        )
+        l_total_debt = self.ledger.record(
+            tool="filing.balance_sheet",
+            ticker=ticker,
+            currency=currency,
+            inputs={"total_debt": tot_debt},
+            output=tot_debt,
+            raw_value=tot_debt,
+            source="Audited Balance Sheet",
+            notes=f"Total Borrowings and Debt ({currency})"
+        )
         l_net_debt = self.ledger.record(
             tool="filing.balance_sheet",
             ticker=ticker,
             currency=currency,
-            inputs={"net_debt": net_debt},
+            inputs={"total_debt": tot_debt, "liquid_cash": liquid_cash},
             output=net_debt,
             raw_value=net_debt,
             source="Audited Balance Sheet",
-            notes=f"Net Debt ({currency})"
+            notes=f"Calculated Net Debt: Total Debt - Liquid Cash ({currency})"
         )
 
-        # 3. Reverse DCF: Implied Growth Rate
+        # 5. Model Assumptions Records (TYPE: ASSUMPTION - No fake sources)
+        l_growth_assump = self.ledger.record(
+            tool="thesis.assumption",
+            ticker=ticker,
+            inputs={"growth_rate": stated_growth_rate},
+            output=stated_growth_rate * 100.0,
+            raw_value=stated_growth_rate * 100.0,
+            source="Model Assumption (Unanchored Parameter)",
+            notes="Assumed 5Y FCF Growth Rate (%)"
+        )
+        l_wacc_assump = self.ledger.record(
+            tool="thesis.assumption",
+            ticker=ticker,
+            inputs={"wacc": wacc},
+            output=wacc * 100.0,
+            raw_value=wacc * 100.0,
+            source="Model Assumption (Unanchored Parameter)",
+            notes="Assumed Discount Rate WACC (%)"
+        )
+        l_term_g_assump = self.ledger.record(
+            tool="thesis.assumption",
+            ticker=ticker,
+            inputs={"terminal_g": terminal_g},
+            output=terminal_g * 100.0,
+            raw_value=terminal_g * 100.0,
+            source="Model Assumption (Unanchored Parameter)",
+            notes="Assumed Terminal Growth Rate (%)"
+        )
+
+        # 6. Reverse DCF: Implied Growth Rate
         rev_res = reverse_dcf(
             current_price=current_price,
             base_fcf=base_fcf,
@@ -190,14 +209,14 @@ class SkepticAgent:
         l_implied = self.ledger.record(
             tool="tools.calc.reverse_dcf",
             ticker=ticker,
-            inputs={"current_price": current_price, "base_fcf": base_fcf, "WACC": wacc},
+            inputs={"current_price": current_price, "base_fcf": base_fcf, "WACC": wacc, "net_debt": net_debt},
             output=implied_cagr,
             raw_value=implied_cagr,
             source="tools.calc.dcf.reverse_dcf",
             notes="Market implied 5-year FCF CAGR"
         )
 
-        # 4. Baseline DCF
+        # 7. Baseline DCF
         base_growth_rates = [stated_growth_rate] * 5
         base_dcf_res = dcf(
             base_fcf=base_fcf,
@@ -212,14 +231,14 @@ class SkepticAgent:
             tool="tools.calc.dcf",
             ticker=ticker,
             currency=currency,
-            inputs={"growth": stated_growth_rate, "wacc": wacc, "term_g": terminal_g},
+            inputs={"growth": stated_growth_rate, "wacc": wacc, "term_g": terminal_g, "net_debt": net_debt},
             output=base_fair_val,
             raw_value=base_fair_val,
             source="tools.calc.dcf.dcf",
             notes=f"Baseline fair value per share ({currency})"
         )
 
-        # 5. Stress Test: -200 bps Margin Compression
+        # 8. Stress Test: -200 bps Margin Compression
         margin_haircut_factor = (base_operating_margin - 0.02) / base_operating_margin if base_operating_margin > 0.02 else 0.90
         stressed_fcf_margin = base_fcf * margin_haircut_factor
         margin_stress_dcf = dcf(
@@ -237,7 +256,7 @@ class SkepticAgent:
             tool="tools.calc.dcf",
             ticker=ticker,
             currency=currency,
-            inputs={"stressed_fcf": stressed_fcf_margin, "margin_delta_bps": -200},
+            inputs={"stressed_fcf": stressed_fcf_margin, "margin_delta_bps": -200, "net_debt": net_debt},
             output=margin_stressed_val,
             raw_value=margin_stressed_val,
             source="tools.calc.dcf.dcf",
@@ -253,7 +272,7 @@ class SkepticAgent:
             notes="Margin stress impact percentage"
         )
 
-        # 6. Stress Test: +100 bps WACC Elevation
+        # 9. Stress Test: +100 bps WACC Elevation
         wacc_stress_dcf = dcf(
             base_fcf=base_fcf,
             growth_rates=base_growth_rates,
@@ -269,7 +288,7 @@ class SkepticAgent:
             tool="tools.calc.dcf",
             ticker=ticker,
             currency=currency,
-            inputs={"wacc_stressed": wacc + 0.01},
+            inputs={"wacc_stressed": wacc + 0.01, "net_debt": net_debt},
             output=wacc_stressed_val,
             raw_value=wacc_stressed_val,
             source="tools.calc.dcf.dcf",
@@ -285,7 +304,7 @@ class SkepticAgent:
             notes="WACC stress impact percentage"
         )
 
-        # 7. Stress Test: Half-Growth Assumption Stress
+        # 10. Stress Test: Half-Growth Assumption Stress
         half_growth_rates = [stated_growth_rate * 0.5] * 5
         half_growth_dcf = dcf(
             base_fcf=base_fcf,
@@ -302,7 +321,7 @@ class SkepticAgent:
             tool="tools.calc.dcf",
             ticker=ticker,
             currency=currency,
-            inputs={"half_growth": stated_growth_rate * 0.5},
+            inputs={"half_growth": stated_growth_rate * 0.5, "net_debt": net_debt},
             output=half_growth_val,
             raw_value=half_growth_val,
             source="tools.calc.dcf.dcf",
@@ -317,6 +336,53 @@ class SkepticAgent:
             source="tools.calc.metrics",
             notes="Half-growth valuation impact"
         )
+
+        # 11. Valuation Sensitivity Grid: Growth x WACC
+        grid_growths = [stated_growth_rate - 0.02, stated_growth_rate, stated_growth_rate + 0.02]
+        grid_waccs = [wacc - 0.01, wacc, wacc + 0.01]
+        
+        l_g_low = self.ledger.record(
+            tool="thesis.assumption",
+            ticker=ticker,
+            inputs={"growth_rate": stated_growth_rate - 0.02},
+            output=(stated_growth_rate - 0.02) * 100.0,
+            raw_value=(stated_growth_rate - 0.02) * 100.0,
+            source="Model Sensitivity Parameter (Downside)",
+            notes="Sensitivity Downside 5Y FCF Growth Rate (%)"
+        )
+        l_g_high = self.ledger.record(
+            tool="thesis.assumption",
+            ticker=ticker,
+            inputs={"growth_rate": stated_growth_rate + 0.02},
+            output=(stated_growth_rate + 0.02) * 100.0,
+            raw_value=(stated_growth_rate + 0.02) * 100.0,
+            source="Model Sensitivity Parameter (Upside)",
+            notes="Sensitivity Upside 5Y FCF Growth Rate (%)"
+        )
+
+        grid_results = {}
+        for g_val in grid_growths:
+            for w_val in grid_waccs:
+                cell_dcf = dcf(
+                    base_fcf=base_fcf,
+                    growth_rates=[g_val] * 5,
+                    discount_rate=w_val,
+                    terminal_growth_rate=terminal_g,
+                    shares_outstanding=shares_outstanding,
+                    net_debt=net_debt
+                )
+                cell_fv = cell_dcf["result"]["fair_value_per_share"]
+                l_cell = self.ledger.record(
+                    tool="tools.calc.dcf",
+                    ticker=ticker,
+                    currency=currency,
+                    inputs={"growth": g_val, "wacc": w_val, "net_debt": net_debt},
+                    output=cell_fv,
+                    raw_value=cell_fv,
+                    source="tools.calc.dcf.dcf",
+                    notes=f"Sensitivity fair value: Growth {g_val*100.1:.1f}%, WACC {w_val*100.1:.1f}% ({currency})"
+                )
+                grid_results[(round(g_val, 4), round(w_val, 4))] = (cell_fv, l_cell)
 
         # --- CHECKLIST TABLE POPULATION ---
         checklist_rows = []
@@ -401,8 +467,34 @@ class SkepticAgent:
         if not half_growth_pass:
             failures.append(f"Growth Dependency: Halving assumed growth rate drops baseline fair value by {half_growth_impact_pct:+.2f}% [{l_half_impact}] to {curr_sym}{half_growth_val:.2f} [{l_half_growth}].")
 
-        # Check 5: Receivables Working Capital Divergence (Only flag if rec grows faster than rev by >5.0 pp)
-        if receivables_growth_yoy is not None and revenue_growth_yoy is not None:
+        # Check 5: Receivables Working Capital Divergence
+        if working_capital_details and "rec_curr" in working_capital_details and "rec_prev" in working_capital_details and "rev_curr" in working_capital_details and "rev_prev" in working_capital_details:
+            wcd = working_capital_details
+            l_wc_rev_curr = self.ledger.record(tool="filing.income_statement", ticker=ticker, currency=currency, inputs={"rev_curr": wcd["rev_curr"]}, output=wcd["rev_curr"], raw_value=wcd["rev_curr"], source="Audited Income Statement", notes="FY2025 Revenue")
+            l_wc_rev_prev = self.ledger.record(tool="filing.income_statement", ticker=ticker, currency=currency, inputs={"rev_prev": wcd["rev_prev"]}, output=wcd["rev_prev"], raw_value=wcd["rev_prev"], source="Audited Income Statement", notes="FY2024 Revenue")
+            rev_growth_yoy = ((wcd["rev_curr"] - wcd["rev_prev"]) / wcd["rev_prev"])
+            l_wc_rev_yoy = self.ledger.record(tool="tools.calc.yoy_growth", ticker=ticker, inputs={"current": wcd["rev_curr"], "prior": wcd["rev_prev"]}, output=rev_growth_yoy * 100.0, raw_value=rev_growth_yoy * 100.0, source="tools.calc.metrics.yoy_growth", notes="Revenue YoY Growth (%)")
+            
+            l_wc_rec_curr = self.ledger.record(tool="filing.balance_sheet", ticker=ticker, currency=currency, inputs={"rec_curr": wcd["rec_curr"]}, output=wcd["rec_curr"], raw_value=wcd["rec_curr"], source="Audited Balance Sheet", notes="FY2025 Trade Receivables")
+            l_wc_rec_prev = self.ledger.record(tool="filing.balance_sheet", ticker=ticker, currency=currency, inputs={"rec_prev": wcd["rec_prev"]}, output=wcd["rec_prev"], raw_value=wcd["rec_prev"], source="Audited Balance Sheet", notes="FY2024 Trade Receivables")
+            rec_yoy = ((wcd["rec_curr"] - wcd["rec_prev"]) / wcd["rec_prev"])
+            l_wc_rec_yoy = self.ledger.record(tool="tools.calc.yoy_growth", ticker=ticker, inputs={"current": wcd["rec_curr"], "prior": wcd["rec_prev"]}, output=rec_yoy * 100.0, raw_value=rec_yoy * 100.0, source="tools.calc.metrics.yoy_growth", notes="Receivables YoY Growth (%)")
+
+            rec_div = (rec_yoy - rev_growth_yoy) * 100.0
+            l_rec = self.ledger.record(
+                tool="tools.calc.working_capital",
+                ticker=ticker,
+                inputs={"rec_yoy": rec_yoy * 100.0, "rev_yoy": rev_growth_yoy * 100.0},
+                output=rec_div,
+                raw_value=rec_div,
+                source="tools.calc.working_capital",
+                notes="Receivables vs Revenue YoY divergence (pp)"
+            )
+            rec_pass = rec_div <= 5.0
+            checklist_rows.append(("Receivables Divergence", f"Divergence {rec_div:+.2f}% [{l_rec}]", f"[{l_rec}]", "PASS" if rec_pass else "FAIL"))
+            if not rec_pass:
+                failures.append(f"Working Capital Divergence: Receivables growth ({rec_yoy*100:+.2f}% [{l_wc_rec_yoy}]) diverged from revenue ({rev_growth_yoy*100:+.2f}% [{l_wc_rev_yoy}]) by {rec_div:+.2f}% [{l_rec}].")
+        elif receivables_growth_yoy is not None and revenue_growth_yoy is not None:
             rec_div = (receivables_growth_yoy - revenue_growth_yoy) * 100.0
             l_rec = self.ledger.record(
                 tool="tools.calc.working_capital",
@@ -421,8 +513,30 @@ class SkepticAgent:
             checklist_rows.append(("Receivables Divergence", "N/A", "N/A", "NOT CHECKED (data unavailable)"))
             unperformed_count += 1
 
-        # Check 6: Inventory Divergence (Only flag if inv grows faster than rev by >5.0 pp)
-        if inventory_growth_yoy is not None and revenue_growth_yoy is not None:
+        # Check 6: Inventory Divergence
+        if working_capital_details and "inv_curr" in working_capital_details and "inv_prev" in working_capital_details and working_capital_details["inv_curr"] is not None:
+            wcd = working_capital_details
+            l_wc_inv_curr = self.ledger.record(tool="filing.balance_sheet", ticker=ticker, currency=currency, inputs={"inv_curr": wcd["inv_curr"]}, output=wcd["inv_curr"], raw_value=wcd["inv_curr"], source="Audited Balance Sheet", notes="FY2025 Inventories")
+            l_wc_inv_prev = self.ledger.record(tool="filing.balance_sheet", ticker=ticker, currency=currency, inputs={"inv_prev": wcd["inv_prev"]}, output=wcd["inv_prev"], raw_value=wcd["inv_prev"], source="Audited Balance Sheet", notes="FY2024 Inventories")
+            inv_yoy = ((wcd["inv_curr"] - wcd["inv_prev"]) / wcd["inv_prev"])
+            l_wc_inv_yoy = self.ledger.record(tool="tools.calc.yoy_growth", ticker=ticker, inputs={"current": wcd["inv_curr"], "prior": wcd["inv_prev"]}, output=inv_yoy * 100.0, raw_value=inv_yoy * 100.0, source="tools.calc.metrics.yoy_growth", notes="Inventory YoY Growth (%)")
+
+            rev_growth_base = rev_growth_yoy or 0.0
+            inv_div = (inv_yoy - rev_growth_base) * 100.0
+            l_inv = self.ledger.record(
+                tool="tools.calc.working_capital",
+                ticker=ticker,
+                inputs={"inv_yoy": inv_yoy * 100.0, "rev_yoy": rev_growth_base * 100.0},
+                output=inv_div,
+                raw_value=inv_div,
+                source="tools.calc.working_capital",
+                notes="Inventory vs Revenue YoY divergence (pp)"
+            )
+            inv_pass = inv_div <= 5.0
+            checklist_rows.append(("Inventory Divergence", f"Divergence {inv_div:+.2f}% [{l_inv}]", f"[{l_inv}]", "PASS" if inv_pass else "FAIL"))
+            if not inv_pass:
+                failures.append(f"Inventory Divergence: Inventory growth ({inv_yoy*100:+.2f}% [{l_wc_inv_yoy}]) diverged from revenue by {inv_div:+.2f}% [{l_inv}].")
+        elif inventory_growth_yoy is not None and revenue_growth_yoy is not None:
             inv_div = (inventory_growth_yoy - revenue_growth_yoy) * 100.0
             l_inv = self.ledger.record(
                 tool="tools.calc.working_capital",
@@ -442,12 +556,12 @@ class SkepticAgent:
             unperformed_count += 1
 
         # Check 7: Refinancing / Liquidity Risk
-        if short_term_debt is not None and cash_and_equivalents is not None:
-            st_ratio = (short_term_debt / cash_and_equivalents) * 100.0 if cash_and_equivalents > 0 else 0.0
+        if short_term_debt is not None and liquid_cash > 0:
+            st_ratio = (short_term_debt / liquid_cash) * 100.0
             l_debt = self.ledger.record(
                 tool="tools.calc.liquidity",
                 ticker=ticker,
-                inputs={"st_debt": short_term_debt, "cash": cash_and_equivalents},
+                inputs={"st_debt": short_term_debt, "cash": liquid_cash},
                 output=st_ratio,
                 raw_value=st_ratio,
                 source="Annual Balance Sheet",
@@ -505,20 +619,32 @@ class SkepticAgent:
 
 ---
 
-### 1. DCF Model Assumptions & Parameters
+### 1. DCF Model Assumptions & Balance Sheet Net Debt Table
 
-| Parameter | Value | Ledger Citation | Primary Source |
-| :--- | :--- | :--- | :--- |
-| Base Free Cash Flow | {curr_sym}{base_fcf:,.0f} | [{l_base_fcf}] | Audited Statement of Cash Flows |
-| Assumed 5Y FCF Growth Rate | {stated_growth_rate*100.0:.2f}% | [{l_growth_assump}] | Analyst Thesis Model |
-| Discount Rate (WACC) | {wacc*100.0:.2f}% | [{l_wacc_assump}] | Cost of Capital Model |
-| Terminal Growth Rate | {terminal_g*100.0:.2f}% | [{l_term_g_assump}] | Long-term GDP Baseline |
-| Shares Outstanding | {shares_outstanding:,.0f} | [{l_shares}] | Market & Share Registry Data |
-| Net Debt | {curr_sym}{net_debt:,.0f} | [{l_net_debt}] | Audited Balance Sheet |
+| Parameter | Value | Type | Ledger Citation | Primary Source |
+| :--- | :--- | :--- | :--- | :--- |
+| Base Free Cash Flow | {curr_sym}{base_fcf:,.0f} | AUDITED DATA | [{l_base_fcf}] | Audited Statement of Cash Flows |
+| Assumed 5Y FCF Growth Rate | {stated_growth_rate*100.0:.2f}% | ASSUMPTION | [{l_growth_assump}] | Model Assumption (Unanchored Parameter) |
+| Discount Rate (WACC) | {wacc*100.0:.2f}% | ASSUMPTION | [{l_wacc_assump}] | Model Assumption (Unanchored Parameter) |
+| Terminal Growth Rate | {terminal_g*100.0:.2f}% | ASSUMPTION | [{l_term_g_assump}] | Model Assumption (Unanchored Parameter) |
+| Shares Outstanding | {shares_outstanding:,.0f} | MARKET DATA | [{l_shares}] | Share Registry & Market Data |
+| Liquid Cash & Securities | {curr_sym}{liquid_cash:,.0f} | AUDITED DATA | [{l_cash}] | Audited Balance Sheet |
+| Total Debt | {curr_sym}{tot_debt:,.0f} | AUDITED DATA | [{l_total_debt}] | Audited Balance Sheet |
+| Balance Sheet Net Debt | {curr_sym}{net_debt:,.0f} | AUDITED DATA | [{l_net_debt}] | Audited Balance Sheet (Debt - Cash) |
 
 ---
 
-### 2. Stress Testing Top 3 Thesis Assumptions
+### 2. Valuation Sensitivity Grid (Growth Rate × Cost of Capital)
+
+| Growth Rate \\ WACC | {(wacc-0.01)*100.0:.1f}% WACC | {wacc*100.0:.1f}% WACC (Base) | {(wacc+0.01)*100.0:.1f}% WACC |
+| :--- | :--- | :--- | :--- |
+| **{(stated_growth_rate-0.02)*100.0:.1f}% Growth** [{l_g_low}] | {curr_sym}{grid_results[(round(grid_growths[0], 4), round(grid_waccs[0], 4))][0]:.2f} [{grid_results[(round(grid_growths[0], 4), round(grid_waccs[0], 4))][1]}] | {curr_sym}{grid_results[(round(grid_growths[0], 4), round(grid_waccs[1], 4))][0]:.2f} [{grid_results[(round(grid_growths[0], 4), round(grid_waccs[1], 4))][1]}] | {curr_sym}{grid_results[(round(grid_growths[0], 4), round(grid_waccs[2], 4))][0]:.2f} [{grid_results[(round(grid_growths[0], 4), round(grid_waccs[2], 4))][1]}] |
+| **{stated_growth_rate*100.0:.1f}% Growth (Base)** [{l_growth_assump}] | {curr_sym}{grid_results[(round(grid_growths[1], 4), round(grid_waccs[0], 4))][0]:.2f} [{grid_results[(round(grid_growths[1], 4), round(grid_waccs[0], 4))][1]}] | {curr_sym}{base_fair_val:.2f} [{l_base_val}] | {curr_sym}{grid_results[(round(grid_growths[1], 4), round(grid_waccs[2], 4))][0]:.2f} [{grid_results[(round(grid_growths[1], 4), round(grid_waccs[2], 4))][1]}] |
+| **{(stated_growth_rate+0.02)*100.0:.1f}% Growth** [{l_g_high}] | {curr_sym}{grid_results[(round(grid_growths[2], 4), round(grid_waccs[0], 4))][0]:.2f} [{grid_results[(round(grid_growths[2], 4), round(grid_waccs[0], 4))][1]}] | {curr_sym}{grid_results[(round(grid_growths[2], 4), round(grid_waccs[1], 4))][0]:.2f} [{grid_results[(round(grid_growths[2], 4), round(grid_waccs[1], 4))][1]}] | {curr_sym}{grid_results[(round(grid_growths[2], 4), round(grid_waccs[2], 4))][0]:.2f} [{grid_results[(round(grid_growths[2], 4), round(grid_waccs[2], 4))][1]}] |
+
+---
+
+### 3. Stress Testing Top 3 Thesis Assumptions
 
 - Current Market Price: {curr_sym}{current_price:.2f} {currency} [{l_price}]
 - Implied 5-Year FCF CAGR (Reverse DCF): **{implied_cagr:.2f}%** [{l_implied}]
@@ -532,7 +658,7 @@ class SkepticAgent:
 
 ---
 
-### 3. Adversarial Stress Test Checklist
+### 4. Adversarial Stress Test Checklist
 
 | Check Name | Metric Value | Ledger Citation | Status |
 | :--- | :--- | :--- | :--- |
@@ -543,7 +669,7 @@ class SkepticAgent:
         skeptic_report += f"""
 ---
 
-### 4. Adversarial Findings & Conclusion
+### 5. Adversarial Findings & Conclusion
 
 - {verdict_detail}
 """
@@ -561,5 +687,11 @@ class SkepticAgent:
             "verdict": verdict_text,
             "unperformed_count": unperformed_count,
             "markdown_report": skeptic_report,
-            "ledger": self.ledger
+            "ledger": self.ledger,
+            "baseline_fair_val": base_fair_val,
+            "margin_stressed_val": margin_stressed_val,
+            "wacc_stressed_val": wacc_stressed_val,
+            "half_growth_val": half_growth_val,
+            "implied_cagr": implied_cagr,
+            "grid_results": grid_results
         }

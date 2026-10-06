@@ -106,3 +106,54 @@ def test_skeptic_solid_thesis(tmp_path):
     assert audit_res["summary"]["status"] == "PASS"
     assert audit_res["summary"]["total_wrong"] == 0
     assert audit_res["summary"]["total_unverifiable"] == 0
+
+def test_skeptic_wacc_dependency():
+    """Verify that every dependent output changes dynamically when WACC input changes (no cached/hard-coded values)."""
+    ledger1 = ProvenanceLedger(run_id="skeptic_wacc_test_1")
+    skeptic1 = SkepticAgent(ledger=ledger1)
+    res_wacc_1 = skeptic1.evaluate_thesis(
+        ticker="AAPL",
+        current_price=250.0,
+        shares_outstanding=15000000000.0,
+        base_fcf=100000000000.0,
+        base_operating_margin=0.30,
+        stated_growth_rate=0.08,
+        wacc=0.085,
+        net_debt=-30000000000.0,
+        terminal_g=0.025
+    )
+
+    ledger2 = ProvenanceLedger(run_id="skeptic_wacc_test_2")
+    skeptic2 = SkepticAgent(ledger=ledger2)
+    res_wacc_2 = skeptic2.evaluate_thesis(
+        ticker="AAPL",
+        current_price=250.0,
+        shares_outstanding=15000000000.0,
+        base_fcf=100000000000.0,
+        base_operating_margin=0.30,
+        stated_growth_rate=0.08,
+        wacc=0.095,
+        net_debt=-30000000000.0,
+        terminal_g=0.025
+    )
+
+    # 1. Baseline fair value must change (higher discount rate lowers fair value)
+    assert res_wacc_1["baseline_fair_val"] != res_wacc_2["baseline_fair_val"]
+    assert res_wacc_1["baseline_fair_val"] > res_wacc_2["baseline_fair_val"]
+
+    # 2. Margin-stressed fair value must change
+    assert res_wacc_1["margin_stressed_val"] != res_wacc_2["margin_stressed_val"]
+    assert res_wacc_1["margin_stressed_val"] > res_wacc_2["margin_stressed_val"]
+
+    # 3. WACC-stressed fair value must change
+    assert res_wacc_1["wacc_stressed_val"] != res_wacc_2["wacc_stressed_val"]
+    assert res_wacc_1["wacc_stressed_val"] > res_wacc_2["wacc_stressed_val"]
+
+    # 4. Half-growth fair value must change
+    assert res_wacc_1["half_growth_val"] != res_wacc_2["half_growth_val"]
+    assert res_wacc_1["half_growth_val"] > res_wacc_2["half_growth_val"]
+
+    # 5. Implied CAGR must change (higher hurdle rate requires higher growth to justify current market price)
+    assert res_wacc_1["implied_cagr"] != res_wacc_2["implied_cagr"]
+    assert res_wacc_1["implied_cagr"] < res_wacc_2["implied_cagr"]
+

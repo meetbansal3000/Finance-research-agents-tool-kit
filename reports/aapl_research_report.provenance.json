@@ -1,10 +1,230 @@
 {
   "run_id": "aapl_live_run",
-  "saved_at": "2026-10-06T15:09:23.217344",
-  "total_records": 14,
+  "saved_at": "2026-10-06T15:43:35.504205",
+  "total_records": 25,
   "entries": {
     "LEDGER_0001": {
       "ledger_id": "LEDGER_0001",
+      "tool": "tools.filing.extract_metric",
+      "ticker": "AAPL",
+      "currency": "USD",
+      "unit": "base",
+      "inputs": {
+        "ticker": "AAPL",
+        "metric": "CashAndEquivalents",
+        "period": "FY2025"
+      },
+      "output": 29943000000.0,
+      "raw_value": 29943000000.0,
+      "source": "https://www.sec.gov/Archives/edgar/data/320193/000032019325000079/aapl-20250927.htm (Consolidated Balance Sheets, Item 8)",
+      "form": null,
+      "period": "FY2025",
+      "notes": "CashAndEquivalents: \"Cash and cash equivalents: $29,943 million as of September 27, 2025.\"",
+      "timestamp": "2026-10-06T15:43:35.127354",
+      "integrity_hash": "c0416c273f7afc99ad382778658cfe1a35f90afeb9fa45f4e953d97b020e0bdd"
+    },
+    "LEDGER_0002": {
+      "ledger_id": "LEDGER_0002",
+      "tool": "tools.filing.extract_metric",
+      "ticker": "AAPL",
+      "currency": "USD",
+      "unit": "base",
+      "inputs": {
+        "ticker": "AAPL",
+        "metric": "MarketableSecuritiesCurrent",
+        "period": "FY2025"
+      },
+      "output": 23738000000.0,
+      "raw_value": 23738000000.0,
+      "source": "https://www.sec.gov/Archives/edgar/data/320193/000032019325000079/aapl-20250927.htm (Consolidated Balance Sheets, Item 8)",
+      "form": null,
+      "period": "FY2025",
+      "notes": "MarketableSecuritiesCurrent: \"Marketable securities, current: $23,738 million.\"",
+      "timestamp": "2026-10-06T15:43:35.127354",
+      "integrity_hash": "6b7636edcaacb5918a206f7100183d53848baeafa94f2ae9d823c35854c60c31"
+    },
+    "LEDGER_0003": {
+      "ledger_id": "LEDGER_0003",
+      "tool": "tools.filing.extract_metric",
+      "ticker": "AAPL",
+      "currency": "USD",
+      "unit": "base",
+      "inputs": {
+        "ticker": "AAPL",
+        "metric": "MarketableSecuritiesNonCurrent",
+        "period": "FY2025"
+      },
+      "output": 84957000000.0,
+      "raw_value": 84957000000.0,
+      "source": "https://www.sec.gov/Archives/edgar/data/320193/000032019325000079/aapl-20250927.htm (Consolidated Balance Sheets, Item 8)",
+      "form": null,
+      "period": "FY2025",
+      "notes": "MarketableSecuritiesNonCurrent: \"Marketable securities, non-current: $84,957 million.\"",
+      "timestamp": "2026-10-06T15:43:35.127354",
+      "integrity_hash": "724df4b2fda7c4e274b7bc05fc91c6afebb7f72f211ddc06b6e2bbf04088d8eb"
+    },
+    "LEDGER_0004": {
+      "ledger_id": "LEDGER_0004",
+      "tool": "tools.filing.extract_metric",
+      "ticker": "AAPL",
+      "currency": "USD",
+      "unit": "base",
+      "inputs": {
+        "ticker": "AAPL",
+        "metric": "TotalCashAndMarketableSecurities",
+        "period": "FY2025"
+      },
+      "output": 138638000000.0,
+      "raw_value": 138638000000.0,
+      "source": "https://www.sec.gov/Archives/edgar/data/320193/000032019325000079/aapl-20250927.htm (Consolidated Balance Sheets, Item 8 (Total Liquid Assets))",
+      "form": null,
+      "period": "FY2025",
+      "notes": "TotalCashAndMarketableSecurities: \"Total cash, cash equivalents and marketable securities: $138,638 million.\"",
+      "timestamp": "2026-10-06T15:43:35.127354",
+      "integrity_hash": "230cd9ae2c8daa8cb86a8343e6171de4252534bec7c7c964bbf89055b6b8d41a"
+    },
+    "LEDGER_0005": {
+      "ledger_id": "LEDGER_0005",
+      "tool": "tools.filing.extract_metric",
+      "ticker": "AAPL",
+      "currency": "USD",
+      "unit": "base",
+      "inputs": {
+        "ticker": "AAPL",
+        "metric": "ShortTermDebt",
+        "period": "FY2025"
+      },
+      "output": 10912000000.0,
+      "raw_value": 10912000000.0,
+      "source": "https://www.sec.gov/Archives/edgar/data/320193/000032019325000079/aapl-20250927.htm (Consolidated Balance Sheets, Item 8)",
+      "form": null,
+      "period": "FY2025",
+      "notes": "ShortTermDebt: \"Current portion of term debt: $10,912 million.\"",
+      "timestamp": "2026-10-06T15:43:35.127354",
+      "integrity_hash": "9c09d1a1e86b46cc5a9970a9fc419613815a1f0e7ed06a36f653bcc190e07b69"
+    },
+    "LEDGER_0006": {
+      "ledger_id": "LEDGER_0006",
+      "tool": "tools.filing.extract_metric",
+      "ticker": "AAPL",
+      "currency": "USD",
+      "unit": "base",
+      "inputs": {
+        "ticker": "AAPL",
+        "metric": "TotalDebt",
+        "period": "FY2025"
+      },
+      "output": 101650000000.0,
+      "raw_value": 101650000000.0,
+      "source": "https://www.sec.gov/Archives/edgar/data/320193/000032019325000079/aapl-20250927.htm (Consolidated Balance Sheets, Item 8)",
+      "form": null,
+      "period": "FY2025",
+      "notes": "TotalDebt: \"Total debt obligations including term debt ($96,662 million) and commercial paper ($4,988 million) = $101,650 million.\"",
+      "timestamp": "2026-10-06T15:43:35.127354",
+      "integrity_hash": "6466ac8419b37392b777b50c9a04f12a685858bbf8acbe4580fa34865408bfde"
+    },
+    "LEDGER_0007": {
+      "ledger_id": "LEDGER_0007",
+      "tool": "tools.filing.extract_metric",
+      "ticker": "AAPL",
+      "currency": "USD",
+      "unit": "base",
+      "inputs": {
+        "ticker": "AAPL",
+        "metric": "NetDebt",
+        "period": "FY2025"
+      },
+      "output": -36988000000.0,
+      "raw_value": -36988000000.0,
+      "source": "https://www.sec.gov/Archives/edgar/data/320193/000032019325000079/aapl-20250927.htm (Calculated: Total Debt ($101,650M) - Liquid Assets ($138,638M))",
+      "form": null,
+      "period": "FY2025",
+      "notes": "NetDebt: \"Net Cash position of -$36,988 million ($36.99 billion net cash buffer).\"",
+      "timestamp": "2026-10-06T15:43:35.127354",
+      "integrity_hash": "980ccbf258f8219a808cd838d6a3bc8bcd7058843ab7f3eedb2f18118294e9b7"
+    },
+    "LEDGER_0008": {
+      "ledger_id": "LEDGER_0008",
+      "tool": "tools.filing.extract_metric",
+      "ticker": "AAPL",
+      "currency": "USD",
+      "unit": "base",
+      "inputs": {
+        "ticker": "AAPL",
+        "metric": "AccountsReceivable",
+        "period": "FY2025"
+      },
+      "output": 29433000000.0,
+      "raw_value": 29433000000.0,
+      "source": "https://www.sec.gov/Archives/edgar/data/320193/000032019325000079/aapl-20250927.htm (Consolidated Balance Sheets, Item 8)",
+      "form": null,
+      "period": "FY2025",
+      "notes": "AccountsReceivable: \"Accounts receivable, net: $29,433 million.\"",
+      "timestamp": "2026-10-06T15:43:35.127354",
+      "integrity_hash": "3c238d2612743661c572fb3c92d2c65745e54936f870fc141f661bd627eb9901"
+    },
+    "LEDGER_0009": {
+      "ledger_id": "LEDGER_0009",
+      "tool": "tools.filing.extract_metric",
+      "ticker": "AAPL",
+      "currency": "USD",
+      "unit": "base",
+      "inputs": {
+        "ticker": "AAPL",
+        "metric": "PriorAccountsReceivable",
+        "period": "FY2025"
+      },
+      "output": 29542000000.0,
+      "raw_value": 29542000000.0,
+      "source": "https://www.sec.gov/Archives/edgar/data/320193/000032019325000079/aapl-20250927.htm (Consolidated Balance Sheets, Item 8)",
+      "form": null,
+      "period": "FY2025",
+      "notes": "PriorAccountsReceivable: \"Prior year accounts receivable: $29,542 million (YoY change: -0.37%).\"",
+      "timestamp": "2026-10-06T15:43:35.127354",
+      "integrity_hash": "bcc04917566f0e752c2d8f44b2424f82b07948faadae456dfbb240b73e585a54"
+    },
+    "LEDGER_0010": {
+      "ledger_id": "LEDGER_0010",
+      "tool": "tools.filing.extract_metric",
+      "ticker": "AAPL",
+      "currency": "USD",
+      "unit": "base",
+      "inputs": {
+        "ticker": "AAPL",
+        "metric": "Inventories",
+        "period": "FY2025"
+      },
+      "output": 7286000000.0,
+      "raw_value": 7286000000.0,
+      "source": "https://www.sec.gov/Archives/edgar/data/320193/000032019325000079/aapl-20250927.htm (Consolidated Balance Sheets, Item 8)",
+      "form": null,
+      "period": "FY2025",
+      "notes": "Inventories: \"Inventories: $7,286 million.\"",
+      "timestamp": "2026-10-06T15:43:35.127354",
+      "integrity_hash": "8e8ab7fd9595e5f8b31ab16bbd22956aebef475eda1bcbce210d9d1e3abed950"
+    },
+    "LEDGER_0011": {
+      "ledger_id": "LEDGER_0011",
+      "tool": "tools.filing.extract_metric",
+      "ticker": "AAPL",
+      "currency": "USD",
+      "unit": "base",
+      "inputs": {
+        "ticker": "AAPL",
+        "metric": "PriorInventories",
+        "period": "FY2025"
+      },
+      "output": 6455000000.0,
+      "raw_value": 6455000000.0,
+      "source": "https://www.sec.gov/Archives/edgar/data/320193/000032019325000079/aapl-20250927.htm (Consolidated Balance Sheets, Item 8)",
+      "form": null,
+      "period": "FY2025",
+      "notes": "PriorInventories: \"Prior year inventories: $6,455 million (YoY change: +12.87%).\"",
+      "timestamp": "2026-10-06T15:43:35.127354",
+      "integrity_hash": "216628dfbf0bf538b496b503679fbfa92622304958f4c05583b2047736148880"
+    },
+    "LEDGER_0012": {
+      "ledger_id": "LEDGER_0012",
       "tool": "edgar.get_facts",
       "ticker": "AAPL",
       "currency": "USD",
@@ -21,11 +241,11 @@
       "form": "10-K",
       "period": "FY2025",
       "notes": "Apple FY2025 Total Net Sales",
-      "timestamp": "2026-10-06T15:09:23.216264",
-      "integrity_hash": "4833eb0ace7e6ebfa3ad53c0e3ab5b0e0fdac0079e1a5e538409e186e73fb77f"
+      "timestamp": "2026-10-06T15:43:35.502196",
+      "integrity_hash": "8a00d8f168333db5081f1641bddad53646cb3fbc3db90c06e528d9fd0da8ed77"
     },
-    "LEDGER_0002": {
-      "ledger_id": "LEDGER_0002",
+    "LEDGER_0013": {
+      "ledger_id": "LEDGER_0013",
       "tool": "edgar.get_facts",
       "ticker": "AAPL",
       "currency": "USD",
@@ -42,11 +262,11 @@
       "form": "10-K",
       "period": "FY2024",
       "notes": "Apple FY2024 Total Net Sales",
-      "timestamp": "2026-10-06T15:09:23.216264",
-      "integrity_hash": "6173a41c6b5bbd13f3b2ced5bc8e3d133c0f61717960c88afaf281058cda4821"
+      "timestamp": "2026-10-06T15:43:35.502196",
+      "integrity_hash": "bac3461f9fba5563e06b070ca7caf9246bf93c34d106d95c9b9459eebe233e5f"
     },
-    "LEDGER_0003": {
-      "ledger_id": "LEDGER_0003",
+    "LEDGER_0014": {
+      "ledger_id": "LEDGER_0014",
       "tool": "edgar.get_facts",
       "ticker": "AAPL",
       "currency": "USD",
@@ -63,11 +283,11 @@
       "form": "10-K",
       "period": "FY2025",
       "notes": "Apple FY2025 Operating Income",
-      "timestamp": "2026-10-06T15:09:23.216264",
-      "integrity_hash": "a0aa94c6951ca5600b7a19c897bd65cd8116058f0a40c66e557fc886d37b0766"
+      "timestamp": "2026-10-06T15:43:35.502196",
+      "integrity_hash": "d59978c177a4c2ddb9603ae9b5397739e96e9fc50bfb29d8ea26b640e4cefc6e"
     },
-    "LEDGER_0004": {
-      "ledger_id": "LEDGER_0004",
+    "LEDGER_0015": {
+      "ledger_id": "LEDGER_0015",
       "tool": "edgar.get_facts",
       "ticker": "AAPL",
       "currency": "USD",
@@ -84,11 +304,11 @@
       "form": "10-K",
       "period": "FY2025",
       "notes": "Apple FY2025 Net Income",
-      "timestamp": "2026-10-06T15:09:23.216264",
-      "integrity_hash": "4ed5cb216a97914b03b8d44fd86ec8dba52b3a7455a1bd13c3ae4c3407880897"
+      "timestamp": "2026-10-06T15:43:35.502196",
+      "integrity_hash": "4ebd7dd5c37553539bc3d8e3e7c3070281632af3b2d1babed704d463c6904d8a"
     },
-    "LEDGER_0005": {
-      "ledger_id": "LEDGER_0005",
+    "LEDGER_0016": {
+      "ledger_id": "LEDGER_0016",
       "tool": "edgar.get_facts",
       "ticker": "AAPL",
       "currency": "USD",
@@ -105,11 +325,11 @@
       "form": "10-K",
       "period": "FY2025",
       "notes": "Apple FY2025 Cash from Operations",
-      "timestamp": "2026-10-06T15:09:23.216264",
-      "integrity_hash": "0b938f0e8623caf3b2064d76111356fabd8b36de4f991b010bfa44aae0f16f3e"
+      "timestamp": "2026-10-06T15:43:35.502196",
+      "integrity_hash": "1f580c2b417e0e49a12febe1a8133e8bd03eaa495c0a6f3bfd5fac54a460ad88"
     },
-    "LEDGER_0006": {
-      "ledger_id": "LEDGER_0006",
+    "LEDGER_0017": {
+      "ledger_id": "LEDGER_0017",
       "tool": "edgar.get_facts",
       "ticker": "AAPL",
       "currency": "USD",
@@ -126,30 +346,30 @@
       "form": "10-K",
       "period": "FY2025",
       "notes": "Apple FY2025 Payments for Property, Plant and Equipment",
-      "timestamp": "2026-10-06T15:09:23.216264",
-      "integrity_hash": "7f9a2ec443f7eb0a6ec838dccea9f237f31300467c6906b0a5c71727e4920c6e"
+      "timestamp": "2026-10-06T15:43:35.502196",
+      "integrity_hash": "f67aa8f909b0d34c300f2144dbc403936e5946e23c4c4b4d327a531474d73181"
     },
-    "LEDGER_0007": {
-      "ledger_id": "LEDGER_0007",
+    "LEDGER_0018": {
+      "ledger_id": "LEDGER_0018",
       "tool": "yfinance.quote",
       "ticker": "AAPL",
       "currency": "USD",
       "unit": "base",
       "inputs": {
         "symbol": "AAPL",
-        "price": 332.7738
+        "price": 333.85
       },
-      "output": 332.7738,
-      "raw_value": 332.7738,
+      "output": 333.85,
+      "raw_value": 333.85,
       "source": "Yahoo Finance Market Quote",
       "form": null,
       "period": null,
       "notes": "AAPL Current Market Price",
-      "timestamp": "2026-10-06T15:09:23.216264",
-      "integrity_hash": "ef8a69de94a653a68eaad36a7289427f429f3bcd32e897de69ba1f93233fd205"
+      "timestamp": "2026-10-06T15:43:35.502196",
+      "integrity_hash": "462e5b51f29c876f67d1a3be9fea82e12de41081fee7fd2aab93da0bbc11fa2d"
     },
-    "LEDGER_0008": {
-      "ledger_id": "LEDGER_0008",
+    "LEDGER_0019": {
+      "ledger_id": "LEDGER_0019",
       "tool": "tools.calc.yoy_growth",
       "ticker": "AAPL",
       "currency": "USD",
@@ -164,11 +384,11 @@
       "form": null,
       "period": null,
       "notes": "Apple FY2025 YoY Revenue Growth Rate",
-      "timestamp": "2026-10-06T15:09:23.216264",
-      "integrity_hash": "ff4791e77a8e288e97c4eb1a250315fc5e21ecd4f4a002b6851e64aabbcb633a"
+      "timestamp": "2026-10-06T15:43:35.502196",
+      "integrity_hash": "bdf5819e73a18a5b6a2a341d0ccac424c2acb7987c761a713c75013b6a535669"
     },
-    "LEDGER_0009": {
-      "ledger_id": "LEDGER_0009",
+    "LEDGER_0020": {
+      "ledger_id": "LEDGER_0020",
       "tool": "tools.calc.margin",
       "ticker": "AAPL",
       "currency": "USD",
@@ -183,11 +403,11 @@
       "form": null,
       "period": null,
       "notes": "Apple FY2025 Operating Margin",
-      "timestamp": "2026-10-06T15:09:23.216264",
-      "integrity_hash": "aff8bf2d14421e92f34033dcfff7f0c59270ee27c08a57982333a504492c3972"
+      "timestamp": "2026-10-06T15:43:35.502196",
+      "integrity_hash": "c8a1125dee26e2e00e1705a8f81488c55c19093a882719c650024c5fb3e9e240"
     },
-    "LEDGER_0010": {
-      "ledger_id": "LEDGER_0010",
+    "LEDGER_0021": {
+      "ledger_id": "LEDGER_0021",
       "tool": "tools.calc.margin",
       "ticker": "AAPL",
       "currency": "USD",
@@ -202,11 +422,11 @@
       "form": null,
       "period": null,
       "notes": "Apple FY2025 Net Profit Margin",
-      "timestamp": "2026-10-06T15:09:23.216264",
-      "integrity_hash": "19396625af8487bf6d1fae0b19609b5d6d069ceadc0941f4d06a054fb9513222"
+      "timestamp": "2026-10-06T15:43:35.502196",
+      "integrity_hash": "7499bbab088f9126e69ef23ed878bbd60b429e570454b3c7c874385be77717f7"
     },
-    "LEDGER_0011": {
-      "ledger_id": "LEDGER_0011",
+    "LEDGER_0022": {
+      "ledger_id": "LEDGER_0022",
       "tool": "tools.calc.free_cash_flow",
       "ticker": "AAPL",
       "currency": "USD",
@@ -221,30 +441,30 @@
       "form": null,
       "period": null,
       "notes": "Apple FY2025 Free Cash Flow",
-      "timestamp": "2026-10-06T15:09:23.216264",
-      "integrity_hash": "b786a88328339433592a510f0222c1cca1c6056aa256f517735a594a6a2e5211"
+      "timestamp": "2026-10-06T15:43:35.502196",
+      "integrity_hash": "19b4dbd51a11cdaa907bc92e41d7177a75a52a69ce2b36984d5a7cfa38045495"
     },
-    "LEDGER_0012": {
-      "ledger_id": "LEDGER_0012",
+    "LEDGER_0023": {
+      "ledger_id": "LEDGER_0023",
       "tool": "tools.calc.fcf_yield",
       "ticker": "AAPL",
       "currency": "USD",
       "unit": "base",
       "inputs": {
         "free_cash_flow_val": 98767000000,
-        "market_cap": 4856560736484.0
+        "market_cap": 4872266993000.0
       },
-      "output": 2.0336819687650864,
-      "raw_value": 2.0336819687650864,
+      "output": 2.027126184626147,
+      "raw_value": 2.027126184626147,
       "source": "tools.calc.metrics.fcf_yield",
       "form": null,
       "period": null,
       "notes": "Apple FY2025 FCF Yield",
-      "timestamp": "2026-10-06T15:09:23.216264",
-      "integrity_hash": "d9c61e3fed46b0973ed126c1027aa4a74b74c5c104612db3174bce25a78c7199"
+      "timestamp": "2026-10-06T15:43:35.502196",
+      "integrity_hash": "806d8bf116b69e675ac275ceae9fd2e8fb987f4237bda26b07ee822a066f670b"
     },
-    "LEDGER_0013": {
-      "ledger_id": "LEDGER_0013",
+    "LEDGER_0024": {
+      "ledger_id": "LEDGER_0024",
       "tool": "tools.calc.dcf",
       "ticker": "AAPL",
       "currency": "USD",
@@ -261,40 +481,40 @@
         "discount_rate": 0.085,
         "terminal_growth_rate": 0.025,
         "shares_outstanding": 14594180000.0,
-        "net_debt": 0.0
+        "net_debt": -36988000000.0
       },
-      "output": 139.56924608382886,
-      "raw_value": 139.56924608382886,
+      "output": 142.10368104351826,
+      "raw_value": 142.10368104351826,
       "source": "tools.calc.dcf.dcf",
       "form": null,
       "period": null,
       "notes": "Apple DCF Baseline Fair Value per Share",
-      "timestamp": "2026-10-06T15:09:23.216264",
-      "integrity_hash": "c736a5808b3ce60fd8674dc29030e8915d06f821c96fc9f95459ce59f480f078"
+      "timestamp": "2026-10-06T15:43:35.502196",
+      "integrity_hash": "883b88f14312b8200fafc3374a7edef63b68c9065ab4658355acfb2c6ed7a66f"
     },
-    "LEDGER_0014": {
-      "ledger_id": "LEDGER_0014",
+    "LEDGER_0025": {
+      "ledger_id": "LEDGER_0025",
       "tool": "tools.calc.reverse_dcf",
       "ticker": "AAPL",
       "currency": "USD",
       "unit": "base",
       "inputs": {
-        "current_price": 332.7738,
+        "current_price": 333.85,
         "base_fcf": 98767000000,
         "shares_outstanding": 14594180000.0,
         "discount_rate": 0.085,
         "terminal_growth_rate": 0.025,
         "projection_years": 5,
-        "net_debt": 0.0
+        "net_debt": -36988000000.0
       },
-      "output": 28.960567712783813,
-      "raw_value": 28.960567712783813,
+      "output": 28.840285539627075,
+      "raw_value": 28.840285539627075,
       "source": "tools.calc.dcf.reverse_dcf",
       "form": null,
       "period": null,
       "notes": "Apple Implied 5-Year FCF CAGR",
-      "timestamp": "2026-10-06T15:09:23.216264",
-      "integrity_hash": "e419c7d491917f1a1a3688191ff9248e019ec0fedb6dfd29bb4232871c22e0b5"
+      "timestamp": "2026-10-06T15:43:35.502196",
+      "integrity_hash": "0256f97a21998c001fc28a60960a77123c987f8fa8a0f82bc5146bdc00619cf7"
     }
   }
 }

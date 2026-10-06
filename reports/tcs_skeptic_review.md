@@ -5,49 +5,61 @@
 
 ---
 
-### 1. DCF Model Assumptions & Parameters
+### 1. DCF Model Assumptions & Balance Sheet Net Debt Table
 
-| Parameter | Value | Ledger Citation | Primary Source |
-| :--- | :--- | :--- | :--- |
-| Base Free Cash Flow | ₹449,710,000,000 | [LEDGER_0002] | Audited Statement of Cash Flows |
-| Assumed 5Y FCF Growth Rate | 8.00% | [LEDGER_0003] | Analyst Thesis Model |
-| Discount Rate (WACC) | 11.00% | [LEDGER_0004] | Cost of Capital Model |
-| Terminal Growth Rate | 4.00% | [LEDGER_0005] | Long-term GDP Baseline |
-| Shares Outstanding | 3,618,087,518 | [LEDGER_0006] | Market & Share Registry Data |
-| Net Debt | ₹0 | [LEDGER_0007] | Audited Balance Sheet |
+| Parameter | Value | Type | Ledger Citation | Primary Source |
+| :--- | :--- | :--- | :--- | :--- |
+| Base Free Cash Flow | ₹449,710,000,000 | AUDITED DATA | [LEDGER_0003] | Audited Statement of Cash Flows |
+| Assumed 5Y FCF Growth Rate | 8.00% | ASSUMPTION | [LEDGER_0007] | Model Assumption (Unanchored Parameter) |
+| Discount Rate (WACC) | 11.00% | ASSUMPTION | [LEDGER_0008] | Model Assumption (Unanchored Parameter) |
+| Terminal Growth Rate | 4.00% | ASSUMPTION | [LEDGER_0009] | Model Assumption (Unanchored Parameter) |
+| Shares Outstanding | 3,618,087,518 | MARKET DATA | [LEDGER_0002] | Share Registry & Market Data |
+| Liquid Cash & Securities | ₹417,330,000,000 | AUDITED DATA | [LEDGER_0004] | Audited Balance Sheet |
+| Total Debt | ₹112,830,000,000 | AUDITED DATA | [LEDGER_0005] | Audited Balance Sheet |
+| Balance Sheet Net Debt | ₹-304,500,000,000 | AUDITED DATA | [LEDGER_0006] | Audited Balance Sheet (Debt - Cash) |
 
 ---
 
-### 2. Stress Testing Top 3 Thesis Assumptions
+### 2. Valuation Sensitivity Grid (Growth Rate × Cost of Capital)
+
+| Growth Rate \ WACC | 10.0% WACC | 11.0% WACC (Base) | 12.0% WACC |
+| :--- | :--- | :--- | :--- |
+| **6.0% Growth** [LEDGER_0018] | ₹2431.24 [LEDGER_0020] | ₹2093.10 [LEDGER_0021] | ₹1839.59 [LEDGER_0022] |
+| **8.0% Growth (Base)** [LEDGER_0007] | ₹2638.13 [LEDGER_0023] | ₹2267.27 [LEDGER_0011] | ₹1989.32 [LEDGER_0025] |
+| **10.0% Growth** [LEDGER_0019] | ₹2860.08 [LEDGER_0026] | ₹2454.01 [LEDGER_0027] | ₹2149.75 [LEDGER_0028] |
+
+---
+
+### 3. Stress Testing Top 3 Thesis Assumptions
 
 - Current Market Price: ₹2100.00 INR [LEDGER_0001]
-- Implied 5-Year FCF CAGR (Reverse DCF): **7.06%** [LEDGER_0008]
-- Baseline Fair Value (DCF): **₹2183.11** [LEDGER_0009]
-- Stressed Fair Value (-200 bps Margin): **₹2004.15** [LEDGER_0010]
-- Margin Stress Valuation Impact: **-8.20%** [LEDGER_0011]
-- Stressed Fair Value (+100 bps WACC): **₹1905.15** [LEDGER_0012]
-- WACC Stress Valuation Impact: **-12.73%** [LEDGER_0013]
-- Stressed Fair Value (Half-Growth): **₹1846.67** [LEDGER_0014]
-- Half-Growth Valuation Impact: **-15.41%** [LEDGER_0015]
+- Implied 5-Year FCF CAGR (Reverse DCF): **6.08%** [LEDGER_0010]
+- Baseline Fair Value (DCF): **₹2267.27** [LEDGER_0011]
+- Stressed Fair Value (-200 bps Margin): **₹2088.31** [LEDGER_0012]
+- Margin Stress Valuation Impact: **-7.89%** [LEDGER_0013]
+- Stressed Fair Value (+100 bps WACC): **₹1989.32** [LEDGER_0014]
+- WACC Stress Valuation Impact: **-12.26%** [LEDGER_0015]
+- Stressed Fair Value (Half-Growth): **₹1930.83** [LEDGER_0016]
+- Half-Growth Valuation Impact: **-14.84%** [LEDGER_0017]
 
 ---
 
-### 3. Adversarial Stress Test Checklist
+### 4. Adversarial Stress Test Checklist
 
 | Check Name | Metric Value | Ledger Citation | Status |
 | :--- | :--- | :--- | :--- |
-| Valuation Feasibility | Implied CAGR 7.06% [LEDGER_0008] vs Hist +7.57% [LEDGER_0019] | [LEDGER_0008], [LEDGER_0019] | **PASS** |
-| Margin Shock (-200 bps) | Impact -8.20% [LEDGER_0011] (₹2004.15 [LEDGER_0010]) | [LEDGER_0011], [LEDGER_0010] | **PASS** |
-| WACC Shock (+100 bps) | Impact -12.73% [LEDGER_0013] (₹1905.15 [LEDGER_0012]) | [LEDGER_0013], [LEDGER_0012] | **PASS** |
-| Half-Growth Stress | Stressed Fair Value ₹1846.67 [LEDGER_0014] (-15.41% [LEDGER_0015]) | [LEDGER_0014], [LEDGER_0015] | **PASS** |
-| Receivables Divergence | Divergence -1.49% [LEDGER_0020] | [LEDGER_0020] | **PASS** |
+| Valuation Feasibility | Implied CAGR 6.08% [LEDGER_0010] vs Hist +7.57% [LEDGER_0032] | [LEDGER_0010], [LEDGER_0032] | **PASS** |
+| Margin Shock (-200 bps) | Impact -7.89% [LEDGER_0013] (₹2088.31 [LEDGER_0012]) | [LEDGER_0013], [LEDGER_0012] | **PASS** |
+| WACC Shock (+100 bps) | Impact -12.26% [LEDGER_0015] (₹1989.32 [LEDGER_0014]) | [LEDGER_0015], [LEDGER_0014] | **PASS** |
+| Half-Growth Stress | Stressed Fair Value ₹1930.83 [LEDGER_0016] (-14.84% [LEDGER_0017]) | [LEDGER_0016], [LEDGER_0017] | **PASS** |
+| Receivables Divergence | Divergence -1.49% [LEDGER_0039] | [LEDGER_0039] | **PASS** |
 | Inventory Divergence | Service/Software Business or Data Unavailable | N/A | **NOT CHECKED (data unavailable)** |
-| Refinancing / Debt Risk | ST Debt / Cash = 3.72% [LEDGER_0021] | [LEDGER_0021] | **PASS** |
+| Refinancing / Debt Risk | ST Debt / Cash = 3.72% [LEDGER_0040] | [LEDGER_0040] | **PASS** |
 | Customer Concentration | Data Not Disclosed in Filings | N/A | **NOT CHECKED (data unavailable)** |
 
 ---
 
-### 4. Adversarial Findings & Conclusion
+### 5. Adversarial Findings & Conclusion
 
 - [ANALYSIS] VULNERABLE: All 6 quantitative checks passed, but qualitative empirical risks were identified.
 - Unverified context: [UNVERIFIED: model memory] Discretionary tech spending in North America has experienced selective contract delays.
