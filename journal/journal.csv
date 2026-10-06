@@ -1,0 +1,2 @@
+decision_id,date,ticker,action,entry_price,target_price,stop_loss,conviction,status,exit_date,exit_price,return_pct,thesis,risks
+DEC_0001,2026-10-06,GOOGL,BUY,347.68,420.00,275.00,HIGH,OPEN,,,,Dominant advertising monopoly with $78.3B net cash cushion and accelerating Google Cloud enterprise operating leverage.,Antitrust regulatory remedies and rising AI infrastructure capital expenditure drag on near-term FCF.

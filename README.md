@@ -248,3 +248,58 @@ Agents never perform mental or rough arithmetic. All metrics are computed using 
 ```powershell
 .\.venv\Scripts\pytest.exe tests/ -v
 ```
+
+---
+
+## 🚨 Regulatory Filing & Market Event Alerts Monitor (`/tools/alerts.py`)
+
+Upgrade 7 monitors covered securities in `watchlist.txt` for:
+- New SEC EDGAR filings (Forms 10-K, 10-Q, 8-K, Form 4) with accession tracking.
+- Market price shocks exceeding $\pm 3\%$ daily move.
+- Persists state in `/alerts/alerts_state.json` and emits markdown digests in `/alerts/alerts_YYYY-MM-DD.md`.
+
+```powershell
+.\.venv\Scripts\python.exe tools/alerts.py
+```
+
+---
+
+## 📅 Scheduled Weekly Watchlist Briefing (`/tools/briefing.py`)
+
+Upgrade 8 implements **Workflow 10** from `research_playbook_v2.md`:
+- Multi-timeframe performance (1W, 1M, YTD) in local currency across US, UK, and Indian listings.
+- Macroeconomic barometer (10Y US Treasury Yield, Brent Crude Oil, USD/INR FX).
+- Automated thesis contradiction checks against `watchlist.txt`.
+- Emits markdown dossiers in `/reports/briefing_YYYY-MM-DD.md`.
+
+```powershell
+.\.venv\Scripts\python.exe tools/briefing.py
+```
+
+---
+
+## 📓 Investment Decision Journal & Portfolio Review (`/tools/journal.py`)
+
+Upgrade 9 enforces institutional investment discipline:
+- Tracks entry prices, target prices, downside stop-losses, core thesis, and invalidation catalysts in `/journal/journal.csv`.
+- Generates individual decision post-mortems in `/journal/entries/`.
+- Renders comprehensive portfolio decision review summaries in `/journal/portfolio_review.md`.
+
+```powershell
+.\.venv\Scripts\python.exe tools/journal.py
+```
+
+---
+
+## 🧪 Quantitative Screening & Backtesting Sandbox (`/tools/backtest.py`)
+
+Upgrade 10 implements **Workflow 9** (Fundamental Screener) and historical portfolio simulation:
+- Multi-factor fundamental filter: Operating Margin $\ge 20\%$, Net Debt/Equity $\le 1.5$, FCF Yield $\ge 2.0\%$.
+- Equal-weighted portfolio backtesting vs benchmark (SPY).
+- Computes Sharpe ratio, Annualized Volatility, Maximum Drawdown, and Alpha.
+- Emits simulation reports in `/backtests/backtest_YYYY-MM-DD.md`.
+
+```powershell
+.\.venv\Scripts\python.exe tools/backtest.py
+```
+
