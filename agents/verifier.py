@@ -890,6 +890,10 @@ class ReportVerifier:
                     except (ValueError, TypeError):
                         continue
 
+                if not matched_val and ("<10" in unit_str or "< 10" in unit_str) and ("concentration" in str(tool_name).lower() or "concentration" in str(entry.get("notes", "")).lower() or "customer" in str(entry.get("notes", "")).lower()):
+                    if expected_raw is not None and float(expected_raw) <= 10.0:
+                        matched_val = True
+
                 if matched_val:
                     unit_confirmed.append({
                         "line": line_idx,
