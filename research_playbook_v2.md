@@ -13,6 +13,7 @@
 9. Save each output to `/reports/TICKER_task_YYYY-MM-DD.md`.
 10. Stay inside this project folder. Ask before installing anything new.
 11. Never do arithmetic yourself, always call the calculation toolkit in `/tools/calc/`.
+12. Check the local knowledge base (`/tools/knowledge.py`) before searching the web. Always search local primary filings, transcripts, and notes before making external calls.
 
 ---
 

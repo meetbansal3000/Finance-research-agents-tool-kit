@@ -13,3 +13,4 @@ All research tasks and agent behaviors MUST strictly follow the master rules in 
 9. **Standardized Reports**: Save research reports to `reports/TICKER_task_YYYY-MM-DD.md`.
 10. **Sandbox Confinement**: Work only inside this project folder. Ask before installing anything new.
 11. **Calculation Toolkit Enforcement**: Never perform mental or rough arithmetic. Always call the deterministic calculation toolkit in `/tools/calc/` (`yoy_growth`, `cagr`, `margin`, `roic`, `roe`, `free_cash_flow`, `fcf_yield`, `net_debt_to_ebitda`, `interest_coverage`, `cash_conversion`, `enterprise_value`, `ev_multiples`, `dcf`, `reverse_dcf`, `convert_currency`).
+12. **Knowledge Base Priority**: Check the local knowledge base (`/tools/knowledge.py`) before searching the web. Search existing local filings, transcripts, and notes before making external calls.

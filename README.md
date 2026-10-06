@@ -41,6 +41,7 @@ D:\AI-Workspace\finance agents for research\
 ├── tools\
 │   ├── ledger.py              # Immutable Provenance Ledger system with SHA-256 integrity
 │   ├── filing.py              # Audited filing extractor (SEC 10-K, NSE/BSE)
+│   ├── knowledge.py           # Upgrade 5: Chroma-powered local knowledge base engine
 │   └── calc\                  # Tested deterministic financial calculation toolkit
 │       ├── __init__.py
 │       ├── metrics.py         # YoY, CAGR, Margins, ROIC, ROE, FCF, Net Debt/EBITDA, EV
@@ -51,7 +52,8 @@ D:\AI-Workspace\finance agents for research\
     ├── test_verifier.py       # Unit test suite for Verifier agent & ledger
     ├── test_verifier_comprehensive.py # Re-fetch, SHA-256 tamper, rounding, and 8+ flawed sentences
     ├── test_skeptic.py        # Unit test suite for Skeptic agent stress testing
-    └── test_pipeline.py       # Integration tests for run_research.py & correction round
+    ├── test_pipeline.py       # Integration tests for run_research.py & correction round
+    └── test_knowledge.py      # Test suite for local knowledge base & evaluation queries
 ```
 
 ---
@@ -136,6 +138,37 @@ $$\text{Analyst Agent} \longrightarrow \text{Verifier Agent (Audit \& Live Re-Fe
    - **Top Section**: Verification results (Status, Confirmed figures, Wrong figures, Unverified flags, what could not be checked, headline reconciliations).
    - **Middle Section**: Analyst research report (Business overview, audited financial statements table with ledger citations, quality and valuation metrics).
    - **End Section**: Skeptic adversarial review (Thesis verdict, assumptions stress tests, sensitivity grid, bear case).
+
+---
+
+## 📚 Local Knowledge Base (`tools/knowledge.py`)
+
+Upgrade 5 provides a local, free, persistent vector knowledge base powered by **ChromaDB** (`library/chroma_db/`).
+It allows research agents to search primary corporate filings, earnings call transcripts, and analyst notes with full metadata preservation and citation tracing.
+
+### Ingestion Commands:
+```powershell
+# Ingest all files dropped into /library/filings/, /library/transcripts/, and /library/notes/:
+.\.venv\Scripts\python.exe tools/knowledge.py ingest-all
+
+# Ingest a specific 10-K or filing:
+.\.venv\Scripts\python.exe tools/knowledge.py ingest library/filings/AAPL_10K_FY2025.htm --type filing --ticker AAPL
+
+# Check knowledge base status:
+.\.venv\Scripts\python.exe tools/knowledge.py status
+```
+
+### Citation-Backed Search:
+```powershell
+# Search for specific queries with ticker filtering:
+.\.venv\Scripts\python.exe tools/knowledge.py search "net sales breakdown Products and Services" --ticker AAPL --top-k 3
+```
+
+All results return formatted citations:
+`[Citation: <ticker> | <document_type> | <filename> | <page_or_section> | Date: <date> | Source: <source_url>]`
+
+### Standing Rule 12 (Knowledge Base Priority):
+> **Rule 12**: Always check the local knowledge base (`/tools/knowledge.py`) before searching the web. Prefer ingested primary filings, transcripts, and verified notes.
 
 ---
 
