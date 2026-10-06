@@ -42,6 +42,7 @@ D:\AI-Workspace\finance agents for research\
 │   ├── ledger.py              # Immutable Provenance Ledger system with SHA-256 integrity
 │   ├── filing.py              # Audited filing extractor (SEC 10-K, NSE/BSE)
 │   ├── knowledge.py           # Upgrade 5: Chroma-powered local knowledge base engine
+│   ├── data_layer.py          # Upgrade 6: Multi-source fallback data layer & disk cache
 │   └── calc\                  # Tested deterministic financial calculation toolkit
 │       ├── __init__.py
 │       ├── metrics.py         # YoY, CAGR, Margins, ROIC, ROE, FCF, Net Debt/EBITDA, EV
@@ -53,7 +54,8 @@ D:\AI-Workspace\finance agents for research\
     ├── test_verifier_comprehensive.py # Re-fetch, SHA-256 tamper, rounding, and 8+ flawed sentences
     ├── test_skeptic.py        # Unit test suite for Skeptic agent stress testing
     ├── test_pipeline.py       # Integration tests for run_research.py & correction round
-    └── test_knowledge.py      # Test suite for local knowledge base & evaluation queries
+    ├── test_knowledge.py      # Test suite for local knowledge base & evaluation queries
+    └── test_data_layer.py     # Test suite for multi-source fallback & disk caching
 ```
 
 ---
@@ -169,6 +171,36 @@ All results return formatted citations:
 
 ### Standing Rule 12 (Knowledge Base Priority):
 > **Rule 12**: Always check the local knowledge base (`/tools/knowledge.py`) before searching the web. Prefer ingested primary filings, transcripts, and verified notes.
+
+---
+
+## 🌐 Multi-Source Data Layer with Fallback & Caching (`tools/data_layer.py`)
+
+Upgrade 6 provides an abstracted data access layer with multi-tier cascading fallback and disk caching:
+$$\text{Local Cache (TTL)} \longrightarrow \text{Primary (SEC EDGAR / yfinance)} \longrightarrow \text{Backup 1 (Finnhub)} \longrightarrow \text{Backup 2 (FMP)} \longrightarrow \text{Backup 3 (Alpha Vantage)}$$
+
+### Usage Commands:
+```powershell
+# Fetch quote with automatic fallback & provenance recording:
+.\.venv\Scripts\python.exe tools/data_layer.py quote AAPL
+
+# Fetch macroeconomic series with fallback (FRED / Treasury Yield proxies):
+.\.venv\Scripts\python.exe tools/data_layer.py macro DGS10
+
+# Display live free-tier limits:
+.\.venv\Scripts\python.exe tools/data_layer.py limits
+
+# Display regional market coverage and data gaps:
+.\.venv\Scripts\python.exe tools/data_layer.py coverage
+```
+
+### Free-Tier API Limits & Strategy:
+- **FRED**: 120 req/min, unlimited daily (Macro benchmark).
+- **FMP**: 5 req/min, 250 req/day (5-year financials).
+- **Finnhub**: 60 req/min (Real-time quotes & metrics).
+- **Alpha Vantage**: 5 req/min, 25 req/day (Strict limit; caching mandatory).
+- **yfinance**: ~2,000 req/hour (Primary zero-key global quotes).
+- **SEC EDGAR**: 10 req/sec, unlimited daily (Primary audited US facts).
 
 ---
 
