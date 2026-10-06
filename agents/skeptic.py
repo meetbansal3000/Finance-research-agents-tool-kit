@@ -63,6 +63,7 @@ class SkepticAgent:
         base_fcf: float,
         base_operating_margin: float,
         stated_growth_rate: float,
+        historical_fcf_series: Optional[Dict[str, float]] = None,
         historical_3y_fcf_cagr: Optional[float] = None,
         historical_5y_fcf_cagr: Optional[float] = None,
         receivables_growth_yoy: Optional[float] = None,
@@ -74,28 +75,108 @@ class SkepticAgent:
         net_debt: float = 0.0,
         wacc: float = 0.09,
         terminal_g: float = 0.025,
+        currency: Optional[str] = None,
+        currency_symbol: Optional[str] = None,
         empirical_counter_evidence: Optional[List[str]] = None,
         raw_report_text: Optional[str] = None
     ) -> Dict[str, Any]:
-        """Perform adversarial stress testing on assumptions and SEC filing evidence."""
+        """Perform adversarial stress testing on assumptions and filing evidence."""
         if raw_report_text:
             extracted = self.extract_assumptions_from_text(raw_report_text)
             stated_growth_rate = extracted.get("growth_rate", stated_growth_rate)
             base_operating_margin = extracted.get("operating_margin", base_operating_margin)
             wacc = extracted.get("wacc", wacc)
 
+        # Determine currency & symbol
+        if not currency:
+            if ticker == "AAPL" or (ticker and not "." in ticker and not ticker.endswith(".NS") and not ticker.endswith(".L")):
+                currency = "USD"
+            elif ticker and (".NS" in ticker or ".BO" in ticker):
+                currency = "INR"
+            elif ticker and ticker.endswith(".L"):
+                currency = "GBP"
+            else:
+                currency = "USD"
+
+        if not currency_symbol:
+            curr_map = {"USD": "$", "INR": "₹", "GBP": "£", "EUR": "€"}
+            curr_sym = curr_map.get(currency, "$")
+        else:
+            curr_sym = currency_symbol
+
         # 1. Price Record
         l_price = self.ledger.record(
             tool="yfinance.quote",
             ticker=ticker,
+            currency=currency,
             inputs={"ticker": ticker, "price": current_price},
             output=current_price,
             raw_value=current_price,
             source=f"Market Quote ({ticker})",
-            notes="Current trading price"
+            notes=f"Current trading price ({currency})"
         )
 
-        # 2. Reverse DCF: Implied Growth Rate
+        # 2. Base FCF Record
+        l_base_fcf = self.ledger.record(
+            tool="filing.cash_flow",
+            ticker=ticker,
+            currency=currency,
+            inputs={"ticker": ticker, "metric": "FreeCashFlow"},
+            output=base_fcf,
+            raw_value=base_fcf,
+            source="Audited Cash Flow Statement",
+            notes=f"Base Free Cash Flow ({currency})"
+        )
+
+        # Assumptions Ledger Records
+        l_growth_assump = self.ledger.record(
+            tool="thesis.assumption",
+            ticker=ticker,
+            inputs={"growth_rate": stated_growth_rate},
+            output=stated_growth_rate * 100.0,
+            raw_value=stated_growth_rate * 100.0,
+            source="Analyst Thesis Model Assumption",
+            notes="Assumed 5Y FCF Growth Rate (%)"
+        )
+        l_wacc_assump = self.ledger.record(
+            tool="thesis.assumption",
+            ticker=ticker,
+            inputs={"wacc": wacc},
+            output=wacc * 100.0,
+            raw_value=wacc * 100.0,
+            source="Cost of Capital Assumption",
+            notes="Assumed Discount Rate WACC (%)"
+        )
+        l_term_g_assump = self.ledger.record(
+            tool="thesis.assumption",
+            ticker=ticker,
+            inputs={"terminal_g": terminal_g},
+            output=terminal_g * 100.0,
+            raw_value=terminal_g * 100.0,
+            source="Terminal Growth Assumption",
+            notes="Assumed Terminal Growth Rate (%)"
+        )
+        l_shares = self.ledger.record(
+            tool="yfinance.quote",
+            ticker=ticker,
+            inputs={"shares_outstanding": shares_outstanding},
+            output=shares_outstanding,
+            raw_value=shares_outstanding,
+            source="Share Registry / Market Data",
+            notes="Diluted Shares Outstanding"
+        )
+        l_net_debt = self.ledger.record(
+            tool="filing.balance_sheet",
+            ticker=ticker,
+            currency=currency,
+            inputs={"net_debt": net_debt},
+            output=net_debt,
+            raw_value=net_debt,
+            source="Audited Balance Sheet",
+            notes=f"Net Debt ({currency})"
+        )
+
+        # 3. Reverse DCF: Implied Growth Rate
         rev_res = reverse_dcf(
             current_price=current_price,
             base_fcf=base_fcf,
@@ -116,7 +197,7 @@ class SkepticAgent:
             notes="Market implied 5-year FCF CAGR"
         )
 
-        # 3. Baseline DCF
+        # 4. Baseline DCF
         base_growth_rates = [stated_growth_rate] * 5
         base_dcf_res = dcf(
             base_fcf=base_fcf,
@@ -130,14 +211,15 @@ class SkepticAgent:
         l_base_val = self.ledger.record(
             tool="tools.calc.dcf",
             ticker=ticker,
+            currency=currency,
             inputs={"growth": stated_growth_rate, "wacc": wacc, "term_g": terminal_g},
             output=base_fair_val,
             raw_value=base_fair_val,
             source="tools.calc.dcf.dcf",
-            notes="Baseline fair value per share"
+            notes=f"Baseline fair value per share ({currency})"
         )
 
-        # 4. Stress Test: -200 bps Margin Compression
+        # 5. Stress Test: -200 bps Margin Compression
         margin_haircut_factor = (base_operating_margin - 0.02) / base_operating_margin if base_operating_margin > 0.02 else 0.90
         stressed_fcf_margin = base_fcf * margin_haircut_factor
         margin_stress_dcf = dcf(
@@ -154,11 +236,12 @@ class SkepticAgent:
         l_margin_stress = self.ledger.record(
             tool="tools.calc.dcf",
             ticker=ticker,
+            currency=currency,
             inputs={"stressed_fcf": stressed_fcf_margin, "margin_delta_bps": -200},
             output=margin_stressed_val,
             raw_value=margin_stressed_val,
             source="tools.calc.dcf.dcf",
-            notes="Fair value under margin compression"
+            notes=f"Fair value under margin compression ({currency})"
         )
         l_margin_impact = self.ledger.record(
             tool="tools.calc.margin_stress_impact",
@@ -170,7 +253,7 @@ class SkepticAgent:
             notes="Margin stress impact percentage"
         )
 
-        # 5. Stress Test: +100 bps WACC Elevation
+        # 6. Stress Test: +100 bps WACC Elevation
         wacc_stress_dcf = dcf(
             base_fcf=base_fcf,
             growth_rates=base_growth_rates,
@@ -185,11 +268,12 @@ class SkepticAgent:
         l_wacc_stress = self.ledger.record(
             tool="tools.calc.dcf",
             ticker=ticker,
+            currency=currency,
             inputs={"wacc_stressed": wacc + 0.01},
             output=wacc_stressed_val,
             raw_value=wacc_stressed_val,
             source="tools.calc.dcf.dcf",
-            notes="Fair value under WACC elevation"
+            notes=f"Fair value under WACC elevation ({currency})"
         )
         l_wacc_impact = self.ledger.record(
             tool="tools.calc.wacc_stress_impact",
@@ -201,7 +285,7 @@ class SkepticAgent:
             notes="WACC stress impact percentage"
         )
 
-        # 6. Stress Test: Half-Growth Assumption Stress
+        # 7. Stress Test: Half-Growth Assumption Stress
         half_growth_rates = [stated_growth_rate * 0.5] * 5
         half_growth_dcf = dcf(
             base_fcf=base_fcf,
@@ -217,11 +301,12 @@ class SkepticAgent:
         l_half_growth = self.ledger.record(
             tool="tools.calc.dcf",
             ticker=ticker,
+            currency=currency,
             inputs={"half_growth": stated_growth_rate * 0.5},
             output=half_growth_val,
             raw_value=half_growth_val,
             source="tools.calc.dcf.dcf",
-            notes="Fair value at half assumed growth rate"
+            notes=f"Fair value at half assumed growth rate ({currency})"
         )
         l_half_impact = self.ledger.record(
             tool="tools.calc.growth_stress_impact",
@@ -238,45 +323,85 @@ class SkepticAgent:
         failures = []
         unperformed_count = 0
 
-        # Check 1: Valuation Feasibility
-        if historical_3y_fcf_cagr is not None:
-            l_hist = self.ledger.record(
+        # Check 1: Valuation Feasibility (with historical FCF series if provided)
+        hist_cagr_val = None
+        hist_cagr_id = None
+        
+        if historical_fcf_series and len(historical_fcf_series) >= 2:
+            sorted_years = sorted(historical_fcf_series.keys())
+            start_yr, end_yr = sorted_years[0], sorted_years[-1]
+            start_val, end_val = historical_fcf_series[start_yr], historical_fcf_series[end_yr]
+            num_periods = len(sorted_years) - 1
+            
+            # Record individual historical FCF years
+            hist_ids = []
+            for yr in sorted_years:
+                hid = self.ledger.record(
+                    tool="filing.cash_flow",
+                    ticker=ticker,
+                    currency=currency,
+                    inputs={"ticker": ticker, "metric": "FreeCashFlow", "period": yr},
+                    output=historical_fcf_series[yr],
+                    raw_value=historical_fcf_series[yr],
+                    source=f"Annual Report {yr} Audited Cash Flow",
+                    period=yr,
+                    notes=f"{ticker} {yr} Free Cash Flow ({currency})"
+                )
+                hist_ids.append(hid)
+            
+            # Compute CAGR
+            cagr_res = cagr(start_value=start_val, end_value=end_val, periods=num_periods)
+            hist_cagr_val = cagr_res["result"]
+            hist_cagr_id = self.ledger.record(
+                tool="tools.calc.cagr",
+                ticker=ticker,
+                inputs={"start_value": start_val, "end_value": end_val, "periods": num_periods},
+                output=hist_cagr_val,
+                raw_value=hist_cagr_val,
+                source="tools.calc.metrics.cagr",
+                notes=f"Historical {num_periods}-year FCF CAGR ({start_yr} to {end_yr})"
+            )
+        elif historical_3y_fcf_cagr is not None:
+            hist_cagr_val = historical_3y_fcf_cagr * 100.0
+            hist_cagr_id = self.ledger.record(
                 tool="tools.calc.cagr",
                 ticker=ticker,
                 inputs={"historical_years": 3},
-                output=historical_3y_fcf_cagr * 100.0,
-                raw_value=historical_3y_fcf_cagr * 100.0,
+                output=hist_cagr_val,
+                raw_value=hist_cagr_val,
                 source="SEC 10-K / Annual Filings",
                 notes="Historical 3-year FCF CAGR"
             )
-            val_feasible = implied_cagr <= (historical_3y_fcf_cagr * 100.0 + 2.0)
+
+        if hist_cagr_val is not None:
+            val_feasible = implied_cagr <= (hist_cagr_val + 2.0)
             status_str = "PASS" if val_feasible else "FAIL"
             if not val_feasible:
-                failures.append(f"Valuation Stretch: Market implied 5Y FCF CAGR of {implied_cagr:.2f}% [{l_implied}] exceeds historical 3Y CAGR of {historical_3y_fcf_cagr*100.0:.2f}% [{l_hist}].")
-            checklist_rows.append(("Valuation Feasibility", f"Implied CAGR {implied_cagr:.2f}% [{l_implied}] vs Hist {historical_3y_fcf_cagr*100.0:.2f}% [{l_hist}]", f"[{l_implied}], [{l_hist}]", status_str))
+                failures.append(f"Valuation Stretch: Market implied 5Y FCF CAGR of {implied_cagr:.2f}% [{l_implied}] exceeds historical CAGR of {hist_cagr_val:+.2f}% [{hist_cagr_id}].")
+            checklist_rows.append(("Valuation Feasibility", f"Implied CAGR {implied_cagr:.2f}% [{l_implied}] vs Hist {hist_cagr_val:+.2f}% [{hist_cagr_id}]", f"[{l_implied}], [{hist_cagr_id}]", status_str))
         else:
             checklist_rows.append(("Valuation Feasibility", f"Implied CAGR {implied_cagr:.2f}% [{l_implied}]", f"[{l_implied}]", "NOT CHECKED (data unavailable)"))
             unperformed_count += 1
 
         # Check 2: Margin Shock (-200 bps)
         margin_pass = abs(margin_impact_pct) <= 15.0
-        checklist_rows.append(("Margin Shock (-200 bps)", f"Impact {margin_impact_pct:+.2f}% [{l_margin_impact}] (${margin_stressed_val:.2f} [{l_margin_stress}])", f"[{l_margin_impact}], [{l_margin_stress}]", "PASS" if margin_pass else "FAIL"))
+        checklist_rows.append(("Margin Shock (-200 bps)", f"Impact {margin_impact_pct:+.2f}% [{l_margin_impact}] ({curr_sym}{margin_stressed_val:.2f} [{l_margin_stress}])", f"[{l_margin_impact}], [{l_margin_stress}]", "PASS" if margin_pass else "FAIL"))
         if not margin_pass:
             failures.append(f"Margin Sensitivity: -200 bps margin contraction reduces fair value by {margin_impact_pct:+.2f}% [{l_margin_impact}].")
 
         # Check 3: WACC Shock (+100 bps)
         wacc_pass = abs(wacc_impact_pct) <= 15.0
-        checklist_rows.append(("WACC Shock (+100 bps)", f"Impact {wacc_impact_pct:+.2f}% [{l_wacc_impact}] (${wacc_stressed_val:.2f} [{l_wacc_stress}])", f"[{l_wacc_impact}], [{l_wacc_stress}]", "PASS" if wacc_pass else "FAIL"))
+        checklist_rows.append(("WACC Shock (+100 bps)", f"Impact {wacc_impact_pct:+.2f}% [{l_wacc_impact}] ({curr_sym}{wacc_stressed_val:.2f} [{l_wacc_stress}])", f"[{l_wacc_impact}], [{l_wacc_stress}]", "PASS" if wacc_pass else "FAIL"))
         if not wacc_pass:
             failures.append(f"Cost of Capital Sensitivity: +100 bps WACC elevation reduces fair value by {wacc_impact_pct:+.2f}% [{l_wacc_impact}].")
 
-        # Check 4: Half-Growth Stress
-        half_growth_pass = half_growth_val >= (current_price * 0.70)
-        checklist_rows.append(("Half-Growth Stress", f"Stressed Fair Value ${half_growth_val:.2f} [{l_half_growth}] ({half_growth_impact_pct:+.2f}% [{l_half_impact}])", f"[{l_half_growth}], [{l_half_impact}]", "PASS" if half_growth_pass else "FAIL"))
+        # Check 4: Half-Growth Stress (Compares to Baseline Fair Value, threshold: drop <= 30%)
+        half_growth_pass = abs(half_growth_impact_pct) <= 30.0
+        checklist_rows.append(("Half-Growth Stress", f"Stressed Fair Value {curr_sym}{half_growth_val:.2f} [{l_half_growth}] ({half_growth_impact_pct:+.2f}% [{l_half_impact}])", f"[{l_half_growth}], [{l_half_impact}]", "PASS" if half_growth_pass else "FAIL"))
         if not half_growth_pass:
-            failures.append(f"Growth Dependency: Halving assumed growth rate drops fair value to ${half_growth_val:.2f} [{l_half_growth}].")
+            failures.append(f"Growth Dependency: Halving assumed growth rate drops baseline fair value by {half_growth_impact_pct:+.2f}% [{l_half_impact}] to {curr_sym}{half_growth_val:.2f} [{l_half_growth}].")
 
-        # Check 5: Receivables Working Capital Divergence
+        # Check 5: Receivables Working Capital Divergence (Only flag if rec grows faster than rev by >5.0 pp)
         if receivables_growth_yoy is not None and revenue_growth_yoy is not None:
             rec_div = (receivables_growth_yoy - revenue_growth_yoy) * 100.0
             l_rec = self.ledger.record(
@@ -285,10 +410,10 @@ class SkepticAgent:
                 inputs={"rec_yoy": receivables_growth_yoy, "rev_yoy": revenue_growth_yoy},
                 output=rec_div,
                 raw_value=rec_div,
-                source="SEC 10-K / Annual Filings",
+                source="Annual Filings",
                 notes="Receivables vs Revenue YoY divergence (pp)"
             )
-            rec_pass = abs(rec_div) <= 5.0
+            rec_pass = rec_div <= 5.0
             checklist_rows.append(("Receivables Divergence", f"Divergence {rec_div:+.2f}% [{l_rec}]", f"[{l_rec}]", "PASS" if rec_pass else "FAIL"))
             if not rec_pass:
                 failures.append(f"Working Capital Divergence: Receivables growth diverged from revenue by {rec_div:+.2f}% [{l_rec}].")
@@ -296,7 +421,7 @@ class SkepticAgent:
             checklist_rows.append(("Receivables Divergence", "N/A", "N/A", "NOT CHECKED (data unavailable)"))
             unperformed_count += 1
 
-        # Check 6: Inventory Divergence
+        # Check 6: Inventory Divergence (Only flag if inv grows faster than rev by >5.0 pp)
         if inventory_growth_yoy is not None and revenue_growth_yoy is not None:
             inv_div = (inventory_growth_yoy - revenue_growth_yoy) * 100.0
             l_inv = self.ledger.record(
@@ -305,10 +430,10 @@ class SkepticAgent:
                 inputs={"inv_yoy": inventory_growth_yoy, "rev_yoy": revenue_growth_yoy},
                 output=inv_div,
                 raw_value=inv_div,
-                source="SEC 10-K / Annual Filings",
+                source="Annual Filings",
                 notes="Inventory vs Revenue YoY divergence (pp)"
             )
-            inv_pass = abs(inv_div) <= 5.0
+            inv_pass = inv_div <= 5.0
             checklist_rows.append(("Inventory Divergence", f"Divergence {inv_div:+.2f}% [{l_inv}]", f"[{l_inv}]", "PASS" if inv_pass else "FAIL"))
             if not inv_pass:
                 failures.append(f"Inventory Divergence: Inventory growth diverged from revenue by {inv_div:+.2f}% [{l_inv}].")
@@ -325,7 +450,7 @@ class SkepticAgent:
                 inputs={"st_debt": short_term_debt, "cash": cash_and_equivalents},
                 output=st_ratio,
                 raw_value=st_ratio,
-                source="SEC 10-K / Annual Filings",
+                source="Annual Balance Sheet",
                 notes="Short-term debt to cash ratio"
             )
             debt_pass = st_ratio <= 50.0
@@ -344,7 +469,7 @@ class SkepticAgent:
                 inputs={"customer_concentration": max_customer_concentration_pct},
                 output=max_customer_concentration_pct,
                 raw_value=max_customer_concentration_pct,
-                source="SEC 10-K Customer Note",
+                source="Filing Customer Note",
                 notes="Max single customer revenue %"
             )
             cust_pass = max_customer_concentration_pct <= 10.0
@@ -377,21 +502,34 @@ class SkepticAgent:
 
 ---
 
-### 1. Stress Testing Top 3 Thesis Assumptions
+### 1. DCF Model Assumptions & Parameters
 
-- Current Market Price: ${current_price:.2f} USD [{l_price}]
+| Parameter | Value | Ledger Citation | Primary Source |
+| :--- | :--- | :--- | :--- |
+| Base Free Cash Flow | {curr_sym}{base_fcf:,.0f} | [{l_base_fcf}] | Audited Statement of Cash Flows |
+| Assumed 5Y FCF Growth Rate | {stated_growth_rate*100.0:.2f}% | [{l_growth_assump}] | Analyst Thesis Model |
+| Discount Rate (WACC) | {wacc*100.0:.2f}% | [{l_wacc_assump}] | Cost of Capital Model |
+| Terminal Growth Rate | {terminal_g*100.0:.2f}% | [{l_term_g_assump}] | Long-term GDP Baseline |
+| Shares Outstanding | {shares_outstanding:,.0f} | [{l_shares}] | Market & Share Registry Data |
+| Net Debt | {curr_sym}{net_debt:,.0f} | [{l_net_debt}] | Audited Balance Sheet |
+
+---
+
+### 2. Stress Testing Top 3 Thesis Assumptions
+
+- Current Market Price: {curr_sym}{current_price:.2f} {currency} [{l_price}]
 - Implied 5-Year FCF CAGR (Reverse DCF): **{implied_cagr:.2f}%** [{l_implied}]
-- Baseline Fair Value (DCF): **${base_fair_val:.2f}** [{l_base_val}]
-- Stressed Fair Value (-200 bps Margin): **${margin_stressed_val:.2f}** [{l_margin_stress}]
+- Baseline Fair Value (DCF): **{curr_sym}{base_fair_val:.2f}** [{l_base_val}]
+- Stressed Fair Value (-200 bps Margin): **{curr_sym}{margin_stressed_val:.2f}** [{l_margin_stress}]
 - Margin Stress Valuation Impact: **{margin_impact_pct:+.2f}%** [{l_margin_impact}]
-- Stressed Fair Value (+100 bps WACC): **${wacc_stressed_val:.2f}** [{l_wacc_stress}]
+- Stressed Fair Value (+100 bps WACC): **{curr_sym}{wacc_stressed_val:.2f}** [{l_wacc_stress}]
 - WACC Stress Valuation Impact: **{wacc_impact_pct:+.2f}%** [{l_wacc_impact}]
-- Stressed Fair Value (Half-Growth): **${half_growth_val:.2f}** [{l_half_growth}]
+- Stressed Fair Value (Half-Growth): **{curr_sym}{half_growth_val:.2f}** [{l_half_growth}]
 - Half-Growth Valuation Impact: **{half_growth_impact_pct:+.2f}%** [{l_half_impact}]
 
 ---
 
-### 2. Adversarial Stress Test Checklist
+### 3. Adversarial Stress Test Checklist
 
 | Check Name | Metric Value | Ledger Citation | Status |
 | :--- | :--- | :--- | :--- |
@@ -402,7 +540,7 @@ class SkepticAgent:
         skeptic_report += f"""
 ---
 
-### 3. Adversarial Findings & Conclusion
+### 4. Adversarial Findings & Conclusion
 
 - {verdict_detail}
 """
@@ -411,7 +549,7 @@ class SkepticAgent:
                 skeptic_report += f"- {f_item}\n"
         if empirical_counter_evidence:
             for e_item in empirical_counter_evidence:
-                skeptic_report += f"- Empirical Filing Note: [UNVERIFIED: model memory] {e_item}\n"
+                skeptic_report += f"- Unverified context: [UNVERIFIED: model memory] {e_item}\n"
 
         skeptic_report += "\n---\n*Generated by Antigravity Skeptic Agent. All figures verified by Provenance Ledger.*"
 

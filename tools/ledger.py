@@ -22,11 +22,13 @@ def compute_entry_hash(
     inputs: Dict[str, Any],
     raw_value: Any,
     source: str,
-    timestamp: str
+    timestamp: str,
+    currency: Optional[str] = None,
+    unit: Optional[str] = None
 ) -> str:
     """Compute true HMAC-SHA256 signature of ledger entry fields to detect tampering."""
     serialized_inputs = json.dumps(inputs, sort_keys=True)
-    payload = f"{ledger_id}|{tool}|{serialized_inputs}|{raw_value}|{source}|{timestamp}"
+    payload = f"{ledger_id}|{tool}|{serialized_inputs}|{raw_value}|{source}|{timestamp}|{currency or ''}|{unit or ''}"
     return hmac.new(get_hmac_key(), payload.encode("utf-8"), hashlib.sha256).hexdigest()
 
 class ProvenanceLedger:
@@ -45,7 +47,9 @@ class ProvenanceLedger:
         period: Optional[str] = None,
         raw_value: Optional[Any] = None,
         notes: Optional[str] = None,
-        ticker: Optional[str] = None
+        ticker: Optional[str] = None,
+        currency: Optional[str] = None,
+        unit: Optional[str] = None
     ) -> str:
         """Record a data extraction or calculation in the provenance ledger.
         Generates a unique ledger ID and cryptographic integrity signature.
@@ -56,19 +60,27 @@ class ProvenanceLedger:
         val = raw_value if raw_value is not None else output
         ts = datetime.datetime.now().isoformat()
         
+        resolved_ticker = ticker or inputs.get("ticker") or inputs.get("symbol")
+        resolved_currency = currency or ("USD" if resolved_ticker == "AAPL" else ("INR" if resolved_ticker and "NS" in resolved_ticker else None))
+        resolved_unit = unit or "base"
+        
         entry_hash = compute_entry_hash(
             ledger_id=ledger_id,
             tool=tool,
             inputs=inputs,
             raw_value=val,
             source=source,
-            timestamp=ts
+            timestamp=ts,
+            currency=resolved_currency,
+            unit=resolved_unit
         )
         
         entry = {
             "ledger_id": ledger_id,
             "tool": tool,
-            "ticker": ticker or inputs.get("ticker") or inputs.get("symbol"),
+            "ticker": resolved_ticker,
+            "currency": resolved_currency,
+            "unit": resolved_unit,
             "inputs": inputs,
             "output": output,
             "raw_value": val,
@@ -94,7 +106,9 @@ class ProvenanceLedger:
             inputs=entry["inputs"],
             raw_value=entry["raw_value"],
             source=entry["source"],
-            timestamp=entry["timestamp"]
+            timestamp=entry["timestamp"],
+            currency=entry.get("currency"),
+            unit=entry.get("unit")
         )
         return entry["integrity_hash"] == expected_hash
 

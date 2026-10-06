@@ -1,6 +1,6 @@
 # Verification Audit Report
 **Target Report:** `aapl_research_report.md`  
-**Audit Timestamp:** 2026-10-06T01:02:55.026362  
+**Audit Timestamp:** 2026-10-06T15:08:18.676663  
 **Overall Status:** **PASS WITH FLAGS** (20 Confirmed, 0 Wrong, 2 Unverifiable)  
 
 ---
@@ -34,16 +34,16 @@
   - *Verified Output:* `98767000000` via `tools.calc.free_cash_flow`
   - *Source:* tools.calc.metrics.free_cash_flow
 - **[Line 14] [LEDGER_0012]**: Free cash flow was $98,767M [LEDGER_0011], yielding an FCF yield of 2.03% [LEDGER_0012].
-  - *Verified Output:* `2.0329720830828175` via `tools.calc.fcf_yield`
+  - *Verified Output:* `2.0329110145312077` via `tools.calc.fcf_yield`
   - *Source:* tools.calc.metrics.fcf_yield
-- **[Line 15] [LEDGER_0007]**: Current market price trades at $332.89 USD [LEDGER_0007].
-  - *Verified Output:* `332.89` via `yfinance.quote`
+- **[Line 15] [LEDGER_0007]**: Current market price trades at $332.90 USD [LEDGER_0007].
+  - *Verified Output:* `332.9` via `yfinance.quote`
   - *Source:* Yahoo Finance Market Quote
 - **[Line 16] [LEDGER_0013]**: Baseline DCF fair value estimate is $139.57 [LEDGER_0013].
   - *Verified Output:* `139.56924608382886` via `tools.calc.dcf`
   - *Source:* tools.calc.dcf.dcf
 - **[Line 17] [LEDGER_0014]**: Reverse DCF model indicates the current market price implies a 5-year FCF CAGR of 28.97% [LEDGER_0014].
-  - *Verified Output:* `28.970104455947876` via `tools.calc.reverse_dcf`
+  - *Verified Output:* `28.97093892097473` via `tools.calc.reverse_dcf`
   - *Source:* tools.calc.dcf.reverse_dcf
 - **[Line 25] [LEDGER_0001]**: | Total Net Sales | $416,161M | [LEDGER_0001] | SEC EDGAR 10-K (Accn: 0000320193-25-000079) |
   - *Verified Output:* `416161000000.0` via `edgar.get_facts`
@@ -64,7 +64,7 @@
   - *Verified Output:* `98767000000` via `tools.calc.free_cash_flow`
   - *Source:* tools.calc.metrics.free_cash_flow
 - **[Line 38] [LEDGER_0014]**: [ANALYSIS] The implied growth rate of 28.97% [LEDGER_0014] exceeds the baseline growth assumption and reflects a premium multiple.
-  - *Verified Output:* `28.970104455947876` via `tools.calc.reverse_dcf`
+  - *Verified Output:* `28.97093892097473` via `tools.calc.reverse_dcf`
   - *Source:* tools.calc.dcf.reverse_dcf
 
 ---
@@ -75,9 +75,9 @@ _None. No value discrepancies found._
 ---
 
 ### ⚠️ 3. Unverifiable / Failed Claims (2)
-- **[Line 36] [MODEL_MEMORY_TAGGED]**: [UNVERIFIED: model memory] Apple maintains a strong ecosystem lock-in across iOS devices and services.
+- **[Line 36] [MODEL_MEMORY_TAGGED]**: [UNVERIFIED: model memory] Apple maintains strong ecosystem retention across hardware devices and subscription services.
   - *Failure Reason:* Declared model memory (unverified qualitative claim).
-- **[Line 37] [MODEL_MEMORY_TAGGED]**: [UNVERIFIED: model memory] Services expansion continues to support gross margin resilience.
+- **[Line 37] [MODEL_MEMORY_TAGGED]**: [UNVERIFIED: model memory] Installed base expansion supports recurring high-margin services revenue.
   - *Failure Reason:* Declared model memory (unverified qualitative claim).
 
 ---

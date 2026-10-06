@@ -1,29 +1,53 @@
 {
   "run_id": "tcs_live_run",
-  "saved_at": "2026-10-06T01:02:55.177721",
+  "saved_at": "2026-10-06T15:08:18.851382",
   "total_records": 13,
   "entries": {
     "LEDGER_0001": {
       "ledger_id": "LEDGER_0001",
       "tool": "yfinance.quote",
       "ticker": "TCS.NS",
+      "currency": "INR",
+      "unit": "base",
       "inputs": {
         "symbol": "TCS.NS",
-        "price": 2114.4
+        "price": 2100.0
       },
-      "output": 2114.4,
-      "raw_value": 2114.4,
+      "output": 2100.0,
+      "raw_value": 2100.0,
       "source": "NSE / Yahoo Finance Live Market Quote",
       "form": null,
       "period": null,
       "notes": "TCS.NS Current Market Price (INR)",
-      "timestamp": "2026-10-06T01:02:55.176662",
-      "integrity_hash": "eff3b445bd5e49acbfdcf1223a2e31e7dfa22650e1351ffa12f016c67e2a6815"
+      "timestamp": "2026-10-06T15:08:18.848364",
+      "integrity_hash": "4301d056a83b924d4dd1768aca1a469e4a9fd573ab7690737d861e921d9f4e85"
     },
     "LEDGER_0002": {
       "ledger_id": "LEDGER_0002",
       "tool": "filing.financials",
       "ticker": "TCS.NS",
+      "currency": "INR",
+      "unit": "base",
+      "inputs": {
+        "ticker": "TCS.NS",
+        "metric": "Revenue",
+        "period": "FY2025"
+      },
+      "output": 2553240000000.0,
+      "raw_value": 2553240000000.0,
+      "source": "TCS Annual Report FY2025 Audited Financial Statements, Page 168",
+      "form": null,
+      "period": "FY2025",
+      "notes": "TCS FY2025 Total Revenue from Operations (INR)",
+      "timestamp": "2026-10-06T15:08:18.849391",
+      "integrity_hash": "efe9ef6408983bbfbf5c44b61b46252789c84846b68fa1fe974d567eee7c45b7"
+    },
+    "LEDGER_0003": {
+      "ledger_id": "LEDGER_0003",
+      "tool": "filing.financials",
+      "ticker": "TCS.NS",
+      "currency": "INR",
+      "unit": "base",
       "inputs": {
         "ticker": "TCS.NS",
         "metric": "Revenue",
@@ -31,177 +55,177 @@
       },
       "output": 2408930000000.0,
       "raw_value": 2408930000000.0,
-      "source": "TCS Annual Report FY2024 Audited Financial Statements",
+      "source": "TCS Annual Report FY2024 Audited Financial Statements, Page 172",
       "form": null,
       "period": "FY2024",
       "notes": "TCS FY2024 Total Revenue from Operations (INR)",
-      "timestamp": "2026-10-06T01:02:55.176662",
-      "integrity_hash": "e6c6b26b9d82da131c674719d0725e8d17132295b9ec0e7ac5a0b6a66404c0e0"
-    },
-    "LEDGER_0003": {
-      "ledger_id": "LEDGER_0003",
-      "tool": "filing.financials",
-      "ticker": "TCS.NS",
-      "inputs": {
-        "ticker": "TCS.NS",
-        "metric": "Revenue",
-        "period": "FY2023"
-      },
-      "output": 2254580000000.0,
-      "raw_value": 2254580000000.0,
-      "source": "TCS Annual Report FY2023 Audited Financial Statements",
-      "form": null,
-      "period": "FY2023",
-      "notes": "TCS FY2023 Total Revenue from Operations (INR)",
-      "timestamp": "2026-10-06T01:02:55.176662",
-      "integrity_hash": "321d1ff174d30a91a8550a8bdb8e3999766934d60f28ca0b71c1691ac2fd56dc"
+      "timestamp": "2026-10-06T15:08:18.849391",
+      "integrity_hash": "a5ee28317122c0de6dd21afa351cc17b8b7a9fce07972bb3db7ce5b965f38255"
     },
     "LEDGER_0004": {
       "ledger_id": "LEDGER_0004",
       "tool": "filing.financials",
       "ticker": "TCS.NS",
+      "currency": "INR",
+      "unit": "base",
       "inputs": {
         "ticker": "TCS.NS",
         "metric": "OperatingIncome",
-        "period": "FY2024"
+        "period": "FY2025"
       },
-      "output": 592000000000.0,
-      "raw_value": 592000000000.0,
-      "source": "TCS Annual Report FY2024 Audited Financial Statements",
+      "output": 622930000000.0,
+      "raw_value": 622930000000.0,
+      "source": "TCS Annual Report FY2025 Audited Financial Statements, Page 168",
       "form": null,
-      "period": "FY2024",
-      "notes": "TCS FY2024 Operating Profit (INR)",
-      "timestamp": "2026-10-06T01:02:55.176662",
-      "integrity_hash": "8925d51ab3bcc08c9318212d0f889702d774e199c7b99b353c378246e41be039"
+      "period": "FY2025",
+      "notes": "TCS FY2025 Operating Profit (INR)",
+      "timestamp": "2026-10-06T15:08:18.849391",
+      "integrity_hash": "8cc3230b676c0430b201e14857790a6fb8550196474b0413d706bce350ebdb51"
     },
     "LEDGER_0005": {
       "ledger_id": "LEDGER_0005",
       "tool": "filing.financials",
       "ticker": "TCS.NS",
+      "currency": "INR",
+      "unit": "base",
       "inputs": {
         "ticker": "TCS.NS",
         "metric": "NetIncome",
-        "period": "FY2024"
+        "period": "FY2025"
       },
-      "output": 460990000000.0,
-      "raw_value": 460990000000.0,
-      "source": "TCS Annual Report FY2024 Audited Financial Statements",
+      "output": 485530000000.0,
+      "raw_value": 485530000000.0,
+      "source": "TCS Annual Report FY2025 Audited Financial Statements, Page 168",
       "form": null,
-      "period": "FY2024",
-      "notes": "TCS FY2024 Consolidated Net Profit (INR)",
-      "timestamp": "2026-10-06T01:02:55.176662",
-      "integrity_hash": "e2e35f8e22a57f5ec19753ac90fde8d6d5913bfcb7e203117a3db56407f52a6a"
+      "period": "FY2025",
+      "notes": "TCS FY2025 Consolidated Net Profit (INR)",
+      "timestamp": "2026-10-06T15:08:18.849391",
+      "integrity_hash": "df8c4d0e38b0911f6199e5d30e7636551b775a5ed0b8c73d37bfc4843185faca"
     },
     "LEDGER_0006": {
       "ledger_id": "LEDGER_0006",
       "tool": "filing.financials",
       "ticker": "TCS.NS",
+      "currency": "INR",
+      "unit": "base",
       "inputs": {
         "ticker": "TCS.NS",
         "metric": "OperatingCashFlow",
-        "period": "FY2024"
+        "period": "FY2025"
       },
-      "output": 443000000000.0,
-      "raw_value": 443000000000.0,
-      "source": "TCS Annual Report FY2024 Cash Flow Statement",
+      "output": 489080000000.0,
+      "raw_value": 489080000000.0,
+      "source": "TCS Annual Report FY2025 Consolidated Statement of Cash Flows, Page 174",
       "form": null,
-      "period": "FY2024",
-      "notes": "TCS FY2024 Cash Generated from Operations (INR)",
-      "timestamp": "2026-10-06T01:02:55.176662",
-      "integrity_hash": "a3aea0300611faa4acd88f52bcc06424246d31e8b485d39e8b47ed045d0fb029"
+      "period": "FY2025",
+      "notes": "TCS FY2025 Cash Generated from Operations (INR)",
+      "timestamp": "2026-10-06T15:08:18.849391",
+      "integrity_hash": "c1be0951fc8c7df222e3bff24fb7b3f85da42084266aa6255ba78ec07a695b56"
     },
     "LEDGER_0007": {
       "ledger_id": "LEDGER_0007",
       "tool": "filing.financials",
       "ticker": "TCS.NS",
+      "currency": "INR",
+      "unit": "base",
       "inputs": {
         "ticker": "TCS.NS",
         "metric": "Capex",
-        "period": "FY2024"
+        "period": "FY2025"
       },
-      "output": 31000000000.0,
-      "raw_value": 31000000000.0,
-      "source": "TCS Annual Report FY2024 Cash Flow Statement",
+      "output": 39370000000.0,
+      "raw_value": 39370000000.0,
+      "source": "TCS Annual Report FY2025 Consolidated Statement of Cash Flows, Page 174",
       "form": null,
-      "period": "FY2024",
-      "notes": "TCS FY2024 Capital Expenditure (INR)",
-      "timestamp": "2026-10-06T01:02:55.176662",
-      "integrity_hash": "a996d9238b796bc47a8a2530beb383ec976a42c33a94b65e8a4f4b7c98f2f1f3"
+      "period": "FY2025",
+      "notes": "TCS FY2025 Capital Expenditure (INR)",
+      "timestamp": "2026-10-06T15:08:18.849391",
+      "integrity_hash": "8ab94079437f6bb5ab0cfc7a3db12e04d8c53a96e24e741dbfc4383e3f675a25"
     },
     "LEDGER_0008": {
       "ledger_id": "LEDGER_0008",
       "tool": "tools.calc.yoy_growth",
       "ticker": "TCS.NS",
+      "currency": "INR",
+      "unit": "base",
       "inputs": {
-        "current_period": 2408930000000.0,
-        "prior_period": 2254580000000.0
+        "current_period": 2553240000000.0,
+        "prior_period": 2408930000000.0
       },
-      "output": 6.846064455463989,
-      "raw_value": 6.846064455463989,
+      "output": 5.9906265437351855,
+      "raw_value": 5.9906265437351855,
       "source": "tools.calc.metrics.yoy_growth",
       "form": null,
       "period": null,
       "notes": "TCS YoY Revenue Growth Rate",
-      "timestamp": "2026-10-06T01:02:55.176662",
-      "integrity_hash": "c47bd386c9aab2fa8cdad3a59da8553db1705f1d60106e79d67fca6c914ef65a"
+      "timestamp": "2026-10-06T15:08:18.849391",
+      "integrity_hash": "8f3890763b613d4a40fe3305f3702737ae0ccef8d16eb7652c23cdf0bb79f77e"
     },
     "LEDGER_0009": {
       "ledger_id": "LEDGER_0009",
       "tool": "tools.calc.margin",
       "ticker": "TCS.NS",
+      "currency": "INR",
+      "unit": "base",
       "inputs": {
-        "numerator": 592000000000.0,
-        "revenue": 2408930000000.0
+        "numerator": 622930000000.0,
+        "revenue": 2553240000000.0
       },
-      "output": 24.575226345306838,
-      "raw_value": 24.575226345306838,
+      "output": 24.397628111732544,
+      "raw_value": 24.397628111732544,
       "source": "tools.calc.metrics.margin",
       "form": null,
       "period": null,
       "notes": "TCS Operating Margin",
-      "timestamp": "2026-10-06T01:02:55.176662",
-      "integrity_hash": "f4e9d6ebbc7e54988b9c74bf6952f36e7b071be0e82aa6c84055654c23963d17"
+      "timestamp": "2026-10-06T15:08:18.849391",
+      "integrity_hash": "43917dee5557717da3d094ee07990bf7cd6b97096adf19400d142defeb6148a4"
     },
     "LEDGER_0010": {
       "ledger_id": "LEDGER_0010",
       "tool": "tools.calc.margin",
       "ticker": "TCS.NS",
+      "currency": "INR",
+      "unit": "base",
       "inputs": {
-        "numerator": 460990000000.0,
-        "revenue": 2408930000000.0
+        "numerator": 485530000000.0,
+        "revenue": 2553240000000.0
       },
-      "output": 19.136712150207767,
-      "raw_value": 19.136712150207767,
+      "output": 19.01623035828986,
+      "raw_value": 19.01623035828986,
       "source": "tools.calc.metrics.margin",
       "form": null,
       "period": null,
       "notes": "TCS Net Profit Margin",
-      "timestamp": "2026-10-06T01:02:55.176662",
-      "integrity_hash": "7a10849ce296f77d24d2d5ad88164c713098696b4940a061239c006adcc233d0"
+      "timestamp": "2026-10-06T15:08:18.849391",
+      "integrity_hash": "062c243f5944e1554dc7b28c4a6637fb3113014d2516a98825f684095bcf6514"
     },
     "LEDGER_0011": {
       "ledger_id": "LEDGER_0011",
       "tool": "tools.calc.free_cash_flow",
       "ticker": "TCS.NS",
+      "currency": "INR",
+      "unit": "base",
       "inputs": {
-        "operating_cash_flow": 443000000000.0,
-        "capital_expenditures": 31000000000.0
+        "operating_cash_flow": 489080000000.0,
+        "capital_expenditures": 39370000000.0
       },
-      "output": 412000000000.0,
-      "raw_value": 412000000000.0,
+      "output": 449710000000.0,
+      "raw_value": 449710000000.0,
       "source": "tools.calc.metrics.free_cash_flow",
       "form": null,
       "period": null,
       "notes": "TCS Free Cash Flow (INR)",
-      "timestamp": "2026-10-06T01:02:55.176662",
-      "integrity_hash": "39eaf43652075d07d0d4764b0218913084acfa9b336273d6d8e11208e2741b17"
+      "timestamp": "2026-10-06T15:08:18.849391",
+      "integrity_hash": "687ccdefd9f3282123685f38b97d6fd6bd5401bcd6b833b1de1eee4891b8ddb5"
     },
     "LEDGER_0012": {
       "ledger_id": "LEDGER_0012",
       "tool": "tools.calc.dcf",
       "ticker": "TCS.NS",
+      "currency": "INR",
+      "unit": "base",
       "inputs": {
-        "base_fcf": 412000000000.0,
+        "base_fcf": 449710000000.0,
         "growth_rates": [
           0.08,
           0.08,
@@ -214,36 +238,38 @@
         "shares_outstanding": 3618087518.0,
         "net_debt": 0.0
       },
-      "output": 1910.2650218881963,
-      "raw_value": 1910.2650218881963,
+      "output": 2085.109910178011,
+      "raw_value": 2085.109910178011,
       "source": "tools.calc.dcf.dcf",
       "form": null,
       "period": null,
       "notes": "TCS DCF Baseline Fair Value per Share (INR)",
-      "timestamp": "2026-10-06T01:02:55.176662",
-      "integrity_hash": "5672b1a5bbef6088f6e31062245c27b385ee35d472884c384f07de6989ff6953"
+      "timestamp": "2026-10-06T15:08:18.849391",
+      "integrity_hash": "f142a0f3537992619bab60e1017988c9f6f31c81bb06fd36c567fb6482af4877"
     },
     "LEDGER_0013": {
       "ledger_id": "LEDGER_0013",
       "tool": "tools.calc.reverse_dcf",
       "ticker": "TCS.NS",
+      "currency": "INR",
+      "unit": "base",
       "inputs": {
-        "current_price": 2114.4,
-        "base_fcf": 412000000000.0,
+        "current_price": 2100.0,
+        "base_fcf": 449710000000.0,
         "shares_outstanding": 3618087518.0,
         "discount_rate": 0.11,
         "terminal_growth_rate": 0.04,
         "projection_years": 5,
         "net_debt": 0.0
       },
-      "output": 9.352010488510132,
-      "raw_value": 9.352010488510132,
+      "output": 7.0631325244903564,
+      "raw_value": 7.0631325244903564,
       "source": "tools.calc.dcf.reverse_dcf",
       "form": null,
       "period": null,
       "notes": "TCS Implied 5-Year FCF CAGR",
-      "timestamp": "2026-10-06T01:02:55.176662",
-      "integrity_hash": "be5589f60bdcae7046e446c64b7895f56e2cd741770164eb1c70a125dcd65ae8"
+      "timestamp": "2026-10-06T15:08:18.849391",
+      "integrity_hash": "56a798f75ff28eb02044b1edee8a3a2abb9a1fec3c12665cc08154ce5008280d"
     }
   }
 }

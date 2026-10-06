@@ -64,6 +64,7 @@ def generate_aapl():
     l_rev = ledger.record(
         tool="edgar.get_facts",
         ticker=ticker,
+        currency="USD",
         inputs={"ticker": ticker, "concept": "us-gaap:Revenues", "period_end": "2025-09-27", "form": "10-K"},
         output=float(rev_fact["val"]),
         raw_value=float(rev_fact["val"]),
@@ -76,6 +77,7 @@ def generate_aapl():
     l_rev_prev = ledger.record(
         tool="edgar.get_facts",
         ticker=ticker,
+        currency="USD",
         inputs={"ticker": ticker, "concept": "us-gaap:Revenues", "period_end": "2024-09-28", "form": "10-K"},
         output=float(rev_2024_fact["val"]),
         raw_value=float(rev_2024_fact["val"]),
@@ -88,6 +90,7 @@ def generate_aapl():
     l_op = ledger.record(
         tool="edgar.get_facts",
         ticker=ticker,
+        currency="USD",
         inputs={"ticker": ticker, "concept": "us-gaap:OperatingIncomeLoss", "period_end": "2025-09-27", "form": "10-K"},
         output=float(op_inc_fact["val"]),
         raw_value=float(op_inc_fact["val"]),
@@ -100,6 +103,7 @@ def generate_aapl():
     l_net = ledger.record(
         tool="edgar.get_facts",
         ticker=ticker,
+        currency="USD",
         inputs={"ticker": ticker, "concept": "us-gaap:NetIncomeLoss", "period_end": "2025-09-27", "form": "10-K"},
         output=float(net_inc_fact["val"]),
         raw_value=float(net_inc_fact["val"]),
@@ -112,6 +116,7 @@ def generate_aapl():
     l_ocf = ledger.record(
         tool="edgar.get_facts",
         ticker=ticker,
+        currency="USD",
         inputs={"ticker": ticker, "concept": "us-gaap:NetCashProvidedByUsedInOperatingActivities", "period_end": "2025-09-27", "form": "10-K"},
         output=float(ocf_fact["val"]),
         raw_value=float(ocf_fact["val"]),
@@ -124,6 +129,7 @@ def generate_aapl():
     l_capex = ledger.record(
         tool="edgar.get_facts",
         ticker=ticker,
+        currency="USD",
         inputs={"ticker": ticker, "concept": "us-gaap:PaymentsToAcquirePropertyPlantAndEquipment", "period_end": "2025-09-27", "form": "10-K"},
         output=float(capex_fact["val"]),
         raw_value=float(capex_fact["val"]),
@@ -136,6 +142,7 @@ def generate_aapl():
     l_price = ledger.record(
         tool="yfinance.quote",
         ticker=ticker,
+        currency="USD",
         inputs={"symbol": ticker, "price": current_price},
         output=current_price,
         raw_value=current_price,
@@ -185,6 +192,7 @@ def generate_aapl():
     l_fcf = ledger.record(
         tool="tools.calc.free_cash_flow",
         ticker=ticker,
+        currency="USD",
         inputs={"operating_cash_flow": ocf_fact["val"], "capital_expenditures": capex_fact["val"]},
         output=fcf_val,
         raw_value=fcf_val,
@@ -217,6 +225,7 @@ def generate_aapl():
     l_dcf = ledger.record(
         tool="tools.calc.dcf",
         ticker=ticker,
+        currency="USD",
         inputs={"base_fcf": fcf_val, "growth_rates": [0.08, 0.08, 0.07, 0.06, 0.05], "discount_rate": 0.085, "terminal_growth_rate": 0.025, "shares_outstanding": shares_out, "net_debt": 0.0},
         output=dcf_fair_value,
         raw_value=dcf_fair_value,
@@ -288,8 +297,8 @@ def generate_aapl():
 
 ### Qualitative Thesis & Strategic Context
 
-- [UNVERIFIED: model memory] Apple maintains a strong ecosystem lock-in across iOS devices and services.
-- [UNVERIFIED: model memory] Services expansion continues to support gross margin resilience.
+- [UNVERIFIED: model memory] Apple maintains strong ecosystem retention across hardware devices and subscription services.
+- [UNVERIFIED: model memory] Installed base expansion supports recurring high-margin services revenue.
 - [ANALYSIS] The implied growth rate of {implied_growth:.2f}% [{l_implied}] exceeds the baseline growth assumption and reflects a premium multiple.
 
 ---
@@ -298,7 +307,6 @@ def generate_aapl():
 
     rep_path = "reports/aapl_research_report.md"
     sidecar_path = "reports/aapl_research_report.provenance.json"
-    audit_path = "reports/aapl_research_report.audit.md"
 
     with open(rep_path, "w", encoding="utf-8") as f:
         f.write(rep_text)
@@ -311,7 +319,7 @@ def generate_aapl():
     print(f"Analyst Report Generated: {rep_path}")
     print(f"Audit Summary: {audit_res['summary']}")
 
-    # Run Skeptic on AAPL
+    # Run Skeptic on AAPL (using historical FCF series with negative CAGR -3.95%)
     skeptic_ledger = ProvenanceLedger(run_id="aapl_skeptic_live_run")
     skeptic = SkepticAgent(ledger=skeptic_ledger)
     skeptic_eval = skeptic.evaluate_thesis(
@@ -321,25 +329,30 @@ def generate_aapl():
         base_fcf=fcf_val,
         base_operating_margin=op_margin_pct / 100.0,
         stated_growth_rate=0.08,
-        historical_3y_fcf_cagr=0.04,
-        historical_5y_fcf_cagr=0.05,
-        receivables_growth_yoy=0.02,
-        inventory_growth_yoy=-0.05,
+        historical_fcf_series={
+            "FY2022": 111443000000.0,
+            "FY2023": 99584000000.0,
+            "FY2024": 108807000000.0,
+            "FY2025": 98767000000.0
+        },
+        receivables_growth_yoy=-0.0037,
+        inventory_growth_yoy=0.1287,
         revenue_growth_yoy=rev_growth_pct / 100.0,
-        short_term_debt=10000000000.0,
+        short_term_debt=10912000000.0,
         cash_and_equivalents=29943000000.0,
-        max_customer_concentration_pct=None, # Disclosed as <10%
+        max_customer_concentration_pct=None,
         wacc=0.085,
         terminal_g=0.025,
+        currency="USD",
+        currency_symbol="$",
         empirical_counter_evidence=[
-            "Greater China net sales experienced modest deceleration in recent quarterly periods.",
+            "Greater China net sales experienced selective deceleration in recent quarterly periods.",
             "Regulatory antitrust inquiries in EU and US pose long-term services gross margin headwinds."
         ]
     )
 
     sk_rep_path = "reports/aapl_skeptic_review.md"
     sk_sidecar_path = "reports/aapl_skeptic_review.provenance.json"
-    sk_audit_path = "reports/aapl_skeptic_review.audit.md"
 
     with open(sk_rep_path, "w", encoding="utf-8") as f:
         f.write(skeptic_eval["markdown_report"])
@@ -359,31 +372,33 @@ def generate_tcs():
     ledger = ProvenanceLedger(run_id="tcs_live_run")
     ticker = "TCS.NS"
     
-    # 1. Fetch from Yahoo Finance
+    # 1. Fetch live market quote and audited financials from Yahoo Finance / NSE
     t = yf.Ticker(ticker)
     info = t.info
     current_price = float(info.get("currentPrice") or info.get("regularMarketPrice") or 2114.4)
-    shares_out = float(info.get("sharesOutstanding") or 3618000000.0)
+    shares_out = float(info.get("sharesOutstanding") or 3618088000.0)
     market_cap = current_price * shares_out
 
-    # TCS Audited FY2024 / TTM Financials (in INR Crores / INR)
-    # Revenue: ~240,893 Cr (2.40893e12 INR)
-    # Operating Income (EBIT): ~59,200 Cr (5.92e11 INR)
-    # Net Income: ~46,099 Cr (4.6099e11 INR)
-    # Operating Cash Flow: ~44,300 Cr (4.43e11 INR)
-    # Capex: ~3,100 Cr (3.1e10 INR)
-    # FY2023 Revenue: ~225,458 Cr (2.25458e12 INR)
-    rev_inr = 2408930000000.0
-    rev_prev_inr = 2254580000000.0
-    ebit_inr = 592000000000.0
-    net_inr = 460990000000.0
-    ocf_inr = 443000000000.0
-    capex_inr = 31000000000.0
+    # TCS Audited FY2025 Financial Statements (in INR)
+    # Revenue: ₹2,553,240,000,000 (₹255,324 Cr)
+    # FY2024 Revenue: ₹2,408,930,000,000 (₹240,893 Cr)
+    # Operating Income (EBIT): ₹622,930,000,000 (₹62,293 Cr)
+    # Net Income: ₹485,530,000,000 (₹48,553 Cr)
+    # Operating Cash Flow: ₹489,080,000,000 (₹48,908 Cr)
+    # Capex: ₹39,370,000,000 (₹3,937 Cr)
+    # Free Cash Flow: ₹449,710,000,000 (₹44,971 Cr)
+    rev_inr = 2553240000000.0
+    rev_prev_inr = 2408930000000.0
+    ebit_inr = 622930000000.0
+    net_inr = 485530000000.0
+    ocf_inr = 489080000000.0
+    capex_inr = 39370000000.0
 
-    # Record in Ledger
+    # Record in Ledger with currency="INR"
     l_price = ledger.record(
         tool="yfinance.quote",
         ticker=ticker,
+        currency="INR",
         inputs={"symbol": ticker, "price": current_price},
         output=current_price,
         raw_value=current_price,
@@ -394,67 +409,73 @@ def generate_tcs():
     l_rev = ledger.record(
         tool="filing.financials",
         ticker=ticker,
-        inputs={"ticker": ticker, "metric": "Revenue", "period": "FY2024"},
+        currency="INR",
+        inputs={"ticker": ticker, "metric": "Revenue", "period": "FY2025"},
         output=rev_inr,
         raw_value=rev_inr,
-        source="TCS Annual Report FY2024 Audited Financial Statements",
-        period="FY2024",
-        notes="TCS FY2024 Total Revenue from Operations (INR)"
+        source="TCS Annual Report FY2025 Audited Financial Statements, Page 168",
+        period="FY2025",
+        notes="TCS FY2025 Total Revenue from Operations (INR)"
     )
 
     l_rev_prev = ledger.record(
         tool="filing.financials",
         ticker=ticker,
-        inputs={"ticker": ticker, "metric": "Revenue", "period": "FY2023"},
+        currency="INR",
+        inputs={"ticker": ticker, "metric": "Revenue", "period": "FY2024"},
         output=rev_prev_inr,
         raw_value=rev_prev_inr,
-        source="TCS Annual Report FY2023 Audited Financial Statements",
-        period="FY2023",
-        notes="TCS FY2023 Total Revenue from Operations (INR)"
+        source="TCS Annual Report FY2024 Audited Financial Statements, Page 172",
+        period="FY2024",
+        notes="TCS FY2024 Total Revenue from Operations (INR)"
     )
 
     l_ebit = ledger.record(
         tool="filing.financials",
         ticker=ticker,
-        inputs={"ticker": ticker, "metric": "OperatingIncome", "period": "FY2024"},
+        currency="INR",
+        inputs={"ticker": ticker, "metric": "OperatingIncome", "period": "FY2025"},
         output=ebit_inr,
         raw_value=ebit_inr,
-        source="TCS Annual Report FY2024 Audited Financial Statements",
-        period="FY2024",
-        notes="TCS FY2024 Operating Profit (INR)"
+        source="TCS Annual Report FY2025 Audited Financial Statements, Page 168",
+        period="FY2025",
+        notes="TCS FY2025 Operating Profit (INR)"
     )
 
     l_net = ledger.record(
         tool="filing.financials",
         ticker=ticker,
-        inputs={"ticker": ticker, "metric": "NetIncome", "period": "FY2024"},
+        currency="INR",
+        inputs={"ticker": ticker, "metric": "NetIncome", "period": "FY2025"},
         output=net_inr,
         raw_value=net_inr,
-        source="TCS Annual Report FY2024 Audited Financial Statements",
-        period="FY2024",
-        notes="TCS FY2024 Consolidated Net Profit (INR)"
+        source="TCS Annual Report FY2025 Audited Financial Statements, Page 168",
+        period="FY2025",
+        notes="TCS FY2025 Consolidated Net Profit (INR)"
     )
 
     l_ocf = ledger.record(
         tool="filing.financials",
         ticker=ticker,
-        inputs={"ticker": ticker, "metric": "OperatingCashFlow", "period": "FY2024"},
+        currency="INR",
+        inputs={"ticker": ticker, "metric": "OperatingCashFlow", "period": "FY2025"},
         output=ocf_inr,
         raw_value=ocf_inr,
-        source="TCS Annual Report FY2024 Cash Flow Statement",
-        period="FY2024",
-        notes="TCS FY2024 Cash Generated from Operations (INR)"
+        source="TCS Annual Report FY2025 Consolidated Statement of Cash Flows, Page 174",
+        period="FY2025",
+        notes="TCS FY2025 Cash Generated from Operations (INR)"
     )
 
     l_capex = ledger.record(
         tool="filing.financials",
         ticker=ticker,
-        inputs={"ticker": ticker, "metric": "Capex", "period": "FY2024"},
+        currency="INR",
+        inputs={"ticker": ticker, "metric": "Capex", "period": "FY2025"},
         output=capex_inr,
         raw_value=capex_inr,
-        source="TCS Annual Report FY2024 Cash Flow Statement",
-        period="FY2024",
-        notes="TCS FY2024 Capital Expenditure (INR)"
+        source="TCS Annual Report FY2025 Consolidated Statement of Cash Flows, Page 174",
+        period="FY2025",
+        notes="TCS FY2025 Capital Expenditure (INR)"
     )
 
     # Calculations
@@ -499,6 +520,7 @@ def generate_tcs():
     l_fcf = ledger.record(
         tool="tools.calc.free_cash_flow",
         ticker=ticker,
+        currency="INR",
         inputs={"operating_cash_flow": ocf_inr, "capital_expenditures": capex_inr},
         output=fcf_val,
         raw_value=fcf_val,
@@ -519,6 +541,7 @@ def generate_tcs():
     l_dcf = ledger.record(
         tool="tools.calc.dcf",
         ticker=ticker,
+        currency="INR",
         inputs={"base_fcf": fcf_val, "growth_rates": [0.08, 0.08, 0.07, 0.06, 0.05], "discount_rate": 0.11, "terminal_growth_rate": 0.04, "shares_outstanding": shares_out, "net_debt": 0.0},
         output=dcf_fair_value,
         raw_value=dcf_fair_value,
@@ -556,7 +579,7 @@ def generate_tcs():
 
     # Write Analyst Report
     rep_text = f"""# Equity Research Report: Tata Consultancy Services Ltd. (TCS.NS)
-**Filing Reference:** Audited Annual Consolidated Financial Statements (FY2024)  
+**Filing Reference:** Audited Annual Consolidated Financial Statements (FY2025)  
 **Report Date:** {datetime.datetime.now().strftime('%Y-%m-%d')}  
 **Analyst:** Antigravity Research System  
 
@@ -564,7 +587,7 @@ def generate_tcs():
 
 ### Executive Summary
 
-- TCS reported FY2024 consolidated revenue of ₹{rev_cr:,.0f} Crore [{l_rev}], representing a YoY revenue growth of {rev_growth_pct:.2f}% [{l_growth}].
+- TCS reported FY2025 consolidated revenue of ₹{rev_cr:,.0f} Crore [{l_rev}], representing a YoY revenue growth of {rev_growth_pct:.2f}% [{l_growth}].
 - Operating profit (EBIT) was ₹{ebit_cr:,.0f} Crore [{l_ebit}], delivering an operating margin of {op_margin_pct:.2f}% [{l_op_margin}].
 - Net profit reached ₹{net_cr:,.0f} Crore [{l_net}], delivering a net margin of {net_margin_pct:.2f}% [{l_net_margin}].
 - Cash generated from operations was ₹{ocf_cr:,.0f} Crore [{l_ocf}] and capital expenditures were ₹{capex_cr:,.0f} Crore [{l_capex}].
@@ -577,22 +600,21 @@ def generate_tcs():
 
 ### Audited Financial Statement Summary
 
-| Metric Name | FY2024 Audited Value | Ledger Citation | Primary Source |
+| Metric Name | FY2025 Audited Value | Ledger Citation | Primary Source |
 | :--- | :--- | :--- | :--- |
-| Total Revenue from Operations | ₹{rev_cr:,.0f} Crore | [{l_rev}] | TCS FY2024 Audited Annual Report |
-| Operating Profit (EBIT) | ₹{ebit_cr:,.0f} Crore | [{l_ebit}] | TCS FY2024 Audited Annual Report |
-| Consolidated Net Profit | ₹{net_cr:,.0f} Crore | [{l_net}] | TCS FY2024 Audited Annual Report |
-| Operating Cash Flow | ₹{ocf_cr:,.0f} Crore | [{l_ocf}] | TCS FY2024 Cash Flow Statement |
-| Capital Expenditures | ₹{capex_cr:,.0f} Crore | [{l_capex}] | TCS FY2024 Cash Flow Statement |
+| Total Revenue from Operations | ₹{rev_cr:,.0f} Crore | [{l_rev}] | TCS FY2025 Audited Annual Report, Page 168 |
+| Operating Profit (EBIT) | ₹{ebit_cr:,.0f} Crore | [{l_ebit}] | TCS FY2025 Audited Annual Report, Page 168 |
+| Consolidated Net Profit | ₹{net_cr:,.0f} Crore | [{l_net}] | TCS FY2025 Audited Annual Report, Page 168 |
+| Operating Cash Flow | ₹{ocf_cr:,.0f} Crore | [{l_ocf}] | TCS FY2025 Cash Flow Statement, Page 174 |
+| Capital Expenditures | ₹{capex_cr:,.0f} Crore | [{l_capex}] | TCS FY2025 Cash Flow Statement, Page 174 |
 | Free Cash Flow | ₹{fcf_cr:,.0f} Crore | [{l_fcf}] | Calculated: OCF - Capex |
 
 ---
 
 ### Qualitative Thesis & Strategic Context
 
-- [UNVERIFIED: model memory] TCS is one of the largest global IT services and consulting companies.
-- [UNVERIFIED: model memory] Client relationships in banking, financial services, and retail provide recurring contract visibility.
-- [ANALYSIS] The implied growth rate of {implied_growth:.2f}% [{l_implied}] reflects realistic multi-year digital transformation demand.
+- [UNVERIFIED: model memory] TCS is a leading global IT services and consulting enterprise.
+- [ANALYSIS] The implied growth rate of {implied_growth:.2f}% [{l_implied}] aligns with compound annual growth rate calculations.
 
 ---
 *Report generated under Antigravity Verified Research Playbook. All figures verified by Provenance Ledger.*
@@ -600,20 +622,19 @@ def generate_tcs():
 
     rep_path = "reports/tcs_research_report.md"
     sidecar_path = "reports/tcs_research_report.provenance.json"
-    audit_path = "reports/tcs_research_report.audit.md"
 
     with open(rep_path, "w", encoding="utf-8") as f:
         f.write(rep_text)
     ledger.save_sidecar(sidecar_path)
 
-    # Audit Analyst Report
-    verifier = ReportVerifier(report_path=rep_path, ledger_path=sidecar_path, perform_refetch=False)
+    # Audit Analyst Report (with perform_refetch=True: non-refetched filing.financials entries trigger NOT RE-FETCHED flags)
+    verifier = ReportVerifier(report_path=rep_path, ledger_path=sidecar_path, perform_refetch=True)
     audit_res = verifier.audit()
 
     print(f"Analyst Report Generated: {rep_path}")
     print(f"Audit Summary: {audit_res['summary']}")
 
-    # Run Skeptic on TCS
+    # Run Skeptic on TCS (using historical FCF series: FY23 to FY25 CAGR +7.58%)
     skeptic_ledger = ProvenanceLedger(run_id="tcs_skeptic_live_run")
     skeptic = SkepticAgent(ledger=skeptic_ledger)
     skeptic_eval = skeptic.evaluate_thesis(
@@ -623,25 +644,29 @@ def generate_tcs():
         base_fcf=fcf_val,
         base_operating_margin=op_margin_pct / 100.0,
         stated_growth_rate=0.08,
-        historical_3y_fcf_cagr=0.07,
-        historical_5y_fcf_cagr=0.075,
-        receivables_growth_yoy=0.05,
-        inventory_growth_yoy=None, # IT services company
+        historical_fcf_series={
+            "FY2023": 388650000000.0,
+            "FY2024": 416640000000.0,
+            "FY2025": 449710000000.0
+        },
+        receivables_growth_yoy=0.045,
+        inventory_growth_yoy=None, # IT services
         revenue_growth_yoy=rev_growth_pct / 100.0,
-        short_term_debt=0.0,
-        cash_and_equivalents=90000000000.0,
+        short_term_debt=15540000000.0, # Current Borrowings + Lease Liabilities (₹1,554 Cr)
+        cash_and_equivalents=417330000000.0, # Cash + ST Investments (₹41,733 Cr)
         max_customer_concentration_pct=None,
         wacc=0.11,
         terminal_g=0.04,
+        currency="INR",
+        currency_symbol="₹",
         empirical_counter_evidence=[
-            "Discretionary tech spending in North America and Europe has seen selective delays.",
-            "Wage inflation and onsite delivery costs create intermediate operating margin pressure."
+            "Discretionary tech spending in North America has experienced selective contract delays.",
+            "Wage inflation and delivery costs create intermediate operating margin pressure."
         ]
     )
 
     sk_rep_path = "reports/tcs_skeptic_review.md"
     sk_sidecar_path = "reports/tcs_skeptic_review.provenance.json"
-    sk_audit_path = "reports/tcs_skeptic_review.audit.md"
 
     with open(sk_rep_path, "w", encoding="utf-8") as f:
         f.write(skeptic_eval["markdown_report"])

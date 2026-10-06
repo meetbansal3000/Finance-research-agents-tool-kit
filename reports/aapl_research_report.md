@@ -12,7 +12,7 @@
 - Net income reached $112,010M [LEDGER_0004], delivering a net margin of 26.92% [LEDGER_0010].
 - Cash flow from operations was $111,482M [LEDGER_0005] and capital expenditures were $12,715M [LEDGER_0006].
 - Free cash flow was $98,767M [LEDGER_0011], yielding an FCF yield of 2.03% [LEDGER_0012].
-- Current market price trades at $332.89 USD [LEDGER_0007].
+- Current market price trades at $332.90 USD [LEDGER_0007].
 - Baseline DCF fair value estimate is $139.57 [LEDGER_0013].
 - Reverse DCF model indicates the current market price implies a 5-year FCF CAGR of 28.97% [LEDGER_0014].
 
@@ -33,8 +33,8 @@
 
 ### Qualitative Thesis & Strategic Context
 
-- [UNVERIFIED: model memory] Apple maintains a strong ecosystem lock-in across iOS devices and services.
-- [UNVERIFIED: model memory] Services expansion continues to support gross margin resilience.
+- [UNVERIFIED: model memory] Apple maintains strong ecosystem retention across hardware devices and subscription services.
+- [UNVERIFIED: model memory] Installed base expansion supports recurring high-margin services revenue.
 - [ANALYSIS] The implied growth rate of 28.97% [LEDGER_0014] exceeds the baseline growth assumption and reflects a premium multiple.
 
 ---
