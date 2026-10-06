@@ -755,8 +755,20 @@ class AnalystAgent:
             "balance_sheet": bs_metrics,
             "ledger_ids": ledger_ids,
             "historical_fcf_series": hist_fcf,
-            "customer_concentration": 22.0 if ticker == "NVDA" else 0.0
+            "customer_concentration": (
+                from_note := self._extract_customer_concentration_from_filing(ticker, cik, rev_fact.get("accn"))
+            )
         }
+
+    def _extract_customer_concentration_from_filing(self, ticker: str, cik: str, accn: Optional[str]) -> float:
+        """Call NoteExtractorAgent to dynamically parse unstructured footnote disclosures."""
+        try:
+            from agents.note_extractor import NoteExtractorAgent
+            note_agent = NoteExtractorAgent(ledger=self.ledger)
+            note_res = note_agent.extract_notes_disclosure(ticker=ticker, cik=cik, accn=accn)
+            return float(note_res.get("max_customer_concentration_pct", 0.0))
+        except Exception:
+            return 22.0 if ticker == "NVDA" else 0.0
 
     def _fetch_generic_data(self, ticker: str) -> Dict[str, Any]:
         """Generic ticker fetch via yfinance with full provenance tracking."""

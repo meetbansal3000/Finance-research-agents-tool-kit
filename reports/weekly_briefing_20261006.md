@@ -1,0 +1,1 @@
+D:\AI-Workspace\finance agents for research\reports\briefing_2026-10-06.md

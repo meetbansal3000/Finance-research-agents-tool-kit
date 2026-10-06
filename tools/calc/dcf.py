@@ -103,21 +103,35 @@ def reverse_dcf(
         )
         return res["result"]["equity_value"] - target_equity_value
         
-    # Search range for growth rate: -50% to +100%
+    # Initial search range for growth rate
     low = -0.50
     high = 2.00
     
-    # Check boundaries
     diff_low = price_diff(low)
     diff_high = price_diff(high)
     
+    # Adaptive dynamic bound expansion (elasticity)
+    # If target price requires higher growth, expand high bound up to 20.0 (+2000%)
+    expand_iter = 0
+    while diff_high < 0 and high < 20.0 and expand_iter < 10:
+        high *= 2.0
+        diff_high = price_diff(high)
+        expand_iter += 1
+
+    # If target price requires lower/negative growth, expand low bound down to -0.99 (-99%)
+    expand_iter = 0
+    while diff_low > 0 and low > -0.99 and expand_iter < 10:
+        low = max(-0.99, low - 0.20)
+        diff_low = price_diff(low)
+        expand_iter += 1
+
     if diff_low > 0:
         implied_g = low
     elif diff_high < 0:
         implied_g = high
     else:
         # Bisection root finding
-        for _ in range(100):
+        for _ in range(120):
             mid = (low + high) / 2.0
             diff_mid = price_diff(mid)
             if abs(diff_mid) < 1e-4 or (high - low) < 1e-6:

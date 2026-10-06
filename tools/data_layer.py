@@ -92,6 +92,64 @@ class DiskCache:
 
 
 # -----------------------------------------------------------------------------
+# Rate Limiting & Quota Management System
+# -----------------------------------------------------------------------------
+class TokenBucketRateLimiter:
+    """
+    Enforces per-provider rate limits and minimum inter-request delays to protect free-tier APIs:
+    - yfinance: max 5 req/sec (min interval 0.15s)
+    - SEC EDGAR: max 10 req/sec (min interval 0.10s)
+    - Finnhub: max 1 req/sec (min interval 1.05s)
+    - FMP: max 5 req/min (min interval 12.0s)
+    - Alpha Vantage: max 4 req/min (min interval 15.0s) with 25 daily call tracking
+    """
+    def __init__(self, cache_dir: str = CACHE_DIR):
+        self.cache_dir = cache_dir
+        self.last_call: Dict[str, float] = {}
+        self.min_intervals = {
+            "yfinance": 0.15,
+            "SEC_EDGAR": 0.10,
+            "Finnhub": 1.05,
+            "FMP": 12.0,
+            "Alpha_Vantage": 15.0
+        }
+
+    def wait_if_needed(self, provider: str) -> None:
+        min_int = self.min_intervals.get(provider, 0.0)
+        last = self.last_call.get(provider, 0.0)
+        now = time.time()
+        elapsed = now - last
+        if elapsed < min_int:
+            time.sleep(min_int - elapsed)
+        self.last_call[provider] = time.time()
+
+    def check_alpha_vantage_quota(self) -> Tuple[bool, int]:
+        """Tracks daily calls to Alpha Vantage against the 25 calls/day free tier limit."""
+        today_str = datetime.date.today().isoformat()
+        state_file = os.path.join(self.cache_dir, "alpha_vantage_daily_quota.json")
+        data = {"date": today_str, "calls": 0}
+        if os.path.exists(state_file):
+            try:
+                with open(state_file, "r", encoding="utf-8") as f:
+                    data = json.load(f)
+                if data.get("date") != today_str:
+                    data = {"date": today_str, "calls": 0}
+            except Exception:
+                data = {"date": today_str, "calls": 0}
+
+        if data.get("calls", 0) >= 25:
+            return False, data.get("calls", 0)
+
+        data["calls"] = data.get("calls", 0) + 1
+        try:
+            with open(state_file, "w", encoding="utf-8") as f:
+                json.dump(data, f, indent=2)
+        except Exception:
+            pass
+        return True, data["calls"]
+
+
+# -----------------------------------------------------------------------------
 # Free-Tier Rate Limits & Capability Metadata
 # -----------------------------------------------------------------------------
 FREE_TIER_LIMITS = {
@@ -195,6 +253,7 @@ MARKET_COVERAGE_ANALYSIS = {
 class DataLayer:
     def __init__(self, cache_ttl_quotes: int = 1800, cache_ttl_financials: int = 86400):
         self.cache = DiskCache()
+        self.limiter = TokenBucketRateLimiter(self.cache.cache_dir)
         self.ttl_quotes = cache_ttl_quotes          # 30 minutes for quotes
         self.ttl_financials = cache_ttl_financials  # 24 hours for financials
         self.ua = os.getenv("SEC_EDGAR_USER_AGENT", "ResearchAnalyst research@example.com")
@@ -204,16 +263,16 @@ class DataLayer:
         self.fred_key = os.getenv("FRED_API_KEY")
 
     # -------------------------------------------------------------------------
-    # 1. Market Quote with Cascading Fallback
+    # 1. Market Quote with Cascading Fallback & Rate Limiting
     # -------------------------------------------------------------------------
     def get_quote(self, ticker: str, ledger: Optional[ProvenanceLedger] = None) -> Dict[str, Any]:
         """
-        Fetch market quote with cascading fallback:
+        Fetch market quote with cascading fallback and token bucket rate pacing:
         1. Local Disk Cache
-        2. yfinance (Primary)
+        2. yfinance (Primary - fast_info accelerated)
         3. Finnhub (Backup 1)
         4. FMP (Backup 2)
-        5. Alpha Vantage (Backup 3)
+        5. Alpha Vantage (Backup 3 - quota guarded to 25/day)
         """
         ticker = ticker.strip().upper()
         cache_key = f"quote_{ticker}"
@@ -227,6 +286,7 @@ class DataLayer:
 
         # Step 1: yfinance (Primary)
         try:
+            self.limiter.wait_if_needed("yfinance")
             res = self._fetch_yfinance_quote(ticker)
             if res and res.get("price") is not None:
                 self.cache.set(cache_key, res, self.ttl_quotes)
@@ -239,6 +299,7 @@ class DataLayer:
         # Step 2: Finnhub (Backup 1)
         if self.finnhub_key:
             try:
+                self.limiter.wait_if_needed("Finnhub")
                 res = self._fetch_finnhub_quote(ticker)
                 if res and res.get("price") is not None:
                     self.cache.set(cache_key, res, self.ttl_quotes)
@@ -251,6 +312,7 @@ class DataLayer:
         # Step 3: FMP (Backup 2)
         if self.fmp_key:
             try:
+                self.limiter.wait_if_needed("FMP")
                 res = self._fetch_fmp_quote(ticker)
                 if res and res.get("price") is not None:
                     self.cache.set(cache_key, res, self.ttl_quotes)
@@ -260,22 +322,78 @@ class DataLayer:
             except Exception as e:
                 errors.append(f"FMP failed: {e}")
 
-        # Step 4: Alpha Vantage (Backup 3)
+        # Step 4: Alpha Vantage (Backup 3 - Quota Guarded)
         if self.alpha_key:
-            try:
-                res = self._fetch_alphavantage_quote(ticker)
-                if res and res.get("price") is not None:
-                    self.cache.set(cache_key, res, self.ttl_quotes)
-                    if ledger:
-                        self._record_quote_in_ledger(ledger, ticker, res, source="Alpha Vantage Global Quote API")
-                    return {**res, "cached": False}
-            except Exception as e:
-                errors.append(f"Alpha Vantage failed: {e}")
+            allowed, used_today = self.limiter.check_alpha_vantage_quota()
+            if allowed:
+                try:
+                    self.limiter.wait_if_needed("Alpha_Vantage")
+                    res = self._fetch_alphavantage_quote(ticker)
+                    if res and res.get("price") is not None:
+                        self.cache.set(cache_key, res, self.ttl_quotes)
+                        if ledger:
+                            self._record_quote_in_ledger(ledger, ticker, res, source="Alpha Vantage Global Quote API")
+                        return {**res, "cached": False}
+                except Exception as e:
+                    errors.append(f"Alpha Vantage failed: {e}")
+            else:
+                errors.append(f"Alpha Vantage daily free quota exhausted ({used_today}/25 calls used today)")
 
         raise RuntimeError(f"All quote sources exhausted for {ticker}. Errors: {'; '.join(errors)}")
 
+    def get_quotes_batch(self, tickers: List[str], ledger: Optional[ProvenanceLedger] = None) -> Dict[str, Dict[str, Any]]:
+        """
+        Fetch quotes for multiple tickers (e.g. 50+ universe screening) resiliently:
+        - Reads available quotes from DiskCache first
+        - Paces external requests with TokenBucketRateLimiter to eliminate HTTP 429 errors
+        - Returns mapping of ticker -> quote_result
+        """
+        results = {}
+        missing_tickers = []
+
+        for t in tickers:
+            clean = t.strip().upper()
+            cache_key = f"quote_{clean}"
+            cached = self.cache.get(cache_key)
+            if cached:
+                if ledger:
+                    self._record_quote_in_ledger(ledger, clean, cached, source=f"Cache ({cached['source']})")
+                results[clean] = {**cached, "cached": True}
+            else:
+                missing_tickers.append(clean)
+
+        for sym in missing_tickers:
+            try:
+                q = self.get_quote(sym, ledger=ledger)
+                results[sym] = q
+            except Exception as e:
+                results[sym] = {"ticker": sym, "error": str(e), "price": None}
+
+        return results
+
     def _fetch_yfinance_quote(self, ticker: str) -> Dict[str, Any]:
         t = yf.Ticker(ticker)
+        # Try fast_info first (10x faster, zero full-profile download overhead)
+        try:
+            fast = t.fast_info
+            p = fast.last_price
+            if p is not None and float(p) > 0:
+                shares = float(fast.shares or 0.0)
+                curr = getattr(fast, "currency", "USD") or "USD"
+                mkt_cap = float(fast.market_cap or (p * shares if shares > 0 else 0.0))
+                return {
+                    "ticker": ticker,
+                    "price": float(p),
+                    "currency": curr,
+                    "shares_outstanding": shares,
+                    "market_cap": mkt_cap,
+                    "source": "yfinance",
+                    "timestamp": datetime.datetime.now().isoformat()
+                }
+        except Exception:
+            pass
+
+        # Fallback to full .info
         info = t.info
         p = info.get("currentPrice") or info.get("regularMarketPrice")
         if p is None:

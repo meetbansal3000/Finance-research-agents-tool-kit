@@ -411,3 +411,217 @@ class FilingExtractor:
 
         return data
 
+    def fetch_form_20f_financials(self, ticker: str, cik: str, ledger: Optional[ProvenanceLedger] = None) -> Dict[str, Any]:
+        """
+        Extract audited annual financial metrics for foreign private issuers from SEC Form 20-F filings.
+        Queries the SEC EDGAR API and parses the `ifrs-full` taxonomy facts.
+        Supports global filers: TSM, BABA, ASML, AZN, SAP, etc.
+        """
+        clean_cik = str(cik).strip().zfill(10)
+        cache_path = os.path.join(CACHE_DIR, f"CIK{clean_cik}_companyfacts.json")
+
+        json_data = None
+        if os.path.exists(cache_path) and os.path.getsize(cache_path) > 0:
+            try:
+                with open(cache_path, "r", encoding="utf-8") as f:
+                    json_data = json.load(f)
+            except Exception:
+                pass
+
+        if not json_data:
+            url = f"https://data.sec.gov/api/xbrl/companyfacts/CIK{clean_cik}.json"
+            req = urllib.request.Request(url, headers={"User-Agent": self.user_agent})
+            try:
+                with urllib.request.urlopen(req, timeout=20) as resp:
+                    json_data = json.loads(resp.read().decode("utf-8"))
+                with open(cache_path, "w", encoding="utf-8") as f:
+                    json.dump(json_data, f, indent=2)
+            except Exception as e:
+                return {
+                    "ticker": ticker,
+                    "status": "ERROR",
+                    "error": f"Failed to fetch Form 20-F company facts for CIK {clean_cik}: {e}"
+                }
+
+        facts = json_data.get("facts", {})
+        ifrs = facts.get("ifrs-full", {})
+        if not ifrs:
+            return {
+                "ticker": ticker,
+                "status": "ERROR",
+                "error": f"No 'ifrs-full' taxonomy found for CIK {clean_cik}. The filer may report under US-GAAP."
+            }
+
+        entity_name = json_data.get("entityName", ticker)
+
+        def get_latest_fact(tag_candidates: List[str]) -> Optional[Dict[str, Any]]:
+            for tag in tag_candidates:
+                if tag not in ifrs:
+                    continue
+                units_dict = ifrs[tag].get("units", {})
+                for unit, facts_list in units_dict.items():
+                    fy_facts = [
+                        f for f in facts_list
+                        if f.get("form") == "20-F" and f.get("fp") == "FY" and "val" in f
+                    ]
+                    if fy_facts:
+                        # Sort by end date descending
+                        sorted_facts = sorted(fy_facts, key=lambda x: str(x.get("end", "")))
+                        latest = sorted_facts[-1]
+                        latest["unit"] = unit
+                        latest["tag"] = tag
+                        return latest
+            return None
+
+        # Extract primary metrics
+        rev_fact = get_latest_fact(["Revenue", "RevenueFromContractsWithCustomers"])
+        ebit_fact = get_latest_fact(["ProfitLossFromOperatingActivities", "OperatingProfitLoss"])
+        ni_fact = get_latest_fact(["ProfitLoss", "ProfitLossAttributableToOwnersOfParent"])
+        ocf_fact = get_latest_fact(["CashFlowsFromUsedInOperatingActivities"])
+        capex_fact = get_latest_fact(["PurchaseOfPropertyPlantAndEquipmentClassifiedAsInvestingActivities", "PaymentsToAcquirePropertyPlantAndEquipment"])
+        cash_fact = get_latest_fact(["CashAndCashEquivalents"])
+
+        # Determine latest fiscal year and period end
+        latest_fy = rev_fact.get("fy") if rev_fact else None
+        period_end = rev_fact.get("end") if rev_fact else None
+        accn = rev_fact.get("accn", "") if rev_fact else ""
+        currency = rev_fact.get("unit", "USD") if rev_fact else "USD"
+
+        # Calculate debt components if available
+        st_debt_fact = get_latest_fact(["CurrentPortionOfLongtermBorrowings", "CurrentBondsIssuedAndCurrentPortionOfNoncurrentBondsIssued", "CurrentBorrowings"])
+        lt_debt_fact = get_latest_fact(["LongtermBorrowings", "NoncurrentPortionOfNoncurrentBondsIssued", "NoncurrentBorrowings"])
+
+        total_debt = 0.0
+        if st_debt_fact:
+            total_debt += float(st_debt_fact.get("val", 0.0))
+        if lt_debt_fact:
+            total_debt += float(lt_debt_fact.get("val", 0.0))
+
+        cash_val = float(cash_fact.get("val", 0.0)) if cash_fact else 0.0
+        net_debt = total_debt - cash_val
+
+        ocf_val = float(ocf_fact.get("val", 0.0)) if ocf_fact else 0.0
+        capex_val = float(capex_fact.get("val", 0.0)) if capex_fact else 0.0
+        fcf_val = ocf_val - capex_val
+
+        extracted_metrics = {
+            "Revenue": rev_fact.get("val") if rev_fact else None,
+            "OperatingIncome": ebit_fact.get("val") if ebit_fact else None,
+            "NetIncome": ni_fact.get("val") if ni_fact else None,
+            "OperatingCashFlow": ocf_val,
+            "Capex": capex_val,
+            "FreeCashFlow": fcf_val,
+            "CashAndCashEquivalents": cash_val,
+            "TotalDebt": total_debt,
+            "NetDebt": net_debt
+        }
+
+        # Provenance ledger registration
+        ledger_ids = {}
+        if ledger and latest_fy and period_end:
+            for met_name, met_val in extracted_metrics.items():
+                if met_val is not None:
+                    ledger_ids[met_name] = ledger.record(
+                        tool="tools.filing.fetch_form_20f_financials",
+                        ticker=ticker,
+                        currency=currency,
+                        unit="base",
+                        inputs={"ticker": ticker, "cik": clean_cik, "metric": met_name, "period": f"FY{latest_fy}"},
+                        output=met_val,
+                        raw_value=met_val,
+                        source=f"SEC EDGAR Form 20-F (Accn: {accn}, Period End: {period_end})",
+                        period=f"FY{latest_fy}",
+                        period_end=period_end,
+                        fiscal_year=f"FY{latest_fy}",
+                        notes=f"{ticker} Form 20-F IFRS metric: {met_name} = {met_val:,.0f} {currency}",
+                        source_tag="SEC_20F_IFRS"
+                    )
+
+        return {
+            "ticker": ticker,
+            "company_name": entity_name,
+            "status": "SUCCESS",
+            "form": "20-F",
+            "accounting_standard": "IFRS",
+            "fiscal_year": f"FY{latest_fy}" if latest_fy else "N/A",
+            "period_end": period_end,
+            "accession_number": accn,
+            "currency": currency,
+            "metrics": extracted_metrics,
+            "ledger_ids": ledger_ids
+        }
+
+    def parse_esef_ixbrl_document(self, content_or_path: str, ticker: str = "ESEF", ledger: Optional[ProvenanceLedger] = None) -> Dict[str, Any]:
+        """
+        Parse European Single Electronic Format (ESEF) XHTML iXBRL annual report.
+        Extracts tagged facts from <ix:nonFraction> elements mapping to IFRS taxonomy concepts.
+        """
+        content = ""
+        if os.path.exists(content_or_path):
+            with open(content_or_path, "r", encoding="utf-8", errors="ignore") as f:
+                content = f.read()
+        else:
+            content = content_or_path
+
+        # Regex for ix:nonFraction tags
+        # Format: <ix:nonFraction name="ifrs-full:Revenue" unitRef="EUR" scale="6" decimals="-6">12,345</ix:nonFraction>
+        tag_pattern = re.compile(
+            r'<ix:nonFraction\b([^>]*)>(.*?)</ix:nonFraction>',
+            re.IGNORECASE | re.DOTALL
+        )
+
+        extracted = {}
+        for attrs_str, val_str in tag_pattern.findall(content):
+            # Parse attributes
+            name_m = re.search(r'name=["\'](ifrs-full:[a-zA-Z0-9]+)["\']', attrs_str, re.IGNORECASE)
+            if not name_m:
+                continue
+            tag_name = name_m.group(1).split(":")[-1]
+
+            scale_m = re.search(r'scale=["\'](-?\d+)["\']', attrs_str, re.IGNORECASE)
+            scale = int(scale_m.group(1)) if scale_m else 0
+
+            unit_m = re.search(r'unitRef=["\']([a-zA-Z0-9_]+)["\']', attrs_str, re.IGNORECASE)
+            unit = unit_m.group(1) if unit_m else "EUR"
+
+            # Clean value string
+            clean_val = re.sub(r'[^\d\.\-]', '', val_str)
+            if not clean_val:
+                continue
+            try:
+                numeric_val = float(clean_val) * (10 ** scale)
+                extracted[tag_name] = {
+                    "val_raw": numeric_val,
+                    "unit": unit,
+                    "scale": scale,
+                    "snippet": f"<{name_m.group(0)}>: {val_str.strip()}"
+                }
+            except Exception:
+                continue
+
+        # Register in ledger if provided
+        ledger_ids = {}
+        if ledger and extracted:
+            for k, item in extracted.items():
+                val = item["val_raw"]
+                ledger_ids[k] = ledger.record(
+                    tool="tools.filing.parse_esef_ixbrl_document",
+                    ticker=ticker,
+                    currency=item["unit"],
+                    unit="base",
+                    inputs={"ticker": ticker, "tag": f"ifrs-full:{k}"},
+                    output=val,
+                    raw_value=val,
+                    source=f"ESEF iXBRL Document ({item['snippet']})",
+                    notes=f"ESEF IFRS extracted tag: {k} = {val:,.0f} {item['unit']}",
+                    source_tag="ESEF_IXBRL"
+                )
+
+        return {
+            "ticker": ticker,
+            "status": "SUCCESS" if extracted else "NO_FACTS_FOUND",
+            "format": "ESEF_IXBRL",
+            "extracted_count": len(extracted),
+            "metrics": extracted,
+            "ledger_ids": ledger_ids
+        }
