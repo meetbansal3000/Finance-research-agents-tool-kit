@@ -20,6 +20,8 @@ D:\AI-Workspace\finance agents for research\
 ├── research_playbook_v2.md    # Master research workflows and standing rules
 ├── watchlist.txt              # Active research coverage watchlist
 ├── agents\
+│   ├── analyst.md             # Analyst agent specification & playbook workflow rules
+│   ├── analyst.py             # Analyst agent execution & error correction engine
 │   ├── verifier.md            # Verifier agent specification & audit rules
 │   ├── verifier.py            # Automated verification & re-fetch engine
 │   ├── skeptic.md             # Skeptic agent specification & thesis destruction rules
@@ -32,10 +34,13 @@ D:\AI-Workspace\finance agents for research\
 ├── journal\                   # Investment decision journal and review files
 ├── backtests\                 # Quantitative screening and backtesting sandbox
 ├── reports\                   # Saved verified research reports & sidecar audits
+│   └── TICKER_YYYY-MM-DD\     # Automated pipeline dossier outputs
+├── run_research.py            # Upgrade 4: End-to-end autonomous research orchestrator
 ├── scripts\                   # Utility and live-extraction scripts
 │   └── test_queries.py
 ├── tools\
 │   ├── ledger.py              # Immutable Provenance Ledger system with SHA-256 integrity
+│   ├── filing.py              # Audited filing extractor (SEC 10-K, NSE/BSE)
 │   └── calc\                  # Tested deterministic financial calculation toolkit
 │       ├── __init__.py
 │       ├── metrics.py         # YoY, CAGR, Margins, ROIC, ROE, FCF, Net Debt/EBITDA, EV
@@ -45,7 +50,8 @@ D:\AI-Workspace\finance agents for research\
     ├── test_calc.py           # Unit test suite for calculation tools
     ├── test_verifier.py       # Unit test suite for Verifier agent & ledger
     ├── test_verifier_comprehensive.py # Re-fetch, SHA-256 tamper, rounding, and 8+ flawed sentences
-    └── test_skeptic.py        # Unit test suite for Skeptic agent stress testing
+    ├── test_skeptic.py        # Unit test suite for Skeptic agent stress testing
+    └── test_pipeline.py       # Integration tests for run_research.py & correction round
 ```
 
 ---
@@ -95,6 +101,41 @@ The **Skeptic Agent** acts as an adversarial red-team auditor designed to stress
    - Short-term debt due within 12 months $\le 50\%$ of liquid cash.
    - Max customer concentration $\le 10\%$.
    - Zero unaddressed empirical filing headwinds.
+
+---
+
+## ⚡ Pipeline Orchestrator (`run_research.py`)
+
+Upgrade 4 introduces the end-to-end autonomous research orchestrator that coordinates four stages:
+$$\text{Analyst Agent} \longrightarrow \text{Verifier Agent (Audit \& Live Re-Fetch)} \longrightarrow [\text{Correction Round 1}] \longrightarrow \text{Skeptic Agent} \longrightarrow \text{Synthesized Dossier}$$
+
+### How to Run:
+```powershell
+# Run Workflow 1 for US stock (Apple):
+.\.venv\Scripts\python.exe run_research.py AAPL 1
+
+# Run Workflow 1 for Non-US stock (Tata Consultancy Services, India):
+.\.venv\Scripts\python.exe run_research.py TCS.NS 1
+```
+
+### Pipeline Execution Lifecycle:
+1. **Analyst Agent (`agents/analyst.py`)**:
+   - Executes the requested playbook workflow (e.g. Workflow 1: Single-stock deep dive).
+   - Ingests audited regulatory filings (`tools/filing.py`, SEC EDGAR XBRL facts, NSE/BSE press releases) and live market quotes.
+   - Computes all margins, growth rates, cash conversion, DCF, and reverse DCF implied growth via `tools/calc/`.
+   - Records every metric and calculation into the cryptographic HMAC-signed `ProvenanceLedger`.
+   - Tags qualitative claims with `[UNVERIFIED: model memory]` and analytical deductions with `[ANALYSIS]`.
+2. **Verifier Agent & Correction Round (`agents/verifier.py`)**:
+   - Audits the analyst draft under strict default-deny parsing.
+   - Cross-checks figures against the ledger, tolerance limits, and independent live source re-fetch.
+   - **Automated Correction Round**: If `total_wrong > 0`, the orchestrator immediately routes the discrepancy list back to the Analyst Agent for **one correction round**, repairing the figures before re-auditing.
+3. **Skeptic Agent (`agents/skeptic.py`)**:
+   - Executes adversarial stress-testing (Reverse DCF hurdle, -200 bps margin shock, +100 bps WACC shock, working capital divergence, liquidity buffer).
+   - Generates the $3 \times 3$ valuation sensitivity matrix (Growth $\times$ WACC) and adversarial checklist.
+4. **Final Synthesized Dossier (`/reports/TICKER_YYYY-MM-DD/final_report.md`)**:
+   - **Top Section**: Verification results (Status, Confirmed figures, Wrong figures, Unverified flags, what could not be checked, headline reconciliations).
+   - **Middle Section**: Analyst research report (Business overview, audited financial statements table with ledger citations, quality and valuation metrics).
+   - **End Section**: Skeptic adversarial review (Thesis verdict, assumptions stress tests, sensitivity grid, bear case).
 
 ---
 

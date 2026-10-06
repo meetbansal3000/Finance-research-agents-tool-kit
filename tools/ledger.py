@@ -115,6 +115,9 @@ class ProvenanceLedger:
     def get(self, ledger_id: str) -> Optional[Dict[str, Any]]:
         return self.entries.get(ledger_id)
 
+    def get_entry(self, ledger_id: str) -> Optional[Dict[str, Any]]:
+        return self.entries.get(ledger_id)
+
     def save_sidecar(self, filepath: str) -> str:
         """Save the provenance ledger as a sidecar JSON file next to a report."""
         sidecar_path = filepath if filepath.endswith(".provenance.json") else f"{os.path.splitext(filepath)[0]}.provenance.json"

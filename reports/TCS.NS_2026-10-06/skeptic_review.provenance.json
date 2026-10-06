@@ -1,0 +1,684 @@
+{
+  "run_id": "TCS.NS_skeptic_2026-10-06",
+  "saved_at": "2026-10-06T16:11:41.566682",
+  "total_records": 35,
+  "entries": {
+    "LEDGER_0001": {
+      "ledger_id": "LEDGER_0001",
+      "tool": "yfinance.quote",
+      "ticker": "TCS.NS",
+      "currency": "INR",
+      "unit": "base",
+      "inputs": {
+        "ticker": "TCS.NS",
+        "price": 2100.0
+      },
+      "output": 2100.0,
+      "raw_value": 2100.0,
+      "source": "Market Quote (TCS.NS)",
+      "form": null,
+      "period": null,
+      "notes": "Current trading price (INR)",
+      "timestamp": "2026-10-06T16:11:41.563680",
+      "integrity_hash": "c9e6e394c7d8ab3a5e6c4e47ab212d9ec751efcfd0a4a360ce162fc42bea34f4"
+    },
+    "LEDGER_0002": {
+      "ledger_id": "LEDGER_0002",
+      "tool": "yfinance.quote",
+      "ticker": "TCS.NS",
+      "currency": "INR",
+      "unit": "base",
+      "inputs": {
+        "shares_outstanding": 3618087518.0
+      },
+      "output": 3618087518.0,
+      "raw_value": 3618087518.0,
+      "source": "Share Registry / Market Data",
+      "form": null,
+      "period": null,
+      "notes": "Diluted Shares Outstanding",
+      "timestamp": "2026-10-06T16:11:41.563680",
+      "integrity_hash": "2192dd047883f4b9eea6c55c35ee3a2efcccd5fbd1ec5312358ea264d364e06f"
+    },
+    "LEDGER_0003": {
+      "ledger_id": "LEDGER_0003",
+      "tool": "filing.cash_flow",
+      "ticker": "TCS.NS",
+      "currency": "INR",
+      "unit": "base",
+      "inputs": {
+        "ticker": "TCS.NS",
+        "metric": "FreeCashFlow"
+      },
+      "output": 449710000000.0,
+      "raw_value": 449710000000.0,
+      "source": "Audited Statement of Cash Flows",
+      "form": null,
+      "period": null,
+      "notes": "Base Free Cash Flow (INR)",
+      "timestamp": "2026-10-06T16:11:41.563680",
+      "integrity_hash": "144296a8425b3143c36e57f636eea04d1530f63984bf57c67289922c68bd8ccb"
+    },
+    "LEDGER_0004": {
+      "ledger_id": "LEDGER_0004",
+      "tool": "filing.balance_sheet",
+      "ticker": "TCS.NS",
+      "currency": "INR",
+      "unit": "base",
+      "inputs": {
+        "cash_and_equivalents": 417330000000.0,
+        "marketable_securities": 0.0
+      },
+      "output": 417330000000.0,
+      "raw_value": 417330000000.0,
+      "source": "Audited Balance Sheet",
+      "form": null,
+      "period": null,
+      "notes": "Total Liquid Cash and Marketable Securities (INR)",
+      "timestamp": "2026-10-06T16:11:41.563680",
+      "integrity_hash": "a2a4f2b781a2d14dfc790dc7662cff8b6e0628e426359cc655de70e240cf2bf7"
+    },
+    "LEDGER_0005": {
+      "ledger_id": "LEDGER_0005",
+      "tool": "filing.balance_sheet",
+      "ticker": "TCS.NS",
+      "currency": "INR",
+      "unit": "base",
+      "inputs": {
+        "total_debt": 112830000000.0
+      },
+      "output": 112830000000.0,
+      "raw_value": 112830000000.0,
+      "source": "Audited Balance Sheet",
+      "form": null,
+      "period": null,
+      "notes": "Total Borrowings and Debt (INR)",
+      "timestamp": "2026-10-06T16:11:41.563680",
+      "integrity_hash": "e2d821be7f98b95c0d3c25a4d5232cec2014249c77ceb805c8f6a15f7956f5d7"
+    },
+    "LEDGER_0006": {
+      "ledger_id": "LEDGER_0006",
+      "tool": "filing.balance_sheet",
+      "ticker": "TCS.NS",
+      "currency": "INR",
+      "unit": "base",
+      "inputs": {
+        "total_debt": 112830000000.0,
+        "liquid_cash": 417330000000.0
+      },
+      "output": -304500000000.0,
+      "raw_value": -304500000000.0,
+      "source": "Audited Balance Sheet",
+      "form": null,
+      "period": null,
+      "notes": "Calculated Net Debt: Total Debt - Liquid Cash (INR)",
+      "timestamp": "2026-10-06T16:11:41.563680",
+      "integrity_hash": "6f0ccdd7b4c2485e02d720b4bf5087c7ccf6454d2f8758e6c99f1e80400a851c"
+    },
+    "LEDGER_0007": {
+      "ledger_id": "LEDGER_0007",
+      "tool": "thesis.assumption",
+      "ticker": "TCS.NS",
+      "currency": "INR",
+      "unit": "base",
+      "inputs": {
+        "growth_rate": 0.07
+      },
+      "output": 7.000000000000001,
+      "raw_value": 7.000000000000001,
+      "source": "Model Assumption (Unanchored Parameter)",
+      "form": null,
+      "period": null,
+      "notes": "Assumed 5Y FCF Growth Rate (%)",
+      "timestamp": "2026-10-06T16:11:41.563680",
+      "integrity_hash": "77994d2ff349816e04899f003c27901e05d19c8ad93e715e35e625f0cdff8e95"
+    },
+    "LEDGER_0008": {
+      "ledger_id": "LEDGER_0008",
+      "tool": "thesis.assumption",
+      "ticker": "TCS.NS",
+      "currency": "INR",
+      "unit": "base",
+      "inputs": {
+        "wacc": 0.105
+      },
+      "output": 10.5,
+      "raw_value": 10.5,
+      "source": "Model Assumption (Unanchored Parameter)",
+      "form": null,
+      "period": null,
+      "notes": "Assumed Discount Rate WACC (%)",
+      "timestamp": "2026-10-06T16:11:41.563680",
+      "integrity_hash": "7c7681ed99c4e8e85cf21b4354687eeef616b1406f55586591070cd9e805171a"
+    },
+    "LEDGER_0009": {
+      "ledger_id": "LEDGER_0009",
+      "tool": "thesis.assumption",
+      "ticker": "TCS.NS",
+      "currency": "INR",
+      "unit": "base",
+      "inputs": {
+        "terminal_g": 0.04
+      },
+      "output": 4.0,
+      "raw_value": 4.0,
+      "source": "Model Assumption (Unanchored Parameter)",
+      "form": null,
+      "period": null,
+      "notes": "Assumed Terminal Growth Rate (%)",
+      "timestamp": "2026-10-06T16:11:41.563680",
+      "integrity_hash": "38e9d8d42ee53efe2992182d383c21c143f613f3c23e0fa783f6232a6153a69a"
+    },
+    "LEDGER_0010": {
+      "ledger_id": "LEDGER_0010",
+      "tool": "tools.calc.reverse_dcf",
+      "ticker": "TCS.NS",
+      "currency": "INR",
+      "unit": "base",
+      "inputs": {
+        "current_price": 2100.0,
+        "base_fcf": 449710000000.0,
+        "WACC": 0.105,
+        "net_debt": -304500000000.0
+      },
+      "output": 4.317206144332886,
+      "raw_value": 4.317206144332886,
+      "source": "tools.calc.dcf.reverse_dcf",
+      "form": null,
+      "period": null,
+      "notes": "Market implied 5-year FCF CAGR",
+      "timestamp": "2026-10-06T16:11:41.564681",
+      "integrity_hash": "dc7cce53be3e61369635094beabd9f180fb0aa736483c432bdc0257b89184ca7"
+    },
+    "LEDGER_0011": {
+      "ledger_id": "LEDGER_0011",
+      "tool": "tools.calc.dcf",
+      "ticker": "TCS.NS",
+      "currency": "INR",
+      "unit": "base",
+      "inputs": {
+        "growth": 0.07,
+        "wacc": 0.105,
+        "term_g": 0.04,
+        "net_debt": -304500000000.0
+      },
+      "output": 2342.110117197911,
+      "raw_value": 2342.110117197911,
+      "source": "tools.calc.dcf.dcf",
+      "form": null,
+      "period": null,
+      "notes": "Baseline fair value per share (INR)",
+      "timestamp": "2026-10-06T16:11:41.564681",
+      "integrity_hash": "d024321586d2a08d2ab527012c295fdefb987295e8ec3455cf210b7f02f53fbe"
+    },
+    "LEDGER_0012": {
+      "ledger_id": "LEDGER_0012",
+      "tool": "tools.calc.dcf",
+      "ticker": "TCS.NS",
+      "currency": "INR",
+      "unit": "base",
+      "inputs": {
+        "stressed_fcf": 412844940991.7648,
+        "margin_delta_bps": -200,
+        "net_debt": -304500000000.0
+      },
+      "output": 2157.0142855919285,
+      "raw_value": 2157.0142855919285,
+      "source": "tools.calc.dcf.dcf",
+      "form": null,
+      "period": null,
+      "notes": "Fair value under margin compression (INR)",
+      "timestamp": "2026-10-06T16:11:41.564681",
+      "integrity_hash": "fe56a388c607d63dbc98724f8310e19d0bf52dc1b01c83d47f4ddec5f596c2ed"
+    },
+    "LEDGER_0013": {
+      "ledger_id": "LEDGER_0013",
+      "tool": "tools.calc.margin_stress_impact",
+      "ticker": "TCS.NS",
+      "currency": "INR",
+      "unit": "base",
+      "inputs": {
+        "baseline": 2342.110117197911,
+        "stressed": 2157.0142855919285
+      },
+      "output": -7.902951712083908,
+      "raw_value": -7.902951712083908,
+      "source": "tools.calc.metrics",
+      "form": null,
+      "period": null,
+      "notes": "Margin stress impact percentage",
+      "timestamp": "2026-10-06T16:11:41.564681",
+      "integrity_hash": "455f3e00f95dced0519f8e4b4934a28b063391a750c7ee65e1cb7bafba36ba91"
+    },
+    "LEDGER_0014": {
+      "ledger_id": "LEDGER_0014",
+      "tool": "tools.calc.dcf",
+      "ticker": "TCS.NS",
+      "currency": "INR",
+      "unit": "base",
+      "inputs": {
+        "wacc_stressed": 0.11499999999999999,
+        "net_debt": -304500000000.0
+      },
+      "output": 2037.0350521646628,
+      "raw_value": 2037.0350521646628,
+      "source": "tools.calc.dcf.dcf",
+      "form": null,
+      "period": null,
+      "notes": "Fair value under WACC elevation (INR)",
+      "timestamp": "2026-10-06T16:11:41.564681",
+      "integrity_hash": "e3076529b36b42c0e170c2c10386eee7ae27d08b49bfb7eeeaafba316a1239aa"
+    },
+    "LEDGER_0015": {
+      "ledger_id": "LEDGER_0015",
+      "tool": "tools.calc.wacc_stress_impact",
+      "ticker": "TCS.NS",
+      "currency": "INR",
+      "unit": "base",
+      "inputs": {
+        "baseline": 2342.110117197911,
+        "stressed": 2037.0350521646628
+      },
+      "output": -13.025649938194992,
+      "raw_value": -13.025649938194992,
+      "source": "tools.calc.metrics",
+      "form": null,
+      "period": null,
+      "notes": "WACC stress impact percentage",
+      "timestamp": "2026-10-06T16:11:41.564681",
+      "integrity_hash": "aa9903a7ae0927be286b27f2aeb82ddb804aa757597592db4e5d1da4c3eb6b62"
+    },
+    "LEDGER_0016": {
+      "ledger_id": "LEDGER_0016",
+      "tool": "tools.calc.dcf",
+      "ticker": "TCS.NS",
+      "currency": "INR",
+      "unit": "base",
+      "inputs": {
+        "half_growth": 0.035,
+        "net_debt": -304500000000.0
+      },
+      "output": 2030.7590491906785,
+      "raw_value": 2030.7590491906785,
+      "source": "tools.calc.dcf.dcf",
+      "form": null,
+      "period": null,
+      "notes": "Fair value at half assumed growth rate (INR)",
+      "timestamp": "2026-10-06T16:11:41.564681",
+      "integrity_hash": "9acf6426f478e3eb9be428b372683cdf0c8a3a423d1c2fa743bccd7addff67d0"
+    },
+    "LEDGER_0017": {
+      "ledger_id": "LEDGER_0017",
+      "tool": "tools.calc.growth_stress_impact",
+      "ticker": "TCS.NS",
+      "currency": "INR",
+      "unit": "base",
+      "inputs": {
+        "baseline": 2342.110117197911,
+        "stressed": 2030.7590491906785
+      },
+      "output": -13.29361355476025,
+      "raw_value": -13.29361355476025,
+      "source": "tools.calc.metrics",
+      "form": null,
+      "period": null,
+      "notes": "Half-growth valuation impact",
+      "timestamp": "2026-10-06T16:11:41.564681",
+      "integrity_hash": "cb658704dd3c5dd2014566b37e0a8bf0fe20ce16af5ac1f1a5382e16ef9ec293"
+    },
+    "LEDGER_0018": {
+      "ledger_id": "LEDGER_0018",
+      "tool": "thesis.assumption",
+      "ticker": "TCS.NS",
+      "currency": "INR",
+      "unit": "base",
+      "inputs": {
+        "growth_rate": 0.05
+      },
+      "output": 5.0,
+      "raw_value": 5.0,
+      "source": "Model Sensitivity Parameter (Downside)",
+      "form": null,
+      "period": null,
+      "notes": "Sensitivity Downside 5Y FCF Growth Rate (%)",
+      "timestamp": "2026-10-06T16:11:41.564681",
+      "integrity_hash": "af92d15efe1c8007302bbaa056a48a991bc447cd5680f9f644ade6c5ee169d0a"
+    },
+    "LEDGER_0019": {
+      "ledger_id": "LEDGER_0019",
+      "tool": "thesis.assumption",
+      "ticker": "TCS.NS",
+      "currency": "INR",
+      "unit": "base",
+      "inputs": {
+        "growth_rate": 0.09000000000000001
+      },
+      "output": 9.000000000000002,
+      "raw_value": 9.000000000000002,
+      "source": "Model Sensitivity Parameter (Upside)",
+      "form": null,
+      "period": null,
+      "notes": "Sensitivity Upside 5Y FCF Growth Rate (%)",
+      "timestamp": "2026-10-06T16:11:41.564681",
+      "integrity_hash": "8c7c5cdeacda47a67265a04db6bbd1aa9197cb14262089744a52e9c4dcfa8dfb"
+    },
+    "LEDGER_0020": {
+      "ledger_id": "LEDGER_0020",
+      "tool": "tools.calc.dcf",
+      "ticker": "TCS.NS",
+      "currency": "INR",
+      "unit": "base",
+      "inputs": {
+        "growth": 0.05,
+        "wacc": 0.095,
+        "net_debt": -304500000000.0
+      },
+      "output": 2538.5469617519016,
+      "raw_value": 2538.5469617519016,
+      "source": "tools.calc.dcf.dcf",
+      "form": null,
+      "period": null,
+      "notes": "Sensitivity fair value: Growth 5.0%, WACC 9.5% (INR)",
+      "timestamp": "2026-10-06T16:11:41.564681",
+      "integrity_hash": "a01f8c8d1f8da8af7afb8604477a4f2b833ced018c62bbe48aff23c7b957377f"
+    },
+    "LEDGER_0021": {
+      "ledger_id": "LEDGER_0021",
+      "tool": "tools.calc.dcf",
+      "ticker": "TCS.NS",
+      "currency": "INR",
+      "unit": "base",
+      "inputs": {
+        "growth": 0.05,
+        "wacc": 0.105,
+        "net_debt": -304500000000.0
+      },
+      "output": 2159.4353334766424,
+      "raw_value": 2159.4353334766424,
+      "source": "tools.calc.dcf.dcf",
+      "form": null,
+      "period": null,
+      "notes": "Sensitivity fair value: Growth 5.0%, WACC 10.5% (INR)",
+      "timestamp": "2026-10-06T16:11:41.564681",
+      "integrity_hash": "df56f1ecf25ae15825ba57e5b38bdc29892572e1389922f335b2b5dc61101f33"
+    },
+    "LEDGER_0022": {
+      "ledger_id": "LEDGER_0022",
+      "tool": "tools.calc.dcf",
+      "ticker": "TCS.NS",
+      "currency": "INR",
+      "unit": "base",
+      "inputs": {
+        "growth": 0.05,
+        "wacc": 0.11499999999999999,
+        "net_debt": -304500000000.0
+      },
+      "output": 1881.4661879437083,
+      "raw_value": 1881.4661879437083,
+      "source": "tools.calc.dcf.dcf",
+      "form": null,
+      "period": null,
+      "notes": "Sensitivity fair value: Growth 5.0%, WACC 11.5% (INR)",
+      "timestamp": "2026-10-06T16:11:41.564681",
+      "integrity_hash": "0cfc171ad0913c96b234017579b0f4f9b67b7208a47f36c75059e635ad610121"
+    },
+    "LEDGER_0023": {
+      "ledger_id": "LEDGER_0023",
+      "tool": "tools.calc.dcf",
+      "ticker": "TCS.NS",
+      "currency": "INR",
+      "unit": "base",
+      "inputs": {
+        "growth": 0.07,
+        "wacc": 0.095,
+        "net_debt": -304500000000.0
+      },
+      "output": 2758.321737620263,
+      "raw_value": 2758.321737620263,
+      "source": "tools.calc.dcf.dcf",
+      "form": null,
+      "period": null,
+      "notes": "Sensitivity fair value: Growth 7.0%, WACC 9.5% (INR)",
+      "timestamp": "2026-10-06T16:11:41.564681",
+      "integrity_hash": "d8c2ca35aed58ab103f6efe38a5456a67a873474305a6bb2e0ccd624f83273f1"
+    },
+    "LEDGER_0024": {
+      "ledger_id": "LEDGER_0024",
+      "tool": "tools.calc.dcf",
+      "ticker": "TCS.NS",
+      "currency": "INR",
+      "unit": "base",
+      "inputs": {
+        "growth": 0.07,
+        "wacc": 0.105,
+        "net_debt": -304500000000.0
+      },
+      "output": 2342.110117197911,
+      "raw_value": 2342.110117197911,
+      "source": "tools.calc.dcf.dcf",
+      "form": null,
+      "period": null,
+      "notes": "Sensitivity fair value: Growth 7.0%, WACC 10.5% (INR)",
+      "timestamp": "2026-10-06T16:11:41.564681",
+      "integrity_hash": "c2a3feb1016ce470e1f30d4531dd760effab902485ab0766eb6950a592105d60"
+    },
+    "LEDGER_0025": {
+      "ledger_id": "LEDGER_0025",
+      "tool": "tools.calc.dcf",
+      "ticker": "TCS.NS",
+      "currency": "INR",
+      "unit": "base",
+      "inputs": {
+        "growth": 0.07,
+        "wacc": 0.11499999999999999,
+        "net_debt": -304500000000.0
+      },
+      "output": 2037.0350521646628,
+      "raw_value": 2037.0350521646628,
+      "source": "tools.calc.dcf.dcf",
+      "form": null,
+      "period": null,
+      "notes": "Sensitivity fair value: Growth 7.0%, WACC 11.5% (INR)",
+      "timestamp": "2026-10-06T16:11:41.564681",
+      "integrity_hash": "a0831be91af3571059f6cc1c1b9b47f18ea1ba88e736ab19bb7efa733185758f"
+    },
+    "LEDGER_0026": {
+      "ledger_id": "LEDGER_0026",
+      "tool": "tools.calc.dcf",
+      "ticker": "TCS.NS",
+      "currency": "INR",
+      "unit": "base",
+      "inputs": {
+        "growth": 0.09000000000000001,
+        "wacc": 0.095,
+        "net_debt": -304500000000.0
+      },
+      "output": 2994.305891617861,
+      "raw_value": 2994.305891617861,
+      "source": "tools.calc.dcf.dcf",
+      "form": null,
+      "period": null,
+      "notes": "Sensitivity fair value: Growth 9.0%, WACC 9.5% (INR)",
+      "timestamp": "2026-10-06T16:11:41.564681",
+      "integrity_hash": "7259170a1e95cf123b3ebf5726817819babc61e4649ba5d1d83bcbb4eeef5299"
+    },
+    "LEDGER_0027": {
+      "ledger_id": "LEDGER_0027",
+      "tool": "tools.calc.dcf",
+      "ticker": "TCS.NS",
+      "currency": "INR",
+      "unit": "base",
+      "inputs": {
+        "growth": 0.09000000000000001,
+        "wacc": 0.105,
+        "net_debt": -304500000000.0
+      },
+      "output": 2538.133201361397,
+      "raw_value": 2538.133201361397,
+      "source": "tools.calc.dcf.dcf",
+      "form": null,
+      "period": null,
+      "notes": "Sensitivity fair value: Growth 9.0%, WACC 10.5% (INR)",
+      "timestamp": "2026-10-06T16:11:41.564681",
+      "integrity_hash": "dde9a11e013d3896c400d626b5dd0c94ef42d1aad9a7c4bee6c56971bfe369f6"
+    },
+    "LEDGER_0028": {
+      "ledger_id": "LEDGER_0028",
+      "tool": "tools.calc.dcf",
+      "ticker": "TCS.NS",
+      "currency": "INR",
+      "unit": "base",
+      "inputs": {
+        "growth": 0.09000000000000001,
+        "wacc": 0.11499999999999999,
+        "net_debt": -304500000000.0
+      },
+      "output": 2203.8663011532517,
+      "raw_value": 2203.8663011532517,
+      "source": "tools.calc.dcf.dcf",
+      "form": null,
+      "period": null,
+      "notes": "Sensitivity fair value: Growth 9.0%, WACC 11.5% (INR)",
+      "timestamp": "2026-10-06T16:11:41.564681",
+      "integrity_hash": "dd49cb535873bcc71b669e708576c020aa793a6fe11c35453005116ff6e30ae6"
+    },
+    "LEDGER_0029": {
+      "ledger_id": "LEDGER_0029",
+      "tool": "filing.cash_flow",
+      "ticker": "TCS.NS",
+      "currency": "INR",
+      "unit": "base",
+      "inputs": {
+        "ticker": "TCS.NS",
+        "metric": "FreeCashFlow",
+        "period": "FY2022"
+      },
+      "output": 391810000000.0,
+      "raw_value": 391810000000.0,
+      "source": "Annual Report FY2022 Audited Cash Flow",
+      "form": null,
+      "period": "FY2022",
+      "notes": "TCS.NS FY2022 Free Cash Flow (INR)",
+      "timestamp": "2026-10-06T16:11:41.564681",
+      "integrity_hash": "f6c340ddbc473e09e12061d36f1395d4ffcedcc916d310d621a7b94a0956e297"
+    },
+    "LEDGER_0030": {
+      "ledger_id": "LEDGER_0030",
+      "tool": "filing.cash_flow",
+      "ticker": "TCS.NS",
+      "currency": "INR",
+      "unit": "base",
+      "inputs": {
+        "ticker": "TCS.NS",
+        "metric": "FreeCashFlow",
+        "period": "FY2023"
+      },
+      "output": 419610000000.0,
+      "raw_value": 419610000000.0,
+      "source": "Annual Report FY2023 Audited Cash Flow",
+      "form": null,
+      "period": "FY2023",
+      "notes": "TCS.NS FY2023 Free Cash Flow (INR)",
+      "timestamp": "2026-10-06T16:11:41.564681",
+      "integrity_hash": "d4d611eb6dbc5a74b6b2f4055e80ba29871db4418f03bbaa5cd4b06a1529b524"
+    },
+    "LEDGER_0031": {
+      "ledger_id": "LEDGER_0031",
+      "tool": "filing.cash_flow",
+      "ticker": "TCS.NS",
+      "currency": "INR",
+      "unit": "base",
+      "inputs": {
+        "ticker": "TCS.NS",
+        "metric": "FreeCashFlow",
+        "period": "FY2024"
+      },
+      "output": 443400000000.0,
+      "raw_value": 443400000000.0,
+      "source": "Annual Report FY2024 Audited Cash Flow",
+      "form": null,
+      "period": "FY2024",
+      "notes": "TCS.NS FY2024 Free Cash Flow (INR)",
+      "timestamp": "2026-10-06T16:11:41.564681",
+      "integrity_hash": "4cba36da85c50aa37be0f99f49be0b1f9a600e7a83208c672e3f791f3c4ece83"
+    },
+    "LEDGER_0032": {
+      "ledger_id": "LEDGER_0032",
+      "tool": "filing.cash_flow",
+      "ticker": "TCS.NS",
+      "currency": "INR",
+      "unit": "base",
+      "inputs": {
+        "ticker": "TCS.NS",
+        "metric": "FreeCashFlow",
+        "period": "FY2025"
+      },
+      "output": 449710000000.0,
+      "raw_value": 449710000000.0,
+      "source": "Annual Report FY2025 Audited Cash Flow",
+      "form": null,
+      "period": "FY2025",
+      "notes": "TCS.NS FY2025 Free Cash Flow (INR)",
+      "timestamp": "2026-10-06T16:11:41.564681",
+      "integrity_hash": "a7f026f786310c6378506460aea89b197ad3ba766bf32688ea10fb09446a859b"
+    },
+    "LEDGER_0033": {
+      "ledger_id": "LEDGER_0033",
+      "tool": "tools.calc.cagr",
+      "ticker": "TCS.NS",
+      "currency": "INR",
+      "unit": "base",
+      "inputs": {
+        "start_value": 391810000000.0,
+        "end_value": 449710000000.0,
+        "periods": 3
+      },
+      "output": 4.7013648257553164,
+      "raw_value": 4.7013648257553164,
+      "source": "tools.calc.metrics.cagr",
+      "form": null,
+      "period": null,
+      "notes": "Historical 3-year FCF CAGR (FY2022 to FY2025)",
+      "timestamp": "2026-10-06T16:11:41.564681",
+      "integrity_hash": "ce5ba261fd56fa0d2d36f8770068d937dfbb303a587fd2385bb12ffb6d1247d5"
+    },
+    "LEDGER_0034": {
+      "ledger_id": "LEDGER_0034",
+      "tool": "tools.calc.working_capital",
+      "ticker": "TCS.NS",
+      "currency": "INR",
+      "unit": "base",
+      "inputs": {
+        "rec_yoy": 0.045005740528128585,
+        "rev_yoy": 0.059906265437351856
+      },
+      "output": -1.4900524909223272,
+      "raw_value": -1.4900524909223272,
+      "source": "Annual Filings",
+      "form": null,
+      "period": null,
+      "notes": "Receivables vs Revenue YoY divergence (pp)",
+      "timestamp": "2026-10-06T16:11:41.564681",
+      "integrity_hash": "f0a67fa932bf8e8744535394b01853d67082612d65bea0eec6c5791c0723a72b"
+    },
+    "LEDGER_0035": {
+      "ledger_id": "LEDGER_0035",
+      "tool": "tools.calc.liquidity",
+      "ticker": "TCS.NS",
+      "currency": "INR",
+      "unit": "base",
+      "inputs": {
+        "st_debt": 15540000000.0,
+        "cash": 417330000000.0
+      },
+      "output": 3.7236719143124146,
+      "raw_value": 3.7236719143124146,
+      "source": "Annual Balance Sheet",
+      "form": null,
+      "period": null,
+      "notes": "Short-term debt to cash ratio",
+      "timestamp": "2026-10-06T16:11:41.565684",
+      "integrity_hash": "f49a30a0693469a0509979eab2d757b53a2a632be51610e0b2eedc716020ddf4"
+    }
+  }
+}

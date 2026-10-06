@@ -1,0 +1,494 @@
+{
+  "run_id": "TCS.NS_analyst_2026-10-06",
+  "saved_at": "2026-10-06T16:11:41.471298",
+  "total_records": 24,
+  "entries": {
+    "LEDGER_0001": {
+      "ledger_id": "LEDGER_0001",
+      "tool": "tools.filing.extract_metric",
+      "ticker": "TCS.NS",
+      "currency": "INR",
+      "unit": "crore",
+      "inputs": {
+        "ticker": "TCS.NS",
+        "metric": "Revenue",
+        "period": "FY2025"
+      },
+      "output": 2553240000000.0,
+      "raw_value": 2553240000000.0,
+      "source": "https://www.tcs.com/content/dam/tcs/investor-relations/financial-statements/2024-25/q4/press-release.pdf (Page 4 (Consolidated Audited Statement of Profit and Loss))",
+      "form": null,
+      "period": "FY2025",
+      "notes": "Revenue: \"Revenue from operations for the year ended March 31, 2025 was \u20b9255,324 crore compared to \u20b9240,893 crore in the previous year, an increase of 6.0%.\"",
+      "timestamp": "2026-10-06T16:11:41.470105",
+      "integrity_hash": "e161403088c74828be65f7aa2e3de077be254b8a0a2adb682d2fc10a12fa7e8b"
+    },
+    "LEDGER_0002": {
+      "ledger_id": "LEDGER_0002",
+      "tool": "tools.filing.extract_metric",
+      "ticker": "TCS.NS",
+      "currency": "INR",
+      "unit": "crore",
+      "inputs": {
+        "ticker": "TCS.NS",
+        "metric": "PriorRevenue",
+        "period": "FY2025"
+      },
+      "output": 2408930000000.0,
+      "raw_value": 2408930000000.0,
+      "source": "https://www.tcs.com/content/dam/tcs/investor-relations/financial-statements/2024-25/q4/press-release.pdf (Page 4 (Consolidated Audited Statement of Profit and Loss))",
+      "form": null,
+      "period": "FY2025",
+      "notes": "PriorRevenue: \"Revenue from operations for the year ended March 31, 2024 was \u20b9240,893 crore.\"",
+      "timestamp": "2026-10-06T16:11:41.470105",
+      "integrity_hash": "9fdbaff237bbfa652e20a9d871df9d20ec4783d9b87f095cf9e39a3aa2f87e96"
+    },
+    "LEDGER_0003": {
+      "ledger_id": "LEDGER_0003",
+      "tool": "tools.filing.extract_metric",
+      "ticker": "TCS.NS",
+      "currency": "INR",
+      "unit": "crore",
+      "inputs": {
+        "ticker": "TCS.NS",
+        "metric": "OperatingIncome",
+        "period": "FY2025"
+      },
+      "output": 622930000000.0,
+      "raw_value": 622930000000.0,
+      "source": "https://www.tcs.com/content/dam/tcs/investor-relations/financial-statements/2024-25/q4/press-release.pdf (Page 4 (Statement of Profit and Loss))",
+      "form": null,
+      "period": "FY2025",
+      "notes": "OperatingIncome: \"Operating profit (EBIT) before other income for FY2025 stood at \u20b962,074 crore (Operating Margin 24.31%). Total EBIT including operating adjustments stood at \u20b962,293 crore (24.40%).\"",
+      "timestamp": "2026-10-06T16:11:41.470300",
+      "integrity_hash": "7c166d2b04da79ebe62b8a0955c175c82c8748d5f21f00790d85f53d262af3f0"
+    },
+    "LEDGER_0004": {
+      "ledger_id": "LEDGER_0004",
+      "tool": "tools.filing.extract_metric",
+      "ticker": "TCS.NS",
+      "currency": "INR",
+      "unit": "base",
+      "inputs": {
+        "ticker": "TCS.NS",
+        "metric": "HeadlineOperatingMargin",
+        "period": "FY2025"
+      },
+      "output": 24.3,
+      "raw_value": 24.3,
+      "source": "https://www.tcs.com/content/dam/tcs/investor-relations/financial-statements/2024-25/q4/press-release.pdf (Page 1 (FY25 Headline Highlights))",
+      "form": null,
+      "period": "FY2025",
+      "notes": "HeadlineOperatingMargin: \"Operating Margin: 24.3%; expanded 20 bps YoY.\"",
+      "timestamp": "2026-10-06T16:11:41.470300",
+      "integrity_hash": "f2c1a0fc6550f82beb9ce4b46782b7bd45078d9e2817e87498001a49244fcb8c"
+    },
+    "LEDGER_0005": {
+      "ledger_id": "LEDGER_0005",
+      "tool": "tools.filing.extract_metric",
+      "ticker": "TCS.NS",
+      "currency": "INR",
+      "unit": "crore",
+      "inputs": {
+        "ticker": "TCS.NS",
+        "metric": "AttributableNetProfit",
+        "period": "FY2025"
+      },
+      "output": 485530000000.0,
+      "raw_value": 485530000000.0,
+      "source": "https://www.tcs.com/content/dam/tcs/investor-relations/financial-statements/2024-25/q4/press-release.pdf (Page 4 (Statement of Profit and Loss, Attributable Share))",
+      "form": null,
+      "period": "FY2025",
+      "notes": "AttributableNetProfit: \"Profit for the year attributable to shareholders of the company: \u20b948,553 crore (Total profit including non-controlling interest \u20b9244 crore is \u20b948,797 crore).\"",
+      "timestamp": "2026-10-06T16:11:41.470300",
+      "integrity_hash": "7e646a083349abbcb43ad4852923db8612b2ba5d1f19434efcc56106d272579d"
+    },
+    "LEDGER_0006": {
+      "ledger_id": "LEDGER_0006",
+      "tool": "tools.filing.extract_metric",
+      "ticker": "TCS.NS",
+      "currency": "INR",
+      "unit": "crore",
+      "inputs": {
+        "ticker": "TCS.NS",
+        "metric": "PriorAttributableNetProfit",
+        "period": "FY2025"
+      },
+      "output": 459080000000.0,
+      "raw_value": 459080000000.0,
+      "source": "https://www.tcs.com/content/dam/tcs/investor-relations/financial-statements/2024-25/q4/press-release.pdf (Page 4 (Statement of Profit and Loss, Attributable Share))",
+      "form": null,
+      "period": "FY2025",
+      "notes": "PriorAttributableNetProfit: \"Profit for FY2024 attributable to shareholders was \u20b945,908 crore (Total profit \u20b946,099 crore).\"",
+      "timestamp": "2026-10-06T16:11:41.470300",
+      "integrity_hash": "9fa58e9f54aa85f940dbe2958fac07eaa6d5c30724d2406265c595985bf534ec"
+    },
+    "LEDGER_0007": {
+      "ledger_id": "LEDGER_0007",
+      "tool": "tools.filing.extract_metric",
+      "ticker": "TCS.NS",
+      "currency": "INR",
+      "unit": "crore",
+      "inputs": {
+        "ticker": "TCS.NS",
+        "metric": "OperatingCashFlow",
+        "period": "FY2025"
+      },
+      "output": 489080000000.0,
+      "raw_value": 489080000000.0,
+      "source": "https://www.tcs.com/content/dam/tcs/investor-relations/financial-statements/2024-25/q4/press-release.pdf (Page 6 (Consolidated Statement of Cash Flows))",
+      "form": null,
+      "period": "FY2025",
+      "notes": "OperatingCashFlow: \"Cash generated from operating activities: \u20b948,908 crore.\"",
+      "timestamp": "2026-10-06T16:11:41.470300",
+      "integrity_hash": "3ba63bfed226052c08ca3812bc8f354a8aaf546037c5b695f73503579ad2683e"
+    },
+    "LEDGER_0008": {
+      "ledger_id": "LEDGER_0008",
+      "tool": "tools.filing.extract_metric",
+      "ticker": "TCS.NS",
+      "currency": "INR",
+      "unit": "crore",
+      "inputs": {
+        "ticker": "TCS.NS",
+        "metric": "Capex",
+        "period": "FY2025"
+      },
+      "output": 39370000000.0,
+      "raw_value": 39370000000.0,
+      "source": "https://www.tcs.com/content/dam/tcs/investor-relations/financial-statements/2024-25/q4/press-release.pdf (Page 6 (Consolidated Statement of Cash Flows))",
+      "form": null,
+      "period": "FY2025",
+      "notes": "Capex: \"Purchase of property, plant and equipment and intangible assets: \u20b93,937 crore.\"",
+      "timestamp": "2026-10-06T16:11:41.470300",
+      "integrity_hash": "9d4da28f7c39456e9514578a7d1b21d0caa052f65627518aa6a64675ddf5ed34"
+    },
+    "LEDGER_0009": {
+      "ledger_id": "LEDGER_0009",
+      "tool": "tools.filing.extract_metric",
+      "ticker": "TCS.NS",
+      "currency": "INR",
+      "unit": "crore",
+      "inputs": {
+        "ticker": "TCS.NS",
+        "metric": "DerivedFreeCashFlow",
+        "period": "FY2025"
+      },
+      "output": 449710000000.0,
+      "raw_value": 449710000000.0,
+      "source": "https://www.tcs.com/content/dam/tcs/investor-relations/financial-statements/2024-25/q4/press-release.pdf (Page 6 (Calculated: OCF \u20b948,908 Cr - Capex \u20b93,937 Cr))",
+      "form": null,
+      "period": "FY2025",
+      "notes": "DerivedFreeCashFlow: \"Free Cash Flow derived as Operating Cash Flow (\u20b948,908 crore) minus Capital Expenditures (\u20b93,937 crore) = \u20b944,971 crore.\"",
+      "timestamp": "2026-10-06T16:11:41.470300",
+      "integrity_hash": "a531a2b02da22f13ee24bed79ce8eb6c7dfaeb889f4dc80bdcef5b7112bdd027"
+    },
+    "LEDGER_0010": {
+      "ledger_id": "LEDGER_0010",
+      "tool": "tools.filing.extract_metric",
+      "ticker": "TCS.NS",
+      "currency": "INR",
+      "unit": "crore",
+      "inputs": {
+        "ticker": "TCS.NS",
+        "metric": "HeadlineFreeCashFlow",
+        "period": "FY2025"
+      },
+      "output": 464490000000.0,
+      "raw_value": 464490000000.0,
+      "source": "https://www.tcs.com/content/dam/tcs/investor-relations/financial-statements/2024-25/q4/press-release.pdf (Page 1 (Financial Performance Highlights))",
+      "form": null,
+      "period": "FY2025",
+      "notes": "HeadlineFreeCashFlow: \"Company-reported Free Cash Flow for FY 25 was \u20b946,449 crore, representing 95.7% of net profit.\"",
+      "timestamp": "2026-10-06T16:11:41.470300",
+      "integrity_hash": "8b55f96db4f5e58eea6f73ab17e04098b72ccfb927a74882ab1495c44fddfad5"
+    },
+    "LEDGER_0011": {
+      "ledger_id": "LEDGER_0011",
+      "tool": "tools.filing.extract_metric",
+      "ticker": "TCS.NS",
+      "currency": "INR",
+      "unit": "crore",
+      "inputs": {
+        "ticker": "TCS.NS",
+        "metric": "CashAndInvestments",
+        "period": "FY2025"
+      },
+      "output": 417330000000.0,
+      "raw_value": 417330000000.0,
+      "source": "https://www.tcs.com/content/dam/tcs/investor-relations/financial-statements/2024-25/q4/press-release.pdf (Page 5 (Consolidated Balance Sheet))",
+      "form": null,
+      "period": "FY2025",
+      "notes": "CashAndInvestments: \"Cash and cash equivalents (\u20b96,765 crore) + Other current investments / deposits (\u20b934,968 crore) = \u20b941,733 crore.\"",
+      "timestamp": "2026-10-06T16:11:41.470300",
+      "integrity_hash": "cb0f72b5d084573372047a1d99509a6618514738c3940d232bb2d4fe8c057018"
+    },
+    "LEDGER_0012": {
+      "ledger_id": "LEDGER_0012",
+      "tool": "tools.filing.extract_metric",
+      "ticker": "TCS.NS",
+      "currency": "INR",
+      "unit": "crore",
+      "inputs": {
+        "ticker": "TCS.NS",
+        "metric": "TotalDebt",
+        "period": "FY2025"
+      },
+      "output": 112830000000.0,
+      "raw_value": 112830000000.0,
+      "source": "https://www.tcs.com/content/dam/tcs/investor-relations/financial-statements/2024-25/q4/press-release.pdf (Page 5 (Consolidated Balance Sheet))",
+      "form": null,
+      "period": "FY2025",
+      "notes": "TotalDebt: \"Total borrowings and lease liabilities: \u20b911,283 crore (Current borrowings \u20b91,554 crore; Lease liabilities \u20b99,729 crore).\"",
+      "timestamp": "2026-10-06T16:11:41.470300",
+      "integrity_hash": "8a60f37b42722f925d5ea4be81b0edfac1aa927664576f87db9b957c9aea6f60"
+    },
+    "LEDGER_0013": {
+      "ledger_id": "LEDGER_0013",
+      "tool": "tools.filing.extract_metric",
+      "ticker": "TCS.NS",
+      "currency": "INR",
+      "unit": "crore",
+      "inputs": {
+        "ticker": "TCS.NS",
+        "metric": "ShortTermDebt",
+        "period": "FY2025"
+      },
+      "output": 15540000000.0,
+      "raw_value": 15540000000.0,
+      "source": "https://www.tcs.com/content/dam/tcs/investor-relations/financial-statements/2024-25/q4/press-release.pdf (Page 5 (Consolidated Balance Sheet))",
+      "form": null,
+      "period": "FY2025",
+      "notes": "ShortTermDebt: \"Current borrowings due within one year: \u20b91,554 crore.\"",
+      "timestamp": "2026-10-06T16:11:41.470300",
+      "integrity_hash": "13c6d5579a3e09092d49a5d3eb761df878051517c2470417eaf8a9483fc34072"
+    },
+    "LEDGER_0014": {
+      "ledger_id": "LEDGER_0014",
+      "tool": "tools.filing.extract_metric",
+      "ticker": "TCS.NS",
+      "currency": "INR",
+      "unit": "crore",
+      "inputs": {
+        "ticker": "TCS.NS",
+        "metric": "NetDebt",
+        "period": "FY2025"
+      },
+      "output": -304500000000.0,
+      "raw_value": -304500000000.0,
+      "source": "https://www.tcs.com/content/dam/tcs/investor-relations/financial-statements/2024-25/q4/press-release.pdf (Page 5 (Consolidated Balance Sheet))",
+      "form": null,
+      "period": "FY2025",
+      "notes": "NetDebt: \"Net Cash position: Total Debt (\u20b911,283 crore) - Cash & Investments (\u20b941,733 crore) = -\u20b930,450 crore.\"",
+      "timestamp": "2026-10-06T16:11:41.470300",
+      "integrity_hash": "6f73838771ea11cf718031969a6f95c87c2024ac2c6f6bc65abb034f56f35ee2"
+    },
+    "LEDGER_0015": {
+      "ledger_id": "LEDGER_0015",
+      "tool": "tools.filing.extract_metric",
+      "ticker": "TCS.NS",
+      "currency": "INR",
+      "unit": "crore",
+      "inputs": {
+        "ticker": "TCS.NS",
+        "metric": "TradeReceivables",
+        "period": "FY2025"
+      },
+      "output": 455100000000.0,
+      "raw_value": 455100000000.0,
+      "source": "https://www.tcs.com/content/dam/tcs/investor-relations/financial-statements/2024-25/q4/press-release.pdf (Page 5 (Balance Sheet))",
+      "form": null,
+      "period": "FY2025",
+      "notes": "TradeReceivables: \"Trade receivables: \u20b945,510 crore (vs \u20b943,550 crore in FY24, +4.50% YoY).\"",
+      "timestamp": "2026-10-06T16:11:41.470300",
+      "integrity_hash": "a67ed83dafd32c789610f5b289901cd1d6ed256d1b9c4cc15cb5b2d51c442035"
+    },
+    "LEDGER_0016": {
+      "ledger_id": "LEDGER_0016",
+      "tool": "tools.filing.extract_metric",
+      "ticker": "TCS.NS",
+      "currency": "INR",
+      "unit": "crore",
+      "inputs": {
+        "ticker": "TCS.NS",
+        "metric": "PriorTradeReceivables",
+        "period": "FY2025"
+      },
+      "output": 435500000000.0,
+      "raw_value": 435500000000.0,
+      "source": "https://www.tcs.com/content/dam/tcs/investor-relations/financial-statements/2024-25/q4/press-release.pdf (Page 5 (Balance Sheet))",
+      "form": null,
+      "period": "FY2025",
+      "notes": "PriorTradeReceivables: \"Trade receivables prior year: \u20b943,550 crore.\"",
+      "timestamp": "2026-10-06T16:11:41.470300",
+      "integrity_hash": "86a050cdd220935a6d206ddb182efd5814719e0efb1986f15305c106fd86012f"
+    },
+    "LEDGER_0017": {
+      "ledger_id": "LEDGER_0017",
+      "tool": "yfinance.quote",
+      "ticker": "TCS.NS",
+      "currency": "INR",
+      "unit": "base",
+      "inputs": {
+        "ticker": "TCS.NS",
+        "price": 2100.0
+      },
+      "output": 2100.0,
+      "raw_value": 2100.0,
+      "source": "Yahoo Finance / NSE Quote",
+      "form": null,
+      "period": null,
+      "notes": "TCS.NS Current Market Price",
+      "timestamp": "2026-10-06T16:11:41.470300",
+      "integrity_hash": "172c7f2a9db2a9f00204350d28ea43451c43855d0a3f4b65c5ed4da642bdfae1"
+    },
+    "LEDGER_0018": {
+      "ledger_id": "LEDGER_0018",
+      "tool": "tools.calc.yoy_growth",
+      "ticker": "TCS.NS",
+      "currency": "INR",
+      "unit": "base",
+      "inputs": {
+        "current_period": 2553240000000.0,
+        "prior_period": 2408930000000.0
+      },
+      "output": 5.9906265437351855,
+      "raw_value": 5.9906265437351855,
+      "source": "tools.calc.metrics.yoy_growth",
+      "form": null,
+      "period": null,
+      "notes": "TCS.NS YoY Revenue Growth Rate (%)",
+      "timestamp": "2026-10-06T16:11:41.470300",
+      "integrity_hash": "36f741ded7727cdbbce09992c9bc868707e97e16286458fcfaabed15d8342f40"
+    },
+    "LEDGER_0019": {
+      "ledger_id": "LEDGER_0019",
+      "tool": "tools.calc.margin",
+      "ticker": "TCS.NS",
+      "currency": "INR",
+      "unit": "base",
+      "inputs": {
+        "numerator": 622930000000.0,
+        "revenue": 2553240000000.0
+      },
+      "output": 24.397628111732544,
+      "raw_value": 24.397628111732544,
+      "source": "tools.calc.metrics.margin",
+      "form": null,
+      "period": null,
+      "notes": "TCS.NS Operating Margin (%)",
+      "timestamp": "2026-10-06T16:11:41.470300",
+      "integrity_hash": "91d5ff8b62929958c49d0c42cbb4b44ce27ae9ca4157b9449eeb5a6696849cab"
+    },
+    "LEDGER_0020": {
+      "ledger_id": "LEDGER_0020",
+      "tool": "tools.calc.margin",
+      "ticker": "TCS.NS",
+      "currency": "INR",
+      "unit": "base",
+      "inputs": {
+        "numerator": 485530000000.0,
+        "revenue": 2553240000000.0
+      },
+      "output": 19.01623035828986,
+      "raw_value": 19.01623035828986,
+      "source": "tools.calc.metrics.margin",
+      "form": null,
+      "period": null,
+      "notes": "TCS.NS Net Profit Margin (%)",
+      "timestamp": "2026-10-06T16:11:41.470300",
+      "integrity_hash": "4201e2ac1ec2698f6a2fb9f9678ad7a35d2468e69b1335ead122dd3b549f687e"
+    },
+    "LEDGER_0021": {
+      "ledger_id": "LEDGER_0021",
+      "tool": "tools.calc.free_cash_flow",
+      "ticker": "TCS.NS",
+      "currency": "INR",
+      "unit": "base",
+      "inputs": {
+        "operating_cash_flow": 489080000000.0,
+        "capital_expenditures": 39370000000.0
+      },
+      "output": 449710000000.0,
+      "raw_value": 449710000000.0,
+      "source": "tools.calc.metrics.free_cash_flow",
+      "form": null,
+      "period": null,
+      "notes": "TCS.NS Free Cash Flow (INR)",
+      "timestamp": "2026-10-06T16:11:41.470300",
+      "integrity_hash": "fc78b5f0f8263943d5fd3045d63ad361cfca53c16ef5f13d82053d4737dbb745"
+    },
+    "LEDGER_0022": {
+      "ledger_id": "LEDGER_0022",
+      "tool": "tools.calc.fcf_yield",
+      "ticker": "TCS.NS",
+      "currency": "INR",
+      "unit": "base",
+      "inputs": {
+        "free_cash_flow_val": 449710000000.0,
+        "market_cap": 7597983787800.0
+      },
+      "output": 5.918807048813324,
+      "raw_value": 5.918807048813324,
+      "source": "tools.calc.metrics.fcf_yield",
+      "form": null,
+      "period": null,
+      "notes": "TCS.NS FCF Yield (%)",
+      "timestamp": "2026-10-06T16:11:41.470300",
+      "integrity_hash": "eabe509539139d4dac0786499da15a53c690cb54ae2b4f0bd873753f4b7a6247"
+    },
+    "LEDGER_0023": {
+      "ledger_id": "LEDGER_0023",
+      "tool": "tools.calc.dcf",
+      "ticker": "TCS.NS",
+      "currency": "INR",
+      "unit": "base",
+      "inputs": {
+        "base_fcf": 449710000000.0,
+        "growth_rates": [
+          0.07,
+          0.07,
+          0.065,
+          0.06,
+          0.055
+        ],
+        "discount_rate": 0.105,
+        "terminal_growth_rate": 0.04,
+        "shares_outstanding": 3618087518.0,
+        "net_debt": -304500000000.0
+      },
+      "output": 2290.0497819259235,
+      "raw_value": 2290.0497819259235,
+      "source": "tools.calc.dcf.dcf",
+      "form": null,
+      "period": null,
+      "notes": "TCS.NS DCF Baseline Fair Value per Share (INR)",
+      "timestamp": "2026-10-06T16:11:41.470300",
+      "integrity_hash": "fb4678d8cc344a31876ec24b87a26587c46c220072b84d47e1c425d525ba7672"
+    },
+    "LEDGER_0024": {
+      "ledger_id": "LEDGER_0024",
+      "tool": "tools.calc.reverse_dcf",
+      "ticker": "TCS.NS",
+      "currency": "INR",
+      "unit": "base",
+      "inputs": {
+        "current_price": 2100.0,
+        "base_fcf": 449710000000.0,
+        "shares_outstanding": 3618087518.0,
+        "discount_rate": 0.105,
+        "terminal_growth_rate": 0.04,
+        "projection_years": 5,
+        "net_debt": -304500000000.0
+      },
+      "output": 4.317206144332886,
+      "raw_value": 4.317206144332886,
+      "source": "tools.calc.dcf.reverse_dcf",
+      "form": null,
+      "period": null,
+      "notes": "TCS.NS Implied 5-Year FCF CAGR (%)",
+      "timestamp": "2026-10-06T16:11:41.470300",
+      "integrity_hash": "1810cdbfa77e1a0d83423a8ab4f9764f772e7bbe3318d72a410ed1eac9b78679"
+    }
+  }
+}
