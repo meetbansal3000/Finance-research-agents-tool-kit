@@ -1,0 +1,459 @@
+{
+  "run_id": "NVDA_analyst_2026-10-06",
+  "saved_at": "2026-10-06T17:52:09.947803",
+  "total_records": 22,
+  "entries": {
+    "LEDGER_0001": {
+      "ledger_id": "LEDGER_0001",
+      "tool": "edgar.get_facts",
+      "ticker": "NVDA",
+      "currency": "USD",
+      "unit": "base",
+      "inputs": {
+        "ticker": "NVDA",
+        "concept": "us-gaap:Revenues",
+        "period_end": "2026-01-25",
+        "form": "10-K"
+      },
+      "output": 215938000000.0,
+      "raw_value": 215938000000.0,
+      "source": "https://data.sec.gov/api/xbrl/companyfacts/CIK0001045810.json (Accn: 0001045810-26-000021)",
+      "form": "10-K",
+      "period": "FY2026",
+      "notes": "NVDA Total Net Sales",
+      "timestamp": "2026-10-06T17:52:09.939684",
+      "integrity_hash": "7505026e7e131dc565ba3443c7831edd765ffd9f603fc477bff95a3b765f80b9"
+    },
+    "LEDGER_0002": {
+      "ledger_id": "LEDGER_0002",
+      "tool": "edgar.get_facts",
+      "ticker": "NVDA",
+      "currency": "USD",
+      "unit": "base",
+      "inputs": {
+        "ticker": "NVDA",
+        "concept": "us-gaap:Revenues",
+        "period_end": "2025-01-26",
+        "form": "10-K"
+      },
+      "output": 130497000000.0,
+      "raw_value": 130497000000.0,
+      "source": "https://data.sec.gov/api/xbrl/companyfacts/CIK0001045810.json (Accn: 0001045810-26-000021)",
+      "form": "10-K",
+      "period": "FY2025",
+      "notes": "NVDA Prior Net Sales",
+      "timestamp": "2026-10-06T17:52:09.939684",
+      "integrity_hash": "0360f3143c55478c0e678b37f7bb37e9b9d4b3840099c518a453a6b89726107a"
+    },
+    "LEDGER_0003": {
+      "ledger_id": "LEDGER_0003",
+      "tool": "edgar.get_facts",
+      "ticker": "NVDA",
+      "currency": "USD",
+      "unit": "base",
+      "inputs": {
+        "ticker": "NVDA",
+        "concept": "us-gaap:OperatingIncomeLoss",
+        "period_end": "2026-01-25",
+        "form": "10-K"
+      },
+      "output": 130387000000.0,
+      "raw_value": 130387000000.0,
+      "source": "https://data.sec.gov/api/xbrl/companyfacts/CIK0001045810.json (Accn: 0001045810-26-000021)",
+      "form": "10-K",
+      "period": "FY2026",
+      "notes": "NVDA Operating Income",
+      "timestamp": "2026-10-06T17:52:09.939684",
+      "integrity_hash": "050e2a028561d5551bbd5edca8ada572cddcdbd25eea2041fdc3eaee32902e67"
+    },
+    "LEDGER_0004": {
+      "ledger_id": "LEDGER_0004",
+      "tool": "edgar.get_facts",
+      "ticker": "NVDA",
+      "currency": "USD",
+      "unit": "base",
+      "inputs": {
+        "ticker": "NVDA",
+        "concept": "us-gaap:NetIncomeLoss",
+        "period_end": "2026-01-25",
+        "form": "10-K"
+      },
+      "output": 120067000000.0,
+      "raw_value": 120067000000.0,
+      "source": "https://data.sec.gov/api/xbrl/companyfacts/CIK0001045810.json (Accn: 0001045810-26-000021)",
+      "form": "10-K",
+      "period": "FY2026",
+      "notes": "NVDA Net Income",
+      "timestamp": "2026-10-06T17:52:09.939684",
+      "integrity_hash": "4be8c119208468c63f6873445c96c8c0ccd9d457698791aafe1cc784af60d8fe"
+    },
+    "LEDGER_0005": {
+      "ledger_id": "LEDGER_0005",
+      "tool": "edgar.get_facts",
+      "ticker": "NVDA",
+      "currency": "USD",
+      "unit": "base",
+      "inputs": {
+        "ticker": "NVDA",
+        "concept": "us-gaap:NetCashProvidedByUsedInOperatingActivities",
+        "period_end": "2026-01-25",
+        "form": "10-K"
+      },
+      "output": 102718000000.0,
+      "raw_value": 102718000000.0,
+      "source": "https://data.sec.gov/api/xbrl/companyfacts/CIK0001045810.json (Accn: 0001045810-26-000021)",
+      "form": "10-K",
+      "period": "FY2026",
+      "notes": "NVDA Cash from Operations",
+      "timestamp": "2026-10-06T17:52:09.939684",
+      "integrity_hash": "b091a6f3554ebe45105926e73d5872c56b34a9ece463855d674978cc60433c53"
+    },
+    "LEDGER_0006": {
+      "ledger_id": "LEDGER_0006",
+      "tool": "edgar.get_facts",
+      "ticker": "NVDA",
+      "currency": "USD",
+      "unit": "base",
+      "inputs": {
+        "ticker": "NVDA",
+        "concept": "us-gaap:PaymentsToAcquireProductiveAssets",
+        "period_end": "2026-01-25",
+        "form": "10-K"
+      },
+      "output": 6042000000.0,
+      "raw_value": 6042000000.0,
+      "source": "https://data.sec.gov/api/xbrl/companyfacts/CIK0001045810.json",
+      "form": "10-K",
+      "period": "FY2026",
+      "notes": "NVDA Capital Expenditures",
+      "timestamp": "2026-10-06T17:52:09.940804",
+      "integrity_hash": "4bf3e28e73bc8ffb49eaa806a92ac9c92b21d2c9209535ea488d497db27843f6"
+    },
+    "LEDGER_0007": {
+      "ledger_id": "LEDGER_0007",
+      "tool": "edgar.get_facts",
+      "ticker": "NVDA",
+      "currency": "USD",
+      "unit": "base",
+      "inputs": {
+        "ticker": "NVDA",
+        "metric": "CashAndLiquidInvestments",
+        "period_end": "2026-01-25"
+      },
+      "output": 10605000000.0,
+      "raw_value": 10605000000.0,
+      "source": "https://data.sec.gov/api/xbrl/companyfacts/CIK0001045810.json",
+      "form": null,
+      "period": "FY2026",
+      "notes": "NVDA Cash and Liquid Securities",
+      "timestamp": "2026-10-06T17:52:09.940804",
+      "integrity_hash": "cfe5e12d4c6f878b85b0b8b0b7f4c398be37fc18e02b27f696b7b0ba89ac4252"
+    },
+    "LEDGER_0008": {
+      "ledger_id": "LEDGER_0008",
+      "tool": "edgar.get_facts",
+      "ticker": "NVDA",
+      "currency": "USD",
+      "unit": "base",
+      "inputs": {
+        "ticker": "NVDA",
+        "metric": "TotalDebt",
+        "period_end": "2026-01-25"
+      },
+      "output": 8468000000.0,
+      "raw_value": 8468000000.0,
+      "source": "https://data.sec.gov/api/xbrl/companyfacts/CIK0001045810.json",
+      "form": null,
+      "period": "FY2026",
+      "notes": "NVDA Total Debt Obligations",
+      "timestamp": "2026-10-06T17:52:09.940804",
+      "integrity_hash": "6d3d4fa25a86f4e5d9d226a233435f21595675784bf5c045b9cced30c942415d"
+    },
+    "LEDGER_0009": {
+      "ledger_id": "LEDGER_0009",
+      "tool": "tools.calc.net_debt",
+      "ticker": "NVDA",
+      "currency": "USD",
+      "unit": "base",
+      "inputs": {
+        "total_debt": 8468000000.0,
+        "cash": 10605000000.0
+      },
+      "output": -2137000000.0,
+      "raw_value": -2137000000.0,
+      "source": "Calculated: Total Debt - Liquid Assets",
+      "form": null,
+      "period": "FY2026",
+      "notes": "NVDA Net Debt Position",
+      "timestamp": "2026-10-06T17:52:09.940804",
+      "integrity_hash": "0ddd1b8eac2ce2f794feb0b7bef6593bb188304ceb897a28fbceecd45b9f36e8"
+    },
+    "LEDGER_0010": {
+      "ledger_id": "LEDGER_0010",
+      "tool": "yfinance.quote",
+      "ticker": "NVDA",
+      "currency": "USD",
+      "unit": "base",
+      "inputs": {
+        "symbol": "NVDA",
+        "price": 240.59
+      },
+      "output": 240.59,
+      "raw_value": 240.59,
+      "source": "Yahoo Finance Market Quote",
+      "form": null,
+      "period": null,
+      "notes": "NVDA Current Market Price",
+      "timestamp": "2026-10-06T17:52:09.940804",
+      "integrity_hash": "8e95ea76adbda9fe54f8209d87a09c65ffa1aca129ecc35ab8da0792e918e92e"
+    },
+    "LEDGER_0011": {
+      "ledger_id": "LEDGER_0011",
+      "tool": "edgar.get_facts",
+      "ticker": "NVDA",
+      "currency": "USD",
+      "unit": "base",
+      "inputs": {
+        "ticker": "NVDA",
+        "metric": "AccountsReceivable",
+        "period_end": "2026-01-25"
+      },
+      "output": 38466000000.0,
+      "raw_value": 38466000000.0,
+      "source": "SEC 10-K Balance Sheet",
+      "form": null,
+      "period": null,
+      "notes": "NVDA Receivables",
+      "timestamp": "2026-10-06T17:52:09.940804",
+      "integrity_hash": "61fc8c47102689efb5d376d6f2a4678a998facce60153b77d95a8ab7bb0a6db9"
+    },
+    "LEDGER_0012": {
+      "ledger_id": "LEDGER_0012",
+      "tool": "edgar.get_facts",
+      "ticker": "NVDA",
+      "currency": "USD",
+      "unit": "base",
+      "inputs": {
+        "ticker": "NVDA",
+        "metric": "PriorAccountsReceivable",
+        "period_end": "2025-01-26"
+      },
+      "output": 23065000000.0,
+      "raw_value": 23065000000.0,
+      "source": "SEC 10-K Balance Sheet",
+      "form": null,
+      "period": null,
+      "notes": "NVDA Prior Receivables",
+      "timestamp": "2026-10-06T17:52:09.940804",
+      "integrity_hash": "9d50692cc79629bb85bca94c694074fea7e5c4770868d91fa3f6d4bca91efccb"
+    },
+    "LEDGER_0013": {
+      "ledger_id": "LEDGER_0013",
+      "tool": "edgar.get_facts",
+      "ticker": "NVDA",
+      "currency": "USD",
+      "unit": "base",
+      "inputs": {
+        "ticker": "NVDA",
+        "metric": "Inventories",
+        "period_end": "2026-01-25"
+      },
+      "output": 21403000000.0,
+      "raw_value": 21403000000.0,
+      "source": "SEC 10-K Balance Sheet",
+      "form": null,
+      "period": null,
+      "notes": "NVDA Inventories",
+      "timestamp": "2026-10-06T17:52:09.940804",
+      "integrity_hash": "c14bd4ef3ef4dda935b352cad3eddb67aa7237d110547f3f71fd902eee95cbbf"
+    },
+    "LEDGER_0014": {
+      "ledger_id": "LEDGER_0014",
+      "tool": "edgar.get_facts",
+      "ticker": "NVDA",
+      "currency": "USD",
+      "unit": "base",
+      "inputs": {
+        "ticker": "NVDA",
+        "metric": "PriorInventories",
+        "period_end": "2025-01-26"
+      },
+      "output": 10080000000.0,
+      "raw_value": 10080000000.0,
+      "source": "SEC 10-K Balance Sheet",
+      "form": null,
+      "period": null,
+      "notes": "NVDA Prior Inventories",
+      "timestamp": "2026-10-06T17:52:09.940804",
+      "integrity_hash": "d482e36f93f988802587e1619af7e2fdcb172d30ff670dec918df078ae21b925"
+    },
+    "LEDGER_0015": {
+      "ledger_id": "LEDGER_0015",
+      "tool": "edgar.get_facts",
+      "ticker": "NVDA",
+      "currency": "USD",
+      "unit": "base",
+      "inputs": {
+        "ticker": "NVDA",
+        "metric": "ShortTermDebt",
+        "period_end": "2026-01-25"
+      },
+      "output": 999000000.0,
+      "raw_value": 999000000.0,
+      "source": "SEC 10-K Balance Sheet",
+      "form": null,
+      "period": null,
+      "notes": "NVDA Short-Term Debt",
+      "timestamp": "2026-10-06T17:52:09.940804",
+      "integrity_hash": "97e40ba5e5974daae3ae897e005cc8a569b7015ad901e8de1d4a10197b68bfba"
+    },
+    "LEDGER_0016": {
+      "ledger_id": "LEDGER_0016",
+      "tool": "tools.calc.yoy_growth",
+      "ticker": "NVDA",
+      "currency": null,
+      "unit": "base",
+      "inputs": {
+        "current_period": 215938000000.0,
+        "prior_period": 130497000000.0
+      },
+      "output": 65.4735357900948,
+      "raw_value": 65.4735357900948,
+      "source": "tools.calc.metrics.yoy_growth",
+      "form": null,
+      "period": null,
+      "notes": "NVDA YoY Revenue Growth Rate (%)",
+      "timestamp": "2026-10-06T17:52:09.944806",
+      "integrity_hash": "f26f5553d97b5c33f68627b4ea763a443f52c310b5205282ebeb2f8fe903fc77"
+    },
+    "LEDGER_0017": {
+      "ledger_id": "LEDGER_0017",
+      "tool": "tools.calc.margin",
+      "ticker": "NVDA",
+      "currency": null,
+      "unit": "base",
+      "inputs": {
+        "numerator": 130387000000.0,
+        "revenue": 215938000000.0
+      },
+      "output": 60.38168363141272,
+      "raw_value": 60.38168363141272,
+      "source": "tools.calc.metrics.margin",
+      "form": null,
+      "period": null,
+      "notes": "NVDA Operating Margin (%)",
+      "timestamp": "2026-10-06T17:52:09.944806",
+      "integrity_hash": "e2a731cd9a4eacd20824810f8aa530f418d1817f7d11b2d091352f51e248734d"
+    },
+    "LEDGER_0018": {
+      "ledger_id": "LEDGER_0018",
+      "tool": "tools.calc.margin",
+      "ticker": "NVDA",
+      "currency": null,
+      "unit": "base",
+      "inputs": {
+        "numerator": 120067000000.0,
+        "revenue": 215938000000.0
+      },
+      "output": 55.60253406070261,
+      "raw_value": 55.60253406070261,
+      "source": "tools.calc.metrics.margin",
+      "form": null,
+      "period": null,
+      "notes": "NVDA Net Profit Margin (%)",
+      "timestamp": "2026-10-06T17:52:09.944806",
+      "integrity_hash": "4f35389663b2c5db19d947a4707502e78111212bd0893967f8ea81eac2a4d2fb"
+    },
+    "LEDGER_0019": {
+      "ledger_id": "LEDGER_0019",
+      "tool": "tools.calc.free_cash_flow",
+      "ticker": "NVDA",
+      "currency": "USD",
+      "unit": "base",
+      "inputs": {
+        "operating_cash_flow": 102718000000.0,
+        "capital_expenditures": 6042000000.0
+      },
+      "output": 96676000000.0,
+      "raw_value": 96676000000.0,
+      "source": "tools.calc.metrics.free_cash_flow",
+      "form": null,
+      "period": null,
+      "notes": "NVDA Free Cash Flow (USD)",
+      "timestamp": "2026-10-06T17:52:09.944806",
+      "integrity_hash": "02ff65c29e14ab000ef7efc8064f69c34784c992cb5a2a4f23b97555df68ef60"
+    },
+    "LEDGER_0020": {
+      "ledger_id": "LEDGER_0020",
+      "tool": "tools.calc.fcf_yield",
+      "ticker": "NVDA",
+      "currency": null,
+      "unit": "base",
+      "inputs": {
+        "free_cash_flow_val": 96676000000.0,
+        "market_cap": 5809526730000.0
+      },
+      "output": 1.6640942454188519,
+      "raw_value": 1.6640942454188519,
+      "source": "tools.calc.metrics.fcf_yield",
+      "form": null,
+      "period": null,
+      "notes": "NVDA FCF Yield (%)",
+      "timestamp": "2026-10-06T17:52:09.944806",
+      "integrity_hash": "d3e58e088daf5db142174e1dd1b26d72fce776fb11675d4bf017ea288bb6eb32"
+    },
+    "LEDGER_0021": {
+      "ledger_id": "LEDGER_0021",
+      "tool": "tools.calc.dcf",
+      "ticker": "NVDA",
+      "currency": "USD",
+      "unit": "base",
+      "inputs": {
+        "base_fcf": 96676000000.0,
+        "growth_rates": [
+          0.08,
+          0.08,
+          0.07,
+          0.06,
+          0.05
+        ],
+        "discount_rate": 0.085,
+        "terminal_growth_rate": 0.025,
+        "shares_outstanding": 24147000000.0,
+        "net_debt": -2137000000.0
+      },
+      "output": 82.65674569026157,
+      "raw_value": 82.65674569026157,
+      "source": "tools.calc.dcf.dcf",
+      "form": null,
+      "period": null,
+      "notes": "NVDA DCF Baseline Fair Value per Share (USD)",
+      "timestamp": "2026-10-06T17:52:09.944806",
+      "integrity_hash": "1c4692d94732351100c427e9bbbcca69c5ab8f1d1abf23f60dd8cdc8111f8658"
+    },
+    "LEDGER_0022": {
+      "ledger_id": "LEDGER_0022",
+      "tool": "tools.calc.reverse_dcf",
+      "ticker": "NVDA",
+      "currency": null,
+      "unit": "base",
+      "inputs": {
+        "current_price": 240.59,
+        "base_fcf": 96676000000.0,
+        "shares_outstanding": 24147000000.0,
+        "discount_rate": 0.085,
+        "terminal_growth_rate": 0.025,
+        "projection_years": 5,
+        "net_debt": -2137000000.0
+      },
+      "output": 34.544092416763306,
+      "raw_value": 34.544092416763306,
+      "source": "tools.calc.dcf.reverse_dcf",
+      "form": null,
+      "period": null,
+      "notes": "NVDA Implied 5-Year FCF CAGR (%)",
+      "timestamp": "2026-10-06T17:52:09.945793",
+      "integrity_hash": "b4cfb12ba91a5b73bde05d274bc7d35efa3c65127c989411e5421a0234de0bd0"
+    }
+  }
+}

@@ -1,0 +1,886 @@
+{
+  "run_id": "NVDA_skeptic_2026-10-06",
+  "saved_at": "2026-10-06T17:52:20.877177",
+  "total_records": 46,
+  "entries": {
+    "LEDGER_0001": {
+      "ledger_id": "LEDGER_0001",
+      "tool": "yfinance.quote",
+      "ticker": "NVDA",
+      "currency": "USD",
+      "unit": "base",
+      "inputs": {
+        "ticker": "NVDA",
+        "price": 240.59
+      },
+      "output": 240.59,
+      "raw_value": 240.59,
+      "source": "Market Quote (NVDA)",
+      "form": null,
+      "period": null,
+      "notes": "Current trading price (USD)",
+      "timestamp": "2026-10-06T17:52:20.874529",
+      "integrity_hash": "e397506beedf6a57a77e60346439550309bd4c1351e98c9c1894af5b9cf14a54"
+    },
+    "LEDGER_0002": {
+      "ledger_id": "LEDGER_0002",
+      "tool": "yfinance.quote",
+      "ticker": "NVDA",
+      "currency": null,
+      "unit": "base",
+      "inputs": {
+        "shares_outstanding": 24147000000.0
+      },
+      "output": 24147000000.0,
+      "raw_value": 24147000000.0,
+      "source": "Share Registry / Market Data",
+      "form": null,
+      "period": null,
+      "notes": "Diluted Shares Outstanding",
+      "timestamp": "2026-10-06T17:52:20.874529",
+      "integrity_hash": "91e9a9544288f1a30c83cb72449e0a585da45d027fb0a4d695ecf10d1c992dc0"
+    },
+    "LEDGER_0003": {
+      "ledger_id": "LEDGER_0003",
+      "tool": "filing.cash_flow",
+      "ticker": "NVDA",
+      "currency": "USD",
+      "unit": "base",
+      "inputs": {
+        "ticker": "NVDA",
+        "metric": "FreeCashFlow"
+      },
+      "output": 96676000000.0,
+      "raw_value": 96676000000.0,
+      "source": "Audited Statement of Cash Flows",
+      "form": null,
+      "period": null,
+      "notes": "Base Free Cash Flow (USD)",
+      "timestamp": "2026-10-06T17:52:20.874529",
+      "integrity_hash": "8eeac864ce0cfc18e95c263a3a71fe4c9f72fadae930f4bf98b19213e6c99bb1"
+    },
+    "LEDGER_0004": {
+      "ledger_id": "LEDGER_0004",
+      "tool": "filing.balance_sheet",
+      "ticker": "NVDA",
+      "currency": "USD",
+      "unit": "base",
+      "inputs": {
+        "cash_and_equivalents": 10605000000.0,
+        "marketable_securities": 0.0
+      },
+      "output": 10605000000.0,
+      "raw_value": 10605000000.0,
+      "source": "Audited Balance Sheet",
+      "form": null,
+      "period": null,
+      "notes": "Total Liquid Cash and Marketable Securities (USD)",
+      "timestamp": "2026-10-06T17:52:20.874529",
+      "integrity_hash": "ed7442d4658cc3945f2839b7dbbd5dcdc7a07c03fc46e696e01866abfea7aff7"
+    },
+    "LEDGER_0005": {
+      "ledger_id": "LEDGER_0005",
+      "tool": "filing.balance_sheet",
+      "ticker": "NVDA",
+      "currency": "USD",
+      "unit": "base",
+      "inputs": {
+        "total_debt": 8468000000.0
+      },
+      "output": 8468000000.0,
+      "raw_value": 8468000000.0,
+      "source": "Audited Balance Sheet",
+      "form": null,
+      "period": null,
+      "notes": "Total Borrowings and Debt (USD)",
+      "timestamp": "2026-10-06T17:52:20.874529",
+      "integrity_hash": "d0ba28bf96d372fb30f4f6682333d2c73b886e9c178336664879be25c801a51e"
+    },
+    "LEDGER_0006": {
+      "ledger_id": "LEDGER_0006",
+      "tool": "filing.balance_sheet",
+      "ticker": "NVDA",
+      "currency": "USD",
+      "unit": "base",
+      "inputs": {
+        "total_debt": 8468000000.0,
+        "liquid_cash": 10605000000.0
+      },
+      "output": -2137000000.0,
+      "raw_value": -2137000000.0,
+      "source": "Audited Balance Sheet",
+      "form": null,
+      "period": null,
+      "notes": "Calculated Net Debt: Total Debt - Liquid Cash (USD)",
+      "timestamp": "2026-10-06T17:52:20.874529",
+      "integrity_hash": "f3b7748c72861832d6bb18b99a2f9ba0a156d14ceb123d155818260264114784"
+    },
+    "LEDGER_0007": {
+      "ledger_id": "LEDGER_0007",
+      "tool": "thesis.assumption",
+      "ticker": "NVDA",
+      "currency": null,
+      "unit": "base",
+      "inputs": {
+        "growth_rate": 0.08
+      },
+      "output": 8.0,
+      "raw_value": 8.0,
+      "source": "Model Assumption (Unanchored Parameter)",
+      "form": null,
+      "period": null,
+      "notes": "Assumed 5Y FCF Growth Rate (%)",
+      "timestamp": "2026-10-06T17:52:20.874529",
+      "integrity_hash": "9698f8b30a5f45c0d6d715fa621600767c530e8a551212ca5e690e85ef73d646"
+    },
+    "LEDGER_0008": {
+      "ledger_id": "LEDGER_0008",
+      "tool": "thesis.assumption",
+      "ticker": "NVDA",
+      "currency": null,
+      "unit": "base",
+      "inputs": {
+        "wacc": 0.085
+      },
+      "output": 8.5,
+      "raw_value": 8.5,
+      "source": "Model Assumption (Unanchored Parameter)",
+      "form": null,
+      "period": null,
+      "notes": "Assumed Discount Rate WACC (%)",
+      "timestamp": "2026-10-06T17:52:20.874529",
+      "integrity_hash": "c49725eed0feae45c8442a1c66104af8147bca064a231f64fc1ab424b106163a"
+    },
+    "LEDGER_0009": {
+      "ledger_id": "LEDGER_0009",
+      "tool": "thesis.assumption",
+      "ticker": "NVDA",
+      "currency": null,
+      "unit": "base",
+      "inputs": {
+        "terminal_g": 0.025
+      },
+      "output": 2.5,
+      "raw_value": 2.5,
+      "source": "Model Assumption (Unanchored Parameter)",
+      "form": null,
+      "period": null,
+      "notes": "Assumed Terminal Growth Rate (%)",
+      "timestamp": "2026-10-06T17:52:20.874529",
+      "integrity_hash": "33915284054b01220a07b708939cbe95308bd2aaf0be77f094d87a1054649cda"
+    },
+    "LEDGER_0010": {
+      "ledger_id": "LEDGER_0010",
+      "tool": "tools.calc.reverse_dcf",
+      "ticker": "NVDA",
+      "currency": null,
+      "unit": "base",
+      "inputs": {
+        "current_price": 240.59,
+        "base_fcf": 96676000000.0,
+        "WACC": 0.085,
+        "net_debt": -2137000000.0
+      },
+      "output": 34.544092416763306,
+      "raw_value": 34.544092416763306,
+      "source": "tools.calc.dcf.reverse_dcf",
+      "form": null,
+      "period": null,
+      "notes": "Market implied 5-year FCF CAGR",
+      "timestamp": "2026-10-06T17:52:20.874529",
+      "integrity_hash": "9ac618422031015a7b89a8e21ef9c95ca52aab79b61777b47ca1269ec82b7fc3"
+    },
+    "LEDGER_0011": {
+      "ledger_id": "LEDGER_0011",
+      "tool": "tools.calc.dcf",
+      "ticker": "NVDA",
+      "currency": "USD",
+      "unit": "base",
+      "inputs": {
+        "growth": 0.08,
+        "wacc": 0.085,
+        "term_g": 0.025,
+        "net_debt": -2137000000.0
+      },
+      "output": 86.66577990424508,
+      "raw_value": 86.66577990424508,
+      "source": "tools.calc.dcf.dcf",
+      "form": null,
+      "period": null,
+      "notes": "Baseline fair value per share (USD)",
+      "timestamp": "2026-10-06T17:52:20.874529",
+      "integrity_hash": "ecadded2c5dfd8fca9a7df73f034c9e78f708aeeb7f76b68f0519edc2e141a80"
+    },
+    "LEDGER_0012": {
+      "ledger_id": "LEDGER_0012",
+      "tool": "tools.calc.dcf",
+      "ticker": "NVDA",
+      "currency": "USD",
+      "unit": "base",
+      "inputs": {
+        "stressed_fcf": 93473836887.41975,
+        "margin_delta_bps": -200,
+        "net_debt": -2137000000.0
+      },
+      "output": 83.79811292012582,
+      "raw_value": 83.79811292012582,
+      "source": "tools.calc.dcf.dcf",
+      "form": null,
+      "period": null,
+      "notes": "Fair value under margin compression (USD)",
+      "timestamp": "2026-10-06T17:52:20.874529",
+      "integrity_hash": "3902fcf265b3fb2fb256681c147953e289dc5dfa4230beece53808e58d61d866"
+    },
+    "LEDGER_0013": {
+      "ledger_id": "LEDGER_0013",
+      "tool": "tools.calc.margin_stress_impact",
+      "ticker": "NVDA",
+      "currency": null,
+      "unit": "base",
+      "inputs": {
+        "baseline": 86.66577990424508,
+        "stressed": 83.79811292012582
+      },
+      "output": -3.3088803761850216,
+      "raw_value": -3.3088803761850216,
+      "source": "tools.calc.metrics",
+      "form": null,
+      "period": null,
+      "notes": "Margin stress impact percentage",
+      "timestamp": "2026-10-06T17:52:20.874529",
+      "integrity_hash": "45e198d0f0b6234ab4c9ea45ea5f0452c72bd1b6c586c2a5dd587584b4145225"
+    },
+    "LEDGER_0014": {
+      "ledger_id": "LEDGER_0014",
+      "tool": "tools.calc.dcf",
+      "ticker": "NVDA",
+      "currency": "USD",
+      "unit": "base",
+      "inputs": {
+        "wacc_stressed": 0.095,
+        "net_debt": -2137000000.0
+      },
+      "output": 74.01683666327521,
+      "raw_value": 74.01683666327521,
+      "source": "tools.calc.dcf.dcf",
+      "form": null,
+      "period": null,
+      "notes": "Fair value under WACC elevation (USD)",
+      "timestamp": "2026-10-06T17:52:20.874529",
+      "integrity_hash": "28576ca99f74293db4fdad6af3cb7f81761c4d72b388e94f5c51b7e2d4a33bdb"
+    },
+    "LEDGER_0015": {
+      "ledger_id": "LEDGER_0015",
+      "tool": "tools.calc.wacc_stress_impact",
+      "ticker": "NVDA",
+      "currency": null,
+      "unit": "base",
+      "inputs": {
+        "baseline": 86.66577990424508,
+        "stressed": 74.01683666327521
+      },
+      "output": -14.59508384387169,
+      "raw_value": -14.59508384387169,
+      "source": "tools.calc.metrics",
+      "form": null,
+      "period": null,
+      "notes": "WACC stress impact percentage",
+      "timestamp": "2026-10-06T17:52:20.874529",
+      "integrity_hash": "388d4389c853ce29a62311f52a32c6ae6fe6ab8fd7c52abc3d05b0d31b77330e"
+    },
+    "LEDGER_0016": {
+      "ledger_id": "LEDGER_0016",
+      "tool": "tools.calc.dcf",
+      "ticker": "NVDA",
+      "currency": "USD",
+      "unit": "base",
+      "inputs": {
+        "half_growth": 0.04,
+        "net_debt": -2137000000.0
+      },
+      "output": 73.09038458457785,
+      "raw_value": 73.09038458457785,
+      "source": "tools.calc.dcf.dcf",
+      "form": null,
+      "period": null,
+      "notes": "Fair value at half assumed growth rate (USD)",
+      "timestamp": "2026-10-06T17:52:20.874529",
+      "integrity_hash": "7029927b4f883ee4feda474a8e79f31edce78f24e47ccec817f00d623cb2bb23"
+    },
+    "LEDGER_0017": {
+      "ledger_id": "LEDGER_0017",
+      "tool": "tools.calc.growth_stress_impact",
+      "ticker": "NVDA",
+      "currency": null,
+      "unit": "base",
+      "inputs": {
+        "baseline": 86.66577990424508,
+        "stressed": 73.09038458457785
+      },
+      "output": -15.664077949412514,
+      "raw_value": -15.664077949412514,
+      "source": "tools.calc.metrics",
+      "form": null,
+      "period": null,
+      "notes": "Half-growth valuation impact",
+      "timestamp": "2026-10-06T17:52:20.874529",
+      "integrity_hash": "d04dd8eda650ef220037e2e5dcf717ea07d684fc827e8102ff0a0f7ec8452f9d"
+    },
+    "LEDGER_0018": {
+      "ledger_id": "LEDGER_0018",
+      "tool": "thesis.assumption",
+      "ticker": "NVDA",
+      "currency": null,
+      "unit": "base",
+      "inputs": {
+        "growth_rate": 0.06
+      },
+      "output": 6.0,
+      "raw_value": 6.0,
+      "source": "Model Sensitivity Parameter (Downside)",
+      "form": null,
+      "period": null,
+      "notes": "Sensitivity Downside 5Y FCF Growth Rate (%)",
+      "timestamp": "2026-10-06T17:52:20.874529",
+      "integrity_hash": "cdecfcbf76f821102c4b9ff936072800fb111c3ad56c844eddfe3345334c6fb4"
+    },
+    "LEDGER_0019": {
+      "ledger_id": "LEDGER_0019",
+      "tool": "thesis.assumption",
+      "ticker": "NVDA",
+      "currency": null,
+      "unit": "base",
+      "inputs": {
+        "growth_rate": 0.1
+      },
+      "output": 10.0,
+      "raw_value": 10.0,
+      "source": "Model Sensitivity Parameter (Upside)",
+      "form": null,
+      "period": null,
+      "notes": "Sensitivity Upside 5Y FCF Growth Rate (%)",
+      "timestamp": "2026-10-06T17:52:20.874529",
+      "integrity_hash": "99dfd60931a5ed2f3368d0d76283a88f417b092b7ad6cea4af0d13c9c20e7727"
+    },
+    "LEDGER_0020": {
+      "ledger_id": "LEDGER_0020",
+      "tool": "tools.calc.dcf",
+      "ticker": "NVDA",
+      "currency": "USD",
+      "unit": "base",
+      "inputs": {
+        "growth": 0.06,
+        "wacc": 0.07500000000000001,
+        "net_debt": -2137000000.0
+      },
+      "output": 95.79032885368112,
+      "raw_value": 95.79032885368112,
+      "source": "tools.calc.dcf.dcf",
+      "form": null,
+      "period": null,
+      "notes": "Sensitivity fair value: Growth 6.0%, WACC 7.5% (USD)",
+      "timestamp": "2026-10-06T17:52:20.874529",
+      "integrity_hash": "a1408bbfff7861b9765ff148f0b7a5ae2617b3c2e93b4e10c963f8c421e2f67f"
+    },
+    "LEDGER_0021": {
+      "ledger_id": "LEDGER_0021",
+      "tool": "tools.calc.dcf",
+      "ticker": "NVDA",
+      "currency": "USD",
+      "unit": "base",
+      "inputs": {
+        "growth": 0.06,
+        "wacc": 0.085,
+        "net_debt": -2137000000.0
+      },
+      "output": 79.63551925438331,
+      "raw_value": 79.63551925438331,
+      "source": "tools.calc.dcf.dcf",
+      "form": null,
+      "period": null,
+      "notes": "Sensitivity fair value: Growth 6.0%, WACC 8.5% (USD)",
+      "timestamp": "2026-10-06T17:52:20.874529",
+      "integrity_hash": "b4bcaf39e93619f8ea509b2cd47e4483f70cdc09f1e5415c33c3edd0cc790cf9"
+    },
+    "LEDGER_0022": {
+      "ledger_id": "LEDGER_0022",
+      "tool": "tools.calc.dcf",
+      "ticker": "NVDA",
+      "currency": "USD",
+      "unit": "base",
+      "inputs": {
+        "growth": 0.06,
+        "wacc": 0.095,
+        "net_debt": -2137000000.0
+      },
+      "output": 68.10267794671407,
+      "raw_value": 68.10267794671407,
+      "source": "tools.calc.dcf.dcf",
+      "form": null,
+      "period": null,
+      "notes": "Sensitivity fair value: Growth 6.0%, WACC 9.5% (USD)",
+      "timestamp": "2026-10-06T17:52:20.875537",
+      "integrity_hash": "4e51368e01541df35229071386f9bbb6a67c04a251eb0b2b2ff5bc7f28904e54"
+    },
+    "LEDGER_0023": {
+      "ledger_id": "LEDGER_0023",
+      "tool": "tools.calc.dcf",
+      "ticker": "NVDA",
+      "currency": "USD",
+      "unit": "base",
+      "inputs": {
+        "growth": 0.08,
+        "wacc": 0.07500000000000001,
+        "net_debt": -2137000000.0
+      },
+      "output": 104.38904514643872,
+      "raw_value": 104.38904514643872,
+      "source": "tools.calc.dcf.dcf",
+      "form": null,
+      "period": null,
+      "notes": "Sensitivity fair value: Growth 8.0%, WACC 7.5% (USD)",
+      "timestamp": "2026-10-06T17:52:20.875537",
+      "integrity_hash": "2e4cd822550be93f9ed6f8575214b6987428ff1c4fbf90a73f08d8334fc2a5bd"
+    },
+    "LEDGER_0024": {
+      "ledger_id": "LEDGER_0024",
+      "tool": "tools.calc.dcf",
+      "ticker": "NVDA",
+      "currency": "USD",
+      "unit": "base",
+      "inputs": {
+        "growth": 0.08,
+        "wacc": 0.085,
+        "net_debt": -2137000000.0
+      },
+      "output": 86.66577990424508,
+      "raw_value": 86.66577990424508,
+      "source": "tools.calc.dcf.dcf",
+      "form": null,
+      "period": null,
+      "notes": "Sensitivity fair value: Growth 8.0%, WACC 8.5% (USD)",
+      "timestamp": "2026-10-06T17:52:20.875537",
+      "integrity_hash": "b0414186b60e7841e1690586f360d3656fd42b6bb3ecde8cd18ced6a40647d5d"
+    },
+    "LEDGER_0025": {
+      "ledger_id": "LEDGER_0025",
+      "tool": "tools.calc.dcf",
+      "ticker": "NVDA",
+      "currency": "USD",
+      "unit": "base",
+      "inputs": {
+        "growth": 0.08,
+        "wacc": 0.095,
+        "net_debt": -2137000000.0
+      },
+      "output": 74.01683666327521,
+      "raw_value": 74.01683666327521,
+      "source": "tools.calc.dcf.dcf",
+      "form": null,
+      "period": null,
+      "notes": "Sensitivity fair value: Growth 8.0%, WACC 9.5% (USD)",
+      "timestamp": "2026-10-06T17:52:20.875537",
+      "integrity_hash": "159ddac500418048c62b286631fe04ecb0f46276dc2991b41fed61966427968a"
+    },
+    "LEDGER_0026": {
+      "ledger_id": "LEDGER_0026",
+      "tool": "tools.calc.dcf",
+      "ticker": "NVDA",
+      "currency": "USD",
+      "unit": "base",
+      "inputs": {
+        "growth": 0.1,
+        "wacc": 0.07500000000000001,
+        "net_debt": -2137000000.0
+      },
+      "output": 113.62002035175988,
+      "raw_value": 113.62002035175988,
+      "source": "tools.calc.dcf.dcf",
+      "form": null,
+      "period": null,
+      "notes": "Sensitivity fair value: Growth 10.0%, WACC 7.5% (USD)",
+      "timestamp": "2026-10-06T17:52:20.875663",
+      "integrity_hash": "c96832de992a29b9a00e7e706a8b6b76a8ed26fdba9d431148d020c3cad53d73"
+    },
+    "LEDGER_0027": {
+      "ledger_id": "LEDGER_0027",
+      "tool": "tools.calc.dcf",
+      "ticker": "NVDA",
+      "currency": "USD",
+      "unit": "base",
+      "inputs": {
+        "growth": 0.1,
+        "wacc": 0.085,
+        "net_debt": -2137000000.0
+      },
+      "output": 94.20837306010662,
+      "raw_value": 94.20837306010662,
+      "source": "tools.calc.dcf.dcf",
+      "form": null,
+      "period": null,
+      "notes": "Sensitivity fair value: Growth 10.0%, WACC 8.5% (USD)",
+      "timestamp": "2026-10-06T17:52:20.875663",
+      "integrity_hash": "4ba1a7dfd3780422d225a6736b91d8649b374e3c0e2848276ae026bedfc572f3"
+    },
+    "LEDGER_0028": {
+      "ledger_id": "LEDGER_0028",
+      "tool": "tools.calc.dcf",
+      "ticker": "NVDA",
+      "currency": "USD",
+      "unit": "base",
+      "inputs": {
+        "growth": 0.1,
+        "wacc": 0.095,
+        "net_debt": -2137000000.0
+      },
+      "output": 80.35815595982956,
+      "raw_value": 80.35815595982956,
+      "source": "tools.calc.dcf.dcf",
+      "form": null,
+      "period": null,
+      "notes": "Sensitivity fair value: Growth 10.0%, WACC 9.5% (USD)",
+      "timestamp": "2026-10-06T17:52:20.875663",
+      "integrity_hash": "9b60f98b7f74b85035617c187a8ecc8ca8cf5a2159c70145017a8a951e6613a6"
+    },
+    "LEDGER_0029": {
+      "ledger_id": "LEDGER_0029",
+      "tool": "filing.cash_flow",
+      "ticker": "NVDA",
+      "currency": "USD",
+      "unit": "base",
+      "inputs": {
+        "ticker": "NVDA",
+        "metric": "FreeCashFlow",
+        "period": "FY_2023"
+      },
+      "output": 3808000000.0,
+      "raw_value": 3808000000.0,
+      "source": "Annual Report FY_2023 Audited Cash Flow",
+      "form": null,
+      "period": "FY_2023",
+      "notes": "NVDA FY_2023 Free Cash Flow (USD)",
+      "timestamp": "2026-10-06T17:52:20.875663",
+      "integrity_hash": "b82fa9e19ca9e90d2b65455cc949f9ac95f499d69b7895792393f0cfef444b0d"
+    },
+    "LEDGER_0030": {
+      "ledger_id": "LEDGER_0030",
+      "tool": "filing.cash_flow",
+      "ticker": "NVDA",
+      "currency": "USD",
+      "unit": "base",
+      "inputs": {
+        "ticker": "NVDA",
+        "metric": "FreeCashFlow",
+        "period": "FY_2024"
+      },
+      "output": 27021000000.0,
+      "raw_value": 27021000000.0,
+      "source": "Annual Report FY_2024 Audited Cash Flow",
+      "form": null,
+      "period": "FY_2024",
+      "notes": "NVDA FY_2024 Free Cash Flow (USD)",
+      "timestamp": "2026-10-06T17:52:20.875663",
+      "integrity_hash": "54447d4d4f574a47f0b2f2594f9a19661c173442ca9b9f95976da033d56bdb65"
+    },
+    "LEDGER_0031": {
+      "ledger_id": "LEDGER_0031",
+      "tool": "filing.cash_flow",
+      "ticker": "NVDA",
+      "currency": "USD",
+      "unit": "base",
+      "inputs": {
+        "ticker": "NVDA",
+        "metric": "FreeCashFlow",
+        "period": "FY_2025"
+      },
+      "output": 60853000000.0,
+      "raw_value": 60853000000.0,
+      "source": "Annual Report FY_2025 Audited Cash Flow",
+      "form": null,
+      "period": "FY_2025",
+      "notes": "NVDA FY_2025 Free Cash Flow (USD)",
+      "timestamp": "2026-10-06T17:52:20.875663",
+      "integrity_hash": "4b6557c96f900d345cb3f9eb4e6d034fda063b3f18fe729753af77e3d9388c3c"
+    },
+    "LEDGER_0032": {
+      "ledger_id": "LEDGER_0032",
+      "tool": "filing.cash_flow",
+      "ticker": "NVDA",
+      "currency": "USD",
+      "unit": "base",
+      "inputs": {
+        "ticker": "NVDA",
+        "metric": "FreeCashFlow",
+        "period": "FY_2026"
+      },
+      "output": 96676000000.0,
+      "raw_value": 96676000000.0,
+      "source": "Annual Report FY_2026 Audited Cash Flow",
+      "form": null,
+      "period": "FY_2026",
+      "notes": "NVDA FY_2026 Free Cash Flow (USD)",
+      "timestamp": "2026-10-06T17:52:20.875663",
+      "integrity_hash": "700335b451324c74b1180d21c00d5def450f59fa4a5e7bf5e1f65aedd0730308"
+    },
+    "LEDGER_0033": {
+      "ledger_id": "LEDGER_0033",
+      "tool": "tools.calc.cagr",
+      "ticker": "NVDA",
+      "currency": null,
+      "unit": "base",
+      "inputs": {
+        "start_value": 3808000000.0,
+        "end_value": 96676000000.0,
+        "periods": 3
+      },
+      "output": 193.9051826916457,
+      "raw_value": 193.9051826916457,
+      "source": "tools.calc.metrics.cagr",
+      "form": null,
+      "period": null,
+      "notes": "Historical 3-year FCF CAGR (FY_2023 to FY_2026)",
+      "timestamp": "2026-10-06T17:52:20.875663",
+      "integrity_hash": "c4059c5a30d000763d7f8cc76e01bdc101fb799fe1e0a6d117bab078ca38178d"
+    },
+    "LEDGER_0034": {
+      "ledger_id": "LEDGER_0034",
+      "tool": "filing.income_statement",
+      "ticker": "NVDA",
+      "currency": "USD",
+      "unit": "base",
+      "inputs": {
+        "rev_curr": 215938000000.0
+      },
+      "output": 215938000000.0,
+      "raw_value": 215938000000.0,
+      "source": "Audited Income Statement",
+      "form": null,
+      "period": null,
+      "notes": "FY2025 Revenue",
+      "timestamp": "2026-10-06T17:52:20.875663",
+      "integrity_hash": "b50a974ca5a1f2ddbb288a6baf71070f5394fc9eeaaa119ecd73b7c32ed74371"
+    },
+    "LEDGER_0035": {
+      "ledger_id": "LEDGER_0035",
+      "tool": "filing.income_statement",
+      "ticker": "NVDA",
+      "currency": "USD",
+      "unit": "base",
+      "inputs": {
+        "rev_prev": 130497000000.0
+      },
+      "output": 130497000000.0,
+      "raw_value": 130497000000.0,
+      "source": "Audited Income Statement",
+      "form": null,
+      "period": null,
+      "notes": "FY2024 Revenue",
+      "timestamp": "2026-10-06T17:52:20.875663",
+      "integrity_hash": "8cf6f3f067d47f0c979a34893e9a4edf2fccfd3f7cceedb7550dd4609d994b5b"
+    },
+    "LEDGER_0036": {
+      "ledger_id": "LEDGER_0036",
+      "tool": "tools.calc.yoy_growth",
+      "ticker": "NVDA",
+      "currency": null,
+      "unit": "base",
+      "inputs": {
+        "current": 215938000000.0,
+        "prior": 130497000000.0
+      },
+      "output": 65.4735357900948,
+      "raw_value": 65.4735357900948,
+      "source": "tools.calc.metrics.yoy_growth",
+      "form": null,
+      "period": null,
+      "notes": "Revenue YoY Growth (%)",
+      "timestamp": "2026-10-06T17:52:20.875663",
+      "integrity_hash": "382fb76a11b8fcd75220c7857440af5dcdf09e974ebfeb79e8e3ab03bae9d119"
+    },
+    "LEDGER_0037": {
+      "ledger_id": "LEDGER_0037",
+      "tool": "filing.balance_sheet",
+      "ticker": "NVDA",
+      "currency": "USD",
+      "unit": "base",
+      "inputs": {
+        "rec_curr": 38466000000.0
+      },
+      "output": 38466000000.0,
+      "raw_value": 38466000000.0,
+      "source": "Audited Balance Sheet",
+      "form": null,
+      "period": null,
+      "notes": "FY2025 Trade Receivables",
+      "timestamp": "2026-10-06T17:52:20.875663",
+      "integrity_hash": "216d89724e4fe255c30fc2ec39d741567f70d24c997aaf0a60a4588748d25dbf"
+    },
+    "LEDGER_0038": {
+      "ledger_id": "LEDGER_0038",
+      "tool": "filing.balance_sheet",
+      "ticker": "NVDA",
+      "currency": "USD",
+      "unit": "base",
+      "inputs": {
+        "rec_prev": 23065000000.0
+      },
+      "output": 23065000000.0,
+      "raw_value": 23065000000.0,
+      "source": "Audited Balance Sheet",
+      "form": null,
+      "period": null,
+      "notes": "FY2024 Trade Receivables",
+      "timestamp": "2026-10-06T17:52:20.875663",
+      "integrity_hash": "65c19d9293d25818dcf99f659ec2ab14d795f04b26dd31a0cb5623facf63cabe"
+    },
+    "LEDGER_0039": {
+      "ledger_id": "LEDGER_0039",
+      "tool": "tools.calc.yoy_growth",
+      "ticker": "NVDA",
+      "currency": null,
+      "unit": "base",
+      "inputs": {
+        "current": 38466000000.0,
+        "prior": 23065000000.0
+      },
+      "output": 66.7721656189031,
+      "raw_value": 66.7721656189031,
+      "source": "tools.calc.metrics.yoy_growth",
+      "form": null,
+      "period": null,
+      "notes": "Receivables YoY Growth (%)",
+      "timestamp": "2026-10-06T17:52:20.875663",
+      "integrity_hash": "b75522e60fe97e3f66ce3fb6e116cd0d90b1428a5e31af98133921344d810144"
+    },
+    "LEDGER_0040": {
+      "ledger_id": "LEDGER_0040",
+      "tool": "tools.calc.working_capital",
+      "ticker": "NVDA",
+      "currency": null,
+      "unit": "base",
+      "inputs": {
+        "rec_yoy": 66.7721656189031,
+        "rev_yoy": 65.4735357900948
+      },
+      "output": 1.2986298288083065,
+      "raw_value": 1.2986298288083065,
+      "source": "tools.calc.working_capital",
+      "form": null,
+      "period": null,
+      "notes": "Receivables vs Revenue YoY divergence (pp)",
+      "timestamp": "2026-10-06T17:52:20.875663",
+      "integrity_hash": "225768e9057ff802068104036cff0302bf54863a67421de7b433730fa593d96c"
+    },
+    "LEDGER_0041": {
+      "ledger_id": "LEDGER_0041",
+      "tool": "filing.balance_sheet",
+      "ticker": "NVDA",
+      "currency": "USD",
+      "unit": "base",
+      "inputs": {
+        "inv_curr": 21403000000.0
+      },
+      "output": 21403000000.0,
+      "raw_value": 21403000000.0,
+      "source": "Audited Balance Sheet",
+      "form": null,
+      "period": null,
+      "notes": "FY2025 Inventories",
+      "timestamp": "2026-10-06T17:52:20.875663",
+      "integrity_hash": "33bc2618ab58b28264be2a678e98a3ef75d56bc81d2cf66abd14809a12aaf737"
+    },
+    "LEDGER_0042": {
+      "ledger_id": "LEDGER_0042",
+      "tool": "filing.balance_sheet",
+      "ticker": "NVDA",
+      "currency": "USD",
+      "unit": "base",
+      "inputs": {
+        "inv_prev": 10080000000.0
+      },
+      "output": 10080000000.0,
+      "raw_value": 10080000000.0,
+      "source": "Audited Balance Sheet",
+      "form": null,
+      "period": null,
+      "notes": "FY2024 Inventories",
+      "timestamp": "2026-10-06T17:52:20.875663",
+      "integrity_hash": "61c5cd246c068739f5c422201ca7b3e72704b4da0f353b7341789070472d1767"
+    },
+    "LEDGER_0043": {
+      "ledger_id": "LEDGER_0043",
+      "tool": "tools.calc.yoy_growth",
+      "ticker": "NVDA",
+      "currency": null,
+      "unit": "base",
+      "inputs": {
+        "current": 21403000000.0,
+        "prior": 10080000000.0
+      },
+      "output": 112.3313492063492,
+      "raw_value": 112.3313492063492,
+      "source": "tools.calc.metrics.yoy_growth",
+      "form": null,
+      "period": null,
+      "notes": "Inventory YoY Growth (%)",
+      "timestamp": "2026-10-06T17:52:20.875663",
+      "integrity_hash": "ce5091a2789a00d03dc75aa19ac3c191ced131a83fd74a6313ba062689e8a519"
+    },
+    "LEDGER_0044": {
+      "ledger_id": "LEDGER_0044",
+      "tool": "tools.calc.working_capital",
+      "ticker": "NVDA",
+      "currency": null,
+      "unit": "base",
+      "inputs": {
+        "inv_yoy": 112.3313492063492,
+        "rev_yoy": 65.4735357900948
+      },
+      "output": 46.8578134162544,
+      "raw_value": 46.8578134162544,
+      "source": "tools.calc.working_capital",
+      "form": null,
+      "period": null,
+      "notes": "Inventory vs Revenue YoY divergence (pp)",
+      "timestamp": "2026-10-06T17:52:20.875663",
+      "integrity_hash": "d0222a111fc36fdd9d538fad2ac73764ee7bf184392bd1571d8006a5eb72625c"
+    },
+    "LEDGER_0045": {
+      "ledger_id": "LEDGER_0045",
+      "tool": "tools.calc.liquidity",
+      "ticker": "NVDA",
+      "currency": null,
+      "unit": "base",
+      "inputs": {
+        "st_debt": 999000000.0,
+        "cash": 10605000000.0
+      },
+      "output": 9.42008486562942,
+      "raw_value": 9.42008486562942,
+      "source": "Annual Balance Sheet",
+      "form": null,
+      "period": null,
+      "notes": "Short-term debt to cash ratio",
+      "timestamp": "2026-10-06T17:52:20.875663",
+      "integrity_hash": "d3e6c9e5fce8fe72e167651a96f85448ea142736936e4966a0fb8551fe51d48d"
+    },
+    "LEDGER_0046": {
+      "ledger_id": "LEDGER_0046",
+      "tool": "edgar.filing_notes",
+      "ticker": "NVDA",
+      "currency": null,
+      "unit": "base",
+      "inputs": {
+        "customer_concentration": 0.0
+      },
+      "output": 0.0,
+      "raw_value": 0.0,
+      "source": "Filing Customer Note",
+      "form": null,
+      "period": null,
+      "notes": "Max single customer revenue %",
+      "timestamp": "2026-10-06T17:52:20.875663",
+      "integrity_hash": "515d8a3ab33dfa6881e1b4227cfca8f16fe8345d6a3278320841c92e283f00e2"
+    }
+  }
+}

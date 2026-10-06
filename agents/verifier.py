@@ -144,8 +144,8 @@ class ReportVerifier:
                 form_type = inputs.get("form", "10-K")
                 
                 # Use SEC EDGAR CIK Facts API with User-Agent
-                cik_map = {"AAPL": "0000320193", "MSFT": "0000789019", "NVDA": "0001045810", "GOOGL": "0001652044"}
-                cik = cik_map.get(ticker, "0000320193")
+                from tools.sec_cik import resolve_cik
+                cik = resolve_cik(ticker) or "0000320193"
                 url = f"https://data.sec.gov/api/xbrl/companyfacts/CIK{cik}.json"
                 user_agent = os.getenv("SEC_EDGAR_USER_AGENT", "ResearchAnalyst research@example.com")
                 req = urllib.request.Request(url, headers={"User-Agent": user_agent})

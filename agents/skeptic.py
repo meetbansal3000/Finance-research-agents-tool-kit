@@ -532,10 +532,16 @@ class SkepticAgent:
                 source="tools.calc.working_capital",
                 notes="Inventory vs Revenue YoY divergence (pp)"
             )
-            inv_pass = inv_div <= 5.0
-            checklist_rows.append(("Inventory Divergence", f"Divergence {inv_div:+.2f}% [{l_inv}]", f"[{l_inv}]", "PASS" if inv_pass else "FAIL"))
-            if not inv_pass:
-                failures.append(f"Inventory Divergence: Inventory growth ({inv_yoy*100:+.2f}% [{l_wc_inv_yoy}]) diverged from revenue by {inv_div:+.2f}% [{l_inv}].")
+            rev_total = wcd.get("rev_curr", 0.0)
+            is_immaterial = rev_total > 0 and (wcd["inv_curr"] / rev_total) < 0.02
+            if is_immaterial:
+                inv_pass = True
+                checklist_rows.append(("Inventory Divergence", f"Divergence {inv_div:+.2f}% [{l_inv}] (Immaterial: <2% of revenue)", f"[{l_inv}]", "PASS"))
+            else:
+                inv_pass = inv_div <= 5.0
+                checklist_rows.append(("Inventory Divergence", f"Divergence {inv_div:+.2f}% [{l_inv}]", f"[{l_inv}]", "PASS" if inv_pass else "FAIL"))
+                if not inv_pass:
+                    failures.append(f"Inventory Divergence: Inventory growth ({inv_yoy*100:+.2f}% [{l_wc_inv_yoy}]) diverged from revenue by {inv_div:+.2f}% [{l_inv}].")
         elif inventory_growth_yoy is not None and revenue_growth_yoy is not None:
             inv_div = (inventory_growth_yoy - revenue_growth_yoy) * 100.0
             l_inv = self.ledger.record(
@@ -693,5 +699,7 @@ class SkepticAgent:
             "wacc_stressed_val": wacc_stressed_val,
             "half_growth_val": half_growth_val,
             "implied_cagr": implied_cagr,
-            "grid_results": grid_results
+            "grid_results": grid_results,
+            "checklist": checklist_rows,
+            "failures": failures
         }
