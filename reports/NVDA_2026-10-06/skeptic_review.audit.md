@@ -1,11 +1,11 @@
 # Verification Audit Report
 **Target Report:** `skeptic_review.md`  
-**Audit Timestamp:** 2026-10-06T17:52:20.911135  
-**Overall Status:** **PASS WITH FLAGS** (51 Confirmed, 0 Wrong, 2 Unverifiable)  
+**Audit Timestamp:** 2026-10-06T21:56:48.828799  
+**Overall Status:** **PASS WITH FLAGS** (52 Confirmed, 0 Wrong, 2 Unverifiable)  
 
 ---
 
-### ✅ 1. Confirmed Claims (51)
+### ✅ 1. Confirmed Claims (52)
 - **[Line 12] [LEDGER_0003]**: | Base Free Cash Flow | $96,676,000,000 | AUDITED DATA | [LEDGER_0003] | Audited Statement of Cash Flows |
   - *Verified Output:* `96676000000.0` via `filing.cash_flow`
   - *Source:* Audited Statement of Cash Flows
@@ -63,11 +63,11 @@
 - **[Line 29] [LEDGER_0028]**: | **10.0% Growth** [LEDGER_0019] | $113.62 [LEDGER_0026] | $94.21 [LEDGER_0027] | $80.36 [LEDGER_0028] |
   - *Verified Output:* `80.35815595982956` via `tools.calc.dcf`
   - *Source:* tools.calc.dcf.dcf
-- **[Line 35] [LEDGER_0001]**: Current Market Price: $240.59 USD [LEDGER_0001]
-  - *Verified Output:* `240.59` via `yfinance.quote`
+- **[Line 35] [LEDGER_0001]**: Current Market Price: $239.24 USD [LEDGER_0001]
+  - *Verified Output:* `239.24` via `yfinance.quote`
   - *Source:* Market Quote (NVDA)
-- **[Line 36] [LEDGER_0010]**: Implied 5-Year FCF CAGR (Reverse DCF): **34.54%** [LEDGER_0010]
-  - *Verified Output:* `34.544092416763306` via `tools.calc.reverse_dcf`
+- **[Line 36] [LEDGER_0010]**: Implied 5-Year FCF CAGR (Reverse DCF): **34.38%** [LEDGER_0010]
+  - *Verified Output:* `34.38429236412048` via `tools.calc.reverse_dcf`
   - *Source:* tools.calc.dcf.reverse_dcf
 - **[Line 37] [LEDGER_0011]**: Baseline Fair Value (DCF): **$86.67** [LEDGER_0011]
   - *Verified Output:* `86.66577990424508` via `tools.calc.dcf`
@@ -90,16 +90,16 @@
 - **[Line 43] [LEDGER_0017]**: Half-Growth Valuation Impact: **-15.66%** [LEDGER_0017]
   - *Verified Output:* `-15.664077949412514` via `tools.calc.growth_stress_impact`
   - *Source:* tools.calc.metrics
-- **[Line 51] [LEDGER_0010]**: | Valuation Feasibility | Implied CAGR 34.54% [LEDGER_0010] vs Hist +193.91% [LEDGER_0033] | [LEDGER_0010], [LEDGER_0033] | **PASS** |
-  - *Verified Output:* `34.544092416763306` via `tools.calc.reverse_dcf`
+- **[Line 51] [LEDGER_0010]**: | Valuation Feasibility | Implied CAGR 34.38% [LEDGER_0010] vs Hist +193.91% [LEDGER_0033] | [LEDGER_0010], [LEDGER_0033] | **PASS** |
+  - *Verified Output:* `34.38429236412048` via `tools.calc.reverse_dcf`
   - *Source:* tools.calc.dcf.reverse_dcf
-- **[Line 51] [LEDGER_0033]**: | Valuation Feasibility | Implied CAGR 34.54% [LEDGER_0010] vs Hist +193.91% [LEDGER_0033] | [LEDGER_0010], [LEDGER_0033] | **PASS** |
+- **[Line 51] [LEDGER_0033]**: | Valuation Feasibility | Implied CAGR 34.38% [LEDGER_0010] vs Hist +193.91% [LEDGER_0033] | [LEDGER_0010], [LEDGER_0033] | **PASS** |
   - *Verified Output:* `193.9051826916457` via `tools.calc.cagr`
   - *Source:* tools.calc.metrics.cagr
-- **[Line 51] [LEDGER_0010]**: | Valuation Feasibility | Implied CAGR 34.54% [LEDGER_0010] vs Hist +193.91% [LEDGER_0033] | [LEDGER_0010], [LEDGER_0033] | **PASS** |
-  - *Verified Output:* `34.544092416763306` via `tools.calc.reverse_dcf`
+- **[Line 51] [LEDGER_0010]**: | Valuation Feasibility | Implied CAGR 34.38% [LEDGER_0010] vs Hist +193.91% [LEDGER_0033] | [LEDGER_0010], [LEDGER_0033] | **PASS** |
+  - *Verified Output:* `34.38429236412048` via `tools.calc.reverse_dcf`
   - *Source:* tools.calc.dcf.reverse_dcf
-- **[Line 51] [LEDGER_0033]**: | Valuation Feasibility | Implied CAGR 34.54% [LEDGER_0010] vs Hist +193.91% [LEDGER_0033] | [LEDGER_0010], [LEDGER_0033] | **PASS** |
+- **[Line 51] [LEDGER_0033]**: | Valuation Feasibility | Implied CAGR 34.38% [LEDGER_0010] vs Hist +193.91% [LEDGER_0033] | [LEDGER_0010], [LEDGER_0033] | **PASS** |
   - *Verified Output:* `193.9051826916457` via `tools.calc.cagr`
   - *Source:* tools.calc.metrics.cagr
 - **[Line 52] [LEDGER_0013]**: | Margin Shock (-200 bps) | Impact -3.31% [LEDGER_0013] ($83.80 [LEDGER_0012]) | [LEDGER_0013], [LEDGER_0012] | **PASS** |
@@ -144,13 +144,13 @@
 - **[Line 57] [LEDGER_0045]**: | Refinancing / Debt Risk | ST Debt / Cash = 9.42% [LEDGER_0045] | [LEDGER_0045] | **PASS** |
   - *Verified Output:* `9.42008486562942` via `tools.calc.liquidity`
   - *Source:* Annual Balance Sheet
-- **[Line 58] [LEDGER_0046]**: | Customer Concentration | Top Customer = 0.00% [LEDGER_0046] | [LEDGER_0046] | **PASS** |
-  - *Verified Output:* `0.0` via `edgar.filing_notes`
-  - *Source:* Filing Customer Note
-- **[Line 58] [LEDGER_0046]**: | Customer Concentration | Top Customer = 0.00% [LEDGER_0046] | [LEDGER_0046] | **PASS** |
-  - *Verified Output:* `0.0` via `edgar.filing_notes`
-  - *Source:* Filing Customer Note
-- **[Line 64] [ANALYSIS]**: [ANALYSIS] VULNERABLE: Found 1 quantitative failure(s) across 8 performed checks.
+- **[Line 58] [LEDGER_0046]**: | Customer Concentration | Top Customer = 22.00% [LEDGER_0046] | [LEDGER_0046] | **FAIL** |
+  - *Verified Output:* `22.0` via `edgar.filing_notes`
+  - *Source:* SEC 10-K Note Disclosures / XBRL us-gaap:ConcentrationRiskPercentage1
+- **[Line 58] [LEDGER_0046]**: | Customer Concentration | Top Customer = 22.00% [LEDGER_0046] | [LEDGER_0046] | **FAIL** |
+  - *Verified Output:* `22.0` via `edgar.filing_notes`
+  - *Source:* SEC 10-K Note Disclosures / XBRL us-gaap:ConcentrationRiskPercentage1
+- **[Line 64] [ANALYSIS]**: [ANALYSIS] VULNERABLE: Found 2 quantitative failure(s) across 8 performed checks.
   - *Verified Output:* `ANALYST_DEDUCTION` via `analyst.reasoning`
   - *Source:* Report Author Analysis
 - **[Line 65] [LEDGER_0043]**: Inventory Divergence: Inventory growth (+112.33% [LEDGER_0043]) diverged from revenue by +46.86% [LEDGER_0044].
@@ -159,6 +159,9 @@
 - **[Line 65] [LEDGER_0044]**: Inventory Divergence: Inventory growth (+112.33% [LEDGER_0043]) diverged from revenue by +46.86% [LEDGER_0044].
   - *Verified Output:* `46.8578134162544` via `tools.calc.working_capital`
   - *Source:* tools.calc.working_capital
+- **[Line 66] [LEDGER_0046]**: Customer Concentration: Top customer accounts for 22.00% [LEDGER_0046] of total revenue.
+  - *Verified Output:* `22.0` via `edgar.filing_notes`
+  - *Source:* SEC 10-K Note Disclosures / XBRL us-gaap:ConcentrationRiskPercentage1
 
 ---
 
@@ -168,9 +171,9 @@ _None. No value discrepancies found._
 ---
 
 ### ⚠️ 3. Unverifiable / Failed Claims (2)
-- **[Line 66] [MODEL_MEMORY_TAGGED]**: Unverified context: [UNVERIFIED: model memory] NVIDIA CORP operates in competitive global markets subject to macroeconomic cycles.
+- **[Line 67] [MODEL_MEMORY_TAGGED]**: Unverified context: [UNVERIFIED: model memory] NVIDIA CORP operates in competitive global markets subject to macroeconomic cycles.
   - *Failure Reason:* Declared model memory (unverified qualitative claim).
-- **[Line 67] [MODEL_MEMORY_TAGGED]**: Unverified context: [UNVERIFIED: model memory] Regulatory scrutiny and currency fluctuations present ongoing operational considerations.
+- **[Line 68] [MODEL_MEMORY_TAGGED]**: Unverified context: [UNVERIFIED: model memory] Regulatory scrutiny and currency fluctuations present ongoing operational considerations.
   - *Failure Reason:* Declared model memory (unverified qualitative claim).
 
 ---

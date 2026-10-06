@@ -75,8 +75,8 @@ def test_skeptic_inventory_materiality_check():
 
     inv_check = [r for r in res["checklist"] if r[0] == "Inventory Divergence"]
     assert len(inv_check) == 1
-    # Check that status is PASS due to materiality
-    assert inv_check[0][3] == "PASS"
+    # Check that status is NOT APPLICABLE due to materiality (<2% of revenue)
+    assert inv_check[0][3] == "NOT APPLICABLE"
     assert "Immaterial: <2% of revenue" in inv_check[0][1]
 
 def test_universal_sec_verifier_refetch():

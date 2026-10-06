@@ -264,3 +264,72 @@ def test_precision_aware_half_unit_tolerance():
     assert tol == 0.5
     passes, _, _ = verifier.verify_value_with_precision("12,715", "", 12716.0)
     assert passes is False
+
+def test_planted_prior_year_balance_sheet_fails(tmp_path):
+    """Test that planting a prior-year balance sheet value fails period integrity."""
+    ledger = ProvenanceLedger(run_id="period_integrity_test")
+    # Plant a prior-year FY2024 balance sheet cash value
+    l_id = ledger.record(
+        tool="tools.filing.extract_metric",
+        ticker="AAPL",
+        currency="USD",
+        unit="base",
+        inputs={"ticker": "AAPL", "metric": "CashAndEquivalents"},
+        output=29943000000.0,
+        raw_value=29943000000.0,
+        source="SEC 10-K (2024-09-28)",
+        period="FY2024",
+        period_end="2024-09-28",
+        fiscal_year="FY2024",
+        notes="Planted prior-year balance sheet value"
+    )
+    
+    rep_file = tmp_path / "aapl_fy25_report.md"
+    sidecar_file = tmp_path / "aapl_fy25_report.provenance.json"
+    
+    # Report states FY2025, but claims prior-year value without prior qualification
+    with open(rep_file, "w", encoding="utf-8") as f:
+        f.write(f"# Apple Inc. (AAPL) Financial Research Report: FY2025\nCash and cash equivalents was $29,943M [{l_id}].")
+    ledger.save_sidecar(str(sidecar_file))
+    
+    verifier = ReportVerifier(report_path=str(rep_file), ledger_path=str(sidecar_file))
+    audit_res = verifier.audit()
+    
+    # Must fail with PERIOD_MISMATCH
+    period_errors = [w for w in audit_res["wrong"] if w.get("error_type") == "PERIOD_MISMATCH"]
+    assert len(period_errors) == 1
+    assert "differs from report" in period_errors[0]["failure_reason"] or "Period mismatch" in period_errors[0]["failure_reason"]
+    assert audit_res["summary"]["status"] == "FAIL"
+
+def test_planted_analyst_mistake_caught_by_independent_verifier(tmp_path):
+    """Test that a mistake planted in analyst extraction code is caught by independent re-fetch."""
+    ledger = ProvenanceLedger(run_id="independent_refetch_test")
+    # Planted mistake in analyst extraction: $450B revenue instead of audited $416.161B
+    l_id = ledger.record(
+        tool="edgar.get_facts",
+        ticker="AAPL",
+        currency="USD",
+        inputs={"ticker": "AAPL", "concept": "RevenueFromContractWithCustomerExcludingAssessedTax", "period": "FY2025", "period_end": "2025-09-27"},
+        output=450000000000.0,  # Planted analyst error!
+        raw_value=450000000000.0,
+        source="SEC 10-K CIK0000320193",
+        period="FY2025",
+        period_end="2025-09-27",
+        fiscal_year="FY2025"
+    )
+    
+    rep_file = tmp_path / "aapl_planted_mistake_report.md"
+    sidecar_file = tmp_path / "aapl_planted_mistake_report.provenance.json"
+    
+    with open(rep_file, "w", encoding="utf-8") as f:
+        f.write(f"Apple FY2025 revenue was $450.0 billion [{l_id}].")
+    ledger.save_sidecar(str(sidecar_file))
+    
+    verifier = ReportVerifier(report_path=str(rep_file), ledger_path=str(sidecar_file), perform_refetch=True)
+    audit_res = verifier.audit()
+    
+    # The independent verifier must catch the discrepancy against the primary filing document or SEC live data!
+    refetch_errors = [w for w in audit_res["wrong"] if w.get("error_type") == "SOURCE_REFETCH_DISCREPANCY"]
+    assert len(refetch_errors) == 1
+    assert "Live source returned" in refetch_errors[0]["failure_reason"]
+    assert audit_res["summary"]["status"] == "FAIL"

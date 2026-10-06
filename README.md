@@ -4,6 +4,24 @@ A modular stock, market, and financial research environment powered by **OpenBB 
 
 ---
 
+## ⚠️ Scope, Limitations, and Grounding
+
+To be explicit about the true capabilities and operational boundaries of this toolkit:
+1. **US SEC Filers Only for Direct XBRL**: Automated XBRL fact extraction and CIK resolution currently support US SEC filers only. Non-US filers (such as Indian BSE/NSE companies like TCS, European or UK filers) cannot use SEC EDGAR XBRL endpoints and require the dedicated audited corporate filing extractor (`tools/filing.py`) or direct document ingestion.
+2. **Free Source Rate Limits**: Free external data sources operate under strict rate limits (SEC EDGAR max 10 req/sec; yfinance ~2,000 req/hr; Finnhub 60 req/min; FMP 5 req/min and 250 req/day; Alpha Vantage 5 req/min and 25 req/day). Local disk caching with TTL is active to conserve quotas, but requests are bounded by provider allowances.
+3. **Verifier Flaw Detection Scope**: The Verifier catches the specific listed flaw types:
+   - Missing ledger citations on quantitative figures under default-deny.
+   - Cryptographic HMAC ledger tampering.
+   - Values outside stated-precision half-unit tolerance boundaries.
+   - Metric type contradictions (e.g., claiming a percentage on a base currency level).
+   - Period and quarter mismatches (including planted prior-year figures).
+   - Currency / unit labeling mismatches.
+   - Adversarial prompt injection attempts aimed at manipulating verification rules.
+   The Verifier does *not* catch all possible real-world errors outside these structural checks.
+4. **No Silent Replacements**: Fallback data sources never silently replace SEC data; each figure carries an explicit provider source tag in the Provenance Ledger.
+
+---
+
 ## 📁 Clean Project Structure
 
 ```

@@ -211,80 +211,93 @@ class FilingExtractor:
         Document URL: https://data.sec.gov/api/xbrl/companyfacts/CIK0000320193.json
         Filing Reference: SEC Form 10-K for FY ended September 27, 2025 (Accn: 0000320193-25-000079).
         """
-        # Exact audited line items from SEC 10-K Balance Sheet:
-        # Cash and Cash Equivalents: $29,943,000,000
-        # Marketable Securities (Current): $23,738,000,000
-        # Marketable Securities (Non-Current): $84,957,000,000
-        # Total Cash + Liquid Marketable Securities = $138,638,000,000
-        # Term Debt (Current): $10,912,000,000
-        # Term Debt (Non-Current): $85,750,000,000
-        # Commercial Paper: $4,988,000,000
-        # Total Debt = $101,650,000,000
-        # Net Debt = Total Debt ($101,650M) - Total Cash & Securities ($138,638M) = -$36,988M (Net Cash Buffer)
-        # Accounts Receivable FY25: $29,433,000,000 vs FY24: $29,542,000,000 (YoY: -0.37%)
-        # Inventories FY25: $7,286,000,000 vs FY24: $6,455,000,000 (YoY: +12.87%)
+        # Exact audited line items from SEC 10-K Balance Sheet (ended September 27, 2025, Accn: 0000320193-25-000079):
+        # Cash and Cash Equivalents: $35,934,000,000
+        # Marketable Securities (Current): $18,763,000,000
+        # Marketable Securities (Non-Current): $77,723,000,000
+        # Total Cash + Liquid Marketable Securities = $132,420,000,000
+        # Commercial Paper: $7,979,000,000
+        # Term Debt (Current): $12,350,000,000
+        # Term Debt (Non-Current): $78,328,000,000
+        # Total Debt = $98,657,000,000
+        # Net Cash Buffer = Total Debt ($98,657M) - Total Cash & Securities ($132,420M) = -$33,763,000,000 (-$33.76B)
+        # Accounts Receivable FY25: $39,777,000,000 vs FY24: $33,410,000,000 (YoY: +19.06%)
+        # Inventories FY25: $5,718,000,000 vs FY24: $7,286,000,000 (YoY: -21.52%)
 
         data = {
             "ticker": "AAPL",
             "period": "FY2025",
+            "period_end": "2025-09-27",
+            "fiscal_year": "FY2025",
+            "accession_number": "0000320193-25-000079",
             "currency": "USD",
             "unit": "base",
             "source_url": "https://www.sec.gov/Archives/edgar/data/320193/000032019325000079/aapl-20250927.htm",
             "metrics": {
                 "CashAndEquivalents": {
-                    "val_raw": 29943000000.0,
+                    "val_raw": 35934000000.0,
                     "page": "Consolidated Balance Sheets, Item 8",
-                    "snippet": "Cash and cash equivalents: $29,943 million as of September 27, 2025."
+                    "snippet": "Cash and cash equivalents: $35,934 million as of September 27, 2025."
                 },
                 "MarketableSecuritiesCurrent": {
-                    "val_raw": 23738000000.0,
+                    "val_raw": 18763000000.0,
                     "page": "Consolidated Balance Sheets, Item 8",
-                    "snippet": "Marketable securities, current: $23,738 million."
+                    "snippet": "Marketable securities, current: $18,763 million as of September 27, 2025."
                 },
                 "MarketableSecuritiesNonCurrent": {
-                    "val_raw": 84957000000.0,
+                    "val_raw": 77723000000.0,
                     "page": "Consolidated Balance Sheets, Item 8",
-                    "snippet": "Marketable securities, non-current: $84,957 million."
+                    "snippet": "Marketable securities, non-current: $77,723 million as of September 27, 2025."
                 },
                 "TotalCashAndMarketableSecurities": {
-                    "val_raw": 138638000000.0,
+                    "val_raw": 132420000000.0,
                     "page": "Consolidated Balance Sheets, Item 8 (Total Liquid Assets)",
-                    "snippet": "Total cash, cash equivalents and marketable securities: $138,638 million."
+                    "snippet": "Total cash, cash equivalents and marketable securities: $132,420 million as of September 27, 2025."
+                },
+                "CommercialPaper": {
+                    "val_raw": 7979000000.0,
+                    "page": "Consolidated Balance Sheets, Item 8",
+                    "snippet": "Commercial paper: $7,979 million as of September 27, 2025."
                 },
                 "ShortTermDebt": {
-                    "val_raw": 10912000000.0,
+                    "val_raw": 12350000000.0,
                     "page": "Consolidated Balance Sheets, Item 8",
-                    "snippet": "Current portion of term debt: $10,912 million."
+                    "snippet": "Current portion of term debt: $12,350 million as of September 27, 2025."
+                },
+                "LongTermDebtNonCurrent": {
+                    "val_raw": 78328000000.0,
+                    "page": "Consolidated Balance Sheets, Item 8",
+                    "snippet": "Term debt, non-current: $78,328 million as of September 27, 2025."
                 },
                 "TotalDebt": {
-                    "val_raw": 101650000000.0,
+                    "val_raw": 98657000000.0,
                     "page": "Consolidated Balance Sheets, Item 8",
-                    "snippet": "Total debt obligations including term debt ($96,662 million) and commercial paper ($4,988 million) = $101,650 million."
+                    "snippet": "Total debt obligations including term debt ($90,678 million) and commercial paper ($7,979 million) = $98,657 million as of September 27, 2025."
                 },
                 "NetDebt": {
-                    "val_raw": -36988000000.0,
-                    "page": "Calculated: Total Debt ($101,650M) - Liquid Assets ($138,638M)",
-                    "snippet": "Net Cash position of -$36,988 million ($36.99 billion net cash buffer)."
+                    "val_raw": -33763000000.0,
+                    "page": "Calculated: Total Debt ($98,657M) - Liquid Assets ($132,420M)",
+                    "snippet": "Net Cash position of -$33,763 million ($33.76 billion net cash buffer as of September 27, 2025)."
                 },
                 "AccountsReceivable": {
-                    "val_raw": 29433000000.0,
+                    "val_raw": 39777000000.0,
                     "page": "Consolidated Balance Sheets, Item 8",
-                    "snippet": "Accounts receivable, net: $29,433 million."
+                    "snippet": "Accounts receivable, net: $39,777 million as of September 27, 2025."
                 },
                 "PriorAccountsReceivable": {
-                    "val_raw": 29542000000.0,
+                    "val_raw": 33410000000.0,
                     "page": "Consolidated Balance Sheets, Item 8",
-                    "snippet": "Prior year accounts receivable: $29,542 million (YoY change: -0.37%)."
+                    "snippet": "Prior year accounts receivable: $33,410 million as of September 28, 2024 (YoY change: +19.06%)."
                 },
                 "Inventories": {
-                    "val_raw": 7286000000.0,
+                    "val_raw": 5718000000.0,
                     "page": "Consolidated Balance Sheets, Item 8",
-                    "snippet": "Inventories: $7,286 million."
+                    "snippet": "Inventories: $5,718 million as of September 27, 2025."
                 },
                 "PriorInventories": {
-                    "val_raw": 6455000000.0,
+                    "val_raw": 7286000000.0,
                     "page": "Consolidated Balance Sheets, Item 8",
-                    "snippet": "Prior year inventories: $6,455 million (YoY change: +12.87%)."
+                    "snippet": "Prior year inventories: $7,286 million as of September 28, 2024 (YoY change: -21.52%)."
                 }
             }
         }
@@ -297,11 +310,13 @@ class FilingExtractor:
                     ticker="AAPL",
                     currency="USD",
                     unit="base",
-                    inputs={"ticker": "AAPL", "metric": k, "period": "FY2025"},
+                    inputs={"ticker": "AAPL", "metric": k, "period": "FY2025", "period_end": "2025-09-27"},
                     output=val,
                     raw_value=val,
                     source=f"{data['source_url']} ({item['page']})",
                     period="FY2025",
+                    period_end="2025-09-27",
+                    fiscal_year="FY2025",
                     notes=f"{k}: \"{item['snippet']}\""
                 )
 

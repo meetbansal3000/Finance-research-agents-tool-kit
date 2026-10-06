@@ -44,11 +44,11 @@ _None. Zero numerical discrepancies identified across audited financial statemen
 - Operating income was $130,387M [LEDGER_0003], resulting in an operating margin of 60.38% [LEDGER_0017].
 - Net income reached $120,067M [LEDGER_0004], delivering a net margin of 55.60% [LEDGER_0018].
 - Cash flow from operations was $102,718M [LEDGER_0005] and capital expenditures were $6,042M [LEDGER_0006].
-- Free cash flow was $96,676M [LEDGER_0019], yielding an FCF yield of 1.66% [LEDGER_0020].
+- Free cash flow was $96,676M [LEDGER_0019], yielding an FCF yield of 1.67% [LEDGER_0020].
 - Balance sheet cash and marketable securities totaled $10,605M [LEDGER_0007] against total debt of $8,468M [LEDGER_0008], resulting in a net debt of -$2,137M [LEDGER_0009].
-- Current market price trades at $240.59 USD [LEDGER_0010].
+- Current market price trades at $239.24 USD [LEDGER_0010].
 - Baseline DCF fair value estimate is $82.66 [LEDGER_0021].
-- Reverse DCF model indicates the current market price implies a 5-year FCF CAGR of 34.54% [LEDGER_0022].
+- Reverse DCF model indicates the current market price implies a 5-year FCF CAGR of 34.38% [LEDGER_0022].
 
 ---
 
@@ -72,7 +72,7 @@ _None. Zero numerical discrepancies identified across audited financial statemen
 
 - [UNVERIFIED: model memory] NVIDIA CORP maintains competitive market positioning across its core operating business lines.
 - [UNVERIFIED: model memory] Multi-year customer relationships and global distribution support continuous operations.
-- [ANALYSIS] The implied growth rate of 34.54% [LEDGER_0022] exceeds the baseline growth assumption and reflects a premium multiple.
+- [ANALYSIS] The implied growth rate of 34.38% [LEDGER_0022] exceeds the baseline growth assumption and reflects a premium multiple.
 
 ---
 *Report generated under Antigravity Verified Research Playbook. All figures verified by Provenance Ledger.*
@@ -83,7 +83,7 @@ _None. Zero numerical discrepancies identified across audited financial statemen
 ## 🐻 III. Skeptic Adversarial Review (End Section)
 
 > **Adversarial Verdict:** **VULNERABLE / STRETCHED**  
-> **Skeptic Verifier Status:** **PASS WITH FLAGS** (51 Confirmed Claims)  
+> **Skeptic Verifier Status:** **PASS WITH FLAGS** (52 Confirmed Claims)  
 
 # Skeptic Adversarial Review: NVDA
 **Audit Date:** 2026-10-06  
@@ -119,8 +119,8 @@ _None. Zero numerical discrepancies identified across audited financial statemen
 
 ### 3. Stress Testing Top 3 Thesis Assumptions
 
-- Current Market Price: $240.59 USD [LEDGER_0001]
-- Implied 5-Year FCF CAGR (Reverse DCF): **34.54%** [LEDGER_0010]
+- Current Market Price: $239.24 USD [LEDGER_0001]
+- Implied 5-Year FCF CAGR (Reverse DCF): **34.38%** [LEDGER_0010]
 - Baseline Fair Value (DCF): **$86.67** [LEDGER_0011]
 - Stressed Fair Value (-200 bps Margin): **$83.80** [LEDGER_0012]
 - Margin Stress Valuation Impact: **-3.31%** [LEDGER_0013]
@@ -135,21 +135,22 @@ _None. Zero numerical discrepancies identified across audited financial statemen
 
 | Check Name | Metric Value | Ledger Citation | Status |
 | :--- | :--- | :--- | :--- |
-| Valuation Feasibility | Implied CAGR 34.54% [LEDGER_0010] vs Hist +193.91% [LEDGER_0033] | [LEDGER_0010], [LEDGER_0033] | **PASS** |
+| Valuation Feasibility | Implied CAGR 34.38% [LEDGER_0010] vs Hist +193.91% [LEDGER_0033] | [LEDGER_0010], [LEDGER_0033] | **PASS** |
 | Margin Shock (-200 bps) | Impact -3.31% [LEDGER_0013] ($83.80 [LEDGER_0012]) | [LEDGER_0013], [LEDGER_0012] | **PASS** |
 | WACC Shock (+100 bps) | Impact -14.60% [LEDGER_0015] ($74.02 [LEDGER_0014]) | [LEDGER_0015], [LEDGER_0014] | **PASS** |
 | Half-Growth Stress | Stressed Fair Value $73.09 [LEDGER_0016] (-15.66% [LEDGER_0017]) | [LEDGER_0016], [LEDGER_0017] | **PASS** |
 | Receivables Divergence | Divergence +1.30% [LEDGER_0040] | [LEDGER_0040] | **PASS** |
 | Inventory Divergence | Divergence +46.86% [LEDGER_0044] | [LEDGER_0044] | **FAIL** |
 | Refinancing / Debt Risk | ST Debt / Cash = 9.42% [LEDGER_0045] | [LEDGER_0045] | **PASS** |
-| Customer Concentration | Top Customer = 0.00% [LEDGER_0046] | [LEDGER_0046] | **PASS** |
+| Customer Concentration | Top Customer = 22.00% [LEDGER_0046] | [LEDGER_0046] | **FAIL** |
 
 ---
 
 ### 5. Adversarial Findings & Conclusion
 
-- [ANALYSIS] VULNERABLE: Found 1 quantitative failure(s) across 8 performed checks.
+- [ANALYSIS] VULNERABLE: Found 2 quantitative failure(s) across 8 performed checks.
 - Inventory Divergence: Inventory growth (+112.33% [LEDGER_0043]) diverged from revenue by +46.86% [LEDGER_0044].
+- Customer Concentration: Top customer accounts for 22.00% [LEDGER_0046] of total revenue.
 - Unverified context: [UNVERIFIED: model memory] NVIDIA CORP operates in competitive global markets subject to macroeconomic cycles.
 - Unverified context: [UNVERIFIED: model memory] Regulatory scrutiny and currency fluctuations present ongoing operational considerations.
 

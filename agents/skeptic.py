@@ -535,8 +535,8 @@ class SkepticAgent:
             rev_total = wcd.get("rev_curr", 0.0)
             is_immaterial = rev_total > 0 and (wcd["inv_curr"] / rev_total) < 0.02
             if is_immaterial:
-                inv_pass = True
-                checklist_rows.append(("Inventory Divergence", f"Divergence {inv_div:+.2f}% [{l_inv}] (Immaterial: <2% of revenue)", f"[{l_inv}]", "PASS"))
+                checklist_rows.append(("Inventory Divergence", f"Divergence {inv_div:+.2f}% [{l_inv}] (Immaterial: <2% of revenue)", f"[{l_inv}]", "NOT APPLICABLE"))
+                unperformed_count += 1
             else:
                 inv_pass = inv_div <= 5.0
                 checklist_rows.append(("Inventory Divergence", f"Divergence {inv_div:+.2f}% [{l_inv}]", f"[{l_inv}]", "PASS" if inv_pass else "FAIL"))
@@ -589,18 +589,19 @@ class SkepticAgent:
                 inputs={"customer_concentration": max_customer_concentration_pct},
                 output=max_customer_concentration_pct,
                 raw_value=max_customer_concentration_pct,
-                source="Filing Customer Note",
+                source="SEC 10-K Note Disclosures / XBRL us-gaap:ConcentrationRiskPercentage1",
                 notes="Max single customer revenue %"
             )
             cust_pass = max_customer_concentration_pct <= 10.0
-            checklist_rows.append(("Customer Concentration", f"Top Customer = {max_customer_concentration_pct:.2f}% [{l_cust}]", f"[{l_cust}]", "PASS" if cust_pass else "FAIL"))
+            display_val = "<10%" if max_customer_concentration_pct <= 0.0 else f"{max_customer_concentration_pct:.2f}%"
+            checklist_rows.append(("Customer Concentration", f"Top Customer = {display_val} [{l_cust}]", f"[{l_cust}]", "PASS" if cust_pass else "FAIL"))
             if not cust_pass:
-                failures.append(f"Customer Concentration: Top customer accounts for {max_customer_concentration_pct:.2f}% [{l_cust}] of total revenue.")
+                failures.append(f"Customer Concentration: Top customer accounts for {display_val} [{l_cust}] of total revenue.")
         else:
             checklist_rows.append(("Customer Concentration", "Data Not Disclosed in Filings", "N/A", "NOT CHECKED (data unavailable)"))
             unperformed_count += 1
 
-        # Evaluate Overall Verdict
+        # Evaluate Overall Verdict strictly by written quantitative policy
         total_checks = len(checklist_rows)
         performed_checks = total_checks - unperformed_count
 
@@ -610,9 +611,6 @@ class SkepticAgent:
         elif len(failures) > 0:
             verdict_text = "VULNERABLE / STRETCHED"
             verdict_detail = f"[ANALYSIS] VULNERABLE: Found {len(failures)} quantitative failure(s) across {performed_checks} performed checks."
-        elif empirical_counter_evidence and len(empirical_counter_evidence) > 0:
-            verdict_text = "VULNERABLE / STRETCHED"
-            verdict_detail = f"[ANALYSIS] VULNERABLE: All {performed_checks} quantitative checks passed, but qualitative empirical risks were identified."
         else:
             verdict_text = "ROBUST / NO STRONG COUNTER-EVIDENCE FOUND"
             verdict_detail = f"[ANALYSIS] No strong counter-evidence found among the checks performed ({performed_checks} of {total_checks} checks performed, {unperformed_count} data checks unavailable)."

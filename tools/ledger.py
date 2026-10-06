@@ -4,6 +4,7 @@ Tracks every financial data extraction and calculation with an immutable ledger 
 source URL, input parameters, timestamp, raw output, and SHA-256 integrity signature.
 """
 
+import re
 import json
 import os
 import hmac
@@ -24,11 +25,13 @@ def compute_entry_hash(
     source: str,
     timestamp: str,
     currency: Optional[str] = None,
-    unit: Optional[str] = None
+    unit: Optional[str] = None,
+    period_end: Optional[str] = None,
+    fiscal_year: Optional[str] = None
 ) -> str:
     """Compute true HMAC-SHA256 signature of ledger entry fields to detect tampering."""
     serialized_inputs = json.dumps(inputs, sort_keys=True)
-    payload = f"{ledger_id}|{tool}|{serialized_inputs}|{raw_value}|{source}|{timestamp}|{currency or ''}|{unit or ''}"
+    payload = f"{ledger_id}|{tool}|{serialized_inputs}|{raw_value}|{source}|{timestamp}|{currency or ''}|{unit or ''}|{period_end or ''}|{fiscal_year or ''}"
     return hmac.new(get_hmac_key(), payload.encode("utf-8"), hashlib.sha256).hexdigest()
 
 class ProvenanceLedger:
@@ -49,7 +52,10 @@ class ProvenanceLedger:
         notes: Optional[str] = None,
         ticker: Optional[str] = None,
         currency: Optional[str] = None,
-        unit: Optional[str] = None
+        unit: Optional[str] = None,
+        period_end: Optional[str] = None,
+        fiscal_year: Optional[str] = None,
+        source_tag: Optional[str] = None
     ) -> str:
         """Record a data extraction or calculation in the provenance ledger.
         Generates a unique ledger ID and cryptographic integrity signature.
@@ -61,9 +67,34 @@ class ProvenanceLedger:
         ts = datetime.datetime.now().isoformat()
         
         resolved_ticker = ticker or inputs.get("ticker") or inputs.get("symbol")
-        resolved_currency = currency or ("USD" if resolved_ticker == "AAPL" else ("INR" if resolved_ticker and "NS" in resolved_ticker else None))
+        resolved_currency = currency or ("USD" if resolved_ticker in ("AAPL", "MSFT", "NVDA") or (resolved_ticker and "." not in resolved_ticker) else ("INR" if resolved_ticker and "NS" in resolved_ticker else None))
         resolved_unit = unit or "base"
         
+        resolved_period_end = period_end or inputs.get("period_end") or inputs.get("end_date") or inputs.get("end")
+        resolved_fiscal_year = fiscal_year or inputs.get("fiscal_year") or inputs.get("fy")
+        if not resolved_fiscal_year and period and ("FY" in str(period) or str(period).startswith("20")):
+            resolved_fiscal_year = str(period)
+        if not resolved_period_end and period and re.match(r'^\d{4}-\d{2}-\d{2}$', str(period)):
+            resolved_period_end = str(period)
+            
+        resolved_source_tag = source_tag
+        if not resolved_source_tag:
+            src_str = str(source).lower()
+            if "sec" in src_str or "edgar" in src_str:
+                resolved_source_tag = "SEC"
+            elif "yfinance" in src_str or "yahoo" in src_str:
+                resolved_source_tag = "yfinance"
+            elif "finnhub" in src_str:
+                resolved_source_tag = "Finnhub"
+            elif "fmp" in src_str:
+                resolved_source_tag = "FMP"
+            elif "cache" in src_str:
+                resolved_source_tag = "cache"
+            elif "calc" in tool:
+                resolved_source_tag = "calc"
+            else:
+                resolved_source_tag = "primary_filing"
+
         entry_hash = compute_entry_hash(
             ledger_id=ledger_id,
             tool=tool,
@@ -72,7 +103,9 @@ class ProvenanceLedger:
             source=source,
             timestamp=ts,
             currency=resolved_currency,
-            unit=resolved_unit
+            unit=resolved_unit,
+            period_end=resolved_period_end,
+            fiscal_year=resolved_fiscal_year
         )
         
         entry = {
@@ -81,6 +114,9 @@ class ProvenanceLedger:
             "ticker": resolved_ticker,
             "currency": resolved_currency,
             "unit": resolved_unit,
+            "period_end": resolved_period_end,
+            "fiscal_year": resolved_fiscal_year,
+            "source_tag": resolved_source_tag,
             "inputs": inputs,
             "output": output,
             "raw_value": val,
@@ -108,7 +144,9 @@ class ProvenanceLedger:
             source=entry["source"],
             timestamp=entry["timestamp"],
             currency=entry.get("currency"),
-            unit=entry.get("unit")
+            unit=entry.get("unit"),
+            period_end=entry.get("period_end"),
+            fiscal_year=entry.get("fiscal_year")
         )
         return entry["integrity_hash"] == expected_hash
 
