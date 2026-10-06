@@ -16,7 +16,7 @@
 - Free cash flow was $73,266M [LEDGER_0017], yielding an FCF yield of 3.59% [LEDGER_0018].
 - Balance sheet cash and marketable securities totaled $126,843M [LEDGER_0007] against total debt of $48,543M [LEDGER_0008], resulting in a net debt of -$78,300M [LEDGER_0009].
 - Current market price trades at $347.68 USD [LEDGER_0010].
-- Baseline DCF fair value estimate is $270.88 [LEDGER_0019].
+- Baseline DCF fair value estimate is $283.38 [LEDGER_0019].
 - Reverse DCF model indicates the current market price implies a 5-year FCF CAGR of 13.17% [LEDGER_0020].
 
 ---

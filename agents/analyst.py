@@ -1023,11 +1023,10 @@ class AnalystAgent:
             notes=f"{ticker} FCF Yield (%)"
         )
 
-        # Baseline DCF & Reverse DCF
         net_debt_val = data["balance_sheet"]["NetDebt"]["val_raw"]
         wacc = 0.085 if curr == "USD" else (0.105 if curr == "INR" else 0.09)
         term_g = 0.025 if curr == "USD" else (0.040 if curr == "INR" else 0.025)
-        growth_assumption = [0.08, 0.08, 0.07, 0.06, 0.05] if curr == "USD" else [0.07, 0.07, 0.065, 0.06, 0.055]
+        growth_assumption = [0.08] * 5 if curr == "USD" else [0.07] * 5
 
         dcf_res = dcf(
             base_fcf=fcf_val,

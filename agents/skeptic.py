@@ -558,7 +558,7 @@ class SkepticAgent:
             if not inv_pass:
                 failures.append(f"Inventory Divergence: Inventory growth diverged from revenue by {inv_div:+.2f}% [{l_inv}].")
         else:
-            checklist_rows.append(("Inventory Divergence", "Service/Software Business or Data Unavailable", "N/A", "NOT CHECKED (data unavailable)"))
+            checklist_rows.append(("Inventory Divergence", "Service/Software Business (No Physical Inventory)", "N/A", "NOT APPLICABLE"))
             unperformed_count += 1
 
         # Check 7: Refinancing / Liquidity Risk

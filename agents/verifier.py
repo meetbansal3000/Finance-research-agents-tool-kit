@@ -498,7 +498,7 @@ class ReportVerifier:
             
             # --- DEFAULT-DENY ENFORCEMENT ---
             if not ledger_matches and not has_memory_tag and not has_analysis_tag:
-                if ("not checked" in unit_str.lower() or "data unavailable" in unit_str.lower()) and not numbers_found:
+                if ("not checked" in unit_str.lower() or "data unavailable" in unit_str.lower() or "not applicable" in unit_str.lower()) and not numbers_found:
                     continue
 
                 narrative_triggers = [

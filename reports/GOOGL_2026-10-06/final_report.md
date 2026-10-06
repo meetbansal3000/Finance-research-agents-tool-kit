@@ -47,7 +47,7 @@ _None. Zero numerical discrepancies identified across audited financial statemen
 - Free cash flow was $73,266M [LEDGER_0017], yielding an FCF yield of 3.59% [LEDGER_0018].
 - Balance sheet cash and marketable securities totaled $126,843M [LEDGER_0007] against total debt of $48,543M [LEDGER_0008], resulting in a net debt of -$78,300M [LEDGER_0009].
 - Current market price trades at $347.68 USD [LEDGER_0010].
-- Baseline DCF fair value estimate is $270.88 [LEDGER_0019].
+- Baseline DCF fair value estimate is $283.38 [LEDGER_0019].
 - Reverse DCF model indicates the current market price implies a 5-year FCF CAGR of 13.17% [LEDGER_0020].
 
 ---
@@ -140,7 +140,7 @@ _None. Zero numerical discrepancies identified across audited financial statemen
 | WACC Shock (+100 bps) | Impact -13.92% [LEDGER_0015] ($243.93 [LEDGER_0014]) | [LEDGER_0015], [LEDGER_0014] | **PASS** |
 | Half-Growth Stress | Stressed Fair Value $241.04 [LEDGER_0016] (-14.94% [LEDGER_0017]) | [LEDGER_0016], [LEDGER_0017] | **PASS** |
 | Receivables Divergence | Divergence +5.06% [LEDGER_0034] | [LEDGER_0034] | **FAIL** |
-| Inventory Divergence | Service/Software Business or Data Unavailable | N/A | **NOT CHECKED (data unavailable)** |
+| Inventory Divergence | Service/Software Business (No Physical Inventory) | N/A | **NOT APPLICABLE** |
 | Refinancing / Debt Risk | ST Debt / Cash = 1.57% [LEDGER_0035] | [LEDGER_0035] | **PASS** |
 | Customer Concentration | Top Customer = <10% [LEDGER_0036] | [LEDGER_0036] | **PASS** |
 

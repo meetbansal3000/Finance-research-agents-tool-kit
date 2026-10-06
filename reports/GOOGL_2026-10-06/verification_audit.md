@@ -1,6 +1,6 @@
 # Verification Audit Report
 **Target Report:** `analyst_report.md`  
-**Audit Timestamp:** 2026-10-06T22:25:19.767151  
+**Audit Timestamp:** 2026-10-06T22:36:25.923617  
 **Overall Status:** **PASS WITH FLAGS (NOT RE-FETCHED)** (26 Confirmed, 0 Wrong, 2 Unverifiable)  
 
 ---
@@ -48,8 +48,8 @@
 - **[Line 18] [LEDGER_0010]**: Current market price trades at $347.68 USD [LEDGER_0010].
   - *Verified Output:* `347.68` via `yfinance.quote`
   - *Source:* Yahoo Finance Market Quote
-- **[Line 19] [LEDGER_0019]**: Baseline DCF fair value estimate is $270.88 [LEDGER_0019].
-  - *Verified Output:* `270.8782072480801` via `tools.calc.dcf`
+- **[Line 19] [LEDGER_0019]**: Baseline DCF fair value estimate is $283.38 [LEDGER_0019].
+  - *Verified Output:* `283.3825000087262` via `tools.calc.dcf`
   - *Source:* tools.calc.dcf.dcf
 - **[Line 20] [LEDGER_0020]**: Reverse DCF model indicates the current market price implies a 5-year FCF CAGR of 13.17% [LEDGER_0020].
   - *Verified Output:* `13.169509172439575` via `tools.calc.reverse_dcf`

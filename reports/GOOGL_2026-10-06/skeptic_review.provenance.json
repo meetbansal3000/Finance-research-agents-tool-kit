@@ -1,6 +1,6 @@
 {
   "run_id": "GOOGL_skeptic_2026-10-06",
-  "saved_at": "2026-10-06T22:25:19.778511",
+  "saved_at": "2026-10-06T22:36:25.935743",
   "total_records": 36,
   "entries": {
     "LEDGER_0001": {
@@ -22,8 +22,8 @@
       "form": null,
       "period": null,
       "notes": "Current trading price (USD)",
-      "timestamp": "2026-10-06T22:25:19.775596",
-      "integrity_hash": "69921e97f403a5998fbd7888e4a1e05d9e06886dab5e94770a2955b2614ed382"
+      "timestamp": "2026-10-06T22:36:25.933978",
+      "integrity_hash": "a2df2e7904159362850bb21d2ddfbc286053addd22b815a7d4b9ea99035918de"
     },
     "LEDGER_0002": {
       "ledger_id": "LEDGER_0002",
@@ -43,8 +43,8 @@
       "form": null,
       "period": null,
       "notes": "Diluted Shares Outstanding",
-      "timestamp": "2026-10-06T22:25:19.776511",
-      "integrity_hash": "7a3f881d350f5386cab6bda15b840d853479690bf8c1ab9285674062322d6a83"
+      "timestamp": "2026-10-06T22:36:25.933978",
+      "integrity_hash": "2920ea42555ba43d8d9b1c28f7c14509ff766b2b40f1c14e050dd9fe25d2efa3"
     },
     "LEDGER_0003": {
       "ledger_id": "LEDGER_0003",
@@ -65,8 +65,8 @@
       "form": null,
       "period": null,
       "notes": "Base Free Cash Flow (USD)",
-      "timestamp": "2026-10-06T22:25:19.776511",
-      "integrity_hash": "c18bfae56aca0323611cb24b87b04ae1f0d49892ba90bac04e44f38afab58c2e"
+      "timestamp": "2026-10-06T22:36:25.933978",
+      "integrity_hash": "f474e0440053ddff14766b272dafd5090d305fe0c538efbdf4f128432df6d0b2"
     },
     "LEDGER_0004": {
       "ledger_id": "LEDGER_0004",
@@ -87,8 +87,8 @@
       "form": null,
       "period": null,
       "notes": "Total Liquid Cash and Marketable Securities (USD)",
-      "timestamp": "2026-10-06T22:25:19.776511",
-      "integrity_hash": "7f4718475eadd1598cbf0729d5dd674c3d2213228030af75ce5b0380dab29791"
+      "timestamp": "2026-10-06T22:36:25.933978",
+      "integrity_hash": "95856d735ca640c1ff0e81595eb19fc3788c1810e2c098301def4b52c33a8610"
     },
     "LEDGER_0005": {
       "ledger_id": "LEDGER_0005",
@@ -108,8 +108,8 @@
       "form": null,
       "period": null,
       "notes": "Total Borrowings and Debt (USD)",
-      "timestamp": "2026-10-06T22:25:19.776511",
-      "integrity_hash": "76d52ba459183b32d06f1b7c447f738100ab73759847d711b1574a435a09feb6"
+      "timestamp": "2026-10-06T22:36:25.933978",
+      "integrity_hash": "85555b6cc07aad90051315b2d177626f2d03b1ebc1520b9f8b85ccf0a7560477"
     },
     "LEDGER_0006": {
       "ledger_id": "LEDGER_0006",
@@ -130,8 +130,8 @@
       "form": null,
       "period": null,
       "notes": "Calculated Net Debt: Total Debt - Liquid Cash (USD)",
-      "timestamp": "2026-10-06T22:25:19.776511",
-      "integrity_hash": "3ecc30ba146ada5dadfd3ce73567bf55cfed115afe8776d2ba396a14110541ed"
+      "timestamp": "2026-10-06T22:36:25.933978",
+      "integrity_hash": "d53b3d9980237deae910238e99c713517577136d8f3ddd86d586cc11b456b214"
     },
     "LEDGER_0007": {
       "ledger_id": "LEDGER_0007",
@@ -151,8 +151,8 @@
       "form": null,
       "period": null,
       "notes": "Assumed 5Y FCF Growth Rate (%)",
-      "timestamp": "2026-10-06T22:25:19.776511",
-      "integrity_hash": "e7ee354c6db1f18f9ee63107dbbc7e641c834bf8f6410fd652b1fbaa21991d34"
+      "timestamp": "2026-10-06T22:36:25.933978",
+      "integrity_hash": "27d0e5b3a3c7f9314e5e1aed333d1a28f1dc0dff4d7fa1a63a4e10662477bc4a"
     },
     "LEDGER_0008": {
       "ledger_id": "LEDGER_0008",
@@ -172,8 +172,8 @@
       "form": null,
       "period": null,
       "notes": "Assumed Discount Rate WACC (%)",
-      "timestamp": "2026-10-06T22:25:19.776511",
-      "integrity_hash": "db9b8e2e2063c7b7bdf5bf2ac016b642af15ed3db6ac3b14d89354d2e5f58de8"
+      "timestamp": "2026-10-06T22:36:25.933978",
+      "integrity_hash": "2c43b8437f8d9dfd50870103776aeca9fe67228d3d1151b851935406b0c69b7a"
     },
     "LEDGER_0009": {
       "ledger_id": "LEDGER_0009",
@@ -193,8 +193,8 @@
       "form": null,
       "period": null,
       "notes": "Assumed Terminal Growth Rate (%)",
-      "timestamp": "2026-10-06T22:25:19.776511",
-      "integrity_hash": "b623f0ee6d7105c2105fcc92ea9f311843fc7bf2ff8e83e6eae71e80f64887c0"
+      "timestamp": "2026-10-06T22:36:25.933978",
+      "integrity_hash": "fa5c4cbfe27e0fb7272a04e6da79e0c492439056fff336f54f21d95d67b71da7"
     },
     "LEDGER_0010": {
       "ledger_id": "LEDGER_0010",
@@ -217,8 +217,8 @@
       "form": null,
       "period": null,
       "notes": "Market implied 5-year FCF CAGR",
-      "timestamp": "2026-10-06T22:25:19.776511",
-      "integrity_hash": "9387bb0ef057776923c32e7ac16b5b3ca448a5026971e8904bade2dd0914a39e"
+      "timestamp": "2026-10-06T22:36:25.933978",
+      "integrity_hash": "102a37da0bb4c33d0a5c1fa87c5c19a5b4d107e63ea0561aa6a371be14fb73ea"
     },
     "LEDGER_0011": {
       "ledger_id": "LEDGER_0011",
@@ -241,8 +241,8 @@
       "form": null,
       "period": null,
       "notes": "Baseline fair value per share (USD)",
-      "timestamp": "2026-10-06T22:25:19.776511",
-      "integrity_hash": "9aa002f061925ef4aa1d5b099c9169dccfd688dedc4dc945b94ed8a91d82fe4d"
+      "timestamp": "2026-10-06T22:36:25.933978",
+      "integrity_hash": "26d7e580e536271045f51768ff7575f0b51125f8556821b112caf41c19c3f51d"
     },
     "LEDGER_0012": {
       "ledger_id": "LEDGER_0012",
@@ -264,8 +264,8 @@
       "form": null,
       "period": null,
       "notes": "Fair value under margin compression (USD)",
-      "timestamp": "2026-10-06T22:25:19.776511",
-      "integrity_hash": "45ffac36b9929dd801dcb8020578d7891f71596b36a64bb0fb4c5608c2f91a14"
+      "timestamp": "2026-10-06T22:36:25.933978",
+      "integrity_hash": "4570c96e5c95a7a27b6695dd4a37128199011a5224adb1b9c6798bf62fa2ae48"
     },
     "LEDGER_0013": {
       "ledger_id": "LEDGER_0013",
@@ -286,8 +286,8 @@
       "form": null,
       "period": null,
       "notes": "Margin stress impact percentage",
-      "timestamp": "2026-10-06T22:25:19.776511",
-      "integrity_hash": "150395f7f7940cceb3a28ae7b67425dbfe2a5b1302c16118850757c17218e74e"
+      "timestamp": "2026-10-06T22:36:25.933978",
+      "integrity_hash": "f47bfc5c8a6e85e1ab85320788c95c3e05bd9e32ce544acc7823c8a46a0f1b52"
     },
     "LEDGER_0014": {
       "ledger_id": "LEDGER_0014",
@@ -308,8 +308,8 @@
       "form": null,
       "period": null,
       "notes": "Fair value under WACC elevation (USD)",
-      "timestamp": "2026-10-06T22:25:19.776511",
-      "integrity_hash": "17df27c00a1895043bb298fa00692a734f5d0821caa8ff8e88a2e39569d344a2"
+      "timestamp": "2026-10-06T22:36:25.933978",
+      "integrity_hash": "5f10f7e1ccc2936c8b389a7aa487dec838adf0531cca56eefc57e4aacbe3c2e9"
     },
     "LEDGER_0015": {
       "ledger_id": "LEDGER_0015",
@@ -330,8 +330,8 @@
       "form": null,
       "period": null,
       "notes": "WACC stress impact percentage",
-      "timestamp": "2026-10-06T22:25:19.776511",
-      "integrity_hash": "fa6c6e10d2e1abeced177d2417cfc8448e84e0d3f6f80eeec6b103c46de2c1e7"
+      "timestamp": "2026-10-06T22:36:25.933978",
+      "integrity_hash": "c889adcd732633ac8db9cbfc5ed14aed0feb8ee02d0edbb4ba5e9ba0f188b5a7"
     },
     "LEDGER_0016": {
       "ledger_id": "LEDGER_0016",
@@ -352,8 +352,8 @@
       "form": null,
       "period": null,
       "notes": "Fair value at half assumed growth rate (USD)",
-      "timestamp": "2026-10-06T22:25:19.776511",
-      "integrity_hash": "908b529dfe49d797b9eb780f992c25cecf5ebccb15c52413db69d6888e14b688"
+      "timestamp": "2026-10-06T22:36:25.933978",
+      "integrity_hash": "d46e9f2f99532dbac43fb3cee5b74b0bc3adff403ba9b8e88161518d522315f5"
     },
     "LEDGER_0017": {
       "ledger_id": "LEDGER_0017",
@@ -374,8 +374,8 @@
       "form": null,
       "period": null,
       "notes": "Half-growth valuation impact",
-      "timestamp": "2026-10-06T22:25:19.776511",
-      "integrity_hash": "f4cdb1277925af6b3c716c9e73fb1680212f43c88ee928a33555007758a114cb"
+      "timestamp": "2026-10-06T22:36:25.933978",
+      "integrity_hash": "943934f43287ffcb42ea9b8a2a68caee0a7c77dcda819cc7a41855b61d5466dd"
     },
     "LEDGER_0018": {
       "ledger_id": "LEDGER_0018",
@@ -395,8 +395,8 @@
       "form": null,
       "period": null,
       "notes": "Sensitivity Downside 5Y FCF Growth Rate (%)",
-      "timestamp": "2026-10-06T22:25:19.776511",
-      "integrity_hash": "4a8b6f828e320c31569c0b40122964762040a89accbd8ca84e2812516cb416c1"
+      "timestamp": "2026-10-06T22:36:25.933978",
+      "integrity_hash": "cf97ef9ad4bbd34b8832792fde4972e40765616d7e3d83c18540e892fcd67e65"
     },
     "LEDGER_0019": {
       "ledger_id": "LEDGER_0019",
@@ -416,8 +416,8 @@
       "form": null,
       "period": null,
       "notes": "Sensitivity Upside 5Y FCF Growth Rate (%)",
-      "timestamp": "2026-10-06T22:25:19.776511",
-      "integrity_hash": "b90136ceeafd713b372d1310468ac49e55d77f30959bf01d93b7888a80af59e5"
+      "timestamp": "2026-10-06T22:36:25.934980",
+      "integrity_hash": "71f1814d2d5ce0fc8272618e7557c8c295f0ced2d6d7a47a0b84003c33208698"
     },
     "LEDGER_0020": {
       "ledger_id": "LEDGER_0020",
@@ -439,8 +439,8 @@
       "form": null,
       "period": null,
       "notes": "Sensitivity fair value: Growth 6.0%, WACC 7.5% (USD)",
-      "timestamp": "2026-10-06T22:25:19.776511",
-      "integrity_hash": "20b4866b0d4ad5d2a1a3bfd4e3f70eba9484438a6b543b7bd77aca43345afd95"
+      "timestamp": "2026-10-06T22:36:25.934980",
+      "integrity_hash": "69988cd85b629d1f1349fb9545273471018d64de9f080e17dcdcca7f2a4e5a92"
     },
     "LEDGER_0021": {
       "ledger_id": "LEDGER_0021",
@@ -462,8 +462,8 @@
       "form": null,
       "period": null,
       "notes": "Sensitivity fair value: Growth 6.0%, WACC 8.5% (USD)",
-      "timestamp": "2026-10-06T22:25:19.776511",
-      "integrity_hash": "23dc90241edd49ed315f61ddc37e87fcda108947cc0fc4b5758a654f33ddd1fa"
+      "timestamp": "2026-10-06T22:36:25.934980",
+      "integrity_hash": "2f33478fe6b0f2e145ac82dd299e1c63f2ed6c691fa72b26e30875cf112269ea"
     },
     "LEDGER_0022": {
       "ledger_id": "LEDGER_0022",
@@ -485,8 +485,8 @@
       "form": null,
       "period": null,
       "notes": "Sensitivity fair value: Growth 6.0%, WACC 9.5% (USD)",
-      "timestamp": "2026-10-06T22:25:19.776511",
-      "integrity_hash": "c3de8f21de5f4a8f7f84b6009b9c5619d4a336199389b201f2225ea450243b0a"
+      "timestamp": "2026-10-06T22:36:25.934980",
+      "integrity_hash": "177eb2c12347c651abe44000fce1d011d7ae233915cf0c2a0ad7ab41ff1e7062"
     },
     "LEDGER_0023": {
       "ledger_id": "LEDGER_0023",
@@ -508,8 +508,8 @@
       "form": null,
       "period": null,
       "notes": "Sensitivity fair value: Growth 8.0%, WACC 7.5% (USD)",
-      "timestamp": "2026-10-06T22:25:19.777540",
-      "integrity_hash": "d684333dcb11dad8df826afcbe841a931079f652208e0c004e99609abe67d703"
+      "timestamp": "2026-10-06T22:36:25.935237",
+      "integrity_hash": "026b01451fe9453b24b4e403024fca72dfa53dbc62bfc9ba462a846e3394db5b"
     },
     "LEDGER_0024": {
       "ledger_id": "LEDGER_0024",
@@ -531,8 +531,8 @@
       "form": null,
       "period": null,
       "notes": "Sensitivity fair value: Growth 8.0%, WACC 8.5% (USD)",
-      "timestamp": "2026-10-06T22:25:19.777540",
-      "integrity_hash": "f1b1697bd8176bea778181106cef54989c02770a5c6b7aa224d9fda900ae2d41"
+      "timestamp": "2026-10-06T22:36:25.935237",
+      "integrity_hash": "719fc54e06fc9566b5b109b7fe39252055c34ced6af600e1270c70af2815e008"
     },
     "LEDGER_0025": {
       "ledger_id": "LEDGER_0025",
@@ -554,8 +554,8 @@
       "form": null,
       "period": null,
       "notes": "Sensitivity fair value: Growth 8.0%, WACC 9.5% (USD)",
-      "timestamp": "2026-10-06T22:25:19.777540",
-      "integrity_hash": "c4fe2cbb1212f64d173892d73045c5eaa91ac0b468e3a690678ec8ca74e48663"
+      "timestamp": "2026-10-06T22:36:25.935237",
+      "integrity_hash": "e6f91fc495bcaea47c813b048f863454a6efc8dd8ceef1c765f3075d9b927859"
     },
     "LEDGER_0026": {
       "ledger_id": "LEDGER_0026",
@@ -577,8 +577,8 @@
       "form": null,
       "period": null,
       "notes": "Sensitivity fair value: Growth 10.0%, WACC 7.5% (USD)",
-      "timestamp": "2026-10-06T22:25:19.777540",
-      "integrity_hash": "a1dc68992b6a6efb286b6a66c966ac7d1d2522a25b631571f5f1a20a9d051793"
+      "timestamp": "2026-10-06T22:36:25.935237",
+      "integrity_hash": "20405906f8ee97b521c19deb02269ba3cd9084cbdadd1378eb0e432a8100c474"
     },
     "LEDGER_0027": {
       "ledger_id": "LEDGER_0027",
@@ -600,8 +600,8 @@
       "form": null,
       "period": null,
       "notes": "Sensitivity fair value: Growth 10.0%, WACC 8.5% (USD)",
-      "timestamp": "2026-10-06T22:25:19.777540",
-      "integrity_hash": "5c7aef151bd51c33eea5431c97c9dac4e33b83e3c5af6087cf23e0cbab79c624"
+      "timestamp": "2026-10-06T22:36:25.935237",
+      "integrity_hash": "9f4adc519341303da53f0298a8c50b9353eb8155003cdf3236661f06db4bc97c"
     },
     "LEDGER_0028": {
       "ledger_id": "LEDGER_0028",
@@ -623,8 +623,8 @@
       "form": null,
       "period": null,
       "notes": "Sensitivity fair value: Growth 10.0%, WACC 9.5% (USD)",
-      "timestamp": "2026-10-06T22:25:19.777540",
-      "integrity_hash": "b47be657dd9e73ad610cc3f87f32c5d1aded3371a37d339b4965d3bf1fb2db5e"
+      "timestamp": "2026-10-06T22:36:25.935237",
+      "integrity_hash": "407e62ed37e699feda16cc232e1ead855ef8429834969ea3e0166e4e29c2d8bd"
     },
     "LEDGER_0029": {
       "ledger_id": "LEDGER_0029",
@@ -646,8 +646,8 @@
       "form": null,
       "period": "FY_2021",
       "notes": "GOOGL FY_2021 Free Cash Flow (USD)",
-      "timestamp": "2026-10-06T22:25:19.777540",
-      "integrity_hash": "e33b4b77ad2fc87f12a9148a02f49a5eea1a73f7940e743409a6b93a4aed7554"
+      "timestamp": "2026-10-06T22:36:25.935237",
+      "integrity_hash": "d829f425a7e9f9fd70b3786a5541a5b81a77e23e8a5b52a2f866899ffc4c245c"
     },
     "LEDGER_0030": {
       "ledger_id": "LEDGER_0030",
@@ -669,8 +669,8 @@
       "form": null,
       "period": "FY_2023",
       "notes": "GOOGL FY_2023 Free Cash Flow (USD)",
-      "timestamp": "2026-10-06T22:25:19.777540",
-      "integrity_hash": "8723d446a90775e1c22696748fe7510ff6587eac9db5b501aa46b11f5e80c42a"
+      "timestamp": "2026-10-06T22:36:25.935237",
+      "integrity_hash": "6b72557fbe91059557f49e9d124e68b8230aeb7969426cc13e919e3fafed7c6d"
     },
     "LEDGER_0031": {
       "ledger_id": "LEDGER_0031",
@@ -692,8 +692,8 @@
       "form": null,
       "period": "FY_2024",
       "notes": "GOOGL FY_2024 Free Cash Flow (USD)",
-      "timestamp": "2026-10-06T22:25:19.777540",
-      "integrity_hash": "cb9eacea212178d7f739bc70e7c909cce4a7381d71a33b7970884ff545aedf3f"
+      "timestamp": "2026-10-06T22:36:25.935237",
+      "integrity_hash": "50793c2864fd5b4a679d4cca77f5a41eae4309f058d20af60503cd9f3befeeec"
     },
     "LEDGER_0032": {
       "ledger_id": "LEDGER_0032",
@@ -715,8 +715,8 @@
       "form": null,
       "period": "FY_2025",
       "notes": "GOOGL FY_2025 Free Cash Flow (USD)",
-      "timestamp": "2026-10-06T22:25:19.777540",
-      "integrity_hash": "a044283fa4992dbc3bc75dd5889f8b88399249e5137c38da15169eeee3332984"
+      "timestamp": "2026-10-06T22:36:25.935237",
+      "integrity_hash": "0c381db30da65b1c87f6bd99536c5263006828fc81150f7e0d0e387634abd799"
     },
     "LEDGER_0033": {
       "ledger_id": "LEDGER_0033",
@@ -738,8 +738,8 @@
       "form": null,
       "period": null,
       "notes": "Historical 3-year FCF CAGR (FY_2021 to FY_2025)",
-      "timestamp": "2026-10-06T22:25:19.777540",
-      "integrity_hash": "ec25f615e9b775d5ef31682c84714b9f9908219ce19b37fd25991a61079c30e9"
+      "timestamp": "2026-10-06T22:36:25.935237",
+      "integrity_hash": "028c1308448d7380f15bd71bcc700e7cf8ce901462b4ccf5b10ffb1d94401f16"
     },
     "LEDGER_0034": {
       "ledger_id": "LEDGER_0034",
@@ -760,8 +760,8 @@
       "form": null,
       "period": null,
       "notes": "Receivables vs Revenue YoY divergence (pp)",
-      "timestamp": "2026-10-06T22:25:19.777540",
-      "integrity_hash": "8c9b6caead753f15a4bf9b077f14e35b1a82108b77da16154cd87b429a29cb8a"
+      "timestamp": "2026-10-06T22:36:25.935237",
+      "integrity_hash": "5c33ca0f1dfed2abc39e8e35f30bd7d3a3f31e138ad55209aba24e74ac308228"
     },
     "LEDGER_0035": {
       "ledger_id": "LEDGER_0035",
@@ -782,8 +782,8 @@
       "form": null,
       "period": null,
       "notes": "Short-term debt to cash ratio",
-      "timestamp": "2026-10-06T22:25:19.777540",
-      "integrity_hash": "deb8a9011a81e211a99afdeada15be3f2a3614e70d92f451e3cc5cb90cf372a8"
+      "timestamp": "2026-10-06T22:36:25.935237",
+      "integrity_hash": "cbc5b2d8c59ca1f8636ae892133f45d9b7887aa8fb3fe30c8d57903b7f452267"
     },
     "LEDGER_0036": {
       "ledger_id": "LEDGER_0036",
@@ -803,8 +803,8 @@
       "form": null,
       "period": null,
       "notes": "Max single customer revenue %",
-      "timestamp": "2026-10-06T22:25:19.777540",
-      "integrity_hash": "ea156b64e66918bfbf65d5599e2793f2193a16aef77121299cc078c241a825b9"
+      "timestamp": "2026-10-06T22:36:25.935237",
+      "integrity_hash": "65179a509d40cb404cbeb2d1426d1d8cb22fc1a575671f13cac69fa3f719f451"
     }
   }
 }
