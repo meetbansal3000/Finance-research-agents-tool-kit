@@ -20,8 +20,8 @@
 
 ### 2. Stress Testing Top 3 Thesis Assumptions
 
-- Current Market Price: $332.90 USD [LEDGER_0001]
-- Implied 5-Year FCF CAGR (Reverse DCF): **28.97%** [LEDGER_0008]
+- Current Market Price: $332.77 USD [LEDGER_0001]
+- Implied 5-Year FCF CAGR (Reverse DCF): **28.96%** [LEDGER_0008]
 - Baseline Fair Value (DCF): **$146.35** [LEDGER_0009]
 - Stressed Fair Value (-200 bps Margin): **$137.19** [LEDGER_0010]
 - Margin Stress Valuation Impact: **-6.26%** [LEDGER_0011]
@@ -36,7 +36,7 @@
 
 | Check Name | Metric Value | Ledger Citation | Status |
 | :--- | :--- | :--- | :--- |
-| Valuation Feasibility | Implied CAGR 28.97% [LEDGER_0008] vs Hist -3.95% [LEDGER_0020] | [LEDGER_0008], [LEDGER_0020] | **FAIL** |
+| Valuation Feasibility | Implied CAGR 28.96% [LEDGER_0008] vs Hist -3.95% [LEDGER_0020] | [LEDGER_0008], [LEDGER_0020] | **FAIL** |
 | Margin Shock (-200 bps) | Impact -6.26% [LEDGER_0011] ($137.19 [LEDGER_0010]) | [LEDGER_0011], [LEDGER_0010] | **PASS** |
 | WACC Shock (+100 bps) | Impact -14.61% [LEDGER_0013] ($124.96 [LEDGER_0012]) | [LEDGER_0013], [LEDGER_0012] | **PASS** |
 | Half-Growth Stress | Stressed Fair Value $123.40 [LEDGER_0014] (-15.68% [LEDGER_0015]) | [LEDGER_0014], [LEDGER_0015] | **PASS** |
@@ -50,7 +50,7 @@
 ### 4. Adversarial Findings & Conclusion
 
 - [ANALYSIS] VULNERABLE: Found 2 quantitative failure(s) across 7 performed checks.
-- Valuation Stretch: Market implied 5Y FCF CAGR of 28.97% [LEDGER_0008] exceeds historical CAGR of -3.95% [LEDGER_0020].
+- Valuation Stretch: Market implied 5Y FCF CAGR of 28.96% [LEDGER_0008] exceeds historical CAGR of -3.95% [LEDGER_0020].
 - Inventory Divergence: Inventory growth diverged from revenue by +6.44% [LEDGER_0022].
 - Unverified context: [UNVERIFIED: model memory] Greater China net sales experienced selective deceleration in recent quarterly periods.
 - Unverified context: [UNVERIFIED: model memory] Regulatory antitrust inquiries in EU and US pose long-term services gross margin headwinds.

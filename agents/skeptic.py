@@ -487,9 +487,12 @@ class SkepticAgent:
         if unperformed_count > 2:
             verdict_text = "INCONCLUSIVE"
             verdict_detail = f"[ANALYSIS] INCONCLUSIVE: {unperformed_count} of {total_checks} checks were NOT CHECKED due to unavailable filing data."
-        elif len(failures) > 0 or (empirical_counter_evidence and len(empirical_counter_evidence) > 0):
+        elif len(failures) > 0:
             verdict_text = "VULNERABLE / STRETCHED"
             verdict_detail = f"[ANALYSIS] VULNERABLE: Found {len(failures)} quantitative failure(s) across {performed_checks} performed checks."
+        elif empirical_counter_evidence and len(empirical_counter_evidence) > 0:
+            verdict_text = "VULNERABLE / STRETCHED"
+            verdict_detail = f"[ANALYSIS] VULNERABLE: All {performed_checks} quantitative checks passed, but qualitative empirical risks were identified."
         else:
             verdict_text = "ROBUST / NO STRONG COUNTER-EVIDENCE FOUND"
             verdict_detail = f"[ANALYSIS] No strong counter-evidence found among the checks performed ({performed_checks} of {total_checks} checks performed, {unperformed_count} data checks unavailable)."

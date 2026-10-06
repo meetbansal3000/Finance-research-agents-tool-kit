@@ -49,7 +49,7 @@
 
 ### 4. Adversarial Findings & Conclusion
 
-- [ANALYSIS] VULNERABLE: Found 0 quantitative failure(s) across 6 performed checks.
+- [ANALYSIS] VULNERABLE: All 6 quantitative checks passed, but qualitative empirical risks were identified.
 - Unverified context: [UNVERIFIED: model memory] Discretionary tech spending in North America has experienced selective contract delays.
 - Unverified context: [UNVERIFIED: model memory] Wage inflation and delivery costs create intermediate operating margin pressure.
 

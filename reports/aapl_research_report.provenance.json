@@ -1,6 +1,6 @@
 {
   "run_id": "aapl_live_run",
-  "saved_at": "2026-10-06T15:08:12.392963",
+  "saved_at": "2026-10-06T15:09:23.217344",
   "total_records": 14,
   "entries": {
     "LEDGER_0001": {
@@ -21,8 +21,8 @@
       "form": "10-K",
       "period": "FY2025",
       "notes": "Apple FY2025 Total Net Sales",
-      "timestamp": "2026-10-06T15:08:12.390447",
-      "integrity_hash": "3e588d622f2db08bf0a613678d36399c6aad66897abfd5f9fbfc9f043468b9cf"
+      "timestamp": "2026-10-06T15:09:23.216264",
+      "integrity_hash": "4833eb0ace7e6ebfa3ad53c0e3ab5b0e0fdac0079e1a5e538409e186e73fb77f"
     },
     "LEDGER_0002": {
       "ledger_id": "LEDGER_0002",
@@ -42,8 +42,8 @@
       "form": "10-K",
       "period": "FY2024",
       "notes": "Apple FY2024 Total Net Sales",
-      "timestamp": "2026-10-06T15:08:12.390447",
-      "integrity_hash": "d5722e925f324c6ffa5996d0d2eda3382a6fa4bab2ffce94d212978c25bbe0d2"
+      "timestamp": "2026-10-06T15:09:23.216264",
+      "integrity_hash": "6173a41c6b5bbd13f3b2ced5bc8e3d133c0f61717960c88afaf281058cda4821"
     },
     "LEDGER_0003": {
       "ledger_id": "LEDGER_0003",
@@ -63,8 +63,8 @@
       "form": "10-K",
       "period": "FY2025",
       "notes": "Apple FY2025 Operating Income",
-      "timestamp": "2026-10-06T15:08:12.391566",
-      "integrity_hash": "ea921928d314ba5626e9ef6930f0e209e907f08f719a268d894fa03399df5196"
+      "timestamp": "2026-10-06T15:09:23.216264",
+      "integrity_hash": "a0aa94c6951ca5600b7a19c897bd65cd8116058f0a40c66e557fc886d37b0766"
     },
     "LEDGER_0004": {
       "ledger_id": "LEDGER_0004",
@@ -84,8 +84,8 @@
       "form": "10-K",
       "period": "FY2025",
       "notes": "Apple FY2025 Net Income",
-      "timestamp": "2026-10-06T15:08:12.391566",
-      "integrity_hash": "008cce8b55af9ea1c5c4bd249442a87653e80635f5d2410777a5c33cb6d64a95"
+      "timestamp": "2026-10-06T15:09:23.216264",
+      "integrity_hash": "4ed5cb216a97914b03b8d44fd86ec8dba52b3a7455a1bd13c3ae4c3407880897"
     },
     "LEDGER_0005": {
       "ledger_id": "LEDGER_0005",
@@ -105,8 +105,8 @@
       "form": "10-K",
       "period": "FY2025",
       "notes": "Apple FY2025 Cash from Operations",
-      "timestamp": "2026-10-06T15:08:12.391566",
-      "integrity_hash": "c6156278fa4e3646fa7e4c56585d11e6428a9ddd660499343018c4f33cc9c3af"
+      "timestamp": "2026-10-06T15:09:23.216264",
+      "integrity_hash": "0b938f0e8623caf3b2064d76111356fabd8b36de4f991b010bfa44aae0f16f3e"
     },
     "LEDGER_0006": {
       "ledger_id": "LEDGER_0006",
@@ -126,8 +126,8 @@
       "form": "10-K",
       "period": "FY2025",
       "notes": "Apple FY2025 Payments for Property, Plant and Equipment",
-      "timestamp": "2026-10-06T15:08:12.391566",
-      "integrity_hash": "26024b0d5c2f6f9474c8aebf452ba14dd3ff462cd57dbc5aafbd05daa8bb5b3b"
+      "timestamp": "2026-10-06T15:09:23.216264",
+      "integrity_hash": "7f9a2ec443f7eb0a6ec838dccea9f237f31300467c6906b0a5c71727e4920c6e"
     },
     "LEDGER_0007": {
       "ledger_id": "LEDGER_0007",
@@ -137,16 +137,16 @@
       "unit": "base",
       "inputs": {
         "symbol": "AAPL",
-        "price": 332.9
+        "price": 332.7738
       },
-      "output": 332.9,
-      "raw_value": 332.9,
+      "output": 332.7738,
+      "raw_value": 332.7738,
       "source": "Yahoo Finance Market Quote",
       "form": null,
       "period": null,
       "notes": "AAPL Current Market Price",
-      "timestamp": "2026-10-06T15:08:12.391566",
-      "integrity_hash": "4b6496c78bb7648f7ddd50a69bbe33d505493d71277a442a8671ca74f1e273b7"
+      "timestamp": "2026-10-06T15:09:23.216264",
+      "integrity_hash": "ef8a69de94a653a68eaad36a7289427f429f3bcd32e897de69ba1f93233fd205"
     },
     "LEDGER_0008": {
       "ledger_id": "LEDGER_0008",
@@ -164,8 +164,8 @@
       "form": null,
       "period": null,
       "notes": "Apple FY2025 YoY Revenue Growth Rate",
-      "timestamp": "2026-10-06T15:08:12.391566",
-      "integrity_hash": "886a4732efd5e58f1fb0f9d8f2c9ee696e099238365f7ec184498ad27f61e654"
+      "timestamp": "2026-10-06T15:09:23.216264",
+      "integrity_hash": "ff4791e77a8e288e97c4eb1a250315fc5e21ecd4f4a002b6851e64aabbcb633a"
     },
     "LEDGER_0009": {
       "ledger_id": "LEDGER_0009",
@@ -183,8 +183,8 @@
       "form": null,
       "period": null,
       "notes": "Apple FY2025 Operating Margin",
-      "timestamp": "2026-10-06T15:08:12.391566",
-      "integrity_hash": "75b26a6fd85d3e9013a988cb4121d71f60d3097431db97e315d002591a2daf70"
+      "timestamp": "2026-10-06T15:09:23.216264",
+      "integrity_hash": "aff8bf2d14421e92f34033dcfff7f0c59270ee27c08a57982333a504492c3972"
     },
     "LEDGER_0010": {
       "ledger_id": "LEDGER_0010",
@@ -202,8 +202,8 @@
       "form": null,
       "period": null,
       "notes": "Apple FY2025 Net Profit Margin",
-      "timestamp": "2026-10-06T15:08:12.391566",
-      "integrity_hash": "6b03901b00f1665e85e82ed42dad900991caa56f6e2ad82a4de2083141aa09a9"
+      "timestamp": "2026-10-06T15:09:23.216264",
+      "integrity_hash": "19396625af8487bf6d1fae0b19609b5d6d069ceadc0941f4d06a054fb9513222"
     },
     "LEDGER_0011": {
       "ledger_id": "LEDGER_0011",
@@ -221,8 +221,8 @@
       "form": null,
       "period": null,
       "notes": "Apple FY2025 Free Cash Flow",
-      "timestamp": "2026-10-06T15:08:12.391566",
-      "integrity_hash": "7202e89bdbb7d57ce6394e275ef2c9e28f35ac94f792d7c85822c5b9eb0a3db0"
+      "timestamp": "2026-10-06T15:09:23.216264",
+      "integrity_hash": "b786a88328339433592a510f0222c1cca1c6056aa256f517735a594a6a2e5211"
     },
     "LEDGER_0012": {
       "ledger_id": "LEDGER_0012",
@@ -232,16 +232,16 @@
       "unit": "base",
       "inputs": {
         "free_cash_flow_val": 98767000000,
-        "market_cap": 4858402522000.0
+        "market_cap": 4856560736484.0
       },
-      "output": 2.0329110145312077,
-      "raw_value": 2.0329110145312077,
+      "output": 2.0336819687650864,
+      "raw_value": 2.0336819687650864,
       "source": "tools.calc.metrics.fcf_yield",
       "form": null,
       "period": null,
       "notes": "Apple FY2025 FCF Yield",
-      "timestamp": "2026-10-06T15:08:12.391566",
-      "integrity_hash": "a739ed6e24006649aa18b962e86d4af8536bc8917ffbde8a2c83956ef8b521b8"
+      "timestamp": "2026-10-06T15:09:23.216264",
+      "integrity_hash": "d9c61e3fed46b0973ed126c1027aa4a74b74c5c104612db3174bce25a78c7199"
     },
     "LEDGER_0013": {
       "ledger_id": "LEDGER_0013",
@@ -269,8 +269,8 @@
       "form": null,
       "period": null,
       "notes": "Apple DCF Baseline Fair Value per Share",
-      "timestamp": "2026-10-06T15:08:12.391566",
-      "integrity_hash": "6f5414f5bada4be1aeb9e61696937660a37283d1679660361309629b42c651cb"
+      "timestamp": "2026-10-06T15:09:23.216264",
+      "integrity_hash": "c736a5808b3ce60fd8674dc29030e8915d06f821c96fc9f95459ce59f480f078"
     },
     "LEDGER_0014": {
       "ledger_id": "LEDGER_0014",
@@ -279,7 +279,7 @@
       "currency": "USD",
       "unit": "base",
       "inputs": {
-        "current_price": 332.9,
+        "current_price": 332.7738,
         "base_fcf": 98767000000,
         "shares_outstanding": 14594180000.0,
         "discount_rate": 0.085,
@@ -287,14 +287,14 @@
         "projection_years": 5,
         "net_debt": 0.0
       },
-      "output": 28.97093892097473,
-      "raw_value": 28.97093892097473,
+      "output": 28.960567712783813,
+      "raw_value": 28.960567712783813,
       "source": "tools.calc.dcf.reverse_dcf",
       "form": null,
       "period": null,
       "notes": "Apple Implied 5-Year FCF CAGR",
-      "timestamp": "2026-10-06T15:08:12.391962",
-      "integrity_hash": "aa2acfff675cae8c0edea09d6bb26b7dcb85c76b4daa9aacf3dd99f303bc3eef"
+      "timestamp": "2026-10-06T15:09:23.216264",
+      "integrity_hash": "e419c7d491917f1a1a3688191ff9248e019ec0fedb6dfd29bb4232871c22e0b5"
     }
   }
 }

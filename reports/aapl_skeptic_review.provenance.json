@@ -1,6 +1,6 @@
 {
   "run_id": "aapl_skeptic_live_run",
-  "saved_at": "2026-10-06T15:08:18.678652",
+  "saved_at": "2026-10-06T15:09:29.961254",
   "total_records": 23,
   "entries": {
     "LEDGER_0001": {
@@ -11,16 +11,16 @@
       "unit": "base",
       "inputs": {
         "ticker": "AAPL",
-        "price": 332.9
+        "price": 332.7738
       },
-      "output": 332.9,
-      "raw_value": 332.9,
+      "output": 332.7738,
+      "raw_value": 332.7738,
       "source": "Market Quote (AAPL)",
       "form": null,
       "period": null,
       "notes": "Current trading price (USD)",
-      "timestamp": "2026-10-06T15:08:18.676663",
-      "integrity_hash": "dc7c4f19f9fd497283f5d0548d84d3b342ce10c3a03237ff980858f96d05393d"
+      "timestamp": "2026-10-06T15:09:29.960252",
+      "integrity_hash": "f0494ad0cb352ae8c74cbe666cbbf2e7afce09238d4e1c9b0f2eb005a204bb4b"
     },
     "LEDGER_0002": {
       "ledger_id": "LEDGER_0002",
@@ -38,8 +38,8 @@
       "form": null,
       "period": null,
       "notes": "Base Free Cash Flow (USD)",
-      "timestamp": "2026-10-06T15:08:18.676663",
-      "integrity_hash": "725b35936b870c57c6742ccd1faac17050abed9ea1a47b8eedde2182688a16ee"
+      "timestamp": "2026-10-06T15:09:29.960252",
+      "integrity_hash": "17f23a1cf772b183a7e265bada9ea688fc9f7ba6baa69fffb5db009bfcebb428"
     },
     "LEDGER_0003": {
       "ledger_id": "LEDGER_0003",
@@ -56,8 +56,8 @@
       "form": null,
       "period": null,
       "notes": "Assumed 5Y FCF Growth Rate (%)",
-      "timestamp": "2026-10-06T15:08:18.676663",
-      "integrity_hash": "598894286c4289cb4bade0dbf7cf59b12de0ceb520ac5d68f412506db3125e14"
+      "timestamp": "2026-10-06T15:09:29.960252",
+      "integrity_hash": "386694a6a79cc0a5cbc71fabc5f5b0dde8c5e8370e30db8805a05eac7dfe6955"
     },
     "LEDGER_0004": {
       "ledger_id": "LEDGER_0004",
@@ -74,8 +74,8 @@
       "form": null,
       "period": null,
       "notes": "Assumed Discount Rate WACC (%)",
-      "timestamp": "2026-10-06T15:08:18.676663",
-      "integrity_hash": "4c271a952c20e158bbaf860590c64a2f14870796efedbfd7714b4977949f3e0f"
+      "timestamp": "2026-10-06T15:09:29.960252",
+      "integrity_hash": "e72d9111692d6ed48ab7d9c71ec7fc098495882fce40377f708a548a70733c2b"
     },
     "LEDGER_0005": {
       "ledger_id": "LEDGER_0005",
@@ -92,8 +92,8 @@
       "form": null,
       "period": null,
       "notes": "Assumed Terminal Growth Rate (%)",
-      "timestamp": "2026-10-06T15:08:18.677573",
-      "integrity_hash": "a8c4118f4d104fa663aaee9235a49e35441e7ddb20888e207124f39ab5f1ce4d"
+      "timestamp": "2026-10-06T15:09:29.960252",
+      "integrity_hash": "f961ff70844fecdb8f107ea0c3c18ada745f000e87b27af1266f56206c2671e7"
     },
     "LEDGER_0006": {
       "ledger_id": "LEDGER_0006",
@@ -110,8 +110,8 @@
       "form": null,
       "period": null,
       "notes": "Diluted Shares Outstanding",
-      "timestamp": "2026-10-06T15:08:18.677573",
-      "integrity_hash": "f6e6bd25b42c0d46d6e3ca0ccdf80227ec2f4b8269fbe9a98dfa292a7a783864"
+      "timestamp": "2026-10-06T15:09:29.960252",
+      "integrity_hash": "9ea03351ed48a85bfe85c327544a7017b8d78b35541a4acb955ef4dfdb24e3a0"
     },
     "LEDGER_0007": {
       "ledger_id": "LEDGER_0007",
@@ -128,8 +128,8 @@
       "form": null,
       "period": null,
       "notes": "Net Debt (USD)",
-      "timestamp": "2026-10-06T15:08:18.677573",
-      "integrity_hash": "dbb0fdc40478461e48a1e68c3bf5df8fe8a3a253e477673c3ca43a6c653bee60"
+      "timestamp": "2026-10-06T15:09:29.960252",
+      "integrity_hash": "737759585f2b53089517b5d3ab7a7976ae4c5984fd3bf6e46d2609406195f680"
     },
     "LEDGER_0008": {
       "ledger_id": "LEDGER_0008",
@@ -138,18 +138,18 @@
       "currency": "USD",
       "unit": "base",
       "inputs": {
-        "current_price": 332.9,
+        "current_price": 332.7738,
         "base_fcf": 98767000000,
         "WACC": 0.085
       },
-      "output": 28.97093892097473,
-      "raw_value": 28.97093892097473,
+      "output": 28.960567712783813,
+      "raw_value": 28.960567712783813,
       "source": "tools.calc.dcf.reverse_dcf",
       "form": null,
       "period": null,
       "notes": "Market implied 5-year FCF CAGR",
-      "timestamp": "2026-10-06T15:08:18.677573",
-      "integrity_hash": "00e8f4edfa92bd7905f89d04a5beb347f468b5b078d76a1a82cd0ecfe1d34515"
+      "timestamp": "2026-10-06T15:09:29.960252",
+      "integrity_hash": "095b6296d16ca38cb999dd06045fe835d3d197c8b3eadba1754c504aaad4e1f0"
     },
     "LEDGER_0009": {
       "ledger_id": "LEDGER_0009",
@@ -168,8 +168,8 @@
       "form": null,
       "period": null,
       "notes": "Baseline fair value per share (USD)",
-      "timestamp": "2026-10-06T15:08:18.677573",
-      "integrity_hash": "dc796c11ec381f27fe766f88bd3b4c88942acc0d88d2e40b33923521bebe2adb"
+      "timestamp": "2026-10-06T15:09:29.960252",
+      "integrity_hash": "bfe9a3a763fb2d9362544ba17fb9a7b8b6572d10ea1459bed1253f668ebadfc6"
     },
     "LEDGER_0010": {
       "ledger_id": "LEDGER_0010",
@@ -187,8 +187,8 @@
       "form": null,
       "period": null,
       "notes": "Fair value under margin compression (USD)",
-      "timestamp": "2026-10-06T15:08:18.677573",
-      "integrity_hash": "8c254604583fa24a8e00cf5e3e9995ab133804be01c610ca2eb63b87ca9c1fab"
+      "timestamp": "2026-10-06T15:09:29.960252",
+      "integrity_hash": "de8c7a278710abd91a6c7763f5c2c5a0a9707d0c54dfe71cc513ee73488ea395"
     },
     "LEDGER_0011": {
       "ledger_id": "LEDGER_0011",
@@ -206,8 +206,8 @@
       "form": null,
       "period": null,
       "notes": "Margin stress impact percentage",
-      "timestamp": "2026-10-06T15:08:18.677573",
-      "integrity_hash": "4fcaafe5334f8ecd5fb545de5f49f0b2e58869eabc84b66890c1a7cf54381f75"
+      "timestamp": "2026-10-06T15:09:29.960252",
+      "integrity_hash": "2d52b0637108478a4eb9ab7680079dc02d542f360c760c8fea4fcaf6b3ecdeec"
     },
     "LEDGER_0012": {
       "ledger_id": "LEDGER_0012",
@@ -224,8 +224,8 @@
       "form": null,
       "period": null,
       "notes": "Fair value under WACC elevation (USD)",
-      "timestamp": "2026-10-06T15:08:18.677573",
-      "integrity_hash": "253838b0c50f1d020440a32f24237580317bef6be8a9d73c36551feeef9b5c01"
+      "timestamp": "2026-10-06T15:09:29.960252",
+      "integrity_hash": "1a4251d29a9cfc6e7abb1588d2e3249f94165ff71ed4ef6202d48ba6adc10207"
     },
     "LEDGER_0013": {
       "ledger_id": "LEDGER_0013",
@@ -243,8 +243,8 @@
       "form": null,
       "period": null,
       "notes": "WACC stress impact percentage",
-      "timestamp": "2026-10-06T15:08:18.677573",
-      "integrity_hash": "5d7a4c6458f252316ee612de004a1d4438d99d91de315cf6c0b07682354a5220"
+      "timestamp": "2026-10-06T15:09:29.960252",
+      "integrity_hash": "acd9e727ed710c35150432c620a0b2bf1cd7bd8d781027ab600e3f5952abf807"
     },
     "LEDGER_0014": {
       "ledger_id": "LEDGER_0014",
@@ -261,8 +261,8 @@
       "form": null,
       "period": null,
       "notes": "Fair value at half assumed growth rate (USD)",
-      "timestamp": "2026-10-06T15:08:18.677573",
-      "integrity_hash": "669ac7e165e4c0c490ae06ddac90a2990b92b49ff681a092b3b21f057a155035"
+      "timestamp": "2026-10-06T15:09:29.960252",
+      "integrity_hash": "4e280c5578490bd3e45de0b35f8db6f048b85134427b0e201bdddf1162433259"
     },
     "LEDGER_0015": {
       "ledger_id": "LEDGER_0015",
@@ -280,8 +280,8 @@
       "form": null,
       "period": null,
       "notes": "Half-growth valuation impact",
-      "timestamp": "2026-10-06T15:08:18.677573",
-      "integrity_hash": "74c6178e14627ae2a2ceb5849b015afbd4f33a3ba5eb090c27c040d58a2096dc"
+      "timestamp": "2026-10-06T15:09:29.960252",
+      "integrity_hash": "0420818727eee3b73403ac0c190e32c0ca53a7689341097914c8129874d4e2d6"
     },
     "LEDGER_0016": {
       "ledger_id": "LEDGER_0016",
@@ -300,8 +300,8 @@
       "form": null,
       "period": "FY2022",
       "notes": "AAPL FY2022 Free Cash Flow (USD)",
-      "timestamp": "2026-10-06T15:08:18.677573",
-      "integrity_hash": "07a0126ba775cd34cf52be8ddc437483e4542233fc6eec3bf7c31f283486e92a"
+      "timestamp": "2026-10-06T15:09:29.960252",
+      "integrity_hash": "f9a5b6f1e54a50eb509516c7afe4aa58d715c7584e49dc484c1e6000f87025d2"
     },
     "LEDGER_0017": {
       "ledger_id": "LEDGER_0017",
@@ -320,8 +320,8 @@
       "form": null,
       "period": "FY2023",
       "notes": "AAPL FY2023 Free Cash Flow (USD)",
-      "timestamp": "2026-10-06T15:08:18.677573",
-      "integrity_hash": "1245f7b1eccf40ef80ad4e26a65f35010bb8d545785820f581ccbfc1443c0103"
+      "timestamp": "2026-10-06T15:09:29.960252",
+      "integrity_hash": "12dd19d53694e0af15a214fec7e8432ccbc8753e5c8b43cbfa7cba4325ff8860"
     },
     "LEDGER_0018": {
       "ledger_id": "LEDGER_0018",
@@ -340,8 +340,8 @@
       "form": null,
       "period": "FY2024",
       "notes": "AAPL FY2024 Free Cash Flow (USD)",
-      "timestamp": "2026-10-06T15:08:18.677573",
-      "integrity_hash": "ab41a5b8f021903dc21c806d30e2bcb8116aab7d8f874ae240cc0091e89eff23"
+      "timestamp": "2026-10-06T15:09:29.960252",
+      "integrity_hash": "8dfa400e40633870e603d915a884c3db6adb88c1588c50f1360e4346a514834d"
     },
     "LEDGER_0019": {
       "ledger_id": "LEDGER_0019",
@@ -360,8 +360,8 @@
       "form": null,
       "period": "FY2025",
       "notes": "AAPL FY2025 Free Cash Flow (USD)",
-      "timestamp": "2026-10-06T15:08:18.677573",
-      "integrity_hash": "f03cc0eb80e405283e59734166debb2b1c5f5322c5b7d023271ed6bcbf167f5a"
+      "timestamp": "2026-10-06T15:09:29.960252",
+      "integrity_hash": "46277bd85d2faf7f229efd13feee7ecfde710980942f86dfcb5044168eb7589c"
     },
     "LEDGER_0020": {
       "ledger_id": "LEDGER_0020",
@@ -380,8 +380,8 @@
       "form": null,
       "period": null,
       "notes": "Historical 3-year FCF CAGR (FY2022 to FY2025)",
-      "timestamp": "2026-10-06T15:08:18.677573",
-      "integrity_hash": "f1075151ef8563233470e0625bfcf8e9c7b6b01ce8c070e80acf1156ccded6a8"
+      "timestamp": "2026-10-06T15:09:29.960252",
+      "integrity_hash": "45566ab10136228c435ff3239d935b1cfcd6c6f5507e4b02f32ca95441ec2538"
     },
     "LEDGER_0021": {
       "ledger_id": "LEDGER_0021",
@@ -399,8 +399,8 @@
       "form": null,
       "period": null,
       "notes": "Receivables vs Revenue YoY divergence (pp)",
-      "timestamp": "2026-10-06T15:08:18.677573",
-      "integrity_hash": "1c20d94ccf0846506d2624271f55c908ffa5eef6baf3d245288ff83c2131d22b"
+      "timestamp": "2026-10-06T15:09:29.960252",
+      "integrity_hash": "9d04d1a514d50eae5d3a38217af21cee6f16b630cb07d844717aab1a283dcb66"
     },
     "LEDGER_0022": {
       "ledger_id": "LEDGER_0022",
@@ -418,8 +418,8 @@
       "form": null,
       "period": null,
       "notes": "Inventory vs Revenue YoY divergence (pp)",
-      "timestamp": "2026-10-06T15:08:18.677573",
-      "integrity_hash": "e67b2fe8e56d24df067d4d75250e3a12b987201c6111b4e5d93ccdb3a39d8f4d"
+      "timestamp": "2026-10-06T15:09:29.960252",
+      "integrity_hash": "99ff887360b9b30b63f711c90ac712f83be5cecf2747674768e181c44a603af6"
     },
     "LEDGER_0023": {
       "ledger_id": "LEDGER_0023",
@@ -437,8 +437,8 @@
       "form": null,
       "period": null,
       "notes": "Short-term debt to cash ratio",
-      "timestamp": "2026-10-06T15:08:18.677573",
-      "integrity_hash": "7563034a0f16e6683f3c28ba616cc1ceeaa0002d80ab398e712787000c215c17"
+      "timestamp": "2026-10-06T15:09:29.960252",
+      "integrity_hash": "6efbf2b91597a75c7d1372b509d5fb98404ab790f008590042a12187af9de8aa"
     }
   }
 }

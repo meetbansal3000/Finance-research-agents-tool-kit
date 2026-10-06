@@ -1,6 +1,6 @@
 # Verification Audit Report
 **Target Report:** `aapl_skeptic_review.md`  
-**Audit Timestamp:** 2026-10-06T15:08:18.690776  
+**Audit Timestamp:** 2026-10-06T15:09:29.974778  
 **Overall Status:** **PASS WITH FLAGS** (41 Confirmed, 0 Wrong, 2 Unverifiable)  
 
 ---
@@ -24,11 +24,11 @@
 - **[Line 17] [LEDGER_0007]**: | Net Debt | $0 | [LEDGER_0007] | Audited Balance Sheet |
   - *Verified Output:* `0.0` via `filing.balance_sheet`
   - *Source:* Audited Balance Sheet
-- **[Line 23] [LEDGER_0001]**: Current Market Price: $332.90 USD [LEDGER_0001]
-  - *Verified Output:* `332.9` via `yfinance.quote`
+- **[Line 23] [LEDGER_0001]**: Current Market Price: $332.77 USD [LEDGER_0001]
+  - *Verified Output:* `332.7738` via `yfinance.quote`
   - *Source:* Market Quote (AAPL)
-- **[Line 24] [LEDGER_0008]**: Implied 5-Year FCF CAGR (Reverse DCF): **28.97%** [LEDGER_0008]
-  - *Verified Output:* `28.97093892097473` via `tools.calc.reverse_dcf`
+- **[Line 24] [LEDGER_0008]**: Implied 5-Year FCF CAGR (Reverse DCF): **28.96%** [LEDGER_0008]
+  - *Verified Output:* `28.960567712783813` via `tools.calc.reverse_dcf`
   - *Source:* tools.calc.dcf.reverse_dcf
 - **[Line 25] [LEDGER_0009]**: Baseline Fair Value (DCF): **$146.35** [LEDGER_0009]
   - *Verified Output:* `146.3459176168883` via `tools.calc.dcf`
@@ -51,16 +51,16 @@
 - **[Line 31] [LEDGER_0015]**: Half-Growth Valuation Impact: **-15.68%** [LEDGER_0015]
   - *Verified Output:* `-15.680089826098174` via `tools.calc.growth_stress_impact`
   - *Source:* tools.calc.metrics
-- **[Line 39] [LEDGER_0008]**: | Valuation Feasibility | Implied CAGR 28.97% [LEDGER_0008] vs Hist -3.95% [LEDGER_0020] | [LEDGER_0008], [LEDGER_0020] | **FAIL** |
-  - *Verified Output:* `28.97093892097473` via `tools.calc.reverse_dcf`
+- **[Line 39] [LEDGER_0008]**: | Valuation Feasibility | Implied CAGR 28.96% [LEDGER_0008] vs Hist -3.95% [LEDGER_0020] | [LEDGER_0008], [LEDGER_0020] | **FAIL** |
+  - *Verified Output:* `28.960567712783813` via `tools.calc.reverse_dcf`
   - *Source:* tools.calc.dcf.reverse_dcf
-- **[Line 39] [LEDGER_0020]**: | Valuation Feasibility | Implied CAGR 28.97% [LEDGER_0008] vs Hist -3.95% [LEDGER_0020] | [LEDGER_0008], [LEDGER_0020] | **FAIL** |
+- **[Line 39] [LEDGER_0020]**: | Valuation Feasibility | Implied CAGR 28.96% [LEDGER_0008] vs Hist -3.95% [LEDGER_0020] | [LEDGER_0008], [LEDGER_0020] | **FAIL** |
   - *Verified Output:* `-3.9450634871626145` via `tools.calc.cagr`
   - *Source:* tools.calc.metrics.cagr
-- **[Line 39] [LEDGER_0008]**: | Valuation Feasibility | Implied CAGR 28.97% [LEDGER_0008] vs Hist -3.95% [LEDGER_0020] | [LEDGER_0008], [LEDGER_0020] | **FAIL** |
-  - *Verified Output:* `28.97093892097473` via `tools.calc.reverse_dcf`
+- **[Line 39] [LEDGER_0008]**: | Valuation Feasibility | Implied CAGR 28.96% [LEDGER_0008] vs Hist -3.95% [LEDGER_0020] | [LEDGER_0008], [LEDGER_0020] | **FAIL** |
+  - *Verified Output:* `28.960567712783813` via `tools.calc.reverse_dcf`
   - *Source:* tools.calc.dcf.reverse_dcf
-- **[Line 39] [LEDGER_0020]**: | Valuation Feasibility | Implied CAGR 28.97% [LEDGER_0008] vs Hist -3.95% [LEDGER_0020] | [LEDGER_0008], [LEDGER_0020] | **FAIL** |
+- **[Line 39] [LEDGER_0020]**: | Valuation Feasibility | Implied CAGR 28.96% [LEDGER_0008] vs Hist -3.95% [LEDGER_0020] | [LEDGER_0008], [LEDGER_0020] | **FAIL** |
   - *Verified Output:* `-3.9450634871626145` via `tools.calc.cagr`
   - *Source:* tools.calc.metrics.cagr
 - **[Line 40] [LEDGER_0011]**: | Margin Shock (-200 bps) | Impact -6.26% [LEDGER_0011] ($137.19 [LEDGER_0010]) | [LEDGER_0011], [LEDGER_0010] | **PASS** |
@@ -120,10 +120,10 @@
 - **[Line 52] [ANALYSIS]**: [ANALYSIS] VULNERABLE: Found 2 quantitative failure(s) across 7 performed checks.
   - *Verified Output:* `ANALYST_DEDUCTION` via `analyst.reasoning`
   - *Source:* Report Author Analysis
-- **[Line 53] [LEDGER_0008]**: Valuation Stretch: Market implied 5Y FCF CAGR of 28.97% [LEDGER_0008] exceeds historical CAGR of -3.95% [LEDGER_0020].
-  - *Verified Output:* `28.97093892097473` via `tools.calc.reverse_dcf`
+- **[Line 53] [LEDGER_0008]**: Valuation Stretch: Market implied 5Y FCF CAGR of 28.96% [LEDGER_0008] exceeds historical CAGR of -3.95% [LEDGER_0020].
+  - *Verified Output:* `28.960567712783813` via `tools.calc.reverse_dcf`
   - *Source:* tools.calc.dcf.reverse_dcf
-- **[Line 53] [LEDGER_0020]**: Valuation Stretch: Market implied 5Y FCF CAGR of 28.97% [LEDGER_0008] exceeds historical CAGR of -3.95% [LEDGER_0020].
+- **[Line 53] [LEDGER_0020]**: Valuation Stretch: Market implied 5Y FCF CAGR of 28.96% [LEDGER_0008] exceeds historical CAGR of -3.95% [LEDGER_0020].
   - *Verified Output:* `-3.9450634871626145` via `tools.calc.cagr`
   - *Source:* tools.calc.metrics.cagr
 - **[Line 54] [LEDGER_0022]**: Inventory Divergence: Inventory growth diverged from revenue by +6.44% [LEDGER_0022].

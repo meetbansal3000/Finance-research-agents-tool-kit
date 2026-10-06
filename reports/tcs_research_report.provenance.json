@@ -1,6 +1,6 @@
 {
   "run_id": "tcs_live_run",
-  "saved_at": "2026-10-06T15:08:18.851382",
+  "saved_at": "2026-10-06T15:09:30.321509",
   "total_records": 13,
   "entries": {
     "LEDGER_0001": {
@@ -19,8 +19,8 @@
       "form": null,
       "period": null,
       "notes": "TCS.NS Current Market Price (INR)",
-      "timestamp": "2026-10-06T15:08:18.848364",
-      "integrity_hash": "4301d056a83b924d4dd1768aca1a469e4a9fd573ab7690737d861e921d9f4e85"
+      "timestamp": "2026-10-06T15:09:30.320599",
+      "integrity_hash": "a063d1ca101191109aabd18b0daa0d98185eaa0dc7264426b3beaec0dcc0217c"
     },
     "LEDGER_0002": {
       "ledger_id": "LEDGER_0002",
@@ -39,8 +39,8 @@
       "form": null,
       "period": "FY2025",
       "notes": "TCS FY2025 Total Revenue from Operations (INR)",
-      "timestamp": "2026-10-06T15:08:18.849391",
-      "integrity_hash": "efe9ef6408983bbfbf5c44b61b46252789c84846b68fa1fe974d567eee7c45b7"
+      "timestamp": "2026-10-06T15:09:30.320599",
+      "integrity_hash": "bbd3c51ac6fd7ffd55140cbdbfa3c3323862a6423821fc95c82bca67a861eef2"
     },
     "LEDGER_0003": {
       "ledger_id": "LEDGER_0003",
@@ -59,8 +59,8 @@
       "form": null,
       "period": "FY2024",
       "notes": "TCS FY2024 Total Revenue from Operations (INR)",
-      "timestamp": "2026-10-06T15:08:18.849391",
-      "integrity_hash": "a5ee28317122c0de6dd21afa351cc17b8b7a9fce07972bb3db7ce5b965f38255"
+      "timestamp": "2026-10-06T15:09:30.320599",
+      "integrity_hash": "5f2802f008836c359887695f6a354a7a5dbb2666341c7a9b09d2abe7516f7f95"
     },
     "LEDGER_0004": {
       "ledger_id": "LEDGER_0004",
@@ -79,8 +79,8 @@
       "form": null,
       "period": "FY2025",
       "notes": "TCS FY2025 Operating Profit (INR)",
-      "timestamp": "2026-10-06T15:08:18.849391",
-      "integrity_hash": "8cc3230b676c0430b201e14857790a6fb8550196474b0413d706bce350ebdb51"
+      "timestamp": "2026-10-06T15:09:30.320599",
+      "integrity_hash": "2f702f5426592238deb6197471a5d164d56892f8a0a315c07b259f74b5f0d2f0"
     },
     "LEDGER_0005": {
       "ledger_id": "LEDGER_0005",
@@ -99,8 +99,8 @@
       "form": null,
       "period": "FY2025",
       "notes": "TCS FY2025 Consolidated Net Profit (INR)",
-      "timestamp": "2026-10-06T15:08:18.849391",
-      "integrity_hash": "df8c4d0e38b0911f6199e5d30e7636551b775a5ed0b8c73d37bfc4843185faca"
+      "timestamp": "2026-10-06T15:09:30.320599",
+      "integrity_hash": "de6990e911b475fa32a6adfd45b529e7ac4ce7ec2e7444a7b839fbe30e1aff59"
     },
     "LEDGER_0006": {
       "ledger_id": "LEDGER_0006",
@@ -119,8 +119,8 @@
       "form": null,
       "period": "FY2025",
       "notes": "TCS FY2025 Cash Generated from Operations (INR)",
-      "timestamp": "2026-10-06T15:08:18.849391",
-      "integrity_hash": "c1be0951fc8c7df222e3bff24fb7b3f85da42084266aa6255ba78ec07a695b56"
+      "timestamp": "2026-10-06T15:09:30.320599",
+      "integrity_hash": "980efa353e66baaa4295d4791610612ffb4eb3c737d08928a36012fcb1a45392"
     },
     "LEDGER_0007": {
       "ledger_id": "LEDGER_0007",
@@ -139,8 +139,8 @@
       "form": null,
       "period": "FY2025",
       "notes": "TCS FY2025 Capital Expenditure (INR)",
-      "timestamp": "2026-10-06T15:08:18.849391",
-      "integrity_hash": "8ab94079437f6bb5ab0cfc7a3db12e04d8c53a96e24e741dbfc4383e3f675a25"
+      "timestamp": "2026-10-06T15:09:30.320599",
+      "integrity_hash": "3c992558a723945b530d897c184cebbfe5805d1e4f7b9781fe462ad915347212"
     },
     "LEDGER_0008": {
       "ledger_id": "LEDGER_0008",
@@ -158,8 +158,8 @@
       "form": null,
       "period": null,
       "notes": "TCS YoY Revenue Growth Rate",
-      "timestamp": "2026-10-06T15:08:18.849391",
-      "integrity_hash": "8f3890763b613d4a40fe3305f3702737ae0ccef8d16eb7652c23cdf0bb79f77e"
+      "timestamp": "2026-10-06T15:09:30.320599",
+      "integrity_hash": "450ae5ac6196c497f5fcadab71872906ad89bb20d8e5e69869b57832dd87c03b"
     },
     "LEDGER_0009": {
       "ledger_id": "LEDGER_0009",
@@ -177,8 +177,8 @@
       "form": null,
       "period": null,
       "notes": "TCS Operating Margin",
-      "timestamp": "2026-10-06T15:08:18.849391",
-      "integrity_hash": "43917dee5557717da3d094ee07990bf7cd6b97096adf19400d142defeb6148a4"
+      "timestamp": "2026-10-06T15:09:30.320599",
+      "integrity_hash": "0fa7969d4d2ec347100485d13622399ebab0990ccc84fc593bd38399afa8a63a"
     },
     "LEDGER_0010": {
       "ledger_id": "LEDGER_0010",
@@ -196,8 +196,8 @@
       "form": null,
       "period": null,
       "notes": "TCS Net Profit Margin",
-      "timestamp": "2026-10-06T15:08:18.849391",
-      "integrity_hash": "062c243f5944e1554dc7b28c4a6637fb3113014d2516a98825f684095bcf6514"
+      "timestamp": "2026-10-06T15:09:30.320599",
+      "integrity_hash": "8efe5b32d1d637deff16451a0a1b241d62cb08cd60ca8bcd6c81fc52a733aefb"
     },
     "LEDGER_0011": {
       "ledger_id": "LEDGER_0011",
@@ -215,8 +215,8 @@
       "form": null,
       "period": null,
       "notes": "TCS Free Cash Flow (INR)",
-      "timestamp": "2026-10-06T15:08:18.849391",
-      "integrity_hash": "687ccdefd9f3282123685f38b97d6fd6bd5401bcd6b833b1de1eee4891b8ddb5"
+      "timestamp": "2026-10-06T15:09:30.320599",
+      "integrity_hash": "574923fb3f23c95e75aa57c392dc92ec69bc31d3ad341948007dfe45e5a8c717"
     },
     "LEDGER_0012": {
       "ledger_id": "LEDGER_0012",
@@ -244,8 +244,8 @@
       "form": null,
       "period": null,
       "notes": "TCS DCF Baseline Fair Value per Share (INR)",
-      "timestamp": "2026-10-06T15:08:18.849391",
-      "integrity_hash": "f142a0f3537992619bab60e1017988c9f6f31c81bb06fd36c567fb6482af4877"
+      "timestamp": "2026-10-06T15:09:30.320599",
+      "integrity_hash": "d8df62205df609bc220087f0c0e3e753eed9281140b38b8ba5a653aab47a6692"
     },
     "LEDGER_0013": {
       "ledger_id": "LEDGER_0013",
@@ -268,8 +268,8 @@
       "form": null,
       "period": null,
       "notes": "TCS Implied 5-Year FCF CAGR",
-      "timestamp": "2026-10-06T15:08:18.849391",
-      "integrity_hash": "56a798f75ff28eb02044b1edee8a3a2abb9a1fec3c12665cc08154ce5008280d"
+      "timestamp": "2026-10-06T15:09:30.321509",
+      "integrity_hash": "85be2d28139b38e5bb0a9d88bc1cf8aae0e27833ab7597ed001170e8a34a2994"
     }
   }
 }
