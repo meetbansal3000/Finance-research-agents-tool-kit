@@ -1,0 +1,868 @@
+{
+  "run_id": "MSFT_skeptic_2026-10-06",
+  "saved_at": "2026-10-06T17:15:43.328234",
+  "total_records": 45,
+  "entries": {
+    "LEDGER_0001": {
+      "ledger_id": "LEDGER_0001",
+      "tool": "yfinance.quote",
+      "ticker": "MSFT",
+      "currency": "USD",
+      "unit": "base",
+      "inputs": {
+        "ticker": "MSFT",
+        "price": 532.34
+      },
+      "output": 532.34,
+      "raw_value": 532.34,
+      "source": "Market Quote (MSFT)",
+      "form": null,
+      "period": null,
+      "notes": "Current trading price (USD)",
+      "timestamp": "2026-10-06T17:15:43.322327",
+      "integrity_hash": "297f77e2f2b69cc5d2b74ee7ad3989a46f844226f1386cf0a6186140bbb9de65"
+    },
+    "LEDGER_0002": {
+      "ledger_id": "LEDGER_0002",
+      "tool": "yfinance.quote",
+      "ticker": "MSFT",
+      "currency": null,
+      "unit": "base",
+      "inputs": {
+        "shares_outstanding": 7425545491.0
+      },
+      "output": 7425545491.0,
+      "raw_value": 7425545491.0,
+      "source": "Share Registry / Market Data",
+      "form": null,
+      "period": null,
+      "notes": "Diluted Shares Outstanding",
+      "timestamp": "2026-10-06T17:15:43.322327",
+      "integrity_hash": "ca4ca6bc3de3b46d71894e8ffc82ef8e3f9d8b37b52bf88ad9b9dd970110088e"
+    },
+    "LEDGER_0003": {
+      "ledger_id": "LEDGER_0003",
+      "tool": "filing.cash_flow",
+      "ticker": "MSFT",
+      "currency": "USD",
+      "unit": "base",
+      "inputs": {
+        "ticker": "MSFT",
+        "metric": "FreeCashFlow"
+      },
+      "output": 66987000000.0,
+      "raw_value": 66987000000.0,
+      "source": "Audited Statement of Cash Flows",
+      "form": null,
+      "period": null,
+      "notes": "Base Free Cash Flow (USD)",
+      "timestamp": "2026-10-06T17:15:43.322327",
+      "integrity_hash": "28baaeabb8fdb9282a7fae5aa563967b9e2988ab7c7fa81af7b61d9fb9312fd4"
+    },
+    "LEDGER_0004": {
+      "ledger_id": "LEDGER_0004",
+      "tool": "filing.balance_sheet",
+      "ticker": "MSFT",
+      "currency": "USD",
+      "unit": "base",
+      "inputs": {
+        "cash_and_equivalents": 76843000000.0,
+        "marketable_securities": 0.0
+      },
+      "output": 76843000000.0,
+      "raw_value": 76843000000.0,
+      "source": "Audited Balance Sheet",
+      "form": null,
+      "period": null,
+      "notes": "Total Liquid Cash and Marketable Securities (USD)",
+      "timestamp": "2026-10-06T17:15:43.322327",
+      "integrity_hash": "ba7384bf7ccf44b0aa76393c1bea1f0d40201aa288ccc14d6ec9269b1f1c5819"
+    },
+    "LEDGER_0005": {
+      "ledger_id": "LEDGER_0005",
+      "tool": "filing.balance_sheet",
+      "ticker": "MSFT",
+      "currency": "USD",
+      "unit": "base",
+      "inputs": {
+        "total_debt": 40294000000.0
+      },
+      "output": 40294000000.0,
+      "raw_value": 40294000000.0,
+      "source": "Audited Balance Sheet",
+      "form": null,
+      "period": null,
+      "notes": "Total Borrowings and Debt (USD)",
+      "timestamp": "2026-10-06T17:15:43.322327",
+      "integrity_hash": "5b1a03ee122f95c7567295c84f99a8e729f7286493d8f119a2b47b69b02f0672"
+    },
+    "LEDGER_0006": {
+      "ledger_id": "LEDGER_0006",
+      "tool": "filing.balance_sheet",
+      "ticker": "MSFT",
+      "currency": "USD",
+      "unit": "base",
+      "inputs": {
+        "total_debt": 40294000000.0,
+        "liquid_cash": 76843000000.0
+      },
+      "output": -36549000000.0,
+      "raw_value": -36549000000.0,
+      "source": "Audited Balance Sheet",
+      "form": null,
+      "period": null,
+      "notes": "Calculated Net Debt: Total Debt - Liquid Cash (USD)",
+      "timestamp": "2026-10-06T17:15:43.322327",
+      "integrity_hash": "b097fa834abef04494a11e3c05f08149805a07805cf0a29b282c0f43fc238381"
+    },
+    "LEDGER_0007": {
+      "ledger_id": "LEDGER_0007",
+      "tool": "thesis.assumption",
+      "ticker": "MSFT",
+      "currency": null,
+      "unit": "base",
+      "inputs": {
+        "growth_rate": 0.08
+      },
+      "output": 8.0,
+      "raw_value": 8.0,
+      "source": "Model Assumption (Unanchored Parameter)",
+      "form": null,
+      "period": null,
+      "notes": "Assumed 5Y FCF Growth Rate (%)",
+      "timestamp": "2026-10-06T17:15:43.322327",
+      "integrity_hash": "3e8895b98082e06c48580ebc58ccf3a5fd244bb5d07dc987ca40955e7ba7a9b4"
+    },
+    "LEDGER_0008": {
+      "ledger_id": "LEDGER_0008",
+      "tool": "thesis.assumption",
+      "ticker": "MSFT",
+      "currency": null,
+      "unit": "base",
+      "inputs": {
+        "wacc": 0.085
+      },
+      "output": 8.5,
+      "raw_value": 8.5,
+      "source": "Model Assumption (Unanchored Parameter)",
+      "form": null,
+      "period": null,
+      "notes": "Assumed Discount Rate WACC (%)",
+      "timestamp": "2026-10-06T17:15:43.322327",
+      "integrity_hash": "963c5f8205110e5469cf8ccda3c0f04eefdb507c3a9a28a4bed670dca74e41ac"
+    },
+    "LEDGER_0009": {
+      "ledger_id": "LEDGER_0009",
+      "tool": "thesis.assumption",
+      "ticker": "MSFT",
+      "currency": null,
+      "unit": "base",
+      "inputs": {
+        "terminal_g": 0.025
+      },
+      "output": 2.5,
+      "raw_value": 2.5,
+      "source": "Model Assumption (Unanchored Parameter)",
+      "form": null,
+      "period": null,
+      "notes": "Assumed Terminal Growth Rate (%)",
+      "timestamp": "2026-10-06T17:15:43.323232",
+      "integrity_hash": "92c71dffc3f42bc4b7702058164fc56972061f865058683c0df4c7fc03fad425"
+    },
+    "LEDGER_0010": {
+      "ledger_id": "LEDGER_0010",
+      "tool": "tools.calc.reverse_dcf",
+      "ticker": "MSFT",
+      "currency": null,
+      "unit": "base",
+      "inputs": {
+        "current_price": 532.34,
+        "base_fcf": 66987000000.0,
+        "WACC": 0.085,
+        "net_debt": -36549000000.0
+      },
+      "output": 33.776384592056274,
+      "raw_value": 33.776384592056274,
+      "source": "tools.calc.dcf.reverse_dcf",
+      "form": null,
+      "period": null,
+      "notes": "Market implied 5-year FCF CAGR",
+      "timestamp": "2026-10-06T17:15:43.324234",
+      "integrity_hash": "794068641a08ca119e6790d8c8d3d012f82a3da5da77396881af92e203798780"
+    },
+    "LEDGER_0011": {
+      "ledger_id": "LEDGER_0011",
+      "tool": "tools.calc.dcf",
+      "ticker": "MSFT",
+      "currency": "USD",
+      "unit": "base",
+      "inputs": {
+        "growth": 0.08,
+        "wacc": 0.085,
+        "term_g": 0.025,
+        "net_debt": -36549000000.0
+      },
+      "output": 200.00110428884904,
+      "raw_value": 200.00110428884904,
+      "source": "tools.calc.dcf.dcf",
+      "form": null,
+      "period": null,
+      "notes": "Baseline fair value per share (USD)",
+      "timestamp": "2026-10-06T17:15:43.324234",
+      "integrity_hash": "2814cdd62ec07e172d7dfc2ea80619be07fbc1eafb97fff4e679f609f0a333d8"
+    },
+    "LEDGER_0012": {
+      "ledger_id": "LEDGER_0012",
+      "tool": "tools.calc.dcf",
+      "ticker": "MSFT",
+      "currency": "USD",
+      "unit": "base",
+      "inputs": {
+        "stressed_fcf": 64123133899.39254,
+        "margin_delta_bps": -200,
+        "net_debt": -36549000000.0
+      },
+      "output": 191.66097479605696,
+      "raw_value": 191.66097479605696,
+      "source": "tools.calc.dcf.dcf",
+      "form": null,
+      "period": null,
+      "notes": "Fair value under margin compression (USD)",
+      "timestamp": "2026-10-06T17:15:43.324234",
+      "integrity_hash": "e2c20080da95bfce75c94720a8d38a6c0d4f1338a83d9c9b765d5723cd235f82"
+    },
+    "LEDGER_0013": {
+      "ledger_id": "LEDGER_0013",
+      "tool": "tools.calc.margin_stress_impact",
+      "ticker": "MSFT",
+      "currency": null,
+      "unit": "base",
+      "inputs": {
+        "baseline": 200.00110428884904,
+        "stressed": 191.66097479605696
+      },
+      "output": -4.1700417217431704,
+      "raw_value": -4.1700417217431704,
+      "source": "tools.calc.metrics",
+      "form": null,
+      "period": null,
+      "notes": "Margin stress impact percentage",
+      "timestamp": "2026-10-06T17:15:43.324234",
+      "integrity_hash": "acfed42647bc20d81bc90bad8050ab504c1f32bf3fdc42e37add136320372525"
+    },
+    "LEDGER_0014": {
+      "ledger_id": "LEDGER_0014",
+      "tool": "tools.calc.dcf",
+      "ticker": "MSFT",
+      "currency": "USD",
+      "unit": "base",
+      "inputs": {
+        "wacc_stressed": 0.095,
+        "net_debt": -36549000000.0
+      },
+      "output": 171.50005046839817,
+      "raw_value": 171.50005046839817,
+      "source": "tools.calc.dcf.dcf",
+      "form": null,
+      "period": null,
+      "notes": "Fair value under WACC elevation (USD)",
+      "timestamp": "2026-10-06T17:15:43.324234",
+      "integrity_hash": "6c4d89ab0b891a4817581470741f43e758e59f9adb2c6c95a0bd378db6ed220b"
+    },
+    "LEDGER_0015": {
+      "ledger_id": "LEDGER_0015",
+      "tool": "tools.calc.wacc_stress_impact",
+      "ticker": "MSFT",
+      "currency": null,
+      "unit": "base",
+      "inputs": {
+        "baseline": 200.00110428884904,
+        "stressed": 171.50005046839817
+      },
+      "output": -14.250448227170075,
+      "raw_value": -14.250448227170075,
+      "source": "tools.calc.metrics",
+      "form": null,
+      "period": null,
+      "notes": "WACC stress impact percentage",
+      "timestamp": "2026-10-06T17:15:43.324234",
+      "integrity_hash": "acbf5d6338be019e12655716ce1900b7211e5f9ec93f624affa251e59790f42b"
+    },
+    "LEDGER_0016": {
+      "ledger_id": "LEDGER_0016",
+      "tool": "tools.calc.dcf",
+      "ticker": "MSFT",
+      "currency": "USD",
+      "unit": "base",
+      "inputs": {
+        "half_growth": 0.04,
+        "net_debt": -36549000000.0
+      },
+      "output": 169.4125353255128,
+      "raw_value": 169.4125353255128,
+      "source": "tools.calc.dcf.dcf",
+      "form": null,
+      "period": null,
+      "notes": "Fair value at half assumed growth rate (USD)",
+      "timestamp": "2026-10-06T17:15:43.324234",
+      "integrity_hash": "8c1386c19f0cb0ca62bf94ffd0aaa074cd9f3378e15e7abf1dd190089ac3c114"
+    },
+    "LEDGER_0017": {
+      "ledger_id": "LEDGER_0017",
+      "tool": "tools.calc.growth_stress_impact",
+      "ticker": "MSFT",
+      "currency": null,
+      "unit": "base",
+      "inputs": {
+        "baseline": 200.00110428884904,
+        "stressed": 169.4125353255128
+      },
+      "output": -15.294200035595344,
+      "raw_value": -15.294200035595344,
+      "source": "tools.calc.metrics",
+      "form": null,
+      "period": null,
+      "notes": "Half-growth valuation impact",
+      "timestamp": "2026-10-06T17:15:43.324234",
+      "integrity_hash": "929c50e7f763180a06d35d528222d2ba3c736f69ca29324e5940df4b74b6b438"
+    },
+    "LEDGER_0018": {
+      "ledger_id": "LEDGER_0018",
+      "tool": "thesis.assumption",
+      "ticker": "MSFT",
+      "currency": null,
+      "unit": "base",
+      "inputs": {
+        "growth_rate": 0.06
+      },
+      "output": 6.0,
+      "raw_value": 6.0,
+      "source": "Model Sensitivity Parameter (Downside)",
+      "form": null,
+      "period": null,
+      "notes": "Sensitivity Downside 5Y FCF Growth Rate (%)",
+      "timestamp": "2026-10-06T17:15:43.324234",
+      "integrity_hash": "2683e8d51300e194d280226e073be64612b43a10d7499136c03538043e4e4d00"
+    },
+    "LEDGER_0019": {
+      "ledger_id": "LEDGER_0019",
+      "tool": "thesis.assumption",
+      "ticker": "MSFT",
+      "currency": null,
+      "unit": "base",
+      "inputs": {
+        "growth_rate": 0.1
+      },
+      "output": 10.0,
+      "raw_value": 10.0,
+      "source": "Model Sensitivity Parameter (Upside)",
+      "form": null,
+      "period": null,
+      "notes": "Sensitivity Upside 5Y FCF Growth Rate (%)",
+      "timestamp": "2026-10-06T17:15:43.324234",
+      "integrity_hash": "c5939f2f98ed55640a2b6d371ccd0d1f3bf143089b4f59e91df2601a7aced32f"
+    },
+    "LEDGER_0020": {
+      "ledger_id": "LEDGER_0020",
+      "tool": "tools.calc.dcf",
+      "ticker": "MSFT",
+      "currency": "USD",
+      "unit": "base",
+      "inputs": {
+        "growth": 0.06,
+        "wacc": 0.07500000000000001,
+        "net_debt": -36549000000.0
+      },
+      "output": 220.5608661393793,
+      "raw_value": 220.5608661393793,
+      "source": "tools.calc.dcf.dcf",
+      "form": null,
+      "period": null,
+      "notes": "Sensitivity fair value: Growth 6.0%, WACC 7.5% (USD)",
+      "timestamp": "2026-10-06T17:15:43.324234",
+      "integrity_hash": "07f138d58f9e5523e10dea6688305e3816c4e3a24fa72eedfb5ce640a68b870e"
+    },
+    "LEDGER_0021": {
+      "ledger_id": "LEDGER_0021",
+      "tool": "tools.calc.dcf",
+      "ticker": "MSFT",
+      "currency": "USD",
+      "unit": "base",
+      "inputs": {
+        "growth": 0.06,
+        "wacc": 0.085,
+        "net_debt": -36549000000.0
+      },
+      "output": 184.16026815445076,
+      "raw_value": 184.16026815445076,
+      "source": "tools.calc.dcf.dcf",
+      "form": null,
+      "period": null,
+      "notes": "Sensitivity fair value: Growth 6.0%, WACC 8.5% (USD)",
+      "timestamp": "2026-10-06T17:15:43.324234",
+      "integrity_hash": "4323b82c9032e77e8ff40106c37a0c38bf1cc946ecb955e59a3693bbb2ce0c89"
+    },
+    "LEDGER_0022": {
+      "ledger_id": "LEDGER_0022",
+      "tool": "tools.calc.dcf",
+      "ticker": "MSFT",
+      "currency": "USD",
+      "unit": "base",
+      "inputs": {
+        "growth": 0.06,
+        "wacc": 0.095,
+        "net_debt": -36549000000.0
+      },
+      "output": 158.17405534989425,
+      "raw_value": 158.17405534989425,
+      "source": "tools.calc.dcf.dcf",
+      "form": null,
+      "period": null,
+      "notes": "Sensitivity fair value: Growth 6.0%, WACC 9.5% (USD)",
+      "timestamp": "2026-10-06T17:15:43.324234",
+      "integrity_hash": "05084fdd0f50700d3da04c377ff60a5ec9401d7bc12d286c7f65f2aa4d634b72"
+    },
+    "LEDGER_0023": {
+      "ledger_id": "LEDGER_0023",
+      "tool": "tools.calc.dcf",
+      "ticker": "MSFT",
+      "currency": "USD",
+      "unit": "base",
+      "inputs": {
+        "growth": 0.08,
+        "wacc": 0.07500000000000001,
+        "net_debt": -36549000000.0
+      },
+      "output": 239.93580293669876,
+      "raw_value": 239.93580293669876,
+      "source": "tools.calc.dcf.dcf",
+      "form": null,
+      "period": null,
+      "notes": "Sensitivity fair value: Growth 8.0%, WACC 7.5% (USD)",
+      "timestamp": "2026-10-06T17:15:43.325237",
+      "integrity_hash": "e42ae1f6882153d74cd1ab317ce553a2805ee5d95f19a9031dae3d860177cb08"
+    },
+    "LEDGER_0024": {
+      "ledger_id": "LEDGER_0024",
+      "tool": "tools.calc.dcf",
+      "ticker": "MSFT",
+      "currency": "USD",
+      "unit": "base",
+      "inputs": {
+        "growth": 0.08,
+        "wacc": 0.085,
+        "net_debt": -36549000000.0
+      },
+      "output": 200.00110428884904,
+      "raw_value": 200.00110428884904,
+      "source": "tools.calc.dcf.dcf",
+      "form": null,
+      "period": null,
+      "notes": "Sensitivity fair value: Growth 8.0%, WACC 8.5% (USD)",
+      "timestamp": "2026-10-06T17:15:43.325237",
+      "integrity_hash": "bddd0288e7f4e19a3241497e63ab904ffd44b54846f4f0b7b4d9d3165f5f9af4"
+    },
+    "LEDGER_0025": {
+      "ledger_id": "LEDGER_0025",
+      "tool": "tools.calc.dcf",
+      "ticker": "MSFT",
+      "currency": "USD",
+      "unit": "base",
+      "inputs": {
+        "growth": 0.08,
+        "wacc": 0.095,
+        "net_debt": -36549000000.0
+      },
+      "output": 171.50005046839817,
+      "raw_value": 171.50005046839817,
+      "source": "tools.calc.dcf.dcf",
+      "form": null,
+      "period": null,
+      "notes": "Sensitivity fair value: Growth 8.0%, WACC 9.5% (USD)",
+      "timestamp": "2026-10-06T17:15:43.325237",
+      "integrity_hash": "5a3dc85215903c8c131e763dddce4f7926eccde2ec8e81ab3584c4cc12bb98bb"
+    },
+    "LEDGER_0026": {
+      "ledger_id": "LEDGER_0026",
+      "tool": "tools.calc.dcf",
+      "ticker": "MSFT",
+      "currency": "USD",
+      "unit": "base",
+      "inputs": {
+        "growth": 0.1,
+        "wacc": 0.07500000000000001,
+        "net_debt": -36549000000.0
+      },
+      "output": 260.735368254531,
+      "raw_value": 260.735368254531,
+      "source": "tools.calc.dcf.dcf",
+      "form": null,
+      "period": null,
+      "notes": "Sensitivity fair value: Growth 10.0%, WACC 7.5% (USD)",
+      "timestamp": "2026-10-06T17:15:43.325237",
+      "integrity_hash": "febd66baf68fcfbab4a04b34e7ba70f490ce250808bdf6c515b51b56d0c4be7c"
+    },
+    "LEDGER_0027": {
+      "ledger_id": "LEDGER_0027",
+      "tool": "tools.calc.dcf",
+      "ticker": "MSFT",
+      "currency": "USD",
+      "unit": "base",
+      "inputs": {
+        "growth": 0.1,
+        "wacc": 0.085,
+        "net_debt": -36549000000.0
+      },
+      "output": 216.99634645142595,
+      "raw_value": 216.99634645142595,
+      "source": "tools.calc.dcf.dcf",
+      "form": null,
+      "period": null,
+      "notes": "Sensitivity fair value: Growth 10.0%, WACC 8.5% (USD)",
+      "timestamp": "2026-10-06T17:15:43.325237",
+      "integrity_hash": "bd7eee6f2342b4bd5d4263038869dd6b4f9f87482fe6ee4e94374a9b3956b6a4"
+    },
+    "LEDGER_0028": {
+      "ledger_id": "LEDGER_0028",
+      "tool": "tools.calc.dcf",
+      "ticker": "MSFT",
+      "currency": "USD",
+      "unit": "base",
+      "inputs": {
+        "growth": 0.1,
+        "wacc": 0.095,
+        "net_debt": -36549000000.0
+      },
+      "output": 185.7885391682574,
+      "raw_value": 185.7885391682574,
+      "source": "tools.calc.dcf.dcf",
+      "form": null,
+      "period": null,
+      "notes": "Sensitivity fair value: Growth 10.0%, WACC 9.5% (USD)",
+      "timestamp": "2026-10-06T17:15:43.325237",
+      "integrity_hash": "384eed994081595e31b1f5f438dc7196cef1253fd99c800d8dce662e1ad472f0"
+    },
+    "LEDGER_0029": {
+      "ledger_id": "LEDGER_0029",
+      "tool": "filing.cash_flow",
+      "ticker": "MSFT",
+      "currency": "USD",
+      "unit": "base",
+      "inputs": {
+        "ticker": "MSFT",
+        "metric": "FreeCashFlow",
+        "period": "FY2023"
+      },
+      "output": 59475000000.0,
+      "raw_value": 59475000000.0,
+      "source": "Annual Report FY2023 Audited Cash Flow",
+      "form": null,
+      "period": "FY2023",
+      "notes": "MSFT FY2023 Free Cash Flow (USD)",
+      "timestamp": "2026-10-06T17:15:43.325237",
+      "integrity_hash": "8d6c4cf9702908322f75dab90fb3052aefe7b1475d7bafb53608297ed1f950dd"
+    },
+    "LEDGER_0030": {
+      "ledger_id": "LEDGER_0030",
+      "tool": "filing.cash_flow",
+      "ticker": "MSFT",
+      "currency": "USD",
+      "unit": "base",
+      "inputs": {
+        "ticker": "MSFT",
+        "metric": "FreeCashFlow",
+        "period": "FY2024"
+      },
+      "output": 74071000000.0,
+      "raw_value": 74071000000.0,
+      "source": "Annual Report FY2024 Audited Cash Flow",
+      "form": null,
+      "period": "FY2024",
+      "notes": "MSFT FY2024 Free Cash Flow (USD)",
+      "timestamp": "2026-10-06T17:15:43.325237",
+      "integrity_hash": "4f219056adc706dbc0295d1b3365d2066785e1fd688705627698fc4400cba7e7"
+    },
+    "LEDGER_0031": {
+      "ledger_id": "LEDGER_0031",
+      "tool": "filing.cash_flow",
+      "ticker": "MSFT",
+      "currency": "USD",
+      "unit": "base",
+      "inputs": {
+        "ticker": "MSFT",
+        "metric": "FreeCashFlow",
+        "period": "FY2025"
+      },
+      "output": 71611000000.0,
+      "raw_value": 71611000000.0,
+      "source": "Annual Report FY2025 Audited Cash Flow",
+      "form": null,
+      "period": "FY2025",
+      "notes": "MSFT FY2025 Free Cash Flow (USD)",
+      "timestamp": "2026-10-06T17:15:43.325237",
+      "integrity_hash": "85471d89db849acfd43839b2a012b9d9246f6105c193ef784512e1e5d9bf533f"
+    },
+    "LEDGER_0032": {
+      "ledger_id": "LEDGER_0032",
+      "tool": "filing.cash_flow",
+      "ticker": "MSFT",
+      "currency": "USD",
+      "unit": "base",
+      "inputs": {
+        "ticker": "MSFT",
+        "metric": "FreeCashFlow",
+        "period": "FY2026"
+      },
+      "output": 66987000000.0,
+      "raw_value": 66987000000.0,
+      "source": "Annual Report FY2026 Audited Cash Flow",
+      "form": null,
+      "period": "FY2026",
+      "notes": "MSFT FY2026 Free Cash Flow (USD)",
+      "timestamp": "2026-10-06T17:15:43.325237",
+      "integrity_hash": "58cfe409193b13b06cf1c4c2185cb75d30de7216c9d05fc9063dc7660d2002bb"
+    },
+    "LEDGER_0033": {
+      "ledger_id": "LEDGER_0033",
+      "tool": "tools.calc.cagr",
+      "ticker": "MSFT",
+      "currency": null,
+      "unit": "base",
+      "inputs": {
+        "start_value": 59475000000.0,
+        "end_value": 66987000000.0,
+        "periods": 3
+      },
+      "output": 4.044395808798296,
+      "raw_value": 4.044395808798296,
+      "source": "tools.calc.metrics.cagr",
+      "form": null,
+      "period": null,
+      "notes": "Historical 3-year FCF CAGR (FY2023 to FY2026)",
+      "timestamp": "2026-10-06T17:15:43.325237",
+      "integrity_hash": "029c80b1742c0075c275dc8333d991fce70a6d29bc803d951ef034abe93cc003"
+    },
+    "LEDGER_0034": {
+      "ledger_id": "LEDGER_0034",
+      "tool": "filing.income_statement",
+      "ticker": "MSFT",
+      "currency": "USD",
+      "unit": "base",
+      "inputs": {
+        "rev_curr": 331839000000.0
+      },
+      "output": 331839000000.0,
+      "raw_value": 331839000000.0,
+      "source": "Audited Income Statement",
+      "form": null,
+      "period": null,
+      "notes": "FY2025 Revenue",
+      "timestamp": "2026-10-06T17:15:43.325237",
+      "integrity_hash": "dfe521a25c6bef9e1cf81f552a3e9922c08abb61889b39c31e78e19ec724f5ae"
+    },
+    "LEDGER_0035": {
+      "ledger_id": "LEDGER_0035",
+      "tool": "filing.income_statement",
+      "ticker": "MSFT",
+      "currency": "USD",
+      "unit": "base",
+      "inputs": {
+        "rev_prev": 281724000000.0
+      },
+      "output": 281724000000.0,
+      "raw_value": 281724000000.0,
+      "source": "Audited Income Statement",
+      "form": null,
+      "period": null,
+      "notes": "FY2024 Revenue",
+      "timestamp": "2026-10-06T17:15:43.325237",
+      "integrity_hash": "c80e1b34589985409cc38bb36ea6013a59400dd8f565f927e55a8db61a7cad5b"
+    },
+    "LEDGER_0036": {
+      "ledger_id": "LEDGER_0036",
+      "tool": "tools.calc.yoy_growth",
+      "ticker": "MSFT",
+      "currency": null,
+      "unit": "base",
+      "inputs": {
+        "current": 331839000000.0,
+        "prior": 281724000000.0
+      },
+      "output": 17.78868679984666,
+      "raw_value": 17.78868679984666,
+      "source": "tools.calc.metrics.yoy_growth",
+      "form": null,
+      "period": null,
+      "notes": "Revenue YoY Growth (%)",
+      "timestamp": "2026-10-06T17:15:43.325237",
+      "integrity_hash": "a759937734ef6b377c03440c0756d7b2da528dbd4907693fac37f81a55c7da31"
+    },
+    "LEDGER_0037": {
+      "ledger_id": "LEDGER_0037",
+      "tool": "filing.balance_sheet",
+      "ticker": "MSFT",
+      "currency": "USD",
+      "unit": "base",
+      "inputs": {
+        "rec_curr": 80876000000.0
+      },
+      "output": 80876000000.0,
+      "raw_value": 80876000000.0,
+      "source": "Audited Balance Sheet",
+      "form": null,
+      "period": null,
+      "notes": "FY2025 Trade Receivables",
+      "timestamp": "2026-10-06T17:15:43.325237",
+      "integrity_hash": "84be8166f8caaa6965b331a8e0f7695e484fee82bb3b3ead6458a4f197d1ee01"
+    },
+    "LEDGER_0038": {
+      "ledger_id": "LEDGER_0038",
+      "tool": "filing.balance_sheet",
+      "ticker": "MSFT",
+      "currency": "USD",
+      "unit": "base",
+      "inputs": {
+        "rec_prev": 69905000000.0
+      },
+      "output": 69905000000.0,
+      "raw_value": 69905000000.0,
+      "source": "Audited Balance Sheet",
+      "form": null,
+      "period": null,
+      "notes": "FY2024 Trade Receivables",
+      "timestamp": "2026-10-06T17:15:43.325237",
+      "integrity_hash": "76564027a05f5d3918dad5892b2665e2da4149a9a9f8623105e52a22dcf5af7e"
+    },
+    "LEDGER_0039": {
+      "ledger_id": "LEDGER_0039",
+      "tool": "tools.calc.yoy_growth",
+      "ticker": "MSFT",
+      "currency": null,
+      "unit": "base",
+      "inputs": {
+        "current": 80876000000.0,
+        "prior": 69905000000.0
+      },
+      "output": 15.694156355053288,
+      "raw_value": 15.694156355053288,
+      "source": "tools.calc.metrics.yoy_growth",
+      "form": null,
+      "period": null,
+      "notes": "Receivables YoY Growth (%)",
+      "timestamp": "2026-10-06T17:15:43.325237",
+      "integrity_hash": "ebfec088324f2ef43ca65849bc714055596ecb1296a9ea2790e090c23ad00f29"
+    },
+    "LEDGER_0040": {
+      "ledger_id": "LEDGER_0040",
+      "tool": "tools.calc.working_capital",
+      "ticker": "MSFT",
+      "currency": null,
+      "unit": "base",
+      "inputs": {
+        "rec_yoy": 15.694156355053288,
+        "rev_yoy": 17.78868679984666
+      },
+      "output": -2.0945304447933717,
+      "raw_value": -2.0945304447933717,
+      "source": "tools.calc.working_capital",
+      "form": null,
+      "period": null,
+      "notes": "Receivables vs Revenue YoY divergence (pp)",
+      "timestamp": "2026-10-06T17:15:43.325237",
+      "integrity_hash": "dbd5acf03d79fe8037779b82d15f09f80234ce15504610a1097aeee8ca0a417a"
+    },
+    "LEDGER_0041": {
+      "ledger_id": "LEDGER_0041",
+      "tool": "filing.balance_sheet",
+      "ticker": "MSFT",
+      "currency": "USD",
+      "unit": "base",
+      "inputs": {
+        "inv_curr": 1397000000.0
+      },
+      "output": 1397000000.0,
+      "raw_value": 1397000000.0,
+      "source": "Audited Balance Sheet",
+      "form": null,
+      "period": null,
+      "notes": "FY2025 Inventories",
+      "timestamp": "2026-10-06T17:15:43.325237",
+      "integrity_hash": "0471b409a71e0592bddde2116c4d99bc40c2c56475be6cf7962b7c0c2330d7b0"
+    },
+    "LEDGER_0042": {
+      "ledger_id": "LEDGER_0042",
+      "tool": "filing.balance_sheet",
+      "ticker": "MSFT",
+      "currency": "USD",
+      "unit": "base",
+      "inputs": {
+        "inv_prev": 938000000.0
+      },
+      "output": 938000000.0,
+      "raw_value": 938000000.0,
+      "source": "Audited Balance Sheet",
+      "form": null,
+      "period": null,
+      "notes": "FY2024 Inventories",
+      "timestamp": "2026-10-06T17:15:43.325237",
+      "integrity_hash": "3f541ee6dd9ae55bc55e5eac67868d2bf18105f7412cc3c134683d49ef47509b"
+    },
+    "LEDGER_0043": {
+      "ledger_id": "LEDGER_0043",
+      "tool": "tools.calc.yoy_growth",
+      "ticker": "MSFT",
+      "currency": null,
+      "unit": "base",
+      "inputs": {
+        "current": 1397000000.0,
+        "prior": 938000000.0
+      },
+      "output": 48.933901918976545,
+      "raw_value": 48.933901918976545,
+      "source": "tools.calc.metrics.yoy_growth",
+      "form": null,
+      "period": null,
+      "notes": "Inventory YoY Growth (%)",
+      "timestamp": "2026-10-06T17:15:43.325237",
+      "integrity_hash": "85edabfb3a30a4836a68a2f8c9e456521228ba4b83ff001e8568d7f0ebaccd70"
+    },
+    "LEDGER_0044": {
+      "ledger_id": "LEDGER_0044",
+      "tool": "tools.calc.working_capital",
+      "ticker": "MSFT",
+      "currency": null,
+      "unit": "base",
+      "inputs": {
+        "inv_yoy": 48.933901918976545,
+        "rev_yoy": 17.78868679984666
+      },
+      "output": 31.145215119129887,
+      "raw_value": 31.145215119129887,
+      "source": "tools.calc.working_capital",
+      "form": null,
+      "period": null,
+      "notes": "Inventory vs Revenue YoY divergence (pp)",
+      "timestamp": "2026-10-06T17:15:43.325237",
+      "integrity_hash": "66393da756964f7591c0a0bc9f2b668ea398c1c39e50e6f9c0cbf3ca53d66ea8"
+    },
+    "LEDGER_0045": {
+      "ledger_id": "LEDGER_0045",
+      "tool": "tools.calc.liquidity",
+      "ticker": "MSFT",
+      "currency": null,
+      "unit": "base",
+      "inputs": {
+        "st_debt": 9227000000.0,
+        "cash": 76843000000.0
+      },
+      "output": 12.00759991150788,
+      "raw_value": 12.00759991150788,
+      "source": "Annual Balance Sheet",
+      "form": null,
+      "period": null,
+      "notes": "Short-term debt to cash ratio",
+      "timestamp": "2026-10-06T17:15:43.325237",
+      "integrity_hash": "222a00747df51daf2c66c7c15b963f3f03a84a6333f88705599f31306d96c705"
+    }
+  }
+}

@@ -1,0 +1,520 @@
+{
+  "run_id": "MSFT_analyst_2026-10-06",
+  "saved_at": "2026-10-06T17:15:34.496610",
+  "total_records": 25,
+  "entries": {
+    "LEDGER_0001": {
+      "ledger_id": "LEDGER_0001",
+      "tool": "tools.filing.extract_metric",
+      "ticker": "MSFT",
+      "currency": "USD",
+      "unit": "base",
+      "inputs": {
+        "ticker": "MSFT",
+        "metric": "CashAndEquivalents",
+        "period": "FY2026"
+      },
+      "output": 20935000000.0,
+      "raw_value": 20935000000.0,
+      "source": "https://data.sec.gov/api/xbrl/companyfacts/CIK0000789019.json (Accn: 0001193125-26-323660, Consolidated Balance Sheets, Item 8)",
+      "form": null,
+      "period": "FY2026",
+      "notes": "CashAndEquivalents: \"Cash and cash equivalents: $20,935 million as of June 30, 2026.\"",
+      "timestamp": "2026-10-06T17:15:33.988622",
+      "integrity_hash": "2d331c44362268c4d8aff4526436e11a92ebfc141fa9ac6c47b3da1ebd06f255"
+    },
+    "LEDGER_0002": {
+      "ledger_id": "LEDGER_0002",
+      "tool": "tools.filing.extract_metric",
+      "ticker": "MSFT",
+      "currency": "USD",
+      "unit": "base",
+      "inputs": {
+        "ticker": "MSFT",
+        "metric": "ShortTermInvestments",
+        "period": "FY2026"
+      },
+      "output": 55908000000.0,
+      "raw_value": 55908000000.0,
+      "source": "https://data.sec.gov/api/xbrl/companyfacts/CIK0000789019.json (Accn: 0001193125-26-323660, Consolidated Balance Sheets, Item 8)",
+      "form": null,
+      "period": "FY2026",
+      "notes": "ShortTermInvestments: \"Short-term investments: $55,908 million as of June 30, 2026.\"",
+      "timestamp": "2026-10-06T17:15:33.989133",
+      "integrity_hash": "27f0febc26809f3ac9f359ced67888b02499b71314cd7ed8782a3bf36690e37a"
+    },
+    "LEDGER_0003": {
+      "ledger_id": "LEDGER_0003",
+      "tool": "tools.filing.extract_metric",
+      "ticker": "MSFT",
+      "currency": "USD",
+      "unit": "base",
+      "inputs": {
+        "ticker": "MSFT",
+        "metric": "TotalCashAndMarketableSecurities",
+        "period": "FY2026"
+      },
+      "output": 76843000000.0,
+      "raw_value": 76843000000.0,
+      "source": "https://data.sec.gov/api/xbrl/companyfacts/CIK0000789019.json (Accn: 0001193125-26-323660, Consolidated Balance Sheets, Item 8 (Total Liquid Assets))",
+      "form": null,
+      "period": "FY2026",
+      "notes": "TotalCashAndMarketableSecurities: \"Total cash, cash equivalents and short-term investments: $76,843 million.\"",
+      "timestamp": "2026-10-06T17:15:33.989133",
+      "integrity_hash": "bfe6c2d86674f8871d5b82748ac4540eb7f2fb8caac243385318abe17a8fb10b"
+    },
+    "LEDGER_0004": {
+      "ledger_id": "LEDGER_0004",
+      "tool": "tools.filing.extract_metric",
+      "ticker": "MSFT",
+      "currency": "USD",
+      "unit": "base",
+      "inputs": {
+        "ticker": "MSFT",
+        "metric": "ShortTermDebt",
+        "period": "FY2026"
+      },
+      "output": 9227000000.0,
+      "raw_value": 9227000000.0,
+      "source": "https://data.sec.gov/api/xbrl/companyfacts/CIK0000789019.json (Accn: 0001193125-26-323660, Consolidated Balance Sheets, Item 8)",
+      "form": null,
+      "period": "FY2026",
+      "notes": "ShortTermDebt: \"Current portion of long-term debt: $9,227 million.\"",
+      "timestamp": "2026-10-06T17:15:33.989133",
+      "integrity_hash": "f4d5d95783b2011b73c0f16868eecbec3e52201c4f1bfa3e6ccb6184f42290c6"
+    },
+    "LEDGER_0005": {
+      "ledger_id": "LEDGER_0005",
+      "tool": "tools.filing.extract_metric",
+      "ticker": "MSFT",
+      "currency": "USD",
+      "unit": "base",
+      "inputs": {
+        "ticker": "MSFT",
+        "metric": "LongTermDebtNoncurrent",
+        "period": "FY2026"
+      },
+      "output": 31067000000.0,
+      "raw_value": 31067000000.0,
+      "source": "https://data.sec.gov/api/xbrl/companyfacts/CIK0000789019.json (Accn: 0001193125-26-323660, Consolidated Balance Sheets, Item 8)",
+      "form": null,
+      "period": "FY2026",
+      "notes": "LongTermDebtNoncurrent: \"Long-term debt, non-current: $31,067 million.\"",
+      "timestamp": "2026-10-06T17:15:33.989133",
+      "integrity_hash": "6baaca8ac0516ea6c94cfe572534d2e70dbdb6dcf4a137278331e5fd9514322d"
+    },
+    "LEDGER_0006": {
+      "ledger_id": "LEDGER_0006",
+      "tool": "tools.filing.extract_metric",
+      "ticker": "MSFT",
+      "currency": "USD",
+      "unit": "base",
+      "inputs": {
+        "ticker": "MSFT",
+        "metric": "TotalDebt",
+        "period": "FY2026"
+      },
+      "output": 40294000000.0,
+      "raw_value": 40294000000.0,
+      "source": "https://data.sec.gov/api/xbrl/companyfacts/CIK0000789019.json (Accn: 0001193125-26-323660, Consolidated Balance Sheets, Item 8)",
+      "form": null,
+      "period": "FY2026",
+      "notes": "TotalDebt: \"Total debt obligations including current portion ($9,227 million) and long-term debt ($31,067 million) = $40,294 million.\"",
+      "timestamp": "2026-10-06T17:15:33.989133",
+      "integrity_hash": "50aa9962e1d4815300053e0a3dcd17ceb58995717f759a70db3f7ad129827a9d"
+    },
+    "LEDGER_0007": {
+      "ledger_id": "LEDGER_0007",
+      "tool": "tools.filing.extract_metric",
+      "ticker": "MSFT",
+      "currency": "USD",
+      "unit": "base",
+      "inputs": {
+        "ticker": "MSFT",
+        "metric": "NetDebt",
+        "period": "FY2026"
+      },
+      "output": -36549000000.0,
+      "raw_value": -36549000000.0,
+      "source": "https://data.sec.gov/api/xbrl/companyfacts/CIK0000789019.json (Accn: 0001193125-26-323660, Calculated: Total Debt ($40,294M) - Liquid Assets ($76,843M))",
+      "form": null,
+      "period": "FY2026",
+      "notes": "NetDebt: \"Net Cash position of -$36,549 million ($36.55 billion net cash buffer).\"",
+      "timestamp": "2026-10-06T17:15:33.989133",
+      "integrity_hash": "72b2aa6264f4b53195ff74c7f509393e7d4b85e6eb378ef437748939a32bf897"
+    },
+    "LEDGER_0008": {
+      "ledger_id": "LEDGER_0008",
+      "tool": "tools.filing.extract_metric",
+      "ticker": "MSFT",
+      "currency": "USD",
+      "unit": "base",
+      "inputs": {
+        "ticker": "MSFT",
+        "metric": "AccountsReceivable",
+        "period": "FY2026"
+      },
+      "output": 80876000000.0,
+      "raw_value": 80876000000.0,
+      "source": "https://data.sec.gov/api/xbrl/companyfacts/CIK0000789019.json (Accn: 0001193125-26-323660, Consolidated Balance Sheets, Item 8)",
+      "form": null,
+      "period": "FY2026",
+      "notes": "AccountsReceivable: \"Accounts receivable, net: $80,876 million.\"",
+      "timestamp": "2026-10-06T17:15:33.989133",
+      "integrity_hash": "0fc3955e1c9e7c91fa59d0b99baf4177d6311bc92a3405ce8f61d97908c58fba"
+    },
+    "LEDGER_0009": {
+      "ledger_id": "LEDGER_0009",
+      "tool": "tools.filing.extract_metric",
+      "ticker": "MSFT",
+      "currency": "USD",
+      "unit": "base",
+      "inputs": {
+        "ticker": "MSFT",
+        "metric": "PriorAccountsReceivable",
+        "period": "FY2026"
+      },
+      "output": 69905000000.0,
+      "raw_value": 69905000000.0,
+      "source": "https://data.sec.gov/api/xbrl/companyfacts/CIK0000789019.json (Accn: 0001193125-26-323660, Consolidated Balance Sheets, Item 8)",
+      "form": null,
+      "period": "FY2026",
+      "notes": "PriorAccountsReceivable: \"Prior year accounts receivable: $69,905 million (YoY change: +15.69%).\"",
+      "timestamp": "2026-10-06T17:15:33.989133",
+      "integrity_hash": "b24e6e9444f13cd456a04e01d126b984d3bef0467ed35d1868b5bee7251d971b"
+    },
+    "LEDGER_0010": {
+      "ledger_id": "LEDGER_0010",
+      "tool": "tools.filing.extract_metric",
+      "ticker": "MSFT",
+      "currency": "USD",
+      "unit": "base",
+      "inputs": {
+        "ticker": "MSFT",
+        "metric": "Inventories",
+        "period": "FY2026"
+      },
+      "output": 1397000000.0,
+      "raw_value": 1397000000.0,
+      "source": "https://data.sec.gov/api/xbrl/companyfacts/CIK0000789019.json (Accn: 0001193125-26-323660, Consolidated Balance Sheets, Item 8)",
+      "form": null,
+      "period": "FY2026",
+      "notes": "Inventories: \"Inventories: $1,397 million.\"",
+      "timestamp": "2026-10-06T17:15:33.989133",
+      "integrity_hash": "958599a6fdd3ed27bc8968bb428ec2fd771cacb4cc4637f57d3b7c023cd4c6ab"
+    },
+    "LEDGER_0011": {
+      "ledger_id": "LEDGER_0011",
+      "tool": "tools.filing.extract_metric",
+      "ticker": "MSFT",
+      "currency": "USD",
+      "unit": "base",
+      "inputs": {
+        "ticker": "MSFT",
+        "metric": "PriorInventories",
+        "period": "FY2026"
+      },
+      "output": 938000000.0,
+      "raw_value": 938000000.0,
+      "source": "https://data.sec.gov/api/xbrl/companyfacts/CIK0000789019.json (Accn: 0001193125-26-323660, Consolidated Balance Sheets, Item 8)",
+      "form": null,
+      "period": "FY2026",
+      "notes": "PriorInventories: \"Prior year inventories: $938 million (YoY change: +48.93%).\"",
+      "timestamp": "2026-10-06T17:15:33.989133",
+      "integrity_hash": "a2a8413746395bd50960efaa66b09633c56788b5842d6af10590154df281dbe6"
+    },
+    "LEDGER_0012": {
+      "ledger_id": "LEDGER_0012",
+      "tool": "edgar.get_facts",
+      "ticker": "MSFT",
+      "currency": "USD",
+      "unit": "base",
+      "inputs": {
+        "ticker": "MSFT",
+        "concept": "us-gaap:Revenues",
+        "period_end": "2026-06-30",
+        "form": "10-K"
+      },
+      "output": 331839000000.0,
+      "raw_value": 331839000000.0,
+      "source": "https://data.sec.gov/api/xbrl/companyfacts/CIK0000789019.json (Accn: 0001193125-26-323660)",
+      "form": "10-K",
+      "period": "FY2026",
+      "notes": "Microsoft FY2026 Total Revenue",
+      "timestamp": "2026-10-06T17:15:34.487940",
+      "integrity_hash": "ca512cc1b07719bb6d7fed0ddb38aec25beea44f89ba81280623cffafb0e0026"
+    },
+    "LEDGER_0013": {
+      "ledger_id": "LEDGER_0013",
+      "tool": "edgar.get_facts",
+      "ticker": "MSFT",
+      "currency": "USD",
+      "unit": "base",
+      "inputs": {
+        "ticker": "MSFT",
+        "concept": "us-gaap:Revenues",
+        "period_end": "2025-06-30",
+        "form": "10-K"
+      },
+      "output": 281724000000.0,
+      "raw_value": 281724000000.0,
+      "source": "https://data.sec.gov/api/xbrl/companyfacts/CIK0000789019.json (Accn: 0001193125-26-323660)",
+      "form": "10-K",
+      "period": "FY2025",
+      "notes": "Microsoft FY2025 Total Revenue",
+      "timestamp": "2026-10-06T17:15:34.487940",
+      "integrity_hash": "7568860b0f154e383b79deeff3f9137367be7b3d20543fd6b12265318d379091"
+    },
+    "LEDGER_0014": {
+      "ledger_id": "LEDGER_0014",
+      "tool": "edgar.get_facts",
+      "ticker": "MSFT",
+      "currency": "USD",
+      "unit": "base",
+      "inputs": {
+        "ticker": "MSFT",
+        "concept": "us-gaap:OperatingIncomeLoss",
+        "period_end": "2026-06-30",
+        "form": "10-K"
+      },
+      "output": 155237000000.0,
+      "raw_value": 155237000000.0,
+      "source": "https://data.sec.gov/api/xbrl/companyfacts/CIK0000789019.json (Accn: 0001193125-26-323660)",
+      "form": "10-K",
+      "period": "FY2026",
+      "notes": "Microsoft FY2026 Operating Income",
+      "timestamp": "2026-10-06T17:15:34.487940",
+      "integrity_hash": "a6623abd9d8a031b62fe18ba268495834060029263f1dfd558a9941740887ec0"
+    },
+    "LEDGER_0015": {
+      "ledger_id": "LEDGER_0015",
+      "tool": "edgar.get_facts",
+      "ticker": "MSFT",
+      "currency": "USD",
+      "unit": "base",
+      "inputs": {
+        "ticker": "MSFT",
+        "concept": "us-gaap:NetIncomeLoss",
+        "period_end": "2026-06-30",
+        "form": "10-K"
+      },
+      "output": 133749000000.0,
+      "raw_value": 133749000000.0,
+      "source": "https://data.sec.gov/api/xbrl/companyfacts/CIK0000789019.json (Accn: 0001193125-26-323660)",
+      "form": "10-K",
+      "period": "FY2026",
+      "notes": "Microsoft FY2026 Net Income",
+      "timestamp": "2026-10-06T17:15:34.487940",
+      "integrity_hash": "58ec9ddf8a113ba78c50902b6b4098310e1ba20c1747e80178c541f1c760ea70"
+    },
+    "LEDGER_0016": {
+      "ledger_id": "LEDGER_0016",
+      "tool": "edgar.get_facts",
+      "ticker": "MSFT",
+      "currency": "USD",
+      "unit": "base",
+      "inputs": {
+        "ticker": "MSFT",
+        "concept": "us-gaap:NetCashProvidedByUsedInOperatingActivities",
+        "period_end": "2026-06-30",
+        "form": "10-K"
+      },
+      "output": 182935000000.0,
+      "raw_value": 182935000000.0,
+      "source": "https://data.sec.gov/api/xbrl/companyfacts/CIK0000789019.json (Accn: 0001193125-26-323660)",
+      "form": "10-K",
+      "period": "FY2026",
+      "notes": "Microsoft FY2026 Cash from Operations",
+      "timestamp": "2026-10-06T17:15:34.487940",
+      "integrity_hash": "37a6bcef9d1e6f14d5dd8122221b7ec205f50a595502e7f0fc41a83d9af086ab"
+    },
+    "LEDGER_0017": {
+      "ledger_id": "LEDGER_0017",
+      "tool": "edgar.get_facts",
+      "ticker": "MSFT",
+      "currency": "USD",
+      "unit": "base",
+      "inputs": {
+        "ticker": "MSFT",
+        "concept": "us-gaap:PaymentsToAcquirePropertyPlantAndEquipment",
+        "period_end": "2026-06-30",
+        "form": "10-K"
+      },
+      "output": 115948000000.0,
+      "raw_value": 115948000000.0,
+      "source": "https://data.sec.gov/api/xbrl/companyfacts/CIK0000789019.json (Accn: 0001193125-26-323660)",
+      "form": "10-K",
+      "period": "FY2026",
+      "notes": "Microsoft FY2026 Payments for Property, Plant and Equipment",
+      "timestamp": "2026-10-06T17:15:34.487940",
+      "integrity_hash": "7f9218eaf63cad82f6ea66baeae1a0be080a4052d7639c18129e7bac935bf6e5"
+    },
+    "LEDGER_0018": {
+      "ledger_id": "LEDGER_0018",
+      "tool": "yfinance.quote",
+      "ticker": "MSFT",
+      "currency": "USD",
+      "unit": "base",
+      "inputs": {
+        "symbol": "MSFT",
+        "price": 532.34
+      },
+      "output": 532.34,
+      "raw_value": 532.34,
+      "source": "Yahoo Finance Market Quote",
+      "form": null,
+      "period": null,
+      "notes": "MSFT Current Market Price",
+      "timestamp": "2026-10-06T17:15:34.487940",
+      "integrity_hash": "5ba38eba62b09b8ccea4e378fc59433bf85c313a2346ffb467d2d9b959cae211"
+    },
+    "LEDGER_0019": {
+      "ledger_id": "LEDGER_0019",
+      "tool": "tools.calc.yoy_growth",
+      "ticker": "MSFT",
+      "currency": null,
+      "unit": "base",
+      "inputs": {
+        "current_period": 331839000000.0,
+        "prior_period": 281724000000.0
+      },
+      "output": 17.78868679984666,
+      "raw_value": 17.78868679984666,
+      "source": "tools.calc.metrics.yoy_growth",
+      "form": null,
+      "period": null,
+      "notes": "MSFT YoY Revenue Growth Rate (%)",
+      "timestamp": "2026-10-06T17:15:34.494171",
+      "integrity_hash": "825194d35bdc216e627e480872aa3165e2db78de466597f0fe798525527320d6"
+    },
+    "LEDGER_0020": {
+      "ledger_id": "LEDGER_0020",
+      "tool": "tools.calc.margin",
+      "ticker": "MSFT",
+      "currency": null,
+      "unit": "base",
+      "inputs": {
+        "numerator": 155237000000.0,
+        "revenue": 331839000000.0
+      },
+      "output": 46.780818408927225,
+      "raw_value": 46.780818408927225,
+      "source": "tools.calc.metrics.margin",
+      "form": null,
+      "period": null,
+      "notes": "MSFT Operating Margin (%)",
+      "timestamp": "2026-10-06T17:15:34.494171",
+      "integrity_hash": "f53eaa48a1258fedc91679c0f1ec56ac0be07d3e3def39a4259c7f96447c1b59"
+    },
+    "LEDGER_0021": {
+      "ledger_id": "LEDGER_0021",
+      "tool": "tools.calc.margin",
+      "ticker": "MSFT",
+      "currency": null,
+      "unit": "base",
+      "inputs": {
+        "numerator": 133749000000.0,
+        "revenue": 331839000000.0
+      },
+      "output": 40.30538905915218,
+      "raw_value": 40.30538905915218,
+      "source": "tools.calc.metrics.margin",
+      "form": null,
+      "period": null,
+      "notes": "MSFT Net Profit Margin (%)",
+      "timestamp": "2026-10-06T17:15:34.494171",
+      "integrity_hash": "dc806189a21dba8b0324aac027590c066edb1bca4d2f2f2dde67981dd2863154"
+    },
+    "LEDGER_0022": {
+      "ledger_id": "LEDGER_0022",
+      "tool": "tools.calc.free_cash_flow",
+      "ticker": "MSFT",
+      "currency": "USD",
+      "unit": "base",
+      "inputs": {
+        "operating_cash_flow": 182935000000.0,
+        "capital_expenditures": 115948000000.0
+      },
+      "output": 66987000000.0,
+      "raw_value": 66987000000.0,
+      "source": "tools.calc.metrics.free_cash_flow",
+      "form": null,
+      "period": null,
+      "notes": "MSFT Free Cash Flow (USD)",
+      "timestamp": "2026-10-06T17:15:34.494171",
+      "integrity_hash": "2448b2906d416c4f8f23a28fd200c4af00b01710cd152af2fec5e714cf54f276"
+    },
+    "LEDGER_0023": {
+      "ledger_id": "LEDGER_0023",
+      "tool": "tools.calc.fcf_yield",
+      "ticker": "MSFT",
+      "currency": null,
+      "unit": "base",
+      "inputs": {
+        "free_cash_flow_val": 66987000000.0,
+        "market_cap": 3952914886678.9404
+      },
+      "output": 1.6946228775565526,
+      "raw_value": 1.6946228775565526,
+      "source": "tools.calc.metrics.fcf_yield",
+      "form": null,
+      "period": null,
+      "notes": "MSFT FCF Yield (%)",
+      "timestamp": "2026-10-06T17:15:34.494171",
+      "integrity_hash": "79f3f1893840d3820e6e9f8689ab06a4b32de3c896da747bef5b75fbce92940d"
+    },
+    "LEDGER_0024": {
+      "ledger_id": "LEDGER_0024",
+      "tool": "tools.calc.dcf",
+      "ticker": "MSFT",
+      "currency": "USD",
+      "unit": "base",
+      "inputs": {
+        "base_fcf": 66987000000.0,
+        "growth_rates": [
+          0.08,
+          0.08,
+          0.07,
+          0.06,
+          0.05
+        ],
+        "discount_rate": 0.085,
+        "terminal_growth_rate": 0.025,
+        "shares_outstanding": 7425545491.0,
+        "net_debt": -36549000000.0
+      },
+      "output": 190.96780421594804,
+      "raw_value": 190.96780421594804,
+      "source": "tools.calc.dcf.dcf",
+      "form": null,
+      "period": null,
+      "notes": "MSFT DCF Baseline Fair Value per Share (USD)",
+      "timestamp": "2026-10-06T17:15:34.494171",
+      "integrity_hash": "406f0efcbab2b76eaf4e09f0f6f1b198b4cd9c7c30eb085618f00d2a43a84bf9"
+    },
+    "LEDGER_0025": {
+      "ledger_id": "LEDGER_0025",
+      "tool": "tools.calc.reverse_dcf",
+      "ticker": "MSFT",
+      "currency": null,
+      "unit": "base",
+      "inputs": {
+        "current_price": 532.34,
+        "base_fcf": 66987000000.0,
+        "shares_outstanding": 7425545491.0,
+        "discount_rate": 0.085,
+        "terminal_growth_rate": 0.025,
+        "projection_years": 5,
+        "net_debt": -36549000000.0
+      },
+      "output": 33.776384592056274,
+      "raw_value": 33.776384592056274,
+      "source": "tools.calc.dcf.reverse_dcf",
+      "form": null,
+      "period": null,
+      "notes": "MSFT Implied 5-Year FCF CAGR (%)",
+      "timestamp": "2026-10-06T17:15:34.494171",
+      "integrity_hash": "35faaf3c2cd6df830e6079223d0acf9bc9160a2bad9bfa12d5b053099b8df7f9"
+    }
+  }
+}
