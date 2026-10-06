@@ -95,7 +95,7 @@ def test_live_sec_xbrl_refetch_apple_fy2025(tmp_path):
     verifier = ReportVerifier(report_path=str(report_file), ledger_path=str(ledger_file), perform_refetch=True)
     audit = verifier.audit()
 
-    assert audit["summary"]["status"] == "PASSED"
+    assert audit["summary"]["status"] == "PASS"
     assert audit["summary"]["total_confirmed"] == 3
     assert audit["summary"]["total_wrong"] == 0
     assert audit["summary"]["total_unverifiable"] == 0

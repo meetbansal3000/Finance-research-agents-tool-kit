@@ -23,17 +23,25 @@ def test_skeptic_weak_thesis(tmp_path):
         base_fcf=5.0,
         base_operating_margin=0.20,
         stated_growth_rate=0.08,
-        historical_fcf_cagr=0.05,
+        historical_3y_fcf_cagr=0.05,
+        historical_5y_fcf_cagr=0.04,
         receivables_growth_yoy=0.15,
+        inventory_growth_yoy=0.12,
         revenue_growth_yoy=0.05,
-        empirical_counter_evidence=["Customer churn increased in recent quarters."]
+        short_term_debt=80.0,
+        cash_and_equivalents=50.0,
+        max_customer_concentration_pct=22.0,
+        # Qualitative empirical evidence with NO numbers (Rule 1 compliance)
+        empirical_counter_evidence=[
+            "Customer churn increased significantly in recent quarters.",
+            "Key accounts have delayed contract renewals."
+        ]
     )
 
-    assert eval_res["is_weak_thesis"] is True
-    assert eval_res["implied_cagr"] > 25.0
+    assert eval_res["verdict"] == "VULNERABLE / STRETCHED"
     assert "Valuation Stretch" in eval_res["markdown_report"]
-    assert "Empirical Filing Headwind" in eval_res["markdown_report"]
     assert "Working Capital Divergence" in eval_res["markdown_report"]
+    assert "Customer Concentration" in eval_res["markdown_report"]
 
     # Save report & ledger sidecar and verify with ReportVerifier
     rep_file = tmp_path / "weak_thesis_skeptic.md"
@@ -48,9 +56,10 @@ def test_skeptic_weak_thesis(tmp_path):
 
     # Skeptic report must have zero wrong figures
     assert audit_res["summary"]["total_wrong"] == 0
-    # Tagged model memory claims are accepted as declared unverified
+    assert audit_res["summary"]["status"] == "PASS WITH FLAGS"
+    # Tagged model memory claims are qualitative only
     memory_claims = [u for u in audit_res["unverifiable"] if u.get("error_type") == "MODEL_MEMORY_TAGGED"]
-    assert len(memory_claims) == 1
+    assert len(memory_claims) == 2
 
 def test_skeptic_solid_thesis(tmp_path):
     """Test Skeptic on a reasonably valued, solid thesis that satisfies all hurdle thresholds."""
@@ -65,7 +74,8 @@ def test_skeptic_solid_thesis(tmp_path):
         base_fcf=10.0,
         base_operating_margin=0.30,
         stated_growth_rate=0.06,
-        historical_fcf_cagr=0.06,
+        historical_3y_fcf_cagr=0.06,
+        historical_5y_fcf_cagr=0.065,
         receivables_growth_yoy=0.04,
         inventory_growth_yoy=0.03,
         revenue_growth_yoy=0.04,
@@ -78,9 +88,8 @@ def test_skeptic_solid_thesis(tmp_path):
         empirical_counter_evidence=None
     )
 
-    assert eval_res["is_weak_thesis"] is False
-    assert "No strong counter-evidence found." in eval_res["markdown_report"]
-    assert "ROBUST / NO STRONG COUNTER-EVIDENCE FOUND" in eval_res["markdown_report"]
+    assert eval_res["verdict"] == "ROBUST / NO STRONG COUNTER-EVIDENCE FOUND"
+    assert "No strong counter-evidence found among the checks performed" in eval_res["markdown_report"]
 
     # Save report & ledger sidecar and verify with ReportVerifier
     rep_file = tmp_path / "solid_thesis_skeptic.md"
@@ -94,6 +103,6 @@ def test_skeptic_solid_thesis(tmp_path):
     audit_res = verifier.audit()
 
     # Skeptic report on solid thesis has zero errors and passes 100%
-    assert audit_res["summary"]["status"] == "PASSED"
+    assert audit_res["summary"]["status"] == "PASS"
     assert audit_res["summary"]["total_wrong"] == 0
     assert audit_res["summary"]["total_unverifiable"] == 0

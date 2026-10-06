@@ -1,19 +1,23 @@
 """
 Skeptic Agent Engine (/agents/skeptic.py)
 Adversarial research agent that dynamically extracts top 3 investment thesis assumptions,
-stress-tests them against DCF sensitivity models, and audits empirical SEC filing evidence
-(working capital divergence, customer concentration, debt maturities).
+stresses them against DCF models (including half-growth stress), and audits empirical filing evidence
+with a structured checklist table and explicit conclusive thresholds.
 
-Definitions and Thresholds for "No strong counter-evidence found":
-1. Valuation Feasibility: Market implied 5-year FCF CAGR <= Historical 3-year FCF CAGR + 2.0 percentage points.
-2. Margin Resilience: Fair value under a -200 bps operating margin contraction remains >= 85% of baseline fair value.
-3. Cost of Capital Shock: Fair value under a +100 bps WACC elevation remains >= 85% of baseline fair value.
-4. Working Capital Quality: |Receivables YoY - Revenue YoY| <= 5.0 pp AND |Inventory YoY - Revenue YoY| <= 5.0 pp.
-5. Debt / Refinancing Risk: Short-term debt due within 12 months <= 50% of Cash and Short-term Investments.
-6. Customer Concentration: No single customer accounts for > 10% of total revenue.
+Checklist Rules:
+1. Valuation Feasibility (Reverse DCF): Implied 5Y FCF CAGR <= Historical 3Y FCF CAGR + 2.0 pp.
+2. Margin Shock (-200 bps): Valuation drop <= 15%.
+3. WACC Shock (+100 bps): Valuation drop <= 15%.
+4. Half-Growth Stress: Fair value at half assumed growth rate compared against baseline and historical growth.
+5. Receivables Divergence: |Receivables YoY - Revenue YoY| <= 5.0 pp.
+6. Inventory Divergence: |Inventory YoY - Revenue YoY| <= 5.0 pp (or NOT CHECKED if service company).
+7. Refinancing / Liquidity Risk: Short-term debt due <= 50% of liquid cash.
+8. Customer Concentration: Max customer revenue share <= 10%.
 
-If ALL 6 conditions are met, the Skeptic outputs: "No strong counter-evidence found."
-If ANY condition fails, the Skeptic details the specific vulnerability with ledger citations.
+Verdict Rules:
+- If > 2 checks are NOT CHECKED (data unavailable): Verdict = INCONCLUSIVE
+- If any performed check FAILS: Verdict = VULNERABLE / STRETCHED
+- If all performed checks PASS: Verdict = ROBUST / NO STRONG COUNTER-EVIDENCE FOUND AMONG THE CHECKS PERFORMED
 """
 
 import os
@@ -59,28 +63,28 @@ class SkepticAgent:
         base_fcf: float,
         base_operating_margin: float,
         stated_growth_rate: float,
-        historical_fcf_cagr: float = 0.05,
-        receivables_growth_yoy: float = 0.04,
-        inventory_growth_yoy: float = 0.03,
-        revenue_growth_yoy: float = 0.04,
-        short_term_debt: float = 0.0,
-        cash_and_equivalents: float = 100.0,
-        max_customer_concentration_pct: float = 5.0,
+        historical_3y_fcf_cagr: Optional[float] = None,
+        historical_5y_fcf_cagr: Optional[float] = None,
+        receivables_growth_yoy: Optional[float] = None,
+        inventory_growth_yoy: Optional[float] = None,
+        revenue_growth_yoy: Optional[float] = None,
+        short_term_debt: Optional[float] = None,
+        cash_and_equivalents: Optional[float] = None,
+        max_customer_concentration_pct: Optional[float] = None,
         net_debt: float = 0.0,
         wacc: float = 0.09,
         terminal_g: float = 0.025,
         empirical_counter_evidence: Optional[List[str]] = None,
         raw_report_text: Optional[str] = None
     ) -> Dict[str, Any]:
-        """Perform comprehensive adversarial evaluation across DCF stress testing and SEC filing evidence."""
-        # Dynamically extract assumptions if report text is provided
+        """Perform adversarial stress testing on assumptions and SEC filing evidence."""
         if raw_report_text:
             extracted = self.extract_assumptions_from_text(raw_report_text)
             stated_growth_rate = extracted.get("growth_rate", stated_growth_rate)
             base_operating_margin = extracted.get("operating_margin", base_operating_margin)
             wacc = extracted.get("wacc", wacc)
 
-        # 1. Record Base Metrics in Ledger
+        # 1. Price Record
         l_price = self.ledger.record(
             tool="yfinance.quote",
             ticker=ticker,
@@ -112,7 +116,7 @@ class SkepticAgent:
             notes="Market implied 5-year FCF CAGR"
         )
 
-        # 3. Baseline Fair Value
+        # 3. Baseline DCF
         base_growth_rates = [stated_growth_rate] * 5
         base_dcf_res = dcf(
             base_fcf=base_fcf,
@@ -197,81 +201,179 @@ class SkepticAgent:
             notes="WACC stress impact percentage"
         )
 
-        # 6. Audit Empirical Filing Evidence
-        # Working Capital Divergence
-        rec_rev_divergence = (receivables_growth_yoy - revenue_growth_yoy) * 100.0
-        inv_rev_divergence = (inventory_growth_yoy - revenue_growth_yoy) * 100.0
-        
-        # Debt Liquidity Ratio
-        st_debt_ratio = (short_term_debt / cash_and_equivalents * 100.0) if cash_and_equivalents > 0 else 0.0
-        
-        l_rec_div = self.ledger.record(
-            tool="tools.calc.working_capital_divergence",
+        # 6. Stress Test: Half-Growth Assumption Stress
+        half_growth_rates = [stated_growth_rate * 0.5] * 5
+        half_growth_dcf = dcf(
+            base_fcf=base_fcf,
+            growth_rates=half_growth_rates,
+            discount_rate=wacc,
+            terminal_growth_rate=terminal_g,
+            shares_outstanding=shares_outstanding,
+            net_debt=net_debt
+        )
+        half_growth_val = half_growth_dcf["result"]["fair_value_per_share"]
+        half_growth_impact_pct = ((half_growth_val - base_fair_val) / base_fair_val) * 100.0
+
+        l_half_growth = self.ledger.record(
+            tool="tools.calc.dcf",
             ticker=ticker,
-            inputs={"rec_yoy": receivables_growth_yoy, "rev_yoy": revenue_growth_yoy},
-            output=rec_rev_divergence,
-            raw_value=rec_rev_divergence,
+            inputs={"half_growth": stated_growth_rate * 0.5},
+            output=half_growth_val,
+            raw_value=half_growth_val,
+            source="tools.calc.dcf.dcf",
+            notes="Fair value at half assumed growth rate"
+        )
+        l_half_impact = self.ledger.record(
+            tool="tools.calc.growth_stress_impact",
+            ticker=ticker,
+            inputs={"baseline": base_fair_val, "stressed": half_growth_val},
+            output=half_growth_impact_pct,
+            raw_value=half_growth_impact_pct,
             source="tools.calc.metrics",
-            notes="Receivables vs Revenue YoY divergence (pp)"
+            notes="Half-growth valuation impact"
         )
 
-        # --- EVALUATE EXPLICIT THRESHOLDS ---
-        # 1. Growth Hurdle: Implied CAGR <= Historical 3Y CAGR + 2.0 pp
-        growth_hurdle_passed = implied_cagr <= (historical_fcf_cagr * 100.0 + 2.0)
-        
-        # 2. Margin Shock Impact: Fair value drop <= 15%
-        margin_shock_passed = abs(margin_impact_pct) <= 15.0
-        
-        # 3. WACC Shock Impact: Fair value drop <= 15%
-        wacc_shock_passed = abs(wacc_impact_pct) <= 15.0
-        
-        # 4. Working Capital: Divergence <= 5.0 pp
-        wc_quality_passed = abs(rec_rev_divergence) <= 5.0 and abs(inv_rev_divergence) <= 5.0
-        
-        # 5. Debt Liquidity: ST Debt <= 50% cash
-        debt_liquidity_passed = st_debt_ratio <= 50.0
-        
-        # 6. Customer Concentration: <= 10%
-        concentration_passed = max_customer_concentration_pct <= 10.0
-        
-        has_empirical_flaws = bool(empirical_counter_evidence and len(empirical_counter_evidence) > 0)
+        # --- CHECKLIST TABLE POPULATION ---
+        checklist_rows = []
+        failures = []
+        unperformed_count = 0
 
-        all_conditions_met = (
-            growth_hurdle_passed and
-            margin_shock_passed and
-            wacc_shock_passed and
-            wc_quality_passed and
-            debt_liquidity_passed and
-            concentration_passed and
-            not has_empirical_flaws
-        )
-
-        is_weak_thesis = not all_conditions_met
-
-        # Build Adversarial Report Sections
-        findings = []
-        if not all_conditions_met:
-            if not growth_hurdle_passed:
-                findings.append(f"Valuation Stretch: Current market price of ${current_price:.2f} [{l_price}] implies a 5-year FCF CAGR of {implied_cagr:.2f}% [{l_implied}], exceeding historical growth capability.")
-            if not margin_shock_passed:
-                findings.append(f"Margin Sensitivity: A 200 bps operating margin compression reduces fair value to ${margin_stressed_val:.2f} [{l_margin_stress}] ({margin_impact_pct:+.2f}% [{l_margin_impact}] impact).")
-            if not wacc_shock_passed:
-                findings.append(f"Cost of Capital Sensitivity: A 100 bps WACC elevation reduces fair value to ${wacc_stressed_val:.2f} [{l_wacc_stress}] ({wacc_impact_pct:+.2f}% [{l_wacc_impact}] impact).")
-            if not wc_quality_passed:
-                findings.append(f"Working Capital Divergence: Receivables growth diverged from revenue by {rec_rev_divergence:+.2f}% [{l_rec_div}], signaling potential collection friction.")
-            if has_empirical_flaws:
-                for item in empirical_counter_evidence:
-                    findings.append(f"Empirical Filing Headwind: [UNVERIFIED: model memory] {item}")
+        # Check 1: Valuation Feasibility
+        if historical_3y_fcf_cagr is not None:
+            l_hist = self.ledger.record(
+                tool="tools.calc.cagr",
+                ticker=ticker,
+                inputs={"historical_years": 3},
+                output=historical_3y_fcf_cagr * 100.0,
+                raw_value=historical_3y_fcf_cagr * 100.0,
+                source="SEC 10-K / Annual Filings",
+                notes="Historical 3-year FCF CAGR"
+            )
+            val_feasible = implied_cagr <= (historical_3y_fcf_cagr * 100.0 + 2.0)
+            status_str = "PASS" if val_feasible else "FAIL"
+            if not val_feasible:
+                failures.append(f"Valuation Stretch: Market implied 5Y FCF CAGR of {implied_cagr:.2f}% [{l_implied}] exceeds historical 3Y CAGR of {historical_3y_fcf_cagr*100.0:.2f}% [{l_hist}].")
+            checklist_rows.append(("Valuation Feasibility", f"Implied CAGR {implied_cagr:.2f}% [{l_implied}] vs Hist {historical_3y_fcf_cagr*100.0:.2f}% [{l_hist}]", f"[{l_implied}], [{l_hist}]", status_str))
         else:
-            findings.append("[ANALYSIS] No strong counter-evidence found.")
-            findings.append(f"[ANALYSIS] Valuation Realism: Current price of ${current_price:.2f} [{l_price}] implies an achievable 5-year FCF CAGR of {implied_cagr:.2f}% [{l_implied}].")
-            findings.append(f"[ANALYSIS] Balance Sheet & Cash Flow Resiliency: Fair value remains solid at ${margin_stressed_val:.2f} [{l_margin_stress}] under margin contraction.")
-            findings.append(f"[ANALYSIS] Working Capital Health: Receivables growth tracks revenue closely within {rec_rev_divergence:+.2f}% [{l_rec_div}].")
+            checklist_rows.append(("Valuation Feasibility", f"Implied CAGR {implied_cagr:.2f}% [{l_implied}]", f"[{l_implied}]", "NOT CHECKED (data unavailable)"))
+            unperformed_count += 1
 
+        # Check 2: Margin Shock (-200 bps)
+        margin_pass = abs(margin_impact_pct) <= 15.0
+        checklist_rows.append(("Margin Shock (-200 bps)", f"Impact {margin_impact_pct:+.2f}% [{l_margin_impact}] (${margin_stressed_val:.2f} [{l_margin_stress}])", f"[{l_margin_impact}], [{l_margin_stress}]", "PASS" if margin_pass else "FAIL"))
+        if not margin_pass:
+            failures.append(f"Margin Sensitivity: -200 bps margin contraction reduces fair value by {margin_impact_pct:+.2f}% [{l_margin_impact}].")
+
+        # Check 3: WACC Shock (+100 bps)
+        wacc_pass = abs(wacc_impact_pct) <= 15.0
+        checklist_rows.append(("WACC Shock (+100 bps)", f"Impact {wacc_impact_pct:+.2f}% [{l_wacc_impact}] (${wacc_stressed_val:.2f} [{l_wacc_stress}])", f"[{l_wacc_impact}], [{l_wacc_stress}]", "PASS" if wacc_pass else "FAIL"))
+        if not wacc_pass:
+            failures.append(f"Cost of Capital Sensitivity: +100 bps WACC elevation reduces fair value by {wacc_impact_pct:+.2f}% [{l_wacc_impact}].")
+
+        # Check 4: Half-Growth Stress
+        half_growth_pass = half_growth_val >= (current_price * 0.70)
+        checklist_rows.append(("Half-Growth Stress", f"Stressed Fair Value ${half_growth_val:.2f} [{l_half_growth}] ({half_growth_impact_pct:+.2f}% [{l_half_impact}])", f"[{l_half_growth}], [{l_half_impact}]", "PASS" if half_growth_pass else "FAIL"))
+        if not half_growth_pass:
+            failures.append(f"Growth Dependency: Halving assumed growth rate drops fair value to ${half_growth_val:.2f} [{l_half_growth}].")
+
+        # Check 5: Receivables Working Capital Divergence
+        if receivables_growth_yoy is not None and revenue_growth_yoy is not None:
+            rec_div = (receivables_growth_yoy - revenue_growth_yoy) * 100.0
+            l_rec = self.ledger.record(
+                tool="tools.calc.working_capital",
+                ticker=ticker,
+                inputs={"rec_yoy": receivables_growth_yoy, "rev_yoy": revenue_growth_yoy},
+                output=rec_div,
+                raw_value=rec_div,
+                source="SEC 10-K / Annual Filings",
+                notes="Receivables vs Revenue YoY divergence (pp)"
+            )
+            rec_pass = abs(rec_div) <= 5.0
+            checklist_rows.append(("Receivables Divergence", f"Divergence {rec_div:+.2f}% [{l_rec}]", f"[{l_rec}]", "PASS" if rec_pass else "FAIL"))
+            if not rec_pass:
+                failures.append(f"Working Capital Divergence: Receivables growth diverged from revenue by {rec_div:+.2f}% [{l_rec}].")
+        else:
+            checklist_rows.append(("Receivables Divergence", "N/A", "N/A", "NOT CHECKED (data unavailable)"))
+            unperformed_count += 1
+
+        # Check 6: Inventory Divergence
+        if inventory_growth_yoy is not None and revenue_growth_yoy is not None:
+            inv_div = (inventory_growth_yoy - revenue_growth_yoy) * 100.0
+            l_inv = self.ledger.record(
+                tool="tools.calc.working_capital",
+                ticker=ticker,
+                inputs={"inv_yoy": inventory_growth_yoy, "rev_yoy": revenue_growth_yoy},
+                output=inv_div,
+                raw_value=inv_div,
+                source="SEC 10-K / Annual Filings",
+                notes="Inventory vs Revenue YoY divergence (pp)"
+            )
+            inv_pass = abs(inv_div) <= 5.0
+            checklist_rows.append(("Inventory Divergence", f"Divergence {inv_div:+.2f}% [{l_inv}]", f"[{l_inv}]", "PASS" if inv_pass else "FAIL"))
+            if not inv_pass:
+                failures.append(f"Inventory Divergence: Inventory growth diverged from revenue by {inv_div:+.2f}% [{l_inv}].")
+        else:
+            checklist_rows.append(("Inventory Divergence", "Service/Software Business or Data Unavailable", "N/A", "NOT CHECKED (data unavailable)"))
+            unperformed_count += 1
+
+        # Check 7: Refinancing / Liquidity Risk
+        if short_term_debt is not None and cash_and_equivalents is not None:
+            st_ratio = (short_term_debt / cash_and_equivalents) * 100.0 if cash_and_equivalents > 0 else 0.0
+            l_debt = self.ledger.record(
+                tool="tools.calc.liquidity",
+                ticker=ticker,
+                inputs={"st_debt": short_term_debt, "cash": cash_and_equivalents},
+                output=st_ratio,
+                raw_value=st_ratio,
+                source="SEC 10-K / Annual Filings",
+                notes="Short-term debt to cash ratio"
+            )
+            debt_pass = st_ratio <= 50.0
+            checklist_rows.append(("Refinancing / Debt Risk", f"ST Debt / Cash = {st_ratio:.2f}% [{l_debt}]", f"[{l_debt}]", "PASS" if debt_pass else "FAIL"))
+            if not debt_pass:
+                failures.append(f"Liquidity Risk: Short-term debt due represents {st_ratio:.2f}% [{l_debt}] of cash buffer.")
+        else:
+            checklist_rows.append(("Refinancing / Debt Risk", "N/A", "N/A", "NOT CHECKED (data unavailable)"))
+            unperformed_count += 1
+
+        # Check 8: Customer Concentration
+        if max_customer_concentration_pct is not None:
+            l_cust = self.ledger.record(
+                tool="edgar.filing_notes",
+                ticker=ticker,
+                inputs={"customer_concentration": max_customer_concentration_pct},
+                output=max_customer_concentration_pct,
+                raw_value=max_customer_concentration_pct,
+                source="SEC 10-K Customer Note",
+                notes="Max single customer revenue %"
+            )
+            cust_pass = max_customer_concentration_pct <= 10.0
+            checklist_rows.append(("Customer Concentration", f"Top Customer = {max_customer_concentration_pct:.2f}% [{l_cust}]", f"[{l_cust}]", "PASS" if cust_pass else "FAIL"))
+            if not cust_pass:
+                failures.append(f"Customer Concentration: Top customer accounts for {max_customer_concentration_pct:.2f}% [{l_cust}] of total revenue.")
+        else:
+            checklist_rows.append(("Customer Concentration", "Data Not Disclosed in Filings", "N/A", "NOT CHECKED (data unavailable)"))
+            unperformed_count += 1
+
+        # Evaluate Overall Verdict
+        total_checks = len(checklist_rows)
+        performed_checks = total_checks - unperformed_count
+
+        if unperformed_count > 2:
+            verdict_text = "INCONCLUSIVE"
+            verdict_detail = f"[ANALYSIS] INCONCLUSIVE: {unperformed_count} of {total_checks} checks were NOT CHECKED due to unavailable filing data."
+        elif len(failures) > 0 or (empirical_counter_evidence and len(empirical_counter_evidence) > 0):
+            verdict_text = "VULNERABLE / STRETCHED"
+            verdict_detail = f"[ANALYSIS] VULNERABLE: Found {len(failures)} quantitative failure(s) across {performed_checks} performed checks."
+        else:
+            verdict_text = "ROBUST / NO STRONG COUNTER-EVIDENCE FOUND"
+            verdict_detail = f"[ANALYSIS] No strong counter-evidence found among the checks performed ({performed_checks} of {total_checks} checks performed, {unperformed_count} data checks unavailable)."
+
+        # Generate Markdown Report
         skeptic_report = f"""# Skeptic Adversarial Review: {ticker}
 **Audit Date:** {datetime.datetime.now().strftime('%Y-%m-%d')}  
 **Evaluator:** Antigravity Skeptic Agent  
-**Thesis Verdict:** **{'VULNERABLE / STRETCHED' if is_weak_thesis else 'ROBUST / NO STRONG COUNTER-EVIDENCE FOUND'}**  
+**Thesis Verdict:** **{verdict_text}**  
 
 ---
 
@@ -284,24 +386,39 @@ class SkepticAgent:
 - Margin Stress Valuation Impact: **{margin_impact_pct:+.2f}%** [{l_margin_impact}]
 - Stressed Fair Value (+100 bps WACC): **${wacc_stressed_val:.2f}** [{l_wacc_stress}]
 - WACC Stress Valuation Impact: **{wacc_impact_pct:+.2f}%** [{l_wacc_impact}]
+- Stressed Fair Value (Half-Growth): **${half_growth_val:.2f}** [{l_half_growth}]
+- Half-Growth Valuation Impact: **{half_growth_impact_pct:+.2f}%** [{l_half_impact}]
 
 ---
 
-### 2. Adversarial Findings & Conclusion
+### 2. Adversarial Stress Test Checklist
 
+| Check Name | Metric Value | Ledger Citation | Status |
+| :--- | :--- | :--- | :--- |
 """
-        for item in findings:
-            skeptic_report += f"- {item}\n"
-            
+        for c_name, c_val, c_id, c_status in checklist_rows:
+            skeptic_report += f"| {c_name} | {c_val} | {c_id} | **{c_status}** |\n"
+
+        skeptic_report += f"""
+---
+
+### 3. Adversarial Findings & Conclusion
+
+- {verdict_detail}
+"""
+        if failures:
+            for f_item in failures:
+                skeptic_report += f"- {f_item}\n"
+        if empirical_counter_evidence:
+            for e_item in empirical_counter_evidence:
+                skeptic_report += f"- Empirical Filing Note: [UNVERIFIED: model memory] {e_item}\n"
+
         skeptic_report += "\n---\n*Generated by Antigravity Skeptic Agent. All figures verified by Provenance Ledger.*"
 
         return {
             "ticker": ticker,
-            "is_weak_thesis": is_weak_thesis,
-            "implied_cagr": implied_cagr,
-            "base_fair_val": base_fair_val,
-            "margin_stressed_val": margin_stressed_val,
-            "wacc_stressed_val": wacc_stressed_val,
+            "verdict": verdict_text,
+            "unperformed_count": unperformed_count,
             "markdown_report": skeptic_report,
             "ledger": self.ledger
         }

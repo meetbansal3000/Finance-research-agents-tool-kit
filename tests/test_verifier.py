@@ -60,7 +60,7 @@ def test_verifier_catches_flaws(tmp_path):
     
     # 4. Assert that Verifier caught the 3 flaws and confirmed the 1 valid number:
     summary = audit_res["summary"]
-    assert summary["status"] == "FAILED"
+    assert summary["status"] == "FAIL"
     assert summary["total_confirmed"] == 1
     assert summary["total_wrong"] == 1
     assert summary["total_unverifiable"] == 2  # 1 untracked number + 1 untagged memory claim

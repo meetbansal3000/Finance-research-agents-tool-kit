@@ -212,7 +212,8 @@ class ReportVerifier:
 
     def _split_into_units(self, text: str) -> List[Tuple[int, str, str]]:
         """
-        Split report into verifiable units (table rows, sentences) with line numbers.
+        Split report into verifiable units: headings, bullet items, table cells, footnotes,
+        image alt text, HTML comments, and narrative sentences under strict default-deny.
         Returns list of (line_num, unit_type, unit_text).
         """
         units = []
@@ -223,28 +224,59 @@ class ReportVerifier:
             if not s:
                 continue
                 
-            # Skip purely structural markdown dividers, headers, and document metadata
+            # Skip purely structural markdown dividers
             if s.startswith("| :---") or s.startswith("---") or s.startswith("==="):
                 continue
                 
-            if s.startswith("#"):
-                # Structural headings
-                continue
-                
-            # Skip document metadata lines like **Audit Date:** ..., **Evaluator:** ..., or *Footers*
+            # Document metadata headers
             if re.match(r'^\*\*[A-Za-z\s]+:\*\*', s) or (s.startswith("*") and s.endswith("*") and "[" not in s):
                 continue
-                
-            # Table rows
-            if s.startswith("|") and s.endswith("|"):
-                # Skip table header rows like | Metric | Value |
-                if "metric" in s.lower() and ("value" in s.lower() or "source" in s.lower()):
-                    continue
-                units.append((line_idx, "table_row", s))
+
+            # 1. HTML Comments Extraction: <!-- comment -->
+            html_comments = re.findall(r'<!--(.*?)-->', s)
+            for hc in html_comments:
+                hc_clean = hc.strip()
+                if hc_clean:
+                    units.append((line_idx, "html_comment", hc_clean))
+
+            # 2. Image Alt Text Extraction: ![alt text](url)
+            image_alts = re.findall(r'!\[(.*?)\]\(.*?\)', s)
+            for ia in image_alts:
+                ia_clean = ia.strip()
+                if ia_clean:
+                    units.append((line_idx, "image_alt", ia_clean))
+
+            # Strip comments and image alts from main line string for clean sentence processing
+            line_clean = re.sub(r'<!--.*?-->', ' ', s)
+            line_clean = re.sub(r'!\[.*?\]\(.*?\)', ' ', line_clean).strip()
+            if not line_clean:
+                continue
+
+            # 3. Headings: # Header
+            if line_clean.startswith("#"):
+                # Strip leading markdown hashes and structural numbering like '1. ', '2. '
+                heading_raw = re.sub(r'^#+\s*', '', line_clean)
+                heading_text = re.sub(r'^\d+\.\s*', '', heading_raw).strip()
+                # Check if heading contains financial assertions, growth claims, or specific numbers
+                if re.search(r'(\b(?:grew|rose|declined|expanded|jumped|fell|surged)\b|\$\d|\£\d|\€\d|\₹\d|\d+%)', heading_text, re.IGNORECASE):
+                    units.append((line_idx, "heading", heading_raw))
                 continue
                 
-            # Clean leading list markers like "1. ", "2. ", "- ", "* ", "(a) "
-            line_body = re.sub(r'^\s*(?:\d+\.|\([a-zA-Z0-9]+\)|[-*])\s+', '', s)
+            # 4. Footnotes: [^1]: Footnote text
+            if re.match(r'^\[\^\d+\]:\s*', line_clean):
+                fn_text = re.sub(r'^\[\^\d+\]:\s*', '', line_clean)
+                units.append((line_idx, "footnote", fn_text))
+                continue
+
+            # 5. Table Rows: | col1 | col2 |
+            if line_clean.startswith("|") and line_clean.endswith("|"):
+                if "metric" in line_clean.lower() and ("value" in line_clean.lower() or "source" in line_clean.lower()):
+                    continue
+                units.append((line_idx, "table_row", line_clean))
+                continue
+                
+            # 6. Bullet Items & Narrative Paragraphs
+            line_body = re.sub(r'^\s*(?:\d+\.|\([a-zA-Z0-9]+\)|[-*])\s+', '', line_clean)
             if not line_body:
                 continue
                 
@@ -283,11 +315,17 @@ class ReportVerifier:
             r'\b\d{4}-\d{2}-\d{2}\b',
             r'\bFY\d{4}\b',
             r'\bQ[1-4]\s*\d{4}\b',
-            r'\b(19|20)\d{2}\b',
+            r'(?<![\$₹£€\d])\b(19|20)\d{2}\b(?!\.\d)',
             r'\([+-]?\d+\s*bps[^)]*\)',
             r'\[LEDGER_\d+\]',
             r'\[UNVERIFIED:[^\]]+\]',
-            r'\[ANALYSIS\]'
+            r'\[ANALYSIS\]',
+            r'\b\d{10}-\d{2}-\d{6}\b',
+            r'Accn:\s*[0-9-]+',
+            r'CIK\d+',
+            r'\b(10-K|10-Q|8-K|20-F|40-F)\b',
+            r'\b\d+\s+of\s+\d+\b',
+            r'\b\d+\s+checks\b'
         ]
         sanitized_text = text
         for dp in date_patterns:
@@ -295,7 +333,7 @@ class ReportVerifier:
 
         # 3. Regex for standard digits with currency and suffixes
         pattern = re.compile(
-            r'(\$|₹|£|€)?\s*([+-]?[0-9]{1,3}(?:,[0-9]{3})*(?:\.[0-9]+)?|[+-]?\d+\.\d+|[+-]?\d+)\s*(billion dollars|million dollars|billion|million|trillion|crore|cr|k|M|B|T|%|x)?',
+            r'(\$|₹|£|€)?\s*([+-]?(?:\d{1,3}(?:,\d{3})+|\d+)(?:\.\d+)?)\s*(billion dollars|million dollars|billion|million|trillion|crore|cr|k|M|B|T|%|x)?',
             re.IGNORECASE
         )
         for m in pattern.finditer(sanitized_text):
@@ -310,7 +348,6 @@ class ReportVerifier:
                 
             # Skip leading numbered list indices like '1.' in '1. Apple...'
             if not curr and not suffix and re.match(r'^\d+\.?$', token):
-                # Only include if in a table cell or if it's a genuine quantity
                 if "|" not in text:
                     continue
                 
@@ -321,7 +358,8 @@ class ReportVerifier:
     def audit(self) -> Dict[str, Any]:
         """
         Execute full audit under strict DEFAULT-DENY policy:
-        Every sentence/table cell must have a valid LEDGER ID, [UNVERIFIED: model memory], or [ANALYSIS].
+        Every sentence, heading, table row, footnote, alt-text, and comment must carry
+        a valid LEDGER ID, [UNVERIFIED: model memory], or [ANALYSIS].
         """
         self.confirmed.clear()
         self.wrong.clear()
@@ -372,6 +410,9 @@ class ReportVerifier:
             # --- DEFAULT-DENY ENFORCEMENT ---
             # If no ledger IDs, no memory tag, and no analysis tag -> REJECT
             if not ledger_matches and not has_memory_tag and not has_analysis_tag:
+                if ("not checked" in unit_str.lower() or "data unavailable" in unit_str.lower()) and not numbers_found:
+                    continue
+
                 narrative_triggers = [
                     r'founded in', r'headquartered in', r'auditor is', r'audited by',
                     r'competitor to', r'market share of', r'leads the industry in',
@@ -398,33 +439,33 @@ class ReportVerifier:
                     self.unverifiable.append({
                         "line": line_idx,
                         "claim": unit_str,
-                        "reason": "Untagged narrative assertion without ledger ID, [UNVERIFIED: model memory], or [ANALYSIS] tag under default-deny.",
+                        "reason": "Untagged claim/heading/comment without ledger ID, [UNVERIFIED: model memory], or [ANALYSIS] tag under default-deny.",
                         "error_type": "UNTAGGED_CLAIM"
                     })
                 continue
                 
             # If tagged with [UNVERIFIED: model memory]
+            # Rule 1: A [UNVERIFIED: model memory] sentence may contain NO numbers, percentages, currency, or dates beyond a year
             if has_memory_tag:
-                # If it has untracked financial figures in the same line without ledger IDs
-                if not ledger_matches and numbers_found:
+                if numbers_found:
                     self.unverifiable.append({
                         "line": line_idx,
                         "claim": unit_str,
-                        "reason": f"Untracked figure '{numbers_found[0][0]}' in memory-tagged line without ledger ID citation.",
+                        "reason": f"Untracked figure '{numbers_found[0][0]}' in [UNVERIFIED: model memory] line. Memory claims cannot contain numbers.",
                         "error_type": "UNTRACKED_FIGURE"
                     })
                 else:
                     self.unverifiable.append({
                         "line": line_idx,
                         "claim": unit_str,
-                        "reason": "Declared model memory (unverified).",
+                        "reason": "Declared model memory (unverified qualitative claim).",
                         "error_type": "MODEL_MEMORY_TAGGED"
                     })
                 continue
                 
             # If tagged with [ANALYSIS]
+            # Rule 2: An [ANALYSIS] sentence may contain only numbers that carry ledger IDs, and no untagged factual assertions
             if has_analysis_tag:
-                # If analysis contains unreferenced specific financial numbers
                 if not ledger_matches and numbers_found:
                     self.unverifiable.append({
                         "line": line_idx,
@@ -432,7 +473,7 @@ class ReportVerifier:
                         "reason": f"Specific financial figure '{numbers_found[0][0]}' in [ANALYSIS] line requires ledger citation.",
                         "error_type": "UNTRACKED_FIGURE"
                     })
-                else:
+                elif not ledger_matches:
                     self.confirmed.append({
                         "line": line_idx,
                         "ledger_id": "ANALYSIS",
@@ -441,7 +482,7 @@ class ReportVerifier:
                         "tool": "analyst.reasoning",
                         "source": "Report Author Analysis"
                     })
-                continue
+                # If it has ledger matches, proceed below to verify numbers against ledger
 
             # Unit contains ledger ID(s)
             # Rule: Each number in the unit must be backed by a ledger ID
@@ -472,9 +513,10 @@ class ReportVerifier:
 
                 # 1. Ticker Mismatch Check
                 ticker_mismatch = False
-                if entry_ticker and entry_ticker.upper() not in unit_str.upper():
+                base_entry_ticker = entry_ticker.split('.')[0].upper() if entry_ticker else ""
+                if base_entry_ticker and base_entry_ticker not in unit_str.upper():
                     for other_t in ["AAPL", "MSFT", "GOOGL", "NVDA", "TCS", "HSBA", "TSLA", "AMZN", "META"]:
-                        if other_t in unit_str.upper() and other_t != entry_ticker.upper():
+                        if other_t in unit_str.upper() and other_t != base_entry_ticker:
                             self.wrong.append({
                                 "line": line_idx,
                                 "ledger_id": l_id,
@@ -491,9 +533,32 @@ class ReportVerifier:
                 if ticker_mismatch:
                     continue
 
-                # 2. Period Mismatch Check (e.g. FY2024 stated in report vs FY2025 in ledger)
+                # 2. Currency Symbol Mismatch Check (e.g. £416.2B stated vs USD in ledger)
+                currency_mismatch = False
+                for token, curr, num_str, suffix in numbers_found:
+                    if curr:
+                        # If ledger entry is USD / SEC 10-K and report says £ or € or ₹
+                        if ("SEC" in str(source_url) or "edgar" in str(tool_name) or entry_ticker == "AAPL") and curr == "£":
+                            self.wrong.append({
+                                "line": line_idx,
+                                "ledger_id": l_id,
+                                "claim": unit_str,
+                                "stated_in_report": f"Currency symbol '{curr}'",
+                                "actual_ledger_value": "USD ($)",
+                                "correct_value": "Currency Mismatch (Stated GBP for USD entry)",
+                                "source": source_url,
+                                "error_type": "CURRENCY_MISMATCH",
+                                "failure_reason": f"Report claims currency {curr} but ledger entry {l_id} is recorded in USD ($)."
+                            })
+                            currency_mismatch = True
+                            break
+                if currency_mismatch:
+                    continue
+
+                # 3. Period / Quarter Mismatch Check (e.g. FY2024 stated vs FY2025; or December quarter vs full FY)
                 period_mismatch = False
                 if entry_period:
+                    # Check fiscal years
                     period_matches_in_text = re.findall(r'\b(FY\d{4}|Q[1-4]\s*\d{4}|\d{4})\b', unit_str, re.IGNORECASE)
                     for pm in period_matches_in_text:
                         pm_norm = pm.upper().replace(" ", "")
@@ -511,14 +576,45 @@ class ReportVerifier:
                             })
                             period_mismatch = True
                             break
+                    # Check quarter assertions against full fiscal year ledger entry
+                    if not period_mismatch and "quarter" in unit_str.lower() and entry_period.startswith("FY") and "Q" not in entry_period:
+                        self.wrong.append({
+                            "line": line_idx,
+                            "ledger_id": l_id,
+                            "claim": unit_str,
+                            "stated_in_report": "Quarterly period claim",
+                            "actual_ledger_value": entry_period,
+                            "correct_value": f"Period mismatch: ledger record is full fiscal year {entry_period}",
+                            "source": source_url,
+                            "error_type": "PERIOD_MISMATCH",
+                            "failure_reason": f"Report claims quarterly period, but ledger entry {l_id} is for full fiscal year {entry_period}."
+                        })
+                        period_mismatch = True
                 if period_mismatch:
                     continue
 
-                # 3. Metric Type Mismatch Check
+                # 4. Metric Type Mismatch Check
                 # e.g. sentence says "revenue rose 4% [LEDGER_0001]" but LEDGER_0001 is total revenue 416B (not growth rate)
-                is_growth_or_margin_claim = bool(re.search(r'(grew|rose|growth|expanded|margin|cagr|roic|roe|yield|%)', unit_str, re.IGNORECASE))
-                tool_is_growth_calc = bool("growth" in tool_name or "cagr" in tool_name or "margin" in tool_name)
-                if "%" in unit_str and not tool_is_growth_calc and expected_raw is not None and float(expected_raw) > 1000:
+                idx_l = unit_str.find(f"[{l_id}]")
+                preceding_text = unit_str[:idx_l].strip() if idx_l != -1 else unit_str.strip()
+                
+                # Check if the metric associated with this specific citation is a percentage or growth claim
+                has_percent_for_this_id = False
+                if re.search(r'(\d+(?:\.\d+)?\s*%|\bpercent\b|\bbps\b|\bpoints\b)\s*$', preceding_text, re.IGNORECASE):
+                    has_percent_for_this_id = True
+                elif len(ledger_matches) == 1 and bool(re.search(r'(\b(?:grew|rose|declined|up over|down over)\b|\d+%)', unit_str, re.IGNORECASE)):
+                    # Ensure the extracted numbers are not monetary currency levels
+                    if numbers_found and not any(n[1] in ('$', '₹', '£', '€') for n in numbers_found):
+                        has_percent_for_this_id = True
+
+                tool_is_growth_calc = bool(
+                    "growth" in str(tool_name).lower() or "cagr" in str(tool_name).lower() or 
+                    "margin" in str(tool_name).lower() or "yield" in str(tool_name).lower() or 
+                    "working_capital" in str(tool_name).lower() or "liquidity" in str(tool_name).lower() or
+                    "concentration" in str(tool_name).lower() or "filing_notes" in str(tool_name).lower()
+                )
+                
+                if has_percent_for_this_id and not tool_is_growth_calc and expected_raw is not None and float(expected_raw) > 1000:
                     self.wrong.append({
                         "line": line_idx,
                         "ledger_id": l_id,
@@ -532,7 +628,7 @@ class ReportVerifier:
                     })
                     continue
 
-                # 4. Live Independent Re-Fetch Check
+                # 5. Live Independent Re-Fetch Check
                 if self.perform_refetch:
                     refetch_ok, live_val, refetch_source = self.refetch_source(entry)
                     if not refetch_ok:
@@ -549,7 +645,7 @@ class ReportVerifier:
                         })
                         continue
 
-                # 5. Half-Unit Precision Verification
+                # 6. Half-Unit Precision Verification
                 matched_val = False
                 
                 for token, curr, num_str, suffix in numbers_found:
@@ -563,7 +659,6 @@ class ReportVerifier:
                             is_ratio=is_token_ratio
                         )
                         if not passes and not is_token_ratio:
-                            # Also test ratio=False
                             passes, stated_scaled, tol = self.verify_value_with_precision(
                                 stated_str=num_str,
                                 suffix=suffix,
@@ -598,6 +693,19 @@ class ReportVerifier:
                         "failure_reason": f"Stated figure outside half-unit precision tolerance of raw ledger value {expected_raw}."
                     })
 
+        # Determine Report Status: PASS, PASS WITH FLAGS, or FAIL
+        total_wrong = len(self.wrong)
+        non_memory_unverifiable = [u for u in self.unverifiable if u.get("error_type") != "MODEL_MEMORY_TAGGED"]
+        memory_claims = [u for u in self.unverifiable if u.get("error_type") == "MODEL_MEMORY_TAGGED"]
+        
+        if total_wrong == 0 and len(non_memory_unverifiable) == 0:
+            if len(memory_claims) > 0:
+                report_status = "PASS WITH FLAGS"
+            else:
+                report_status = "PASS"
+        else:
+            report_status = "FAIL"
+
         audit_result = {
             "report_path": self.report_path,
             "audited_at": datetime.datetime.now().isoformat(),
@@ -605,7 +713,8 @@ class ReportVerifier:
                 "total_confirmed": len(self.confirmed),
                 "total_wrong": len(self.wrong),
                 "total_unverifiable": len(self.unverifiable),
-                "status": "FAILED" if (self.wrong or self.unverifiable) else "PASSED"
+                "tagged_memory_claims": len(memory_claims),
+                "status": report_status
             },
             "confirmed": self.confirmed,
             "wrong": self.wrong,

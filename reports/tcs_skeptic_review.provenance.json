@@ -1,0 +1,210 @@
+{
+  "run_id": "tcs_skeptic_live_run",
+  "saved_at": "2026-10-06T01:02:55.189062",
+  "total_records": 12,
+  "entries": {
+    "LEDGER_0001": {
+      "ledger_id": "LEDGER_0001",
+      "tool": "yfinance.quote",
+      "ticker": "TCS.NS",
+      "inputs": {
+        "ticker": "TCS.NS",
+        "price": 2114.4
+      },
+      "output": 2114.4,
+      "raw_value": 2114.4,
+      "source": "Market Quote (TCS.NS)",
+      "form": null,
+      "period": null,
+      "notes": "Current trading price",
+      "timestamp": "2026-10-06T01:02:55.187151",
+      "integrity_hash": "c77266e5b47679b849b7a4c67fb80c22de1a67e8236fed3ff23909348264889e"
+    },
+    "LEDGER_0002": {
+      "ledger_id": "LEDGER_0002",
+      "tool": "tools.calc.reverse_dcf",
+      "ticker": "TCS.NS",
+      "inputs": {
+        "current_price": 2114.4,
+        "base_fcf": 412000000000.0,
+        "WACC": 0.11
+      },
+      "output": 9.352010488510132,
+      "raw_value": 9.352010488510132,
+      "source": "tools.calc.dcf.reverse_dcf",
+      "form": null,
+      "period": null,
+      "notes": "Market implied 5-year FCF CAGR",
+      "timestamp": "2026-10-06T01:02:55.188062",
+      "integrity_hash": "e6790a8e8fc63122b6986ff1456ed5a65788e01986d29a922f681a9c7498d5f4"
+    },
+    "LEDGER_0003": {
+      "ledger_id": "LEDGER_0003",
+      "tool": "tools.calc.dcf",
+      "ticker": "TCS.NS",
+      "inputs": {
+        "growth": 0.08,
+        "wacc": 0.11,
+        "term_g": 0.04
+      },
+      "output": 2000.0491787200742,
+      "raw_value": 2000.0491787200742,
+      "source": "tools.calc.dcf.dcf",
+      "form": null,
+      "period": null,
+      "notes": "Baseline fair value per share",
+      "timestamp": "2026-10-06T01:02:55.188062",
+      "integrity_hash": "b44ef353d0b86e2f2b66e8763b10d9ee217249e6b8f81405b6138011aa88e661"
+    },
+    "LEDGER_0004": {
+      "ledger_id": "LEDGER_0004",
+      "tool": "tools.calc.dcf",
+      "ticker": "TCS.NS",
+      "inputs": {
+        "stressed_fcf": 378470298648.6487,
+        "margin_delta_bps": -200
+      },
+      "output": 1837.2796358790556,
+      "raw_value": 1837.2796358790556,
+      "source": "tools.calc.dcf.dcf",
+      "form": null,
+      "period": null,
+      "notes": "Fair value under margin compression",
+      "timestamp": "2026-10-06T01:02:55.188062",
+      "integrity_hash": "af48874a81ecf15489e496183b77af4bdb766577a723b7f21b6d3bdab0383798"
+    },
+    "LEDGER_0005": {
+      "ledger_id": "LEDGER_0005",
+      "tool": "tools.calc.margin_stress_impact",
+      "ticker": "TCS.NS",
+      "inputs": {
+        "baseline": 2000.0491787200742,
+        "stressed": 1837.2796358790556
+      },
+      "output": -8.138277027027032,
+      "raw_value": -8.138277027027032,
+      "source": "tools.calc.metrics",
+      "form": null,
+      "period": null,
+      "notes": "Margin stress impact percentage",
+      "timestamp": "2026-10-06T01:02:55.188062",
+      "integrity_hash": "66c7a92d746d877c541ab39b35f0e2e5b175e20be00968177794f4afb2d436db"
+    },
+    "LEDGER_0006": {
+      "ledger_id": "LEDGER_0006",
+      "tool": "tools.calc.dcf",
+      "ticker": "TCS.NS",
+      "inputs": {
+        "wacc_stressed": 0.12
+      },
+      "output": 1745.399884780194,
+      "raw_value": 1745.399884780194,
+      "source": "tools.calc.dcf.dcf",
+      "form": null,
+      "period": null,
+      "notes": "Fair value under WACC elevation",
+      "timestamp": "2026-10-06T01:02:55.188062",
+      "integrity_hash": "ed40eccecf47ae0e95dd99c6752d2c2bc49393f960b0ef4c61f411509453f786"
+    },
+    "LEDGER_0007": {
+      "ledger_id": "LEDGER_0007",
+      "tool": "tools.calc.wacc_stress_impact",
+      "ticker": "TCS.NS",
+      "inputs": {
+        "baseline": 2000.0491787200742,
+        "stressed": 1745.399884780194
+      },
+      "output": -12.732151621533742,
+      "raw_value": -12.732151621533742,
+      "source": "tools.calc.metrics",
+      "form": null,
+      "period": null,
+      "notes": "WACC stress impact percentage",
+      "timestamp": "2026-10-06T01:02:55.188062",
+      "integrity_hash": "c8bcf9a70dee2db0d028a63cfc3df84978bacd6c5f8c7dd258d45b12728ca97f"
+    },
+    "LEDGER_0008": {
+      "ledger_id": "LEDGER_0008",
+      "tool": "tools.calc.dcf",
+      "ticker": "TCS.NS",
+      "inputs": {
+        "half_growth": 0.04
+      },
+      "output": 1691.8172450749582,
+      "raw_value": 1691.8172450749582,
+      "source": "tools.calc.dcf.dcf",
+      "form": null,
+      "period": null,
+      "notes": "Fair value at half assumed growth rate",
+      "timestamp": "2026-10-06T01:02:55.188062",
+      "integrity_hash": "6fdcf9f0a57e9c802c11f0f310f1ac476dfd835b784c66a5aab81460cdbbb6f3"
+    },
+    "LEDGER_0009": {
+      "ledger_id": "LEDGER_0009",
+      "tool": "tools.calc.growth_stress_impact",
+      "ticker": "TCS.NS",
+      "inputs": {
+        "baseline": 2000.0491787200742,
+        "stressed": 1691.8172450749582
+      },
+      "output": -15.411217730274418,
+      "raw_value": -15.411217730274418,
+      "source": "tools.calc.metrics",
+      "form": null,
+      "period": null,
+      "notes": "Half-growth valuation impact",
+      "timestamp": "2026-10-06T01:02:55.188062",
+      "integrity_hash": "ff2c6867e84e46eee1974c9ae78cabe7f1a9a3b3b8e4d17a63b707fa80757b86"
+    },
+    "LEDGER_0010": {
+      "ledger_id": "LEDGER_0010",
+      "tool": "tools.calc.cagr",
+      "ticker": "TCS.NS",
+      "inputs": {
+        "historical_years": 3
+      },
+      "output": 7.000000000000001,
+      "raw_value": 7.000000000000001,
+      "source": "SEC 10-K / Annual Filings",
+      "form": null,
+      "period": null,
+      "notes": "Historical 3-year FCF CAGR",
+      "timestamp": "2026-10-06T01:02:55.188062",
+      "integrity_hash": "f90fe45c921febc4d73f605518f69af1eb8439ecc09a411a747699899d6e6452"
+    },
+    "LEDGER_0011": {
+      "ledger_id": "LEDGER_0011",
+      "tool": "tools.calc.working_capital",
+      "ticker": "TCS.NS",
+      "inputs": {
+        "rec_yoy": 0.05,
+        "rev_yoy": 0.06846064455463989
+      },
+      "output": -1.846064455463989,
+      "raw_value": -1.846064455463989,
+      "source": "SEC 10-K / Annual Filings",
+      "form": null,
+      "period": null,
+      "notes": "Receivables vs Revenue YoY divergence (pp)",
+      "timestamp": "2026-10-06T01:02:55.188062",
+      "integrity_hash": "0ca4d25f309657a68408e3b406e1ceb85ccdd286238c4014b9d5f3d61af7bc44"
+    },
+    "LEDGER_0012": {
+      "ledger_id": "LEDGER_0012",
+      "tool": "tools.calc.liquidity",
+      "ticker": "TCS.NS",
+      "inputs": {
+        "st_debt": 0.0,
+        "cash": 90000000000.0
+      },
+      "output": 0.0,
+      "raw_value": 0.0,
+      "source": "SEC 10-K / Annual Filings",
+      "form": null,
+      "period": null,
+      "notes": "Short-term debt to cash ratio",
+      "timestamp": "2026-10-06T01:02:55.188062",
+      "integrity_hash": "b1c384f0431fa6d96c7675dd6aa862e697c550a04a76f53e4d79bf64fe4a156a"
+    }
+  }
+}
