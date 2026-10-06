@@ -1,0 +1,174 @@
+# Verification Audit Report
+**Target Report:** `skeptic_review.md`  
+**Audit Timestamp:** 2026-10-06T23:01:48.971279  
+**Overall Status:** **PASS WITH FLAGS** (50 Confirmed, 0 Wrong, 2 Unverifiable)  
+
+---
+
+### ✅ 1. Confirmed Claims (50)
+- **[Line 12] [LEDGER_0003]**: | Base Free Cash Flow | $7,695,000,000 | AUDITED DATA | [LEDGER_0003] | Audited Statement of Cash Flows |
+  - *Verified Output:* `7695000000.0` via `filing.cash_flow`
+  - *Source:* Audited Statement of Cash Flows
+- **[Line 13] [LEDGER_0007]**: | Assumed 5Y FCF Growth Rate | 8.00% | ASSUMPTION | [LEDGER_0007] | Model Assumption (Unanchored Parameter) |
+  - *Verified Output:* `8.0` via `thesis.assumption`
+  - *Source:* Model Assumption (Unanchored Parameter)
+- **[Line 15] [LEDGER_0009]**: | Terminal Growth Rate | 2.50% | ASSUMPTION | [LEDGER_0009] | Model Assumption (Unanchored Parameter) |
+  - *Verified Output:* `2.5` via `thesis.assumption`
+  - *Source:* Model Assumption (Unanchored Parameter)
+- **[Line 16] [LEDGER_0002]**: | Shares Outstanding | 10,786,313,572 | MARKET DATA | [LEDGER_0002] | Share Registry & Market Data |
+  - *Verified Output:* `10786313572.0` via `yfinance.quote`
+  - *Source:* Share Registry / Market Data
+- **[Line 17] [LEDGER_0004]**: | Liquid Cash & Securities | $123,029,000,000 | AUDITED DATA | [LEDGER_0004] | Audited Balance Sheet |
+  - *Verified Output:* `123029000000.0` via `filing.balance_sheet`
+  - *Source:* Audited Balance Sheet
+- **[Line 18] [LEDGER_0005]**: | Total Debt | $68,396,000,000 | AUDITED DATA | [LEDGER_0005] | Audited Balance Sheet |
+  - *Verified Output:* `68396000000.0` via `filing.balance_sheet`
+  - *Source:* Audited Balance Sheet
+- **[Line 19] [LEDGER_0006]**: | Balance Sheet Net Debt | $-54,633,000,000 | AUDITED DATA | [LEDGER_0006] | Audited Balance Sheet (Debt - Cash) |
+  - *Verified Output:* `-54633000000.0` via `filing.balance_sheet`
+  - *Source:* Audited Balance Sheet
+- **[Line 27] [LEDGER_0018]**: | **6.0% Growth** [LEDGER_0018] | $22.12 [LEDGER_0020] | $19.24 [LEDGER_0021] | $17.18 [LEDGER_0022] |
+  - *Verified Output:* `6.0` via `thesis.assumption`
+  - *Source:* Model Sensitivity Parameter (Downside)
+- **[Line 27] [LEDGER_0020]**: | **6.0% Growth** [LEDGER_0018] | $22.12 [LEDGER_0020] | $19.24 [LEDGER_0021] | $17.18 [LEDGER_0022] |
+  - *Verified Output:* `22.118011709806186` via `tools.calc.dcf`
+  - *Source:* tools.calc.dcf.dcf
+- **[Line 27] [LEDGER_0021]**: | **6.0% Growth** [LEDGER_0018] | $22.12 [LEDGER_0020] | $19.24 [LEDGER_0021] | $17.18 [LEDGER_0022] |
+  - *Verified Output:* `19.239407637839044` via `tools.calc.dcf`
+  - *Source:* tools.calc.dcf.dcf
+- **[Line 27] [LEDGER_0022]**: | **6.0% Growth** [LEDGER_0018] | $22.12 [LEDGER_0020] | $19.24 [LEDGER_0021] | $17.18 [LEDGER_0022] |
+  - *Verified Output:* `17.184385958657472` via `tools.calc.dcf`
+  - *Source:* tools.calc.dcf.dcf
+- **[Line 28] [LEDGER_0007]**: | **8.0% Growth (Base)** [LEDGER_0007] | $23.65 [LEDGER_0023] | $20.49 [LEDGER_0011] | $18.24 [LEDGER_0025] |
+  - *Verified Output:* `8.0` via `thesis.assumption`
+  - *Source:* Model Assumption (Unanchored Parameter)
+- **[Line 28] [LEDGER_0023]**: | **8.0% Growth (Base)** [LEDGER_0007] | $23.65 [LEDGER_0023] | $20.49 [LEDGER_0011] | $18.24 [LEDGER_0025] |
+  - *Verified Output:* `23.650205548543738` via `tools.calc.dcf`
+  - *Source:* tools.calc.dcf.dcf
+- **[Line 28] [LEDGER_0011]**: | **8.0% Growth (Base)** [LEDGER_0007] | $23.65 [LEDGER_0023] | $20.49 [LEDGER_0011] | $18.24 [LEDGER_0025] |
+  - *Verified Output:* `20.49212044818143` via `tools.calc.dcf`
+  - *Source:* tools.calc.dcf.dcf
+- **[Line 28] [LEDGER_0025]**: | **8.0% Growth (Base)** [LEDGER_0007] | $23.65 [LEDGER_0023] | $20.49 [LEDGER_0011] | $18.24 [LEDGER_0025] |
+  - *Verified Output:* `18.238222047477294` via `tools.calc.dcf`
+  - *Source:* tools.calc.dcf.dcf
+- **[Line 29] [LEDGER_0019]**: | **10.0% Growth** [LEDGER_0019] | $25.30 [LEDGER_0026] | $21.84 [LEDGER_0027] | $19.37 [LEDGER_0028] |
+  - *Verified Output:* `10.0` via `thesis.assumption`
+  - *Source:* Model Sensitivity Parameter (Upside)
+- **[Line 29] [LEDGER_0026]**: | **10.0% Growth** [LEDGER_0019] | $25.30 [LEDGER_0026] | $21.84 [LEDGER_0027] | $19.37 [LEDGER_0028] |
+  - *Verified Output:* `25.29506076339073` via `tools.calc.dcf`
+  - *Source:* tools.calc.dcf.dcf
+- **[Line 29] [LEDGER_0027]**: | **10.0% Growth** [LEDGER_0019] | $25.30 [LEDGER_0026] | $21.84 [LEDGER_0027] | $19.37 [LEDGER_0028] |
+  - *Verified Output:* `21.836125107487245` via `tools.calc.dcf`
+  - *Source:* tools.calc.dcf.dcf
+- **[Line 29] [LEDGER_0028]**: | **10.0% Growth** [LEDGER_0019] | $25.30 [LEDGER_0026] | $21.84 [LEDGER_0027] | $19.37 [LEDGER_0028] |
+  - *Verified Output:* `19.368173312857643` via `tools.calc.dcf`
+  - *Source:* tools.calc.dcf.dcf
+- **[Line 35] [LEDGER_0001]**: Current Market Price: $256.29 USD [LEDGER_0001]
+  - *Verified Output:* `256.29` via `yfinance.quote`
+  - *Source:* Market Quote (AMZN)
+- **[Line 36] [LEDGER_0010]**: Implied 5-Year FCF CAGR (Reverse DCF): **94.08%** [LEDGER_0010]
+  - *Verified Output:* `94.08490061759949` via `tools.calc.reverse_dcf`
+  - *Source:* tools.calc.dcf.reverse_dcf
+- **[Line 37] [LEDGER_0011]**: Baseline Fair Value (DCF): **$20.49** [LEDGER_0011]
+  - *Verified Output:* `20.49212044818143` via `tools.calc.dcf`
+  - *Source:* tools.calc.dcf.dcf
+- **[Line 38] [LEDGER_0012]**: Stressed Fair Value (-200 bps Margin): **$17.73** [LEDGER_0012]
+  - *Verified Output:* `17.726243232999074` via `tools.calc.dcf`
+  - *Source:* tools.calc.dcf.dcf
+- **[Line 39] [LEDGER_0013]**: Margin Stress Valuation Impact: **-13.50%** [LEDGER_0013]
+  - *Verified Output:* `-13.49727190105314` via `tools.calc.margin_stress_impact`
+  - *Source:* tools.calc.metrics
+- **[Line 40] [LEDGER_0014]**: Stressed Fair Value (+100 bps WACC): **$18.24** [LEDGER_0014]
+  - *Verified Output:* `18.238222047477294` via `tools.calc.dcf`
+  - *Source:* tools.calc.dcf.dcf
+- **[Line 41] [LEDGER_0015]**: WACC Stress Valuation Impact: **-11.00%** [LEDGER_0015]
+  - *Verified Output:* `-10.998853956590713` via `tools.calc.wacc_stress_impact`
+  - *Source:* tools.calc.metrics
+- **[Line 42] [LEDGER_0016]**: Stressed Fair Value (Half-Growth): **$18.07** [LEDGER_0016]
+  - *Verified Output:* `18.073138781727348` via `tools.calc.dcf`
+  - *Source:* tools.calc.dcf.dcf
+- **[Line 43] [LEDGER_0017]**: Half-Growth Valuation Impact: **-11.80%** [LEDGER_0017]
+  - *Verified Output:* `-11.804447824572275` via `tools.calc.growth_stress_impact`
+  - *Source:* tools.calc.metrics
+- **[Line 51] [LEDGER_0010]**: | Valuation Feasibility | Implied CAGR 94.08% [LEDGER_0010] | [LEDGER_0010] | **NOT CHECKED (data unavailable)** |
+  - *Verified Output:* `94.08490061759949` via `tools.calc.reverse_dcf`
+  - *Source:* tools.calc.dcf.reverse_dcf
+- **[Line 51] [LEDGER_0010]**: | Valuation Feasibility | Implied CAGR 94.08% [LEDGER_0010] | [LEDGER_0010] | **NOT CHECKED (data unavailable)** |
+  - *Verified Output:* `94.08490061759949` via `tools.calc.reverse_dcf`
+  - *Source:* tools.calc.dcf.reverse_dcf
+- **[Line 52] [LEDGER_0013]**: | Margin Shock (-200 bps) | Impact -13.50% [LEDGER_0013] ($17.73 [LEDGER_0012]) | [LEDGER_0013], [LEDGER_0012] | **PASS** |
+  - *Verified Output:* `-13.49727190105314` via `tools.calc.margin_stress_impact`
+  - *Source:* tools.calc.metrics
+- **[Line 52] [LEDGER_0012]**: | Margin Shock (-200 bps) | Impact -13.50% [LEDGER_0013] ($17.73 [LEDGER_0012]) | [LEDGER_0013], [LEDGER_0012] | **PASS** |
+  - *Verified Output:* `17.726243232999074` via `tools.calc.dcf`
+  - *Source:* tools.calc.dcf.dcf
+- **[Line 52] [LEDGER_0013]**: | Margin Shock (-200 bps) | Impact -13.50% [LEDGER_0013] ($17.73 [LEDGER_0012]) | [LEDGER_0013], [LEDGER_0012] | **PASS** |
+  - *Verified Output:* `-13.49727190105314` via `tools.calc.margin_stress_impact`
+  - *Source:* tools.calc.metrics
+- **[Line 52] [LEDGER_0012]**: | Margin Shock (-200 bps) | Impact -13.50% [LEDGER_0013] ($17.73 [LEDGER_0012]) | [LEDGER_0013], [LEDGER_0012] | **PASS** |
+  - *Verified Output:* `17.726243232999074` via `tools.calc.dcf`
+  - *Source:* tools.calc.dcf.dcf
+- **[Line 54] [LEDGER_0016]**: | Half-Growth Stress | Stressed Fair Value $18.07 [LEDGER_0016] (-11.80% [LEDGER_0017]) | [LEDGER_0016], [LEDGER_0017] | **PASS** |
+  - *Verified Output:* `18.073138781727348` via `tools.calc.dcf`
+  - *Source:* tools.calc.dcf.dcf
+- **[Line 54] [LEDGER_0017]**: | Half-Growth Stress | Stressed Fair Value $18.07 [LEDGER_0016] (-11.80% [LEDGER_0017]) | [LEDGER_0016], [LEDGER_0017] | **PASS** |
+  - *Verified Output:* `-11.804447824572275` via `tools.calc.growth_stress_impact`
+  - *Source:* tools.calc.metrics
+- **[Line 54] [LEDGER_0016]**: | Half-Growth Stress | Stressed Fair Value $18.07 [LEDGER_0016] (-11.80% [LEDGER_0017]) | [LEDGER_0016], [LEDGER_0017] | **PASS** |
+  - *Verified Output:* `18.073138781727348` via `tools.calc.dcf`
+  - *Source:* tools.calc.dcf.dcf
+- **[Line 54] [LEDGER_0017]**: | Half-Growth Stress | Stressed Fair Value $18.07 [LEDGER_0016] (-11.80% [LEDGER_0017]) | [LEDGER_0016], [LEDGER_0017] | **PASS** |
+  - *Verified Output:* `-11.804447824572275` via `tools.calc.growth_stress_impact`
+  - *Source:* tools.calc.metrics
+- **[Line 55] [LEDGER_0039]**: | Receivables Divergence | Divergence +9.76% [LEDGER_0039] | [LEDGER_0039] | **FAIL** |
+  - *Verified Output:* `9.76431669503933` via `tools.calc.working_capital`
+  - *Source:* tools.calc.working_capital
+- **[Line 55] [LEDGER_0039]**: | Receivables Divergence | Divergence +9.76% [LEDGER_0039] | [LEDGER_0039] | **FAIL** |
+  - *Verified Output:* `9.76431669503933` via `tools.calc.working_capital`
+  - *Source:* tools.calc.working_capital
+- **[Line 56] [LEDGER_0043]**: | Inventory Divergence | Divergence -0.36% [LEDGER_0043] | [LEDGER_0043] | **PASS** |
+  - *Verified Output:* `-0.3622054929047963` via `tools.calc.working_capital`
+  - *Source:* tools.calc.working_capital
+- **[Line 56] [LEDGER_0043]**: | Inventory Divergence | Divergence -0.36% [LEDGER_0043] | [LEDGER_0043] | **PASS** |
+  - *Verified Output:* `-0.3622054929047963` via `tools.calc.working_capital`
+  - *Source:* tools.calc.working_capital
+- **[Line 57] [LEDGER_0044]**: | Refinancing / Debt Risk | ST Debt / Cash = 2.23% [LEDGER_0044] | [LEDGER_0044] | **PASS** |
+  - *Verified Output:* `2.2336197156767916` via `tools.calc.liquidity`
+  - *Source:* Annual Balance Sheet
+- **[Line 57] [LEDGER_0044]**: | Refinancing / Debt Risk | ST Debt / Cash = 2.23% [LEDGER_0044] | [LEDGER_0044] | **PASS** |
+  - *Verified Output:* `2.2336197156767916` via `tools.calc.liquidity`
+  - *Source:* Annual Balance Sheet
+- **[Line 58] [LEDGER_0045]**: | Customer Concentration | Top Customer = <10% [LEDGER_0045] | [LEDGER_0045] | **PASS** |
+  - *Verified Output:* `0.0` via `edgar.filing_notes`
+  - *Source:* SEC 10-K Note Disclosures / XBRL us-gaap:ConcentrationRiskPercentage1
+- **[Line 58] [LEDGER_0045]**: | Customer Concentration | Top Customer = <10% [LEDGER_0045] | [LEDGER_0045] | **PASS** |
+  - *Verified Output:* `0.0` via `edgar.filing_notes`
+  - *Source:* SEC 10-K Note Disclosures / XBRL us-gaap:ConcentrationRiskPercentage1
+- **[Line 64] [ANALYSIS]**: [ANALYSIS] VULNERABLE: Found 1 quantitative failure(s) across 7 performed checks.
+  - *Verified Output:* `ANALYST_DEDUCTION` via `analyst.reasoning`
+  - *Source:* Report Author Analysis
+- **[Line 65] [LEDGER_0038]**: Working Capital Divergence: Receivables growth (+22.14% [LEDGER_0038]) diverged from revenue (+12.38% [LEDGER_0035]) by +9.76% [LEDGER_0039].
+  - *Verified Output:* `22.142071378334023` via `tools.calc.yoy_growth`
+  - *Source:* tools.calc.metrics.yoy_growth
+- **[Line 65] [LEDGER_0035]**: Working Capital Divergence: Receivables growth (+22.14% [LEDGER_0038]) diverged from revenue (+12.38% [LEDGER_0035]) by +9.76% [LEDGER_0039].
+  - *Verified Output:* `12.377754683294695` via `tools.calc.yoy_growth`
+  - *Source:* tools.calc.metrics.yoy_growth
+- **[Line 65] [LEDGER_0039]**: Working Capital Divergence: Receivables growth (+22.14% [LEDGER_0038]) diverged from revenue (+12.38% [LEDGER_0035]) by +9.76% [LEDGER_0039].
+  - *Verified Output:* `9.76431669503933` via `tools.calc.working_capital`
+  - *Source:* tools.calc.working_capital
+
+---
+
+### ❌ 2. Wrong / Discrepant Figures (0)
+_None. No value discrepancies found._
+
+---
+
+### ⚠️ 3. Unverifiable / Failed Claims (2)
+- **[Line 66] [MODEL_MEMORY_TAGGED]**: Unverified context: [UNVERIFIED: model memory] AMAZON COM INC operates in competitive global markets subject to macroeconomic cycles.
+  - *Failure Reason:* Declared model memory (unverified qualitative claim).
+- **[Line 67] [MODEL_MEMORY_TAGGED]**: Unverified context: [UNVERIFIED: model memory] Regulatory scrutiny and currency fluctuations present ongoing operational considerations.
+  - *Failure Reason:* Declared model memory (unverified qualitative claim).
+
+---
+*Audit conducted by Antigravity Verifier Agent under default-deny policy. Original report was not modified.*

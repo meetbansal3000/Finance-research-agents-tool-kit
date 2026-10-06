@@ -415,18 +415,26 @@ class SkepticAgent:
                 )
                 hist_ids.append(hid)
             
-            # Compute CAGR
-            cagr_res = cagr(start_value=start_val, end_value=end_val, periods=num_periods)
-            hist_cagr_val = cagr_res["result"]
-            hist_cagr_id = self.ledger.record(
-                tool="tools.calc.cagr",
-                ticker=ticker,
-                inputs={"start_value": start_val, "end_value": end_val, "periods": num_periods},
-                output=hist_cagr_val,
-                raw_value=hist_cagr_val,
-                source="tools.calc.metrics.cagr",
-                notes=f"Historical {num_periods}-year FCF CAGR ({start_yr} to {end_yr})"
-            )
+            # Compute CAGR if start and end values are strictly positive
+            if start_val > 0 and end_val > 0:
+                try:
+                    cagr_res = cagr(start_value=start_val, end_value=end_val, periods=num_periods)
+                    hist_cagr_val = cagr_res["result"]
+                    hist_cagr_id = self.ledger.record(
+                        tool="tools.calc.cagr",
+                        ticker=ticker,
+                        inputs={"start_value": start_val, "end_value": end_val, "periods": num_periods},
+                        output=hist_cagr_val,
+                        raw_value=hist_cagr_val,
+                        source="tools.calc.metrics.cagr",
+                        notes=f"Historical {num_periods}-year FCF CAGR ({start_yr} to {end_yr})"
+                    )
+                except Exception:
+                    hist_cagr_val = None
+                    hist_cagr_id = None
+            else:
+                hist_cagr_val = None
+                hist_cagr_id = None
         elif historical_3y_fcf_cagr is not None:
             hist_cagr_val = historical_3y_fcf_cagr * 100.0
             hist_cagr_id = self.ledger.record(
