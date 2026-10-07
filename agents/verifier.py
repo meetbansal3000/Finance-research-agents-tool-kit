@@ -250,16 +250,61 @@ class ReportVerifier:
                         return (True, recomputed_val, "Recomputed Calc Tool")
                     return (abs(float(recomputed_val) - float(expected_val)) < 1e-4, recomputed_val, "Recomputed Calc Tool")
                     
-            elif tool == "yfinance.quote":
+            elif tool in ("yfinance.quote", "data_layer.get_quote"):
                 import yfinance as yf
-                t = yf.Ticker(inputs.get("symbol", inputs.get("ticker")))
-                price = float(t.info.get("currentPrice") or t.info.get("regularMarketPrice") or 0.0)
-                return (price > 0, price, "Live Yahoo Finance Quote")
+                ticker_sym = inputs.get("symbol") or inputs.get("ticker")
+                if ticker_sym:
+                    t = yf.Ticker(ticker_sym)
+                    price = float(getattr(t.fast_info, "last_price", 0.0) or t.info.get("currentPrice") or t.info.get("regularMarketPrice") or 0.0)
+                    return (price > 0, price, "Live Market Quote")
+                return (False, None, "Missing ticker symbol in quote inputs")
+
+            elif tool == "tools.filing.extract_metric":
+                metric_name = inputs.get("metric")
+                ticker_sym = inputs.get("ticker", "")
+                from tools.filing import FilingParser
+                fp = FilingParser()
+                if "TCS" in ticker_sym:
+                    res_data = fp.fetch_tcs_fy25_audited_financials()
+                    if metric_name in res_data.get("metrics", {}):
+                        m_item = res_data["metrics"][metric_name]
+                        refetched = m_item.get("val_raw") if "val_raw" in m_item else m_item.get("val_crore")
+                        return (True, refetched, "Filing Document Re-parse")
+                elif "AAPL" in ticker_sym:
+                    res_data = fp.fetch_apple_fy25_audited_financials()
+                    if metric_name in res_data.get("metrics", {}):
+                        refetched = res_data["metrics"][metric_name].get("val_raw")
+                        return (True, refetched, "SEC 10-K Re-parse")
+                elif "MSFT" in ticker_sym:
+                    res_data = fp.fetch_msft_fy26_financials()
+                    if metric_name in res_data.get("metrics", {}):
+                        refetched = res_data["metrics"][metric_name].get("val_raw")
+                        return (True, refetched, "SEC 10-Q Re-parse")
+
+            elif tool.startswith("note_extractor."):
+                from agents.note_extractor import NoteExtractorAgent
+                extractor = NoteExtractorAgent()
+                ticker_sym = inputs.get("ticker", "")
+                doc_path = inputs.get("doc_path")
+                if "concentration" in tool:
+                    res = extractor.extract_customer_concentration(ticker=ticker_sym, doc_path=doc_path)
+                    top_c = res.get("top_customer_pct", 0.0)
+                    return (True, top_c, "Note Extractor Re-evaluation")
+                elif "segment" in tool:
+                    res = extractor.extract_segment_notes(ticker=ticker_sym, doc_path=doc_path)
+                    return (True, res, "Note Extractor Re-evaluation")
+
+            elif tool == "data_layer.get_fundamentals":
+                from tools.data_layer import get_data_layer
+                dl = get_data_layer()
+                ticker_sym = inputs.get("ticker", "")
+                fund = dl.get_fundamentals(ticker_sym)
+                return (bool(fund and fund.get("metrics")), fund.get("metrics"), "Data Layer Fundamentals Re-fetch")
                 
         except Exception as e:
             return (False, None, f"Re-fetch exception: {e}")
             
-        return (True, expected_val, "Unmocked/Static verified tool")
+        return (False, None, f"Independent live re-fetch endpoint not configured for tool '{tool}'")
 
     def _split_into_units(self, text: str) -> List[Tuple[int, str, str]]:
         """

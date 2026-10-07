@@ -49,11 +49,9 @@ class AnalystAgent:
         ticker = "AAPL"
         cik = "0000320193"
         url = f"https://data.sec.gov/api/xbrl/companyfacts/CIK{cik}.json"
-        user_agent = os.getenv("SEC_EDGAR_USER_AGENT", "ResearchAnalyst research@example.com")
-        
-        req = urllib.request.Request(url, headers={"User-Agent": user_agent})
-        with urllib.request.urlopen(req, timeout=25) as resp:
-            facts_data = json.loads(resp.read().decode("utf-8"))
+        from tools.data_layer import get_data_layer
+        dl = get_data_layer()
+        facts_data = dl.fetch_sec_edgar(url, is_json=True, ledger=self.ledger)
         us_gaap = facts_data["facts"]["us-gaap"]
 
         def get_fact(concept_name: str, end_date: str = "2025-09-27"):
@@ -72,11 +70,18 @@ class AnalystAgent:
         aapl_bs = self.extractor.fetch_apple_fy25_audited_financials(ledger=self.ledger)
         m_bs = aapl_bs["metrics"]
 
-        # Market quote
-        t = yf.Ticker(ticker)
-        info = t.info
-        current_price = float(info.get("currentPrice") or info.get("regularMarketPrice") or 255.0)
-        shares_out = float(info.get("sharesOutstanding") or 14950000000.0)
+        # Market quote via DataLayer
+        quote = dl.get_quote(ticker, ledger=self.ledger)
+        current_price = float(quote["price"])
+        shares_out = float(quote.get("shares_outstanding") or 0.0)
+        if shares_out <= 0.0:
+            sh_units = us_gaap.get("CommonStockSharesOutstanding", {}).get("units", {}).get("shares", []) or \
+                       us_gaap.get("WeightedAverageNumberOfDilutedSharesOutstanding", {}).get("units", {}).get("shares", [])
+            sh_matches = [u for u in sh_units if u.get("form") in ("10-K", "10-Q")]
+            if sh_matches:
+                shares_out = float(sh_matches[-1]["val"])
+            else:
+                raise ValueError(f"Missing verified live share count for {ticker}")
         market_cap = current_price * shares_out
 
         # Record SEC Facts in Ledger
@@ -152,7 +157,7 @@ class AnalystAgent:
             form="10-K",
             notes="Apple FY2025 Payments for Property, Plant and Equipment"
         )
-        l_price = self.ledger.record(
+        l_price = quote.get("ledger_id") or self.ledger.record(
             tool="yfinance.quote",
             ticker=ticker,
             currency="USD",
@@ -218,11 +223,9 @@ class AnalystAgent:
         ticker = "MSFT"
         cik = "0000789019"
         url = f"https://data.sec.gov/api/xbrl/companyfacts/CIK{cik}.json"
-        user_agent = os.getenv("SEC_EDGAR_USER_AGENT", "ResearchAnalyst research@example.com")
-        
-        req = urllib.request.Request(url, headers={"User-Agent": user_agent})
-        with urllib.request.urlopen(req, timeout=25) as resp:
-            facts_data = json.loads(resp.read().decode("utf-8"))
+        from tools.data_layer import get_data_layer
+        dl = get_data_layer()
+        facts_data = dl.fetch_sec_edgar(url, is_json=True, ledger=self.ledger)
         us_gaap = facts_data["facts"]["us-gaap"]
 
         def get_fact(concept_name: str, end_date: str = "2026-06-30"):
@@ -241,11 +244,18 @@ class AnalystAgent:
         msft_bs = self.extractor.fetch_msft_fy26_audited_financials(ledger=self.ledger)
         m_bs = msft_bs["metrics"]
 
-        # Market quote
-        t = yf.Ticker(ticker)
-        info = t.info
-        current_price = float(info.get("currentPrice") or info.get("regularMarketPrice") or 532.14)
-        shares_out = float(info.get("sharesOutstanding") or 7425545000.0)
+        # Market quote via DataLayer
+        quote = dl.get_quote(ticker, ledger=self.ledger)
+        current_price = float(quote["price"])
+        shares_out = float(quote.get("shares_outstanding") or 0.0)
+        if shares_out <= 0.0:
+            sh_units = us_gaap.get("CommonStockSharesOutstanding", {}).get("units", {}).get("shares", []) or \
+                       us_gaap.get("WeightedAverageNumberOfDilutedSharesOutstanding", {}).get("units", {}).get("shares", [])
+            sh_matches = [u for u in sh_units if u.get("form") in ("10-K", "10-Q")]
+            if sh_matches:
+                shares_out = float(sh_matches[-1]["val"])
+            else:
+                raise ValueError(f"Missing verified live share count for {ticker}")
         market_cap = current_price * shares_out
 
         # Record SEC Facts in Ledger
@@ -321,7 +331,7 @@ class AnalystAgent:
             form="10-K",
             notes="Microsoft FY2026 Payments for Property, Plant and Equipment"
         )
-        l_price = self.ledger.record(
+        l_price = quote.get("ledger_id") or self.ledger.record(
             tool="yfinance.quote",
             ticker=ticker,
             currency="USD",
@@ -385,16 +395,22 @@ class AnalystAgent:
 
     def _fetch_tcs_data(self) -> Dict[str, Any]:
         ticker = "TCS.NS"
-        t = yf.Ticker(ticker)
-        info = t.info
-        current_price = float(info.get("currentPrice") or info.get("regularMarketPrice") or 2114.4)
-        shares_out = float(info.get("sharesOutstanding") or 3618088000.0)
+        from tools.data_layer import get_data_layer
+        dl = get_data_layer()
+        quote = dl.get_quote(ticker, ledger=self.ledger)
+        current_price = float(quote["price"])
+        shares_out = float(quote.get("shares_outstanding") or 0.0)
+        if shares_out <= 0.0:
+            t = yf.Ticker(ticker)
+            shares_out = float(getattr(t.fast_info, "shares", 0.0) or t.info.get("sharesOutstanding", 0.0))
+            if shares_out <= 0.0:
+                raise ValueError(f"Missing verified live share count for {ticker}")
         market_cap = current_price * shares_out
 
         tcs_filing = self.extractor.fetch_tcs_fy25_audited_financials(ledger=self.ledger)
         m = tcs_filing["metrics"]
 
-        l_price = self.ledger.record(
+        l_price = quote.get("ledger_id") or self.ledger.record(
             tool="yfinance.quote",
             ticker=ticker,
             currency="INR",
@@ -467,11 +483,9 @@ class AnalystAgent:
         company_name = resolve_company_name(ticker) or f"{ticker} Inc."
 
         url = f"https://data.sec.gov/api/xbrl/companyfacts/CIK{cik}.json"
-        user_agent = os.getenv("SEC_EDGAR_USER_AGENT", "ResearchAnalyst research@example.com")
-
-        req = urllib.request.Request(url, headers={"User-Agent": user_agent})
-        with urllib.request.urlopen(req, timeout=25) as resp:
-            facts_data = json.loads(resp.read().decode("utf-8"))
+        from tools.data_layer import get_data_layer
+        dl = get_data_layer()
+        facts_data = dl.fetch_sec_edgar(url, is_json=True, ledger=self.ledger)
         us_gaap = facts_data.get("facts", {}).get("us-gaap", {})
 
         def extract_annual_series(candidate_concepts):
@@ -522,21 +536,31 @@ class AnalystAgent:
         prev_rev_fact = rev_series[prev_end]
 
         op_series = extract_annual_series(["OperatingIncomeLoss", "OperatingIncome"])
-        op_fact = op_series.get(latest_end) or (list(op_series.values())[-1] if op_series else {"val": float(rev_fact["val"]) * 0.20, "concept": "OperatingIncomeLoss", "accn": rev_fact["accn"]})
+        op_fact = op_series.get(latest_end) or (list(op_series.values())[-1] if op_series else None)
+        if not op_fact:
+            raise ValueError(f"Institutional Data Integrity Violation: Audited Operating Income fact not found in SEC EDGAR facts for {ticker} (latest period: {latest_end}). Zero synthetic estimates permitted.")
 
-        net_series = extract_annual_series(["NetIncomeLoss", "ProfitLoss"])
-        net_fact = net_series.get(latest_end) or (list(net_series.values())[-1] if net_series else {"val": float(rev_fact["val"]) * 0.15, "concept": "NetIncomeLoss", "accn": rev_fact["accn"]})
+        net_series = extract_annual_series(["NetIncomeLoss", "ProfitLoss", "NetIncomeLossAvailableToCommonStockholdersBasic"])
+        net_fact = net_series.get(latest_end) or (list(net_series.values())[-1] if net_series else None)
+        if not net_fact:
+            raise ValueError(f"Institutional Data Integrity Violation: Audited Net Income fact not found in SEC EDGAR facts for {ticker} (latest period: {latest_end}). Zero synthetic estimates permitted.")
 
-        ocf_series = extract_annual_series(["NetCashProvidedByUsedInOperatingActivities"])
-        ocf_fact = ocf_series.get(latest_end) or (list(ocf_series.values())[-1] if ocf_series else {"val": float(net_fact["val"]) * 1.10, "concept": "NetCashProvidedByUsedInOperatingActivities", "accn": rev_fact["accn"]})
+        ocf_series = extract_annual_series(["NetCashProvidedByUsedInOperatingActivities", "CashProvidedByUsedInOperatingActivitiesDiscontinuedOperations"])
+        ocf_fact = ocf_series.get(latest_end) or (list(ocf_series.values())[-1] if ocf_series else None)
+        if not ocf_fact:
+            raise ValueError(f"Institutional Data Integrity Violation: Audited Operating Cash Flow fact not found in SEC EDGAR facts for {ticker} (latest period: {latest_end}). Zero synthetic estimates permitted.")
 
-        capex_series = extract_annual_series(["PaymentsToAcquirePropertyPlantAndEquipment", "PaymentsToAcquireProductiveAssets"])
+        capex_series = extract_annual_series(["PaymentsToAcquirePropertyPlantAndEquipment", "PaymentsToAcquireProductiveAssets", "CapitalExpenditureIncurred1"])
         capex_fact = capex_series.get(latest_end) if capex_series else None
-        capex_val = float(capex_fact["val"]) if capex_fact else (float(rev_fact["val"]) * 0.05)
+        if not capex_fact:
+            raise ValueError(f"Institutional Data Integrity Violation: Audited Capital Expenditures fact not found in SEC EDGAR facts for {ticker} (latest period: {latest_end}). Zero synthetic estimates permitted.")
+        capex_val = float(capex_fact["val"])
 
         # Balance sheet point-in-time metrics
-        cash_fact = get_instant_fact(["CashAndCashEquivalentsAtCarryingValue", "CashCashEquivalentsRestrictedCashAndRestrictedCashEquivalents"], latest_end)
-        cash_val = float(cash_fact["val"]) if cash_fact else (float(rev_fact["val"]) * 0.10)
+        cash_fact = get_instant_fact(["CashAndCashEquivalentsAtCarryingValue", "CashCashEquivalentsRestrictedCashAndRestrictedCashEquivalents", "CashAndCashEquivalents"], latest_end)
+        if not cash_fact:
+            raise ValueError(f"Institutional Data Integrity Violation: Audited Cash and Cash Equivalents fact not found in SEC EDGAR facts for {ticker} (period: {latest_end}). Zero synthetic estimates permitted.")
+        cash_val = float(cash_fact["val"])
 
         st_inv_fact = get_instant_fact(["ShortTermInvestments", "MarketableSecuritiesCurrent"], latest_end)
         st_inv_val = float(st_inv_fact["val"]) if st_inv_fact else 0.0
@@ -550,10 +574,12 @@ class AnalystAgent:
         tot_debt_val = lt_debt_val + st_debt_val
         net_debt_val = tot_debt_val - tot_liquid_cash
 
-        rec_curr_fact = get_instant_fact(["AccountsReceivableNetCurrent", "AccountsReceivableNet"], latest_end)
-        rec_prev_fact = get_instant_fact(["AccountsReceivableNetCurrent", "AccountsReceivableNet"], prev_end)
-        rec_curr_val = float(rec_curr_fact["val"]) if rec_curr_fact else (float(rev_fact["val"]) * 0.12)
-        rec_prev_val = float(rec_prev_fact["val"]) if rec_prev_fact else (float(prev_rev_fact["val"]) * 0.12)
+        rec_curr_fact = get_instant_fact(["AccountsReceivableNetCurrent", "AccountsReceivableNet", "ReceivablesNetCurrent"], latest_end)
+        rec_prev_fact = get_instant_fact(["AccountsReceivableNetCurrent", "AccountsReceivableNet", "ReceivablesNetCurrent"], prev_end)
+        if not rec_curr_fact or not rec_prev_fact:
+            raise ValueError(f"Institutional Data Integrity Violation: Audited Accounts Receivable fact not found in SEC EDGAR facts for {ticker} (periods: {latest_end}, {prev_end}). Zero synthetic estimates permitted.")
+        rec_curr_val = float(rec_curr_fact["val"])
+        rec_prev_val = float(rec_prev_fact["val"])
 
         inv_curr_fact = get_instant_fact(["InventoryNet", "InventoriesNet"], latest_end)
         inv_prev_fact = get_instant_fact(["InventoryNet", "InventoriesNet"], prev_end)
@@ -571,11 +597,18 @@ class AnalystAgent:
                 yr_label = f"FY_{end_d[:4]}"
                 hist_fcf[yr_label] = o_v - c_v
 
-        # Market quote via yfinance
-        t = yf.Ticker(ticker)
-        info = t.info
-        current_price = float(info.get("currentPrice") or info.get("regularMarketPrice") or 100.0)
-        shares_out = float(info.get("sharesOutstanding") or 1000000000.0)
+        # Market quote via DataLayer
+        quote = dl.get_quote(ticker, ledger=self.ledger)
+        current_price = float(quote["price"])
+        shares_out = float(quote.get("shares_outstanding") or 0.0)
+        if shares_out <= 0.0:
+            sh_units = us_gaap.get("CommonStockSharesOutstanding", {}).get("units", {}).get("shares", []) or \
+                       us_gaap.get("WeightedAverageNumberOfDilutedSharesOutstanding", {}).get("units", {}).get("shares", [])
+            sh_matches = [u for u in sh_units if u.get("form") in ("10-K", "10-Q")]
+            if sh_matches:
+                shares_out = float(sh_matches[-1]["val"])
+            else:
+                raise ValueError(f"Missing verified live share count for {ticker}")
         market_cap = current_price * shares_out
 
         fiscal_yr = f"FY{latest_end[:4]}"
@@ -686,7 +719,7 @@ class AnalystAgent:
             period=fiscal_yr,
             notes=f"{ticker} Net Debt Position"
         )
-        l_price = self.ledger.record(
+        l_price = quote.get("ledger_id") or self.ledger.record(
             tool="yfinance.quote",
             ticker=ticker,
             currency="USD",
@@ -774,62 +807,94 @@ class AnalystAgent:
             return None
 
     def _fetch_generic_data(self, ticker: str) -> Dict[str, Any]:
-        """Generic ticker fetch via yfinance with full provenance tracking."""
+        from tools.data_layer import get_data_layer
+        dl = get_data_layer()
+        quote = dl.get_quote(ticker, ledger=self.ledger)
+        current_price = float(quote["price"])
         t = yf.Ticker(ticker)
         info = t.info
-        current_price = float(info.get("currentPrice") or info.get("regularMarketPrice") or 100.0)
-        shares_out = float(info.get("sharesOutstanding") or 100000000.0)
+        shares_out = float(quote.get("shares_outstanding") or 0.0)
+        if shares_out <= 0.0:
+            shares_out = float(getattr(t.fast_info, "shares", 0.0) or info.get("sharesOutstanding", 0.0))
+            if shares_out <= 0.0:
+                raise ValueError(f"Missing verified live share count for {ticker}")
         market_cap = current_price * shares_out
-        currency = info.get("currency", "USD")
+        currency = quote.get("currency") or info.get("currency", "USD")
         curr_sym = "₹" if currency == "INR" else ("£" if currency == "GBP" else ("€" if currency == "EUR" else "$"))
 
         financials = t.financials
         cashflow = t.cashflow
         balance_sheet = t.balance_sheet
 
-        # Extract latest annual items or fallback defaults
-        try:
-            rev_val = float(financials.loc["Total Revenue"].iloc[0])
+        def extract_row(df, candidate_names: List[str]) -> Optional[float]:
+            if df is not None and not df.empty:
+                for name in candidate_names:
+                    if name in df.index:
+                        val = df.loc[name].iloc[0]
+                        if val is not None and not (isinstance(val, float) and math.isnan(val)):
+                            return float(val)
+            return None
+
+        rev_val = extract_row(financials, ["Total Revenue", "Operating Revenue"])
+        if rev_val is None:
+            raw_rev = info.get("totalRevenue")
+            if raw_rev is not None:
+                rev_val = float(raw_rev)
+            else:
+                raise ValueError(f"Total Revenue unavailable for {ticker}. Zero-fabrication policy prohibits estimating revenue.")
+
+        if financials is not None and not financials.empty and "Total Revenue" in financials.index and len(financials.loc["Total Revenue"]) > 1:
             rev_prev = float(financials.loc["Total Revenue"].iloc[1])
-        except Exception:
-            rev_val = float(info.get("totalRevenue", 1000000000.0))
-            rev_prev = rev_val * 0.95
+        else:
+            raise ValueError(f"Prior year revenue unavailable for {ticker}. Zero-fabrication policy prohibits estimating prior revenue.")
 
-        try:
-            op_inc_val = float(financials.loc["Operating Income"].iloc[0])
-        except Exception:
-            op_inc_val = float(info.get("operatingIncome", rev_val * 0.20))
+        op_inc_val = extract_row(financials, ["Operating Income", "Operating Profit", "EBIT"])
+        if op_inc_val is None:
+            raw_op = info.get("operatingIncome")
+            if raw_op is not None:
+                op_inc_val = float(raw_op)
+            else:
+                raise ValueError(f"Operating Income unavailable for {ticker}. Zero-fabrication policy prohibits estimating operating income.")
 
-        try:
-            net_inc_val = float(financials.loc["Net Income"].iloc[0])
-        except Exception:
-            net_inc_val = float(info.get("netIncomeToCommon", rev_val * 0.15))
+        net_inc_val = extract_row(financials, ["Net Income", "Net Income Common Stockholders"])
+        if net_inc_val is None:
+            raw_ni = info.get("netIncomeToCommon") or info.get("netIncome")
+            if raw_ni is not None:
+                net_inc_val = float(raw_ni)
+            else:
+                raise ValueError(f"Net Income unavailable for {ticker}. Zero-fabrication policy prohibits estimating net income.")
 
-        try:
-            ocf_val = float(cashflow.loc["Operating Cash Flow"].iloc[0])
-        except Exception:
-            ocf_val = float(info.get("operatingCashflow", net_inc_val * 1.10))
+        ocf_val = extract_row(cashflow, ["Operating Cash Flow", "Cash Flow From Continuing Operating Activities"])
+        if ocf_val is None:
+            raw_ocf = info.get("operatingCashflow")
+            if raw_ocf is not None:
+                ocf_val = float(raw_ocf)
+            else:
+                raise ValueError(f"Operating Cash Flow unavailable for {ticker}. Zero-fabrication policy prohibits estimating cash flows.")
 
-        try:
-            capex_val = abs(float(cashflow.loc["Capital Expenditure"].iloc[0]))
-        except Exception:
-            capex_val = rev_val * 0.04
+        capex_raw = extract_row(cashflow, ["Capital Expenditure", "Capital Expenditures", "Purchase Of Property Plant And Equipment"])
+        if capex_raw is None:
+            raise ValueError(f"Capital Expenditure unavailable for {ticker}. Zero-fabrication policy prohibits estimating capex.")
+        capex_val = abs(float(capex_raw))
 
-        try:
-            cash_val = float(balance_sheet.loc["Cash And Cash Equivalents"].iloc[0])
-        except Exception:
-            cash_val = float(info.get("totalCash", rev_val * 0.25))
+        cash_val = extract_row(balance_sheet, ["Cash And Cash Equivalents", "Cash Cash Equivalents And Short Term Investments"])
+        if cash_val is None:
+            raw_cash = info.get("totalCash")
+            if raw_cash is not None:
+                cash_val = float(raw_cash)
+            else:
+                raise ValueError(f"Cash And Cash Equivalents unavailable for {ticker}.")
 
-        try:
-            tot_debt_val = float(balance_sheet.loc["Total Debt"].iloc[0])
-        except Exception:
-            tot_debt_val = float(info.get("totalDebt", rev_val * 0.15))
+        tot_debt_val = extract_row(balance_sheet, ["Total Debt", "Long Term Debt And Capital Lease Obligation"])
+        if tot_debt_val is None:
+            raw_debt = info.get("totalDebt")
+            tot_debt_val = float(raw_debt) if raw_debt is not None else 0.0
 
-        st_debt_val = tot_debt_val * 0.15
+        st_debt_val = extract_row(balance_sheet, ["Current Debt", "Short Term Debt", "Current Portion Of Long Term Debt"]) or 0.0
         net_debt_val = tot_debt_val - cash_val
 
         # Record entries in ledger
-        l_price = self.ledger.record(
+        l_price = quote.get("ledger_id") or self.ledger.record(
             tool="yfinance.quote",
             ticker=ticker,
             currency=currency,
@@ -1049,14 +1114,15 @@ class AnalystAgent:
             discount_rate=wacc,
             terminal_growth_rate=term_g,
             shares_outstanding=data["shares_outstanding"],
-            net_debt=net_debt_val
+            net_debt=net_debt_val,
+            mid_year=True
         )
         dcf_fair_value = dcf_res["result"]["fair_value_per_share"]
         l_dcf = self.ledger.record(
             tool="tools.calc.dcf",
             ticker=ticker,
             currency=curr,
-            inputs={"base_fcf": fcf_val, "growth_rates": growth_assumption, "discount_rate": wacc, "terminal_growth_rate": term_g, "shares_outstanding": data["shares_outstanding"], "net_debt": net_debt_val},
+            inputs={"base_fcf": fcf_val, "growth_rates": growth_assumption, "discount_rate": wacc, "terminal_growth_rate": term_g, "shares_outstanding": data["shares_outstanding"], "net_debt": net_debt_val, "mid_year": True},
             output=dcf_fair_value,
             raw_value=dcf_fair_value,
             source="tools.calc.dcf.dcf",

@@ -11,17 +11,47 @@ import hmac
 import hashlib
 import datetime
 import warnings
+import secrets
 from typing import Dict, Any, Optional, List
 
+DEFAULT_HMAC_KEY = b"antigravity-finance-hmac-key-v1"
+_SESSION_HMAC_KEY: Optional[bytes] = None
+KEY_FILE_PATH = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), ".provenance_key.sec")
+
 def get_hmac_key() -> bytes:
-    """Load HMAC signing key from environment or fallback key with strict mode support."""
+    """Load HMAC signing key from environment or persistent workspace key file, enforcing cryptographic security."""
+    global _SESSION_HMAC_KEY
     key_str = os.getenv("LEDGER_HMAC_KEY")
-    strict = os.getenv("LEDGER_HMAC_STRICT", "0").lower() in ("1", "true", "yes")
-    if not key_str:
-        if strict:
-            raise ValueError("LEDGER_HMAC_KEY environment variable is required in strict mode.")
-        key_str = "antigravity-finance-hmac-key-v1"
-    return key_str.encode("utf-8")
+    if key_str:
+        return key_str.encode("utf-8")
+    
+    strict = os.getenv("LEDGER_HMAC_STRICT", "").lower() in ("1", "true", "yes")
+    if strict:
+        raise ValueError("LEDGER_HMAC_KEY environment variable is required in strict mode.")
+
+    # If explicitly running in legacy mode without strict checking
+    if os.getenv("LEDGER_HMAC_STRICT") == "0":
+        return DEFAULT_HMAC_KEY
+
+    # Persistent workspace key ensures cross-process verifier consistency
+    if os.path.exists(KEY_FILE_PATH):
+        try:
+            with open(KEY_FILE_PATH, "rb") as f:
+                content = f.read().strip()
+                if len(content) >= 32:
+                    return content
+        except Exception:
+            pass
+
+    # Generate and persist a cryptographic 256-bit key for this workspace
+    if _SESSION_HMAC_KEY is None:
+        _SESSION_HMAC_KEY = secrets.token_bytes(32)
+        try:
+            with open(KEY_FILE_PATH, "wb") as f:
+                f.write(_SESSION_HMAC_KEY)
+        except Exception:
+            pass
+    return _SESSION_HMAC_KEY
 
 def compute_entry_hash(
     ledger_id: str,
@@ -177,13 +207,17 @@ class ProvenanceLedger:
             accession=entry.get("accession"),
             url=entry.get("url")
         )
-        if entry["integrity_hash"] == expected_hash:
+        if hmac.compare_digest(entry["integrity_hash"], expected_hash):
             return True
 
-        # Backwards compatibility check for legacy entries hashed without run_id/accession/url
+        strict = os.getenv("LEDGER_HMAC_STRICT", "1").lower() in ("1", "true", "yes")
+        if strict:
+            return False
+
+        # Backwards compatibility check only for legacy unmigrated entries
         legacy_payload = f"{entry['ledger_id']}|{entry['tool']}|{json.dumps(entry['inputs'], sort_keys=True)}|{entry['raw_value']}|{entry['source']}|{entry['timestamp']}|{entry.get('currency') or ''}|{entry.get('unit') or ''}|{entry.get('period_end') or ''}|{entry.get('fiscal_year') or ''}"
         legacy_hash = hmac.new(get_hmac_key(), legacy_payload.encode("utf-8"), hashlib.sha256).hexdigest()
-        return entry["integrity_hash"] == legacy_hash
+        return hmac.compare_digest(entry["integrity_hash"], legacy_hash)
 
     def get(self, ledger_id: str) -> Optional[Dict[str, Any]]:
         return self.entries.get(ledger_id)

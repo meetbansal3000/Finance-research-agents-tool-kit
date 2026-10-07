@@ -19,7 +19,8 @@ from tools.calc.metrics import (
 )
 from tools.calc.dcf import (
     dcf,
-    reverse_dcf
+    reverse_dcf,
+    dcf_sensitivity_matrix
 )
 from tools.calc.fx import (
     convert_currency
@@ -40,5 +41,6 @@ __all__ = [
     "ev_multiples",
     "dcf",
     "reverse_dcf",
+    "dcf_sensitivity_matrix",
     "convert_currency"
 ]

@@ -11,7 +11,7 @@ import re
 import json
 import urllib.request
 import urllib.error
-from typing import Dict, Any, Optional, Tuple, List
+from typing import Dict, Any, Optional, Tuple, List, Union
 from tools.ledger import ProvenanceLedger
 
 CACHE_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), "library", "filings")
@@ -44,40 +44,97 @@ class FilingExtractor:
 
     def fetch_tcs_fy25_audited_financials(self, ledger: Optional[ProvenanceLedger] = None) -> Dict[str, Any]:
         """
-        Extract TCS Audited FY25 and FY24 consolidated financial figures.
+        Extract TCS Audited FY25 and FY24 consolidated financial figures dynamically from the primary filing release.
         Primary source document: Tata Consultancy Services Audited Consolidated Financial Results (FY2024-25).
         Document URL: https://www.tcs.com/content/dam/tcs/investor-relations/financial-statements/2024-25/q4/press-release.pdf
         Alternative exchange release: National Stock Exchange (NSE) / BSE Corporate Announcements.
         """
         doc_url = "https://www.tcs.com/content/dam/tcs/investor-relations/financial-statements/2024-25/q4/press-release.pdf"
+        local_path = os.path.join(CACHE_DIR, "TCS_FY25_Audited_Results.md")
         
-        # Line-item disclosures from TCS Audited Statement of Financial Results (ended March 31, 2025):
-        # Figures reported in INR Crores (₹ Cr):
-        # 1. Revenue from Operations:
-        #    FY25: ₹255,324 Cr | FY24: ₹240,893 Cr (YoY +5.99%)
-        # 2. Operating Income (EBIT):
-        #    Reported Operating Profit: ₹62,074 Cr | Reported Operating Margin: 24.31% (Headline 24.3%)
-        #    Normalized EBIT: ₹62,293 Cr (24.40%)
-        # 3. Profit for the Year (Net Income):
-        #    - Attributable to Shareholders: FY25: ₹48,553 Cr | FY24: ₹45,908 Cr (YoY +5.76%)
-        #    - Non-controlling interests: FY25: ₹244 Cr | FY24: ₹191 Cr
-        #    - Total Consolidated Profit: FY25: ₹48,797 Cr | FY24: ₹46,099 Cr
-        # 4. Cash Flows:
-        #    - Operating Cash Flow (OCF): ₹48,908 Cr
-        #    - Capital Expenditure (Capex / Additions to PPE & Intangibles): ₹3,937 Cr
-        #    - Derived FCF (OCF - Capex): ₹44,971 Cr
-        #    - Company-Reported Headline FCF: ₹46,449 Cr (TCS defines headline FCF as OCF before working capital/tax adjustments or post operating capex exclusions)
-        # 5. Balance Sheet & Liquidity:
-        #    - Cash & Cash Equivalents + Current Investments: ₹41,733 Cr (₹417,330,000,000)
-        #    - Total Debt (Current Borrowings ₹1,554 Cr + Lease Liabilities ₹9,729 Cr): ₹11,283 Cr (₹112,830,000,000)
-        #    - Short-Term Debt Due: ₹1,554 Cr (₹15,540,000,000)
-        #    - Net Cash Position: ₹30,450 Cr positive cash buffer (Net Debt = -₹304,500,000,000)
-        # 6. Working Capital Line Items:
-        #    - Trade Receivables FY25: ₹45,510 Cr vs FY24: ₹43,550 Cr (YoY: +4.50%)
-        #    - Inventories: N/A (Service business, negligible goods for resale)
-        #    - Revenue Growth YoY: +5.99%
-        #    - Receivables vs Revenue YoY Divergence: 4.50% - 5.99% = -1.49 pp (Favorable cash conversion)
-        
+        if not os.path.exists(local_path):
+            raise FileNotFoundError(f"Primary filing document for TCS FY25 not found at {local_path} and live endpoint unavailable.")
+
+        with open(local_path, "r", encoding="utf-8") as f:
+            doc_text = f.read()
+
+        def parse_metric_snippet(patterns: Union[str, List[str]], text: str) -> Tuple[float, str]:
+            if isinstance(patterns, str):
+                patterns = [patterns]
+            for p in patterns:
+                m = re.search(p, text, re.IGNORECASE)
+                if m:
+                    num_str = m.group(1).replace(",", "")
+                    val_num = float(num_str)
+                    snippet = m.group(0).strip()
+                    return val_num, snippet
+            raise ValueError(f"None of candidate patterns matched in primary filing document: {patterns}")
+
+        # Dynamically parse metrics from primary filing text with multiple layout patterns
+        rev_cr, s_rev = parse_metric_snippet([
+            r"Revenue from operations for the year ended March 31, 2025 was ₹([0-9,]+)\s*crore",
+            r"Revenue from operations.*?ended March 31, 2025.*?[₹\s]*([0-9,]+)\s*crore",
+            r"Revenue from operations.*?FY\s*25.*?[₹\s]*([0-9,]+)\s*crore"
+        ], doc_text)
+        prev_rev_cr, s_prev_rev = parse_metric_snippet([
+            r"compared to ₹([0-9,]+)\s*crore in the previous year",
+            r"compared to [₹\s]*([0-9,]+)\s*crore in.*?previous year",
+            r"Revenue from operations.*?March 31, 2024.*?[₹\s]*([0-9,]+)\s*crore"
+        ], doc_text)
+        op_inc_cr, s_op_inc = parse_metric_snippet([
+            r"Total EBIT including operating adjustments stood at ₹([0-9,]+)\s*crore",
+            r"EBIT.*?stood at [₹\s]*([0-9,]+)\s*crore",
+            r"Operating Profit / EBIT:?\s*[₹\s]*([0-9,]+)\s*crore"
+        ], doc_text)
+        margin_pct, s_margin = parse_metric_snippet([
+            r"Operating Margin:\s*([0-9\.]+)\s*%",
+            r"EBIT Margin:\s*([0-9\.]+)\s*%"
+        ], doc_text)
+        net_inc_cr, s_net_inc = parse_metric_snippet([
+            r"Profit for the year attributable to shareholders of the company:\s*₹([0-9,]+)\s*crore",
+            r"Profit.*?attributable to shareholders.*?[₹\s]*([0-9,]+)\s*crore",
+            r"Net Profit attributable:?\s*[₹\s]*([0-9,]+)\s*crore"
+        ], doc_text)
+        prev_net_inc_cr, s_prev_net = parse_metric_snippet([
+            r"Profit for FY2024 attributable to shareholders was ₹([0-9,]+)\s*crore",
+            r"Profit for FY\s*24 attributable.*?[₹\s]*([0-9,]+)\s*crore"
+        ], doc_text)
+        ocf_cr, s_ocf = parse_metric_snippet([
+            r"Cash generated from operating activities:\s*₹([0-9,]+)\s*crore",
+            r"Cash generated from operating activities.*?[₹\s]*([0-9,]+)\s*crore"
+        ], doc_text)
+        capex_cr, s_capex = parse_metric_snippet([
+            r"Purchase of property, plant and equipment and intangible assets:\s*₹([0-9,]+)\s*crore",
+            r"Capital expenditures / capex.*?[₹\s]*([0-9,]+)\s*crore"
+        ], doc_text)
+        fcf_head_cr, s_fcf_head = parse_metric_snippet([
+            r"Company-reported Free Cash Flow for FY 25 was ₹([0-9,]+)\s*crore",
+            r"Free Cash Flow for FY\s*25.*?[₹\s]*([0-9,]+)\s*crore"
+        ], doc_text)
+        cash_cr, s_cash = parse_metric_snippet([
+            r"Cash and cash equivalents.*?=\s*₹([0-9,]+)\s*crore",
+            r"Cash and cash equivalents:?\s*[₹\s]*([0-9,]+)\s*crore"
+        ], doc_text)
+        debt_cr, s_debt = parse_metric_snippet([
+            r"Total borrowings and lease liabilities:\s*₹([0-9,]+)\s*crore",
+            r"Total debt and lease liabilities.*?[₹\s]*([0-9,]+)\s*crore"
+        ], doc_text)
+        st_debt_cr, s_st_debt = parse_metric_snippet([
+            r"Current borrowings due within one year:\s*₹([0-9,]+)\s*crore",
+            r"Current borrowings:?\s*[₹\s]*([0-9,]+)\s*crore"
+        ], doc_text)
+        rec_cr, s_rec = parse_metric_snippet([
+            r"Trade receivables:\s*₹([0-9,]+)\s*crore",
+            r"Trade receivables.*?[₹\s]*([0-9,]+)\s*crore"
+        ], doc_text)
+        rec_prev_cr, s_rec_prev = parse_metric_snippet([
+            r"Trade receivables prior year:\s*₹([0-9,]+)\s*crore",
+            r"Trade receivables.*?March 31, 2024.*?[₹\s]*([0-9,]+)\s*crore"
+        ], doc_text)
+
+        derived_fcf_cr = ocf_cr - capex_cr
+        net_debt_cr = debt_cr - cash_cr
+
         extracted_data = {
             "ticker": "TCS.NS",
             "period": "FY2025",
@@ -86,100 +143,100 @@ class FilingExtractor:
             "document_url": doc_url,
             "metrics": {
                 "Revenue": {
-                    "val_crore": 255324.0,
-                    "val_raw": 2553240000000.0,
+                    "val_crore": rev_cr,
+                    "val_raw": rev_cr * 1e7,
                     "page": "Page 4 (Consolidated Audited Statement of Profit and Loss)",
-                    "snippet": "Revenue from operations for the year ended March 31, 2025 was ₹255,324 crore compared to ₹240,893 crore in the previous year, an increase of 6.0%."
+                    "snippet": s_rev
                 },
                 "PriorRevenue": {
-                    "val_crore": 240893.0,
-                    "val_raw": 2408930000000.0,
+                    "val_crore": prev_rev_cr,
+                    "val_raw": prev_rev_cr * 1e7,
                     "page": "Page 4 (Consolidated Audited Statement of Profit and Loss)",
-                    "snippet": "Revenue from operations for the year ended March 31, 2024 was ₹240,893 crore."
+                    "snippet": s_prev_rev
                 },
                 "OperatingIncome": {
-                    "val_crore": 62293.0,
-                    "val_raw": 622930000000.0,
+                    "val_crore": op_inc_cr,
+                    "val_raw": op_inc_cr * 1e7,
                     "page": "Page 4 (Statement of Profit and Loss)",
-                    "snippet": "Operating profit (EBIT) before other income for FY2025 stood at ₹62,074 crore (Operating Margin 24.31%). Total EBIT including operating adjustments stood at ₹62,293 crore (24.40%)."
+                    "snippet": s_op_inc
                 },
                 "HeadlineOperatingMargin": {
-                    "val_pct": 24.3,
-                    "val_raw": 24.3,
+                    "val_pct": margin_pct,
+                    "val_raw": margin_pct,
                     "page": "Page 1 (FY25 Headline Highlights)",
-                    "snippet": "Operating Margin: 24.3%; expanded 20 bps YoY."
+                    "snippet": s_margin
                 },
                 "AttributableNetProfit": {
-                    "val_crore": 48553.0,
-                    "val_raw": 485530000000.0,
+                    "val_crore": net_inc_cr,
+                    "val_raw": net_inc_cr * 1e7,
                     "page": "Page 4 (Statement of Profit and Loss, Attributable Share)",
-                    "snippet": "Profit for the year attributable to shareholders of the company: ₹48,553 crore (Total profit including non-controlling interest ₹244 crore is ₹48,797 crore)."
+                    "snippet": s_net_inc
                 },
                 "PriorAttributableNetProfit": {
-                    "val_crore": 45908.0,
-                    "val_raw": 459080000000.0,
+                    "val_crore": prev_net_inc_cr,
+                    "val_raw": prev_net_inc_cr * 1e7,
                     "page": "Page 4 (Statement of Profit and Loss, Attributable Share)",
-                    "snippet": "Profit for FY2024 attributable to shareholders was ₹45,908 crore (Total profit ₹46,099 crore)."
+                    "snippet": s_prev_net
                 },
                 "OperatingCashFlow": {
-                    "val_crore": 48908.0,
-                    "val_raw": 489080000000.0,
+                    "val_crore": ocf_cr,
+                    "val_raw": ocf_cr * 1e7,
                     "page": "Page 6 (Consolidated Statement of Cash Flows)",
-                    "snippet": "Cash generated from operating activities: ₹48,908 crore."
+                    "snippet": s_ocf
                 },
                 "Capex": {
-                    "val_crore": 3937.0,
-                    "val_raw": 39370000000.0,
+                    "val_crore": capex_cr,
+                    "val_raw": capex_cr * 1e7,
                     "page": "Page 6 (Consolidated Statement of Cash Flows)",
-                    "snippet": "Purchase of property, plant and equipment and intangible assets: ₹3,937 crore."
+                    "snippet": s_capex
                 },
                 "DerivedFreeCashFlow": {
-                    "val_crore": 44971.0,
-                    "val_raw": 449710000000.0,
-                    "page": "Page 6 (Calculated: OCF ₹48,908 Cr - Capex ₹3,937 Cr)",
-                    "snippet": "Free Cash Flow derived as Operating Cash Flow (₹48,908 crore) minus Capital Expenditures (₹3,937 crore) = ₹44,971 crore."
+                    "val_crore": derived_fcf_cr,
+                    "val_raw": derived_fcf_cr * 1e7,
+                    "page": "Page 6 (Calculated: OCF - Capex)",
+                    "snippet": f"Free Cash Flow derived as Operating Cash Flow (₹{ocf_cr:,.0f} crore) minus Capital Expenditures (₹{capex_cr:,.0f} crore) = ₹{derived_fcf_cr:,.0f} crore."
                 },
                 "HeadlineFreeCashFlow": {
-                    "val_crore": 46449.0,
-                    "val_raw": 464490000000.0,
+                    "val_crore": fcf_head_cr,
+                    "val_raw": fcf_head_cr * 1e7,
                     "page": "Page 1 (Financial Performance Highlights)",
-                    "snippet": "Company-reported Free Cash Flow for FY 25 was ₹46,449 crore, representing 95.7% of net profit."
+                    "snippet": s_fcf_head
                 },
                 "CashAndInvestments": {
-                    "val_crore": 41733.0,
-                    "val_raw": 417330000000.0,
+                    "val_crore": cash_cr,
+                    "val_raw": cash_cr * 1e7,
                     "page": "Page 5 (Consolidated Balance Sheet)",
-                    "snippet": "Cash and cash equivalents (₹6,765 crore) + Other current investments / deposits (₹34,968 crore) = ₹41,733 crore."
+                    "snippet": s_cash
                 },
                 "TotalDebt": {
-                    "val_crore": 11283.0,
-                    "val_raw": 112830000000.0,
+                    "val_crore": debt_cr,
+                    "val_raw": debt_cr * 1e7,
                     "page": "Page 5 (Consolidated Balance Sheet)",
-                    "snippet": "Total borrowings and lease liabilities: ₹11,283 crore (Current borrowings ₹1,554 crore; Lease liabilities ₹9,729 crore)."
+                    "snippet": s_debt
                 },
                 "ShortTermDebt": {
-                    "val_crore": 1554.0,
-                    "val_raw": 15540000000.0,
+                    "val_crore": st_debt_cr,
+                    "val_raw": st_debt_cr * 1e7,
                     "page": "Page 5 (Consolidated Balance Sheet)",
-                    "snippet": "Current borrowings due within one year: ₹1,554 crore."
+                    "snippet": s_st_debt
                 },
                 "NetDebt": {
-                    "val_crore": -30450.0,
-                    "val_raw": -304500000000.0,
+                    "val_crore": net_debt_cr,
+                    "val_raw": net_debt_cr * 1e7,
                     "page": "Page 5 (Consolidated Balance Sheet)",
-                    "snippet": "Net Cash position: Total Debt (₹11,283 crore) - Cash & Investments (₹41,733 crore) = -₹30,450 crore."
+                    "snippet": f"Net Cash position: Total Debt (₹{debt_cr:,.0f} crore) - Cash & Investments (₹{cash_cr:,.0f} crore) = ₹{net_debt_cr:,.0f} crore."
                 },
                 "TradeReceivables": {
-                    "val_crore": 45510.0,
-                    "val_raw": 455100000000.0,
+                    "val_crore": rec_cr,
+                    "val_raw": rec_cr * 1e7,
                     "page": "Page 5 (Balance Sheet)",
-                    "snippet": "Trade receivables: ₹45,510 crore (vs ₹43,550 crore in FY24, +4.50% YoY)."
+                    "snippet": s_rec
                 },
                 "PriorTradeReceivables": {
-                    "val_crore": 43550.0,
-                    "val_raw": 435500000000.0,
+                    "val_crore": rec_prev_cr,
+                    "val_raw": rec_prev_cr * 1e7,
                     "page": "Page 5 (Balance Sheet)",
-                    "snippet": "Trade receivables prior year: ₹43,550 crore."
+                    "snippet": s_rec_prev
                 }
             }
         }
@@ -207,22 +264,53 @@ class FilingExtractor:
 
     def fetch_apple_fy25_audited_financials(self, ledger: Optional[ProvenanceLedger] = None) -> Dict[str, Any]:
         """
-        Extract Apple Inc. (AAPL) Audited FY25 balance sheet liquidity and debt items from SEC 10-K.
+        Extract Apple Inc. (AAPL) Audited FY25 balance sheet liquidity and debt items dynamically from SEC 10-K.
         Document URL: https://data.sec.gov/api/xbrl/companyfacts/CIK0000320193.json
         Filing Reference: SEC Form 10-K for FY ended September 27, 2025 (Accn: 0000320193-25-000079).
         """
-        # Exact audited line items from SEC 10-K Balance Sheet (ended September 27, 2025, Accn: 0000320193-25-000079):
-        # Cash and Cash Equivalents: $35,934,000,000
-        # Marketable Securities (Current): $18,763,000,000
-        # Marketable Securities (Non-Current): $77,723,000,000
-        # Total Cash + Liquid Marketable Securities = $132,420,000,000
-        # Commercial Paper: $7,979,000,000
-        # Term Debt (Current): $12,350,000,000
-        # Term Debt (Non-Current): $78,328,000,000
-        # Total Debt = $98,657,000,000
-        # Net Cash Buffer = Total Debt ($98,657M) - Total Cash & Securities ($132,420M) = -$33,763,000,000 (-$33.76B)
-        # Accounts Receivable FY25: $39,777,000,000 vs FY24: $33,410,000,000 (YoY: +19.06%)
-        # Inventories FY25: $5,718,000,000 vs FY24: $7,286,000,000 (YoY: -21.52%)
+        from tools.data_layer import get_data_layer
+        sec_url = "https://data.sec.gov/api/xbrl/companyfacts/CIK0000320193.json"
+        facts_data = get_data_layer().fetch_sec_edgar(sec_url, is_json=True, ledger=ledger)
+        ug = facts_data.get("facts", {}).get("us-gaap", {})
+        if not ug:
+            raise ValueError("SEC EDGAR us-gaap facts unavailable for Apple Inc. (CIK0000320193)")
+
+        def get_required_fact(concept_candidates: List[str], end_d: str = "2025-09-27") -> Tuple[float, str]:
+            for concept in concept_candidates:
+                if concept in ug:
+                    units = ug[concept].get("units", {}).get("USD", [])
+                    m = [u for u in units if u.get("form") == "10-K" and u.get("end") == end_d]
+                    if m:
+                        return float(m[-1]["val"]), m[-1].get("accn", "0000320193-25-000079")
+            raise ValueError(f"Required audited XBRL fact '{concept_candidates[0]}' (end: {end_d}) not found for AAPL in SEC EDGAR.")
+
+        cash_val, accn_cash = get_required_fact(["CashAndCashEquivalentsAtCarryingValue"])
+        msc_val, accn_msc = get_required_fact(["MarketableSecuritiesCurrent"])
+        msnc_val, accn_msnc = get_required_fact(["MarketableSecuritiesNoncurrent"])
+        cp_val, accn_cp = get_required_fact(["CommercialPaper"])
+        st_debt_val, accn_st = get_required_fact(["LongTermDebtCurrent"])
+        lt_debt_val, accn_lt = get_required_fact(["LongTermDebtNoncurrent"])
+        rec_val, accn_rec = get_required_fact(["AccountsReceivableNetCurrent"])
+        rec_prev_val, accn_rec_prev = get_required_fact(["AccountsReceivableNetCurrent"], end_d="2024-09-28")
+        inv_val, accn_inv = get_required_fact(["InventoryNet"])
+        inv_prev_val, accn_inv_prev = get_required_fact(["InventoryNet"], end_d="2024-09-28")
+
+        tot_liquid = cash_val + msc_val + msnc_val
+        tot_debt = cp_val + st_debt_val + lt_debt_val
+        net_debt = tot_debt - tot_liquid
+
+        vals = {
+            "CashAndEquivalents": cash_val,
+            "MarketableSecuritiesCurrent": msc_val,
+            "MarketableSecuritiesNonCurrent": msnc_val,
+            "CommercialPaper": cp_val,
+            "ShortTermDebt": st_debt_val,
+            "LongTermDebtNonCurrent": lt_debt_val,
+            "AccountsReceivable": rec_val,
+            "PriorAccountsReceivable": rec_prev_val,
+            "Inventories": inv_val,
+            "PriorInventories": inv_prev_val
+        }
 
         data = {
             "ticker": "AAPL",
@@ -235,69 +323,69 @@ class FilingExtractor:
             "source_url": "https://www.sec.gov/Archives/edgar/data/320193/000032019325000079/aapl-20250927.htm",
             "metrics": {
                 "CashAndEquivalents": {
-                    "val_raw": 35934000000.0,
+                    "val_raw": vals["CashAndEquivalents"],
                     "page": "Consolidated Balance Sheets, Item 8",
-                    "snippet": "Cash and cash equivalents: $35,934 million as of September 27, 2025."
+                    "snippet": f"Cash and cash equivalents: ${vals['CashAndEquivalents']/1e6:,.0f} million as of September 27, 2025."
                 },
                 "MarketableSecuritiesCurrent": {
-                    "val_raw": 18763000000.0,
+                    "val_raw": vals["MarketableSecuritiesCurrent"],
                     "page": "Consolidated Balance Sheets, Item 8",
-                    "snippet": "Marketable securities, current: $18,763 million as of September 27, 2025."
+                    "snippet": f"Marketable securities, current: ${vals['MarketableSecuritiesCurrent']/1e6:,.0f} million as of September 27, 2025."
                 },
                 "MarketableSecuritiesNonCurrent": {
-                    "val_raw": 77723000000.0,
+                    "val_raw": vals["MarketableSecuritiesNonCurrent"],
                     "page": "Consolidated Balance Sheets, Item 8",
-                    "snippet": "Marketable securities, non-current: $77,723 million as of September 27, 2025."
+                    "snippet": f"Marketable securities, non-current: ${vals['MarketableSecuritiesNonCurrent']/1e6:,.0f} million as of September 27, 2025."
                 },
                 "TotalCashAndMarketableSecurities": {
-                    "val_raw": 132420000000.0,
+                    "val_raw": tot_liquid,
                     "page": "Consolidated Balance Sheets, Item 8 (Total Liquid Assets)",
-                    "snippet": "Total cash, cash equivalents and marketable securities: $132,420 million as of September 27, 2025."
+                    "snippet": f"Total cash, cash equivalents and marketable securities: ${tot_liquid/1e6:,.0f} million as of September 27, 2025."
                 },
                 "CommercialPaper": {
-                    "val_raw": 7979000000.0,
+                    "val_raw": vals["CommercialPaper"],
                     "page": "Consolidated Balance Sheets, Item 8",
-                    "snippet": "Commercial paper: $7,979 million as of September 27, 2025."
+                    "snippet": f"Commercial paper: ${vals['CommercialPaper']/1e6:,.0f} million as of September 27, 2025."
                 },
                 "ShortTermDebt": {
-                    "val_raw": 12350000000.0,
+                    "val_raw": vals["ShortTermDebt"],
                     "page": "Consolidated Balance Sheets, Item 8",
-                    "snippet": "Current portion of term debt: $12,350 million as of September 27, 2025."
+                    "snippet": f"Current portion of term debt: ${vals['ShortTermDebt']/1e6:,.0f} million as of September 27, 2025."
                 },
                 "LongTermDebtNonCurrent": {
-                    "val_raw": 78328000000.0,
+                    "val_raw": vals["LongTermDebtNonCurrent"],
                     "page": "Consolidated Balance Sheets, Item 8",
-                    "snippet": "Term debt, non-current: $78,328 million as of September 27, 2025."
+                    "snippet": f"Term debt, non-current: ${vals['LongTermDebtNonCurrent']/1e6:,.0f} million as of September 27, 2025."
                 },
                 "TotalDebt": {
-                    "val_raw": 98657000000.0,
+                    "val_raw": tot_debt,
                     "page": "Consolidated Balance Sheets, Item 8",
-                    "snippet": "Total debt obligations including term debt ($90,678 million) and commercial paper ($7,979 million) = $98,657 million as of September 27, 2025."
+                    "snippet": f"Total debt obligations: ${tot_debt/1e6:,.0f} million as of September 27, 2025."
                 },
                 "NetDebt": {
-                    "val_raw": -33763000000.0,
-                    "page": "Calculated: Total Debt ($98,657M) - Liquid Assets ($132,420M)",
-                    "snippet": "Net Cash position of -$33,763 million ($33.76 billion net cash buffer as of September 27, 2025)."
+                    "val_raw": net_debt,
+                    "page": "Calculated: Total Debt - Liquid Assets",
+                    "snippet": f"Net Cash position of -${abs(net_debt)/1e6:,.0f} million as of September 27, 2025."
                 },
                 "AccountsReceivable": {
-                    "val_raw": 39777000000.0,
+                    "val_raw": vals["AccountsReceivable"],
                     "page": "Consolidated Balance Sheets, Item 8",
-                    "snippet": "Accounts receivable, net: $39,777 million as of September 27, 2025."
+                    "snippet": f"Accounts receivable, net: ${vals['AccountsReceivable']/1e6:,.0f} million as of September 27, 2025."
                 },
                 "PriorAccountsReceivable": {
-                    "val_raw": 33410000000.0,
+                    "val_raw": vals["PriorAccountsReceivable"],
                     "page": "Consolidated Balance Sheets, Item 8",
-                    "snippet": "Prior year accounts receivable: $33,410 million as of September 28, 2024 (YoY change: +19.06%)."
+                    "snippet": f"Prior year accounts receivable: ${vals['PriorAccountsReceivable']/1e6:,.0f} million as of September 28, 2024."
                 },
                 "Inventories": {
-                    "val_raw": 5718000000.0,
+                    "val_raw": vals["Inventories"],
                     "page": "Consolidated Balance Sheets, Item 8",
-                    "snippet": "Inventories: $5,718 million as of September 27, 2025."
+                    "snippet": f"Inventories: ${vals['Inventories']/1e6:,.0f} million as of September 27, 2025."
                 },
                 "PriorInventories": {
-                    "val_raw": 7286000000.0,
+                    "val_raw": vals["PriorInventories"],
                     "page": "Consolidated Balance Sheets, Item 8",
-                    "snippet": "Prior year inventories: $7,286 million as of September 28, 2024 (YoY change: -21.52%)."
+                    "snippet": f"Prior year inventories: ${vals['PriorInventories']/1e6:,.0f} million as of September 28, 2024."
                 }
             }
         }
@@ -418,30 +506,16 @@ class FilingExtractor:
         Supports global filers: TSM, BABA, ASML, AZN, SAP, etc.
         """
         clean_cik = str(cik).strip().zfill(10)
-        cache_path = os.path.join(CACHE_DIR, f"CIK{clean_cik}_companyfacts.json")
-
-        json_data = None
-        if os.path.exists(cache_path) and os.path.getsize(cache_path) > 0:
-            try:
-                with open(cache_path, "r", encoding="utf-8") as f:
-                    json_data = json.load(f)
-            except Exception:
-                pass
-
-        if not json_data:
-            url = f"https://data.sec.gov/api/xbrl/companyfacts/CIK{clean_cik}.json"
-            req = urllib.request.Request(url, headers={"User-Agent": self.user_agent})
-            try:
-                with urllib.request.urlopen(req, timeout=20) as resp:
-                    json_data = json.loads(resp.read().decode("utf-8"))
-                with open(cache_path, "w", encoding="utf-8") as f:
-                    json.dump(json_data, f, indent=2)
-            except Exception as e:
-                return {
-                    "ticker": ticker,
-                    "status": "ERROR",
-                    "error": f"Failed to fetch Form 20-F company facts for CIK {clean_cik}: {e}"
-                }
+        from tools.data_layer import get_data_layer
+        url = f"https://data.sec.gov/api/xbrl/companyfacts/CIK{clean_cik}.json"
+        try:
+            json_data = get_data_layer().fetch_sec_edgar(url, is_json=True, ledger=ledger)
+        except Exception as e:
+            return {
+                "ticker": ticker,
+                "status": "ERROR",
+                "error": f"Failed to fetch Form 20-F company facts for CIK {clean_cik}: {e}"
+            }
 
         facts = json_data.get("facts", {})
         ifrs = facts.get("ifrs-full", {})

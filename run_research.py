@@ -110,6 +110,10 @@ def run_pipeline(
         audit_res = verifier.audit()
         summary = audit_res["summary"]
         print(f"  Post-Correction Audit Result: {summary['status']} ({summary['total_confirmed']} Confirmed, {summary['total_wrong']} Wrong, {summary['total_unverifiable']} Unverifiable)")
+        if summary.get("total_wrong", 0) > 0 or summary.get("status") in ("FAIL", "FLAGGED"):
+            raise RuntimeError(
+                f"Institutional Hard Stop: Report audit status is {summary.get('status')} with {summary.get('total_wrong', 0)} uncorrected erroneous figure(s) and {summary.get('total_unverifiable', 0)} unverifiable items after automated single-round correction. Pipeline halted under default-deny policy."
+            )
 
     verification_audit_path = os.path.join(target_dir, "verification_audit.md")
     gen_audit_path = f"{os.path.splitext(analyst_report_path)[0]}.audit.md"
@@ -134,12 +138,16 @@ def run_pipeline(
     sk_verifier = ReportVerifier(
         report_path=skeptic_report_path,
         ledger_path=skeptic_sidecar_path,
-        perform_refetch=False
+        perform_refetch=perform_refetch
     )
     sk_audit = sk_verifier.audit()
     print(f"  ✓ Skeptic review written to: {skeptic_report_path}")
     print(f"  ✓ Skeptic Audit: {sk_audit['summary']['status']} ({sk_audit['summary']['total_confirmed']} Confirmed)")
     print(f"  ✓ Adversarial Thesis Verdict: {skeptic_res['verdict']}")
+    if sk_audit["summary"].get("total_wrong", 0) > 0 or sk_audit["summary"].get("status") in ("FAIL", "FLAGGED"):
+        raise RuntimeError(
+            f"Institutional Hard Stop: Skeptic report failed audit with status {sk_audit['summary'].get('status')} and {sk_audit['summary'].get('total_wrong', 0)} wrong figure(s). Pipeline halted under default-deny policy."
+        )
 
     # -------------------------------------------------------------------------
     # STAGE 4: Final Synthesized Report

@@ -45,11 +45,12 @@ os.makedirs(CACHE_DIR, exist_ok=True)
 # Process & Thread Safety: FileLock
 # -----------------------------------------------------------------------------
 class FileLock:
-    """Advisory inter-process file lock using atomic OS file creation."""
-    def __init__(self, lock_file: str, timeout: float = 10.0, retry_delay: float = 0.05):
+    """Advisory inter-process file lock with crash recovery and stale lock clearing."""
+    def __init__(self, lock_file: str, timeout: float = 10.0, retry_delay: float = 0.05, stale_timeout: float = 5.0):
         self.lock_file = lock_file
         self.timeout = timeout
         self.retry_delay = retry_delay
+        self.stale_timeout = stale_timeout
         self.fd: Optional[int] = None
 
     def acquire(self) -> bool:
@@ -57,8 +58,22 @@ class FileLock:
         while True:
             try:
                 self.fd = os.open(self.lock_file, os.O_CREAT | os.O_EXCL | os.O_RDWR)
+                payload = f"{os.getpid()}:{time.time()}\n"
+                os.write(self.fd, payload.encode("utf-8"))
                 return True
             except (FileExistsError, OSError):
+                # Inspect for stale lock left behind by crashed/terminated processes
+                try:
+                    if os.path.exists(self.lock_file):
+                        mtime = os.path.getmtime(self.lock_file)
+                        if (time.time() - mtime) > self.stale_timeout:
+                            try:
+                                os.remove(self.lock_file)
+                            except OSError:
+                                pass
+                except OSError:
+                    pass
+
                 if time.time() - start_time >= self.timeout:
                     return False
                 time.sleep(self.retry_delay)
@@ -189,14 +204,42 @@ class TokenBucketRateLimiter:
         }
 
     def wait_if_needed(self, provider: str) -> None:
+        min_int = self.min_intervals.get(provider, 0.0)
+        state_file = os.path.join(self.cache_dir, "rate_limiter_state.json")
+        lock_file = f"{state_file}.lock"
+
         with self._lock:
-            min_int = self.min_intervals.get(provider, 0.0)
             last = self.last_call.get(provider, 0.0)
             now = time.time()
-            elapsed = now - last
-            if elapsed < min_int:
-                time.sleep(min_int - elapsed)
-            self.last_call[provider] = time.time()
+            try:
+                with FileLock(lock_file, timeout=5.0, stale_timeout=3.0):
+                    data = {}
+                    if os.path.exists(state_file):
+                        try:
+                            with open(state_file, "r", encoding="utf-8") as f:
+                                data = json.load(f)
+                        except Exception:
+                            data = {}
+                    file_last = float(data.get(provider, 0.0))
+                    effective_last = max(last, file_last)
+                    elapsed = now - effective_last
+                    if elapsed < min_int:
+                        time.sleep(min_int - elapsed)
+                    now_updated = time.time()
+                    data[provider] = now_updated
+                    self.last_call[provider] = now_updated
+                    temp_f = f"{state_file}.tmp.{os.getpid()}"
+                    try:
+                        with open(temp_f, "w", encoding="utf-8") as f:
+                            json.dump(data, f)
+                        os.replace(temp_f, state_file)
+                    except Exception:
+                        if os.path.exists(temp_f):
+                            os.remove(temp_f)
+            except TimeoutError:
+                # If cross-process lock timed out, wait full min_interval to guarantee no breach
+                time.sleep(min_int)
+                self.last_call[provider] = time.time()
 
     def check_alpha_vantage_quota(self) -> Tuple[bool, int]:
         """Tracks daily calls to Alpha Vantage against the 25 calls/day free tier limit with file-locking safety."""
@@ -367,9 +410,10 @@ class DataLayer:
         cache_key = f"quote_{ticker}"
         cached = self.cache.get(cache_key)
         if cached:
+            l_id = None
             if ledger:
-                self._record_quote_in_ledger(ledger, ticker, cached, source=f"Cache ({cached['source']})")
-            return {**cached, "cached": True}
+                l_id = self._record_quote_in_ledger(ledger, ticker, cached, source=f"Cache ({cached['source']})")
+            return {**cached, "cached": True, "ledger_id": l_id}
 
         errors = []
 
@@ -379,9 +423,10 @@ class DataLayer:
             res = self._fetch_yfinance_quote(ticker)
             if res and res.get("price") is not None:
                 self.cache.set(cache_key, res, self.ttl_quotes)
+                l_id = None
                 if ledger:
-                    self._record_quote_in_ledger(ledger, ticker, res, source="Yahoo Finance Market Quote")
-                return {**res, "cached": False}
+                    l_id = self._record_quote_in_ledger(ledger, ticker, res, source="Yahoo Finance Market Quote")
+                return {**res, "cached": False, "ledger_id": l_id}
         except Exception as e:
             errors.append(f"yfinance failed: {e}")
 
@@ -392,9 +437,10 @@ class DataLayer:
                 res = self._fetch_finnhub_quote(ticker)
                 if res and res.get("price") is not None:
                     self.cache.set(cache_key, res, self.ttl_quotes)
+                    l_id = None
                     if ledger:
-                        self._record_quote_in_ledger(ledger, ticker, res, source="Finnhub Quote API")
-                    return {**res, "cached": False}
+                        l_id = self._record_quote_in_ledger(ledger, ticker, res, source="Finnhub Quote API")
+                    return {**res, "cached": False, "ledger_id": l_id}
             except Exception as e:
                 errors.append(f"Finnhub failed: {e}")
 
@@ -405,9 +451,10 @@ class DataLayer:
                 res = self._fetch_fmp_quote(ticker)
                 if res and res.get("price") is not None:
                     self.cache.set(cache_key, res, self.ttl_quotes)
+                    l_id = None
                     if ledger:
-                        self._record_quote_in_ledger(ledger, ticker, res, source="Financial Modeling Prep Quote API")
-                    return {**res, "cached": False}
+                        l_id = self._record_quote_in_ledger(ledger, ticker, res, source="Financial Modeling Prep Quote API")
+                    return {**res, "cached": False, "ledger_id": l_id}
             except Exception as e:
                 errors.append(f"FMP failed: {e}")
 
@@ -420,9 +467,10 @@ class DataLayer:
                     res = self._fetch_alphavantage_quote(ticker)
                     if res and res.get("price") is not None:
                         self.cache.set(cache_key, res, self.ttl_quotes)
+                        l_id = None
                         if ledger:
-                            self._record_quote_in_ledger(ledger, ticker, res, source="Alpha Vantage Global Quote API")
-                        return {**res, "cached": False}
+                            l_id = self._record_quote_in_ledger(ledger, ticker, res, source="Alpha Vantage Global Quote API")
+                        return {**res, "cached": False, "ledger_id": l_id}
                 except Exception as e:
                     errors.append(f"Alpha Vantage failed: {e}")
             else:
@@ -571,7 +619,62 @@ class DataLayer:
         )
 
     # -------------------------------------------------------------------------
-    # 2. Macroeconomic Series with Fallback (FRED -> Yahoo Proxies)
+    # 2. Unified SEC EDGAR Fetcher (Rate Limited & Cached)
+    # -------------------------------------------------------------------------
+    def fetch_sec_edgar(
+        self,
+        url: str,
+        is_json: bool = True,
+        timeout: int = 25,
+        ledger: Optional[ProvenanceLedger] = None
+    ) -> Any:
+        """
+        Unified SEC EDGAR fetcher enforcing rate limiting (max 10 req/s),
+        24-hour disk caching, configured user agent, and provenance ledger recording.
+        """
+        cache_key = f"sec_{hashlib.sha256(url.encode('utf-8')).hexdigest()}"
+        cached = self.cache.get(cache_key)
+        if cached is not None:
+            if ledger:
+                ledger.record(
+                    tool="data_layer.fetch_sec_edgar",
+                    inputs={"url": url},
+                    output=f"Cached SEC response ({len(str(cached))} chars)",
+                    source=f"Cache ({url})",
+                    source_tag="SEC_CACHE"
+                )
+            return cached
+
+        # Enforce SEC token bucket rate limiter
+        self.limiter.wait_if_needed("SEC_EDGAR")
+
+        user_agent = os.getenv("SEC_EDGAR_USER_AGENT", "ResearchAnalyst research@example.com")
+        req = urllib.request.Request(url, headers={"User-Agent": user_agent})
+        with urllib.request.urlopen(req, timeout=timeout) as resp:
+            raw_bytes = resp.read()
+            raw_text = raw_bytes.decode("utf-8", errors="replace")
+
+        if is_json:
+            parsed = json.loads(raw_text)
+            self.cache.set(cache_key, parsed, ttl_seconds=self.ttl_financials)
+            result = parsed
+        else:
+            self.cache.set(cache_key, raw_text, ttl_seconds=self.ttl_financials)
+            result = raw_text
+
+        if ledger:
+            ledger.record(
+                tool="data_layer.fetch_sec_edgar",
+                inputs={"url": url},
+                output=f"Live SEC response ({len(raw_text)} chars)",
+                source=url,
+                source_tag="SEC"
+            )
+
+        return result
+
+    # -------------------------------------------------------------------------
+    # 3. Macroeconomic Series with Fallback (FRED -> Yahoo Proxies)
     # -------------------------------------------------------------------------
     def get_macro_series(self, series_id: str, ledger: Optional[ProvenanceLedger] = None) -> Dict[str, Any]:
         """
@@ -667,13 +770,39 @@ class DataLayer:
         cache_key = f"fundamentals_{clean_ticker}"
         cached = self.cache.get(cache_key)
         if cached:
+            if ledger:
+                ledger.record(
+                    tool="data_layer.get_fundamentals",
+                    ticker=clean_ticker,
+                    inputs={"ticker": clean_ticker},
+                    output=cached.get("revenue"),
+                    raw_value=cached.get("revenue"),
+                    source=f"Cache ({cached.get('source')})",
+                    period=cached.get("period"),
+                    notes=f"Cached fundamentals for {clean_ticker}"
+                )
             return {**cached, "cached": True}
 
         # For US (AAPL) and Indian (TCS.NS), we integrate directly with primary verified tools
         from agents.analyst import AnalystAgent
-        analyst = AnalystAgent()
+        analyst = AnalystAgent(ledger=ledger)
         company_data = analyst.fetch_company_data(clean_ticker)
         
+        source_label = company_data.get("source")
+        if not source_label:
+            if company_data.get("facts"):
+                facts_dict = company_data.get("facts", {})
+                accn = ""
+                for fact_item in facts_dict.values():
+                    if isinstance(fact_item, dict) and fact_item.get("accn"):
+                        accn = fact_item["accn"]
+                        break
+                source_label = f"SEC EDGAR Form 10-K (Accn: {accn})" if accn else "SEC EDGAR Form 10-K"
+            elif clean_ticker.startswith("TCS"):
+                source_label = "TCS Audited Financial Results Release (Ind AS / NSE / BSE)"
+            else:
+                source_label = f"Market Data Provider (yfinance / Multi-source, {company_data.get('accounting_standard', 'Standard')})"
+
         res = {
             "ticker": clean_ticker,
             "company_name": company_data.get("company_name"),
@@ -685,9 +814,20 @@ class DataLayer:
             "net_income": company_data.get("net_income"),
             "operating_cash_flow": company_data.get("operating_cash_flow"),
             "capex": company_data.get("capex"),
-            "source": f"Primary Regulatory Filings ({company_data.get('accounting_standard')})"
+            "source": source_label
         }
         self.cache.set(cache_key, res, self.ttl_financials)
+        if ledger:
+            ledger.record(
+                tool="data_layer.get_fundamentals",
+                ticker=clean_ticker,
+                inputs={"ticker": clean_ticker},
+                output=res["revenue"],
+                raw_value=res["revenue"],
+                source=res["source"],
+                period=res["period"],
+                notes=f"Fundamentals for {clean_ticker}"
+            )
         return {**res, "cached": False}
 
     # -------------------------------------------------------------------------
@@ -708,6 +848,16 @@ class DataLayer:
             "market_coverage": MARKET_COVERAGE_ANALYSIS,
             "active_providers": active_keys
         }
+
+
+_default_data_layer: Optional[DataLayer] = None
+
+def get_data_layer() -> DataLayer:
+    """Returns the shared singleton DataLayer instance."""
+    global _default_data_layer
+    if _default_data_layer is None:
+        _default_data_layer = DataLayer()
+    return _default_data_layer
 
 
 def main():
