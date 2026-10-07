@@ -454,7 +454,7 @@ class FilingExtractor:
 
         entity_name = json_data.get("entityName", ticker)
 
-        def get_latest_fact(tag_candidates: List[str]) -> Optional[Dict[str, Any]]:
+        def get_anchor_revenue_fact(tag_candidates: List[str]) -> Optional[Dict[str, Any]]:
             for tag in tag_candidates:
                 if tag not in ifrs:
                     continue
@@ -465,7 +465,6 @@ class FilingExtractor:
                         if f.get("form") == "20-F" and f.get("fp") == "FY" and "val" in f
                     ]
                     if fy_facts:
-                        # Sort by end date descending
                         sorted_facts = sorted(fy_facts, key=lambda x: str(x.get("end", "")))
                         latest = sorted_facts[-1]
                         latest["unit"] = unit
@@ -473,39 +472,109 @@ class FilingExtractor:
                         return latest
             return None
 
-        # Extract primary metrics
-        rev_fact = get_latest_fact(["Revenue", "RevenueFromContractsWithCustomers"])
-        ebit_fact = get_latest_fact(["ProfitLossFromOperatingActivities", "OperatingProfitLoss"])
-        ni_fact = get_latest_fact(["ProfitLoss", "ProfitLossAttributableToOwnersOfParent"])
-        ocf_fact = get_latest_fact(["CashFlowsFromUsedInOperatingActivities"])
-        capex_fact = get_latest_fact(["PurchaseOfPropertyPlantAndEquipmentClassifiedAsInvestingActivities", "PaymentsToAcquirePropertyPlantAndEquipment"])
-        cash_fact = get_latest_fact(["CashAndCashEquivalents"])
+        # Determine anchor reporting period from Revenue
+        rev_fact = get_anchor_revenue_fact(["Revenue", "RevenueFromContractsWithCustomers"])
+        if not rev_fact:
+            return {
+                "ticker": ticker,
+                "status": "ERROR",
+                "error": f"No annual Form 20-F revenue fact found for CIK {clean_cik}."
+            }
 
-        # Determine latest fiscal year and period end
-        latest_fy = rev_fact.get("fy") if rev_fact else None
-        period_end = rev_fact.get("end") if rev_fact else None
-        accn = rev_fact.get("accn", "") if rev_fact else ""
-        currency = rev_fact.get("unit", "USD") if rev_fact else "USD"
+        target_fy = rev_fact.get("fy")
+        target_end = rev_fact.get("end")
+        target_accn = rev_fact.get("accn", "")
+        currency = rev_fact.get("unit", "USD")
 
-        # Calculate debt components if available
-        st_debt_fact = get_latest_fact(["CurrentPortionOfLongtermBorrowings", "CurrentBondsIssuedAndCurrentPortionOfNoncurrentBondsIssued", "CurrentBorrowings"])
-        lt_debt_fact = get_latest_fact(["LongtermBorrowings", "NoncurrentPortionOfNoncurrentBondsIssued", "NoncurrentBorrowings"])
+        # Period-matched fact selector ensuring period, accession, and currency integrity
+        fact_sources = {}
+        def get_period_matched_fact(metric_name: str, tag_candidates: List[str], is_instant: bool = False) -> Optional[Dict[str, Any]]:
+            for tag in tag_candidates:
+                if tag not in ifrs:
+                    continue
+                units_dict = ifrs[tag].get("units", {})
+                # Strictly lock to the anchor revenue currency to prevent cross-currency distortion
+                if currency not in units_dict:
+                    continue
+                facts_list = units_dict[currency]
+                # Lock strictly to the exact accession number of the anchor 20-F filing
+                accn_matched = [
+                    f for f in facts_list
+                    if f.get("form") == "20-F" and f.get("end") == target_end and f.get("accn") == target_accn and "val" in f
+                ]
+                if not accn_matched:
+                    continue
+                # For duration metrics, strictly require matching fiscal year/annual period
+                if not is_instant:
+                    if target_fy:
+                        fy_matched = [
+                            f for f in accn_matched
+                            if f.get("fy") == target_fy and (f.get("fp") == "FY" or not f.get("fp"))
+                        ]
+                        if fy_matched:
+                            res = dict(fy_matched[-1])
+                            res["unit"] = currency
+                            res["tag"] = tag
+                            fact_sources[metric_name] = target_accn
+                            return res
+                    continue
 
-        total_debt = 0.0
-        if st_debt_fact:
-            total_debt += float(st_debt_fact.get("val", 0.0))
-        if lt_debt_fact:
-            total_debt += float(lt_debt_fact.get("val", 0.0))
+                # For instant balance sheet metrics (cash, debt), strictly require absence of start date
+                instant_matched = [
+                    f for f in accn_matched
+                    if "start" not in f or f.get("start") is None
+                ]
+                if instant_matched:
+                    res = dict(instant_matched[-1])
+                    res["unit"] = currency
+                    res["tag"] = tag
+                    fact_sources[metric_name] = target_accn
+                    return res
+                continue
+            return None
 
-        cash_val = float(cash_fact.get("val", 0.0)) if cash_fact else 0.0
-        net_debt = total_debt - cash_val
+        fact_sources["Revenue"] = target_accn
+        # Extract period-matched primary duration metrics
+        ebit_fact = get_period_matched_fact("OperatingIncome", ["ProfitLossFromOperatingActivities", "OperatingProfitLoss"], is_instant=False)
+        ni_fact = get_period_matched_fact("NetIncome", ["ProfitLoss", "ProfitLossAttributableToOwnersOfParent"], is_instant=False)
+        ocf_fact = get_period_matched_fact("OperatingCashFlow", ["CashFlowsFromUsedInOperatingActivities"], is_instant=False)
+        capex_fact = get_period_matched_fact("Capex", ["PurchaseOfPropertyPlantAndEquipmentClassifiedAsInvestingActivities", "PaymentsToAcquirePropertyPlantAndEquipment"], is_instant=False)
+        
+        # Extract period-matched balance sheet instant metrics
+        cash_fact = get_period_matched_fact("CashAndCashEquivalents", ["CashAndCashEquivalents"], is_instant=True)
+        direct_borrowings_fact = get_period_matched_fact("TotalDebt", ["Borrowings", "BorrowingsNoncurrentAndCurrent"], is_instant=True)
+        st_debt_fact = get_period_matched_fact("ShortTermDebt", ["CurrentPortionOfLongtermBorrowings", "CurrentBondsIssuedAndCurrentPortionOfNoncurrentBondsIssued", "CurrentBorrowings"], is_instant=True)
+        lt_debt_fact = get_period_matched_fact("LongTermDebt", ["LongtermBorrowings", "NoncurrentPortionOfNoncurrentBondsIssued", "NoncurrentBorrowings"], is_instant=True)
 
-        ocf_val = float(ocf_fact.get("val", 0.0)) if ocf_fact else 0.0
-        capex_val = float(capex_fact.get("val", 0.0)) if capex_fact else 0.0
-        fcf_val = ocf_val - capex_val
+        st_debt_val = float(st_debt_fact["val"]) if (st_debt_fact and "val" in st_debt_fact) else None
+        lt_debt_val = float(lt_debt_fact["val"]) if (lt_debt_fact and "val" in lt_debt_fact) else None
+
+        total_debt = None
+        if direct_borrowings_fact and "val" in direct_borrowings_fact:
+            total_debt = float(direct_borrowings_fact["val"])
+        elif st_debt_val is not None and lt_debt_val is not None:
+            total_debt = st_debt_val + lt_debt_val
+
+        cash_val = float(cash_fact["val"]) if (cash_fact and "val" in cash_fact) else None
+        net_debt = None
+        if total_debt is not None and cash_val is not None:
+            net_debt = total_debt - cash_val
+
+        ocf_val = float(ocf_fact["val"]) if (ocf_fact and "val" in ocf_fact) else None
+        capex_raw = float(capex_fact["val"]) if (capex_fact and "val" in capex_fact) else None
+        # Normalize capex to positive outlay magnitude for reported metrics
+        capex_val = abs(capex_raw) if capex_raw is not None else None
+        fcf_val = None
+        if ocf_val is not None and capex_raw is not None:
+            # Calculate FCF using the filing's signed cash-flow conventions:
+            # If capex is reported as a negative outflow, add signed flows; if positive magnitude, subtract.
+            if capex_raw < 0:
+                fcf_val = ocf_val + capex_raw
+            else:
+                fcf_val = ocf_val - capex_raw
 
         extracted_metrics = {
-            "Revenue": rev_fact.get("val") if rev_fact else None,
+            "Revenue": rev_fact.get("val"),
             "OperatingIncome": ebit_fact.get("val") if ebit_fact else None,
             "NetIncome": ni_fact.get("val") if ni_fact else None,
             "OperatingCashFlow": ocf_val,
@@ -516,23 +585,24 @@ class FilingExtractor:
             "NetDebt": net_debt
         }
 
-        # Provenance ledger registration
+        # Provenance ledger registration strictly for present, non-None metrics
         ledger_ids = {}
-        if ledger and latest_fy and period_end:
+        if ledger and target_fy and target_end:
             for met_name, met_val in extracted_metrics.items():
                 if met_val is not None:
+                    actual_accn = fact_sources.get(met_name, target_accn)
                     ledger_ids[met_name] = ledger.record(
                         tool="tools.filing.fetch_form_20f_financials",
                         ticker=ticker,
                         currency=currency,
                         unit="base",
-                        inputs={"ticker": ticker, "cik": clean_cik, "metric": met_name, "period": f"FY{latest_fy}"},
+                        inputs={"ticker": ticker, "cik": clean_cik, "metric": met_name, "period": f"FY{target_fy}"},
                         output=met_val,
                         raw_value=met_val,
-                        source=f"SEC EDGAR Form 20-F (Accn: {accn}, Period End: {period_end})",
-                        period=f"FY{latest_fy}",
-                        period_end=period_end,
-                        fiscal_year=f"FY{latest_fy}",
+                        source=f"SEC EDGAR Form 20-F (Accn: {actual_accn}, Period End: {target_end})",
+                        period=f"FY{target_fy}",
+                        period_end=target_end,
+                        fiscal_year=f"FY{target_fy}",
                         notes=f"{ticker} Form 20-F IFRS metric: {met_name} = {met_val:,.0f} {currency}",
                         source_tag="SEC_20F_IFRS"
                     )
@@ -543,11 +613,12 @@ class FilingExtractor:
             "status": "SUCCESS",
             "form": "20-F",
             "accounting_standard": "IFRS",
-            "fiscal_year": f"FY{latest_fy}" if latest_fy else "N/A",
-            "period_end": period_end,
-            "accession_number": accn,
+            "fiscal_year": f"FY{target_fy}" if target_fy else "N/A",
+            "period_end": target_end,
+            "accession_number": target_accn,
             "currency": currency,
             "metrics": extracted_metrics,
+            "metric_accessions": fact_sources,
             "ledger_ids": ledger_ids
         }
 
@@ -555,6 +626,7 @@ class FilingExtractor:
         """
         Parse European Single Electronic Format (ESEF) XHTML iXBRL annual report.
         Extracts tagged facts from <ix:nonFraction> elements mapping to IFRS taxonomy concepts.
+        Applies sign="-" attribute and scale multipliers accurately.
         """
         content = ""
         if os.path.exists(content_or_path):
@@ -564,7 +636,6 @@ class FilingExtractor:
             content = content_or_path
 
         # Regex for ix:nonFraction tags
-        # Format: <ix:nonFraction name="ifrs-full:Revenue" unitRef="EUR" scale="6" decimals="-6">12,345</ix:nonFraction>
         tag_pattern = re.compile(
             r'<ix:nonFraction\b([^>]*)>(.*?)</ix:nonFraction>',
             re.IGNORECASE | re.DOTALL
@@ -584,12 +655,23 @@ class FilingExtractor:
             unit_m = re.search(r'unitRef=["\']([a-zA-Z0-9_]+)["\']', attrs_str, re.IGNORECASE)
             unit = unit_m.group(1) if unit_m else "EUR"
 
+            # Strip nested XML/HTML markup from inside ix:nonFraction
+            stripped_text = re.sub(r'<[^>]+>', '', val_str).strip()
+            # Parse sign attribute (ESEF standard sign="-" attribute) or parenthesized/negative numbers
+            sign_m = re.search(r'sign=["\'](-)["\']', attrs_str, re.IGNORECASE)
+            is_parenthesized = stripped_text.startswith("(") and stripped_text.endswith(")")
+            has_leading_minus = bool(re.match(r'^[-−–—]\s*\d', stripped_text))
+            is_negative = bool(sign_m) or is_parenthesized or has_leading_minus
+
             # Clean value string
-            clean_val = re.sub(r'[^\d\.\-]', '', val_str)
+            clean_val = re.sub(r'[^\d\.]', '', stripped_text)
             if not clean_val:
                 continue
             try:
                 numeric_val = float(clean_val) * (10 ** scale)
+                if is_negative:
+                    numeric_val = -abs(numeric_val)
+
                 extracted[tag_name] = {
                     "val_raw": numeric_val,
                     "unit": unit,

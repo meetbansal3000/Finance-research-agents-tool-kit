@@ -84,15 +84,17 @@ def test_esef_ixbrl_document_parsing():
       <body>
         <ix:nonFraction name="ifrs-full:Revenue" unitRef="EUR" scale="6">21350</ix:nonFraction>
         <ix:nonFraction name="ifrs-full:ProfitLoss" unitRef="EUR" scale="6">5820</ix:nonFraction>
+        <ix:nonFraction name="ifrs-full:OperatingExpense" unitRef="EUR" scale="6" sign="-">1250</ix:nonFraction>
       </body>
     </html>
     '''
     res = fe.parse_esef_ixbrl_document(sample_xhtml, ticker="SAP.DE", ledger=ledger)
     assert res["status"] == "SUCCESS"
-    assert res["extracted_count"] == 2
+    assert res["extracted_count"] == 3
     assert res["metrics"]["Revenue"]["val_raw"] == 21350000000.0
     assert res["metrics"]["ProfitLoss"]["val_raw"] == 5820000000.0
-    assert len(ledger.entries) == 2
+    assert res["metrics"]["OperatingExpense"]["val_raw"] == -1250000000.0  # Sign preserved
+    assert len(ledger.entries) == 3
 
 
 def test_token_bucket_rate_limiter_and_quota():

@@ -760,15 +760,18 @@ class AnalystAgent:
             )
         }
 
-    def _extract_customer_concentration_from_filing(self, ticker: str, cik: str, accn: Optional[str]) -> float:
+    def _extract_customer_concentration_from_filing(self, ticker: str, cik: str, accn: Optional[str]) -> Optional[float]:
         """Call NoteExtractorAgent to dynamically parse unstructured footnote disclosures."""
         try:
             from agents.note_extractor import NoteExtractorAgent
             note_agent = NoteExtractorAgent(ledger=self.ledger)
             note_res = note_agent.extract_notes_disclosure(ticker=ticker, cik=cik, accn=accn)
-            return float(note_res.get("max_customer_concentration_pct", 0.0))
+            if note_res and note_res.get("method") == "TEXTUAL_NOTE_EXTRACTION" and note_res.get("status") == "SUCCESS":
+                val = note_res.get("max_customer_concentration_pct")
+                return float(val) if val is not None else None
+            return None
         except Exception:
-            return 22.0 if ticker == "NVDA" else 0.0
+            return None
 
     def _fetch_generic_data(self, ticker: str) -> Dict[str, Any]:
         """Generic ticker fetch via yfinance with full provenance tracking."""
@@ -1263,7 +1266,7 @@ class AnalystAgent:
                 f"{data['company_name']} operates in competitive global markets subject to macroeconomic cycles.",
                 "Regulatory scrutiny and currency fluctuations present ongoing operational considerations."
             ],
-            "max_customer_concentration_pct": data.get("customer_concentration", 0.0)
+            "max_customer_concentration_pct": data.get("customer_concentration")
         }
 
         return {

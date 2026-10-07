@@ -40,10 +40,51 @@ class NoteExtractorAgent:
             accn=accn or ""
         )
 
+        status = parse_res.get("status", "SUCCESS")
         cust_info = parse_res.get("customer_concentration", {})
-        max_pct = cust_info.get("max_concentration_pct", 0.0)
-        snippet = cust_info.get("quoted_snippet", "")
         method = cust_info.get("method", "TEXTUAL_NOTE_EXTRACTION")
+        disclosure_type = cust_info.get("disclosure_type")
+        snippet = cust_info.get("quoted_snippet", "")
+
+        # If extraction failed or was unattempted / generic fallback
+        if status != "SUCCESS" or method != "TEXTUAL_NOTE_EXTRACTION" or disclosure_type == "UNDISCLOSED_OR_BELOW_THRESHOLD":
+            return {
+                "ticker": ticker,
+                "status": "UNAVAILABLE" if status != "SUCCESS" else "NO_CONCENTRATION_DISCLOSED",
+                "max_customer_concentration_pct": None,
+                "has_concentration_above_10": None,
+                "customers": [],
+                "quoted_snippet": snippet or "Primary HTML filing or footnote disclosures not available.",
+                "method": method,
+                "disclosure_type": disclosure_type,
+                "ledger_id": None
+            }
+
+        # Case 1: Explicit below-threshold diversification statement confirmed from filing notes
+        if disclosure_type == "DIVERSIFIED_BELOW_10_PERCENT":
+            l_cust = self.ledger.record(
+                tool="filing.note_disclosure",
+                ticker=ticker,
+                inputs={"ticker": ticker, "disclosure_type": "CustomerConcentration", "accn": accn},
+                output=0.0,
+                raw_value=0.0,
+                source=f"SEC 10-K Audited Notes: {snippet[:120]}...",
+                notes=f"{ticker} Confirmed Diversified (<10% threshold)",
+                source_tag="SEC_AUDITED_NOTE"
+            )
+            return {
+                "ticker": ticker,
+                "status": "SUCCESS",
+                "max_customer_concentration_pct": 0.0,
+                "has_concentration_above_10": False,
+                "customers": [],
+                "quoted_snippet": snippet,
+                "method": method,
+                "disclosure_type": disclosure_type,
+                "ledger_id": l_cust
+            }
+
+        max_pct = float(cust_info.get("max_concentration_pct", 0.0))
 
         # Record entry in ProvenanceLedger
         l_cust = self.ledger.record(
@@ -59,6 +100,7 @@ class NoteExtractorAgent:
 
         return {
             "ticker": ticker,
+            "status": "SUCCESS",
             "max_customer_concentration_pct": max_pct,
             "has_concentration_above_10": cust_info.get("has_concentration_above_10", False),
             "customers": cust_info.get("customers", []),
