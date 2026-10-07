@@ -182,3 +182,39 @@ r_monte_carlo_dcf <- function(base_fcf, shares_outstanding, net_debt = 0.0,
     iterations = n_sim
   )
 }
+
+#' Check NVIDIA NIM Hardware / API Acceleration Status
+#' 
+#' @return List indicating configuration status, active model, and supported models
+check_nvidia_status <- function() {
+  py_exe <- .get_python_path()
+  code <- "import json; from tools.nvidia_client import NvidiaNimClient; c = NvidiaNimClient(); print(json.dumps({'configured': c.is_configured(), 'model': c.default_model, 'models': c.get_supported_models()}))"
+  out <- system2(py_exe, args = c("-c", shQuote(code)), stdout = TRUE, stderr = TRUE)
+  tryCatch({
+    jsonlite::fromJSON(paste(out, collapse = "\n"))
+  }, error = function(e) {
+    list(configured = FALSE, error = paste(out, collapse = "\n"))
+  })
+}
+
+#' Run NVIDIA NIM Accelerated Adversarial Stress Test from RStudio
+#' 
+#' @param ticker Stock ticker symbol (e.g. "NVDA", "AAPL")
+#' @param thesis_text Investment thesis narrative to stress-test
+#' @param growth_pct Assumed annual revenue/FCF growth rate (%)
+#' @param margin_pct Assumed operating margin (%)
+#' @return Structured critique with model metadata, latency, and provenance ledger citation
+run_nvidia_adversarial_stress <- function(ticker, thesis_text = "", growth_pct = 8.0, margin_pct = 25.0) {
+  py_exe <- .get_python_path()
+  clean_thesis <- gsub("'", "\\\\'", thesis_text)
+  code <- sprintf(
+    "import json; from agents.nvidia_agent import NvidiaResearchAgent; ag = NvidiaResearchAgent(); res = ag.run_adversarial_critique('%s', {'revenue_growth_pct': %f, 'operating_margin_pct': %f}, '%s'); print(json.dumps(res))",
+    ticker, growth_pct, margin_pct, clean_thesis
+  )
+  out <- system2(py_exe, args = c("-c", shQuote(code)), stdout = TRUE, stderr = TRUE)
+  tryCatch({
+    jsonlite::fromJSON(paste(out, collapse = "\n"))
+  }, error = function(e) {
+    list(error = paste("NVIDIA execution error:", paste(out, collapse = "\n")))
+  })
+}

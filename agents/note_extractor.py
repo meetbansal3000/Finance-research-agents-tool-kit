@@ -109,6 +109,34 @@ class NoteExtractorAgent:
             "ledger_id": l_cust
         }
 
+    def audit_footnote_with_nvidia(
+        self,
+        ticker: str,
+        footnote_text: str,
+        focus_topic: str = "Customer Concentration"
+    ) -> Dict[str, Any]:
+        """
+        Leverage NVIDIA NIM inference to audit complex unstructured footnote disclosures.
+        Cryptographically anchored into ProvenanceLedger with source_tag='NVIDIA_NIM_INFERENCE'.
+        """
+        from tools.nvidia_client import NvidiaNimClient
+        client = NvidiaNimClient()
+        res = client.parse_qualitative_disclosures(
+            ticker=ticker,
+            footnote_text=footnote_text,
+            focus_topic=focus_topic,
+            ledger=self.ledger
+        )
+        return {
+            "ticker": ticker,
+            "focus_topic": focus_topic,
+            "content": res["content"],
+            "model": res["model"],
+            "ledger_id": res["ledger_id"],
+            "latency_ms": res["latency_ms"],
+            "offline_fallback": res["offline_fallback"]
+        }
+
 
 if __name__ == "__main__":
     agent = NoteExtractorAgent()

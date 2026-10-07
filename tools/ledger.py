@@ -167,6 +167,8 @@ class ProvenanceLedger:
                 resolved_source_tag = "Finnhub"
             elif "fmp" in src_str:
                 resolved_source_tag = "FMP"
+            elif "nvidia" in src_str or "nim" in src_str:
+                resolved_source_tag = "NVIDIA_NIM_INFERENCE"
             elif "cache" in src_str:
                 resolved_source_tag = "cache"
             elif "calc" in tool:
