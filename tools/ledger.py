@@ -10,11 +10,17 @@ import os
 import hmac
 import hashlib
 import datetime
+import warnings
 from typing import Dict, Any, Optional, List
 
 def get_hmac_key() -> bytes:
-    """Load HMAC signing key from environment or fallback key."""
-    key_str = os.getenv("LEDGER_HMAC_KEY", "antigravity-finance-hmac-key-v1")
+    """Load HMAC signing key from environment or fallback key with strict mode support."""
+    key_str = os.getenv("LEDGER_HMAC_KEY")
+    strict = os.getenv("LEDGER_HMAC_STRICT", "0").lower() in ("1", "true", "yes")
+    if not key_str:
+        if strict:
+            raise ValueError("LEDGER_HMAC_KEY environment variable is required in strict mode.")
+        key_str = "antigravity-finance-hmac-key-v1"
     return key_str.encode("utf-8")
 
 def compute_entry_hash(
@@ -27,11 +33,14 @@ def compute_entry_hash(
     currency: Optional[str] = None,
     unit: Optional[str] = None,
     period_end: Optional[str] = None,
-    fiscal_year: Optional[str] = None
+    fiscal_year: Optional[str] = None,
+    run_id: Optional[str] = None,
+    accession: Optional[str] = None,
+    url: Optional[str] = None
 ) -> str:
     """Compute true HMAC-SHA256 signature of ledger entry fields to detect tampering."""
     serialized_inputs = json.dumps(inputs, sort_keys=True)
-    payload = f"{ledger_id}|{tool}|{serialized_inputs}|{raw_value}|{source}|{timestamp}|{currency or ''}|{unit or ''}|{period_end or ''}|{fiscal_year or ''}"
+    payload = f"{ledger_id}|{tool}|{serialized_inputs}|{raw_value}|{source}|{timestamp}|{currency or ''}|{unit or ''}|{period_end or ''}|{fiscal_year or ''}|{run_id or ''}|{accession or ''}|{url or ''}"
     return hmac.new(get_hmac_key(), payload.encode("utf-8"), hashlib.sha256).hexdigest()
 
 class ProvenanceLedger:
@@ -39,6 +48,12 @@ class ProvenanceLedger:
         self.run_id = run_id or datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
         self.entries: Dict[str, Dict[str, Any]] = {}
         self._counter = 1
+
+    def format_citation(self, ledger_id: str, run_scoped: bool = False) -> str:
+        """Format a citation token, optionally scoped by the unique execution run ID."""
+        if run_scoped:
+            return f"[{self.run_id}:{ledger_id}]"
+        return f"[{ledger_id}]"
 
     def record(
         self,
@@ -55,7 +70,9 @@ class ProvenanceLedger:
         unit: Optional[str] = None,
         period_end: Optional[str] = None,
         fiscal_year: Optional[str] = None,
-        source_tag: Optional[str] = None
+        source_tag: Optional[str] = None,
+        accession: Optional[str] = None,
+        url: Optional[str] = None
     ) -> str:
         """Record a data extraction or calculation in the provenance ledger.
         Generates a unique ledger ID and cryptographic integrity signature.
@@ -76,6 +93,9 @@ class ProvenanceLedger:
             resolved_fiscal_year = str(period)
         if not resolved_period_end and period and re.match(r'^\d{4}-\d{2}-\d{2}$', str(period)):
             resolved_period_end = str(period)
+
+        resolved_accession = accession or inputs.get("accession") or inputs.get("accession_number")
+        resolved_url = url or inputs.get("url") or (str(source) if str(source).startswith("http") else None)
             
         resolved_source_tag = source_tag
         if not resolved_source_tag:
@@ -105,17 +125,23 @@ class ProvenanceLedger:
             currency=resolved_currency,
             unit=resolved_unit,
             period_end=resolved_period_end,
-            fiscal_year=resolved_fiscal_year
+            fiscal_year=resolved_fiscal_year,
+            run_id=self.run_id,
+            accession=resolved_accession,
+            url=resolved_url
         )
         
         entry = {
             "ledger_id": ledger_id,
+            "run_id": self.run_id,
             "tool": tool,
             "ticker": resolved_ticker,
             "currency": resolved_currency,
             "unit": resolved_unit,
             "period_end": resolved_period_end,
             "fiscal_year": resolved_fiscal_year,
+            "accession": resolved_accession,
+            "url": resolved_url,
             "source_tag": resolved_source_tag,
             "inputs": inputs,
             "output": output,
@@ -146,9 +172,18 @@ class ProvenanceLedger:
             currency=entry.get("currency"),
             unit=entry.get("unit"),
             period_end=entry.get("period_end"),
-            fiscal_year=entry.get("fiscal_year")
+            fiscal_year=entry.get("fiscal_year"),
+            run_id=entry.get("run_id"),
+            accession=entry.get("accession"),
+            url=entry.get("url")
         )
-        return entry["integrity_hash"] == expected_hash
+        if entry["integrity_hash"] == expected_hash:
+            return True
+
+        # Backwards compatibility check for legacy entries hashed without run_id/accession/url
+        legacy_payload = f"{entry['ledger_id']}|{entry['tool']}|{json.dumps(entry['inputs'], sort_keys=True)}|{entry['raw_value']}|{entry['source']}|{entry['timestamp']}|{entry.get('currency') or ''}|{entry.get('unit') or ''}|{entry.get('period_end') or ''}|{entry.get('fiscal_year') or ''}"
+        legacy_hash = hmac.new(get_hmac_key(), legacy_payload.encode("utf-8"), hashlib.sha256).hexdigest()
+        return entry["integrity_hash"] == legacy_hash
 
     def get(self, ledger_id: str) -> Optional[Dict[str, Any]]:
         return self.entries.get(ledger_id)

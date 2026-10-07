@@ -36,8 +36,54 @@ if hasattr(sys.stdout, "reconfigure"):
 import yfinance as yf
 from tools.ledger import ProvenanceLedger
 
+import threading
+
 CACHE_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), "library", "cache")
 os.makedirs(CACHE_DIR, exist_ok=True)
+
+# -----------------------------------------------------------------------------
+# Process & Thread Safety: FileLock
+# -----------------------------------------------------------------------------
+class FileLock:
+    """Advisory inter-process file lock using atomic OS file creation."""
+    def __init__(self, lock_file: str, timeout: float = 10.0, retry_delay: float = 0.05):
+        self.lock_file = lock_file
+        self.timeout = timeout
+        self.retry_delay = retry_delay
+        self.fd: Optional[int] = None
+
+    def acquire(self) -> bool:
+        start_time = time.time()
+        while True:
+            try:
+                self.fd = os.open(self.lock_file, os.O_CREAT | os.O_EXCL | os.O_RDWR)
+                return True
+            except (FileExistsError, OSError):
+                if time.time() - start_time >= self.timeout:
+                    return False
+                time.sleep(self.retry_delay)
+
+    def release(self) -> None:
+        if self.fd is not None:
+            try:
+                os.close(self.fd)
+            except OSError:
+                pass
+            self.fd = None
+            try:
+                if os.path.exists(self.lock_file):
+                    os.remove(self.lock_file)
+            except OSError:
+                pass
+
+    def __enter__(self):
+        if not self.acquire():
+            raise TimeoutError(f"Could not acquire lock on {self.lock_file} within {self.timeout}s")
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.release()
+
 
 # -----------------------------------------------------------------------------
 # Disk Cache System
@@ -45,13 +91,15 @@ os.makedirs(CACHE_DIR, exist_ok=True)
 class DiskCache:
     def __init__(self, cache_dir: str = CACHE_DIR):
         self.cache_dir = cache_dir
+        self.last_error: Optional[str] = None
         os.makedirs(self.cache_dir, exist_ok=True)
 
     def _get_path(self, key: str) -> str:
         h = hashlib.sha256(key.encode("utf-8")).hexdigest()
         return os.path.join(self.cache_dir, f"{h}.json")
 
-    def get(self, key: str) -> Optional[Dict[str, Any]]:
+    def get_with_metadata(self, key: str) -> Optional[Tuple[Any, Dict[str, Any]]]:
+        """Returns (payload, metadata) without mutating the cached payload."""
         path = self._get_path(key)
         if not os.path.exists(path):
             return None
@@ -59,25 +107,50 @@ class DiskCache:
             with open(path, "r", encoding="utf-8") as f:
                 data = json.load(f)
             expires_at = data.get("expires_at", 0)
-            if time.time() > expires_at:
+            now = time.time()
+            if now > expires_at:
                 return None
-            return data.get("payload")
-        except Exception:
+            payload = data.get("payload")
+            cached_at = data.get("cached_at")
+            cached_ts = data.get("cached_timestamp", expires_at - data.get("ttl_seconds", 86400))
+            metadata = {
+                "is_cached": True,
+                "cached_at": cached_at,
+                "cache_age_seconds": round(max(0.0, now - cached_ts), 2)
+            }
+            return payload, metadata
+        except Exception as e:
+            self.last_error = f"DiskCache.get_with_metadata error: {e}"
             return None
+
+    def get(self, key: str) -> Optional[Any]:
+        res = self.get_with_metadata(key)
+        return res[0] if res else None
 
     def set(self, key: str, payload: Any, ttl_seconds: int = 86400) -> None:
         path = self._get_path(key)
+        temp_path = f"{path}.tmp.{os.getpid()}.{time.time_ns()}"
+        now = time.time()
         try:
             data = {
                 "key": key,
                 "cached_at": datetime.datetime.now().isoformat(),
-                "expires_at": time.time() + ttl_seconds,
+                "cached_timestamp": now,
+                "ttl_seconds": ttl_seconds,
+                "expires_at": now + ttl_seconds,
                 "payload": payload
             }
-            with open(path, "w", encoding="utf-8") as f:
+            with open(temp_path, "w", encoding="utf-8") as f:
                 json.dump(data, f, indent=2)
-        except Exception:
-            pass
+            os.replace(temp_path, path)
+            self.last_error = None
+        except Exception as e:
+            self.last_error = f"DiskCache.set error: {e}"
+            if os.path.exists(temp_path):
+                try:
+                    os.remove(temp_path)
+                except OSError:
+                    pass
 
     def clear(self) -> int:
         count = 0
@@ -86,8 +159,8 @@ class DiskCache:
                 try:
                     os.remove(os.path.join(self.cache_dir, f))
                     count += 1
-                except Exception:
-                    pass
+                except Exception as e:
+                    self.last_error = f"DiskCache.clear error: {e}"
         return count
 
 
@@ -106,6 +179,7 @@ class TokenBucketRateLimiter:
     def __init__(self, cache_dir: str = CACHE_DIR):
         self.cache_dir = cache_dir
         self.last_call: Dict[str, float] = {}
+        self._lock = threading.Lock()
         self.min_intervals = {
             "yfinance": 0.15,
             "SEC_EDGAR": 0.10,
@@ -115,38 +189,53 @@ class TokenBucketRateLimiter:
         }
 
     def wait_if_needed(self, provider: str) -> None:
-        min_int = self.min_intervals.get(provider, 0.0)
-        last = self.last_call.get(provider, 0.0)
-        now = time.time()
-        elapsed = now - last
-        if elapsed < min_int:
-            time.sleep(min_int - elapsed)
-        self.last_call[provider] = time.time()
+        with self._lock:
+            min_int = self.min_intervals.get(provider, 0.0)
+            last = self.last_call.get(provider, 0.0)
+            now = time.time()
+            elapsed = now - last
+            if elapsed < min_int:
+                time.sleep(min_int - elapsed)
+            self.last_call[provider] = time.time()
 
     def check_alpha_vantage_quota(self) -> Tuple[bool, int]:
-        """Tracks daily calls to Alpha Vantage against the 25 calls/day free tier limit."""
+        """Tracks daily calls to Alpha Vantage against the 25 calls/day free tier limit with file-locking safety."""
         today_str = datetime.date.today().isoformat()
         state_file = os.path.join(self.cache_dir, "alpha_vantage_daily_quota.json")
-        data = {"date": today_str, "calls": 0}
-        if os.path.exists(state_file):
+        lock_file = f"{state_file}.lock"
+
+        with self._lock:
             try:
-                with open(state_file, "r", encoding="utf-8") as f:
-                    data = json.load(f)
-                if data.get("date") != today_str:
+                with FileLock(lock_file, timeout=5.0):
                     data = {"date": today_str, "calls": 0}
-            except Exception:
-                data = {"date": today_str, "calls": 0}
+                    if os.path.exists(state_file):
+                        try:
+                            with open(state_file, "r", encoding="utf-8") as f:
+                                data = json.load(f)
+                            if data.get("date") != today_str:
+                                data = {"date": today_str, "calls": 0}
+                        except Exception:
+                            data = {"date": today_str, "calls": 0}
 
-        if data.get("calls", 0) >= 25:
-            return False, data.get("calls", 0)
+                    if data.get("calls", 0) >= 25:
+                        return False, data.get("calls", 0)
 
-        data["calls"] = data.get("calls", 0) + 1
-        try:
-            with open(state_file, "w", encoding="utf-8") as f:
-                json.dump(data, f, indent=2)
-        except Exception:
-            pass
-        return True, data["calls"]
+                    data["calls"] = data.get("calls", 0) + 1
+                    temp_file = f"{state_file}.tmp.{os.getpid()}"
+                    try:
+                        with open(temp_file, "w", encoding="utf-8") as f:
+                            json.dump(data, f, indent=2)
+                        os.replace(temp_file, state_file)
+                    except Exception:
+                        if os.path.exists(temp_file):
+                            try:
+                                os.remove(temp_file)
+                            except OSError:
+                                pass
+                    return True, data["calls"]
+            except TimeoutError:
+                # Fail closed when quota lock acquisition times out
+                return False, 25
 
 
 # -----------------------------------------------------------------------------

@@ -842,6 +842,7 @@ class ReportVerifier:
                     continue
 
                 # 5. Live Independent Re-Fetch Check
+                refetch_ok = False
                 if self.perform_refetch:
                     refetch_ok, live_val, refetch_source = self.refetch_source(entry)
                     if not refetch_ok:
@@ -895,14 +896,55 @@ class ReportVerifier:
                         matched_val = True
 
                 if matched_val:
-                    unit_confirmed.append({
-                        "line": line_idx,
-                        "ledger_id": l_id,
-                        "claim": unit_str,
-                        "verified_value": expected_raw,
-                        "tool": tool_name,
-                        "source": source_url
-                    })
+                    # Determine 4-Tier Provenance Classification
+                    is_calc = bool(
+                        "calc" in str(tool_name).lower() or "dcf" in str(tool_name).lower() or 
+                        "margin" in str(tool_name).lower() or "growth" in str(tool_name).lower() or 
+                        "cagr" in str(tool_name).lower() or "yield" in str(tool_name).lower()
+                    )
+                    if self.perform_refetch and refetch_ok:
+                        tier = "INDEPENDENT_REFETCH_CONFIRMED"
+                        unit_confirmed.append({
+                            "line": line_idx,
+                            "ledger_id": l_id,
+                            "claim": unit_str,
+                            "verified_value": expected_raw,
+                            "tool": tool_name,
+                            "source": source_url,
+                            "tier": tier
+                        })
+                    elif is_calc:
+                        tier = "DERIVED_ANALYSIS"
+                        unit_confirmed.append({
+                            "line": line_idx,
+                            "ledger_id": l_id,
+                            "claim": unit_str,
+                            "verified_value": expected_raw,
+                            "tool": tool_name,
+                            "source": source_url,
+                            "tier": tier
+                        })
+                    elif not self.perform_refetch:
+                        tier = "PRIMARY_LEDGER_CONSISTENT"
+                        unit_confirmed.append({
+                            "line": line_idx,
+                            "ledger_id": l_id,
+                            "claim": unit_str,
+                            "verified_value": expected_raw,
+                            "tool": tool_name,
+                            "source": source_url,
+                            "tier": tier
+                        })
+                    else:
+                        # perform_refetch was requested, but independent refetch failed or was unavailable
+                        unit_unverifiable.append({
+                            "line": line_idx,
+                            "ledger_id": l_id,
+                            "claim": unit_str,
+                            "reason": f"Independent re-fetch was requested but failed or endpoint unavailable ({refetch_source}).",
+                            "error_type": "INDEPENDENT_REFETCH_UNVERIFIED",
+                            "tier": "UNVERIFIABLE_OR_UNCHECKED"
+                        })
                 else:
                     unit_wrong.append({
                         "line": line_idx,
@@ -923,7 +965,8 @@ class ReportVerifier:
                 self.wrong.extend(unit_wrong)
                 self.unverifiable.extend(unit_unverifiable)
 
-        # Determine Report Status: PASS, PASS WITH FLAGS, PASS WITH FLAGS (NOT RE-FETCHED), or FAIL
+        # Determine Report Status under Weakest-Link Policy:
+        # FAIL if any value discrepancy or untracked/unverifiable claims
         total_wrong = len(self.wrong)
         non_memory_unverifiable = [u for u in self.unverifiable if u.get("error_type") != "MODEL_MEMORY_TAGGED"]
         memory_claims = [u for u in self.unverifiable if u.get("error_type") == "MODEL_MEMORY_TAGGED"]
@@ -939,6 +982,13 @@ class ReportVerifier:
             report_status = "FAIL"
 
         reconciliations = self.check_headline_reconciliations()
+        tier_counts = {
+            "INDEPENDENT_REFETCH_CONFIRMED": sum(1 for c in self.confirmed if c.get("tier") == "INDEPENDENT_REFETCH_CONFIRMED"),
+            "PRIMARY_LEDGER_CONSISTENT": sum(1 for c in self.confirmed if c.get("tier") == "PRIMARY_LEDGER_CONSISTENT"),
+            "DERIVED_ANALYSIS": sum(1 for c in self.confirmed if c.get("tier") == "DERIVED_ANALYSIS"),
+            "UNVERIFIABLE_OR_UNCHECKED": len(self.unverifiable)
+        }
+
         audit_result = {
             "report_path": self.report_path,
             "audited_at": datetime.datetime.now().isoformat(),
@@ -948,7 +998,8 @@ class ReportVerifier:
                 "total_unverifiable": len(self.unverifiable),
                 "tagged_memory_claims": len(memory_claims),
                 "reconciliations_tracked": len(reconciliations),
-                "status": report_status
+                "status": report_status,
+                "tiers": tier_counts
             },
             "reconciliations": reconciliations,
             "confirmed": self.confirmed,
@@ -1019,11 +1070,18 @@ class ReportVerifier:
         audit_md_path = f"{os.path.splitext(self.report_path)[0]}.audit.md"
         summary = audit_result["summary"]
         reconciliations = audit_result.get("reconciliations", [])
+        tiers = summary.get("tiers", {})
         
         md_content = f"""# Verification Audit Report
 **Target Report:** `{os.path.basename(self.report_path)}`  
 **Audit Timestamp:** {audit_result['audited_at']}  
 **Overall Status:** **{summary['status']}** ({summary['total_confirmed']} Confirmed, {summary['total_wrong']} Wrong, {summary['total_unverifiable']} Unverifiable)  
+
+### 📊 Four-Tier Provenance Classification
+- **Tier 1 (Independent Re-fetch Confirmed):** {tiers.get('INDEPENDENT_REFETCH_CONFIRMED', 0)}
+- **Tier 2 (Primary Ledger Consistent):** {tiers.get('PRIMARY_LEDGER_CONSISTENT', 0)}
+- **Tier 3 (Derived Analysis):** {tiers.get('DERIVED_ANALYSIS', 0)}
+- **Tier 4 (Unverifiable or Unchecked):** {tiers.get('UNVERIFIABLE_OR_UNCHECKED', 0)}
 
 ---
 
@@ -1031,7 +1089,7 @@ class ReportVerifier:
 """
         if self.confirmed:
             for item in self.confirmed:
-                md_content += f"- **[Line {item['line']}] [{item['ledger_id']}]**: {item['claim']}\n  - *Verified Output:* `{item['verified_value']}` via `{item['tool']}`\n  - *Source:* {item['source']}\n"
+                md_content += f"- **[Line {item['line']}] [{item['ledger_id']} | {item.get('tier', 'PRIMARY_LEDGER_CONSISTENT')}]**: {item['claim']}\n  - *Verified Output:* `{item['verified_value']}` via `{item['tool']}`\n  - *Source:* {item['source']}\n"
         else:
             md_content += "_No figures confirmed._\n"
 
@@ -1060,3 +1118,6 @@ class ReportVerifier:
         with open(audit_md_path, "w", encoding="utf-8") as f:
             f.write(md_content)
         return audit_md_path
+
+    # Alias for API consistency
+    verify_report = audit
