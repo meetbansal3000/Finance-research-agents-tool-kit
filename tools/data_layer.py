@@ -283,10 +283,12 @@ class TokenBucketRateLimiter:
                         try:
                             with open(state_file, "r", encoding="utf-8") as f:
                                 data = json.load(f)
+                            if not isinstance(data, dict) or not isinstance(data.get("calls"), int) or not isinstance(data.get("date"), str):
+                                raise ValueError(f"Invalid schema structure in '{state_file}': expected dict with string 'date' and integer 'calls'.")
                             if data.get("date") != today_str:
                                 data = {"date": today_str, "calls": 0}
                         except Exception as e:
-                            raise RuntimeError(f"Institutional Quota State Violation: Corrupted or unreadable quota state in '{state_file}': {e}")
+                            raise RuntimeError(f"Institutional Quota State Violation: Corrupted or invalid quota state in '{state_file}': {e}")
 
                     if data.get("calls", 0) >= 25:
                         return False, data.get("calls", 0)
@@ -296,6 +298,8 @@ class TokenBucketRateLimiter:
                     try:
                         with open(temp_file, "w", encoding="utf-8") as f:
                             json.dump(data, f, indent=2)
+                            f.flush()
+                            os.fsync(f.fileno())
                         os.replace(temp_file, state_file)
                     except Exception as e:
                         if os.path.exists(temp_file):

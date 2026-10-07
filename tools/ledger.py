@@ -38,10 +38,11 @@ def get_hmac_key() -> bytes:
         try:
             with open(KEY_FILE_PATH, "rb") as f:
                 content = f.read().strip()
-                if len(content) >= 32:
-                    return content
-        except Exception:
-            pass
+            if len(content) < 32:
+                raise ValueError(f"Workspace HMAC key at '{KEY_FILE_PATH}' is undersized ({len(content)} bytes < 32 bytes required).")
+            return content
+        except Exception as e:
+            raise RuntimeError(f"Institutional Key Security Violation: Existing key file at '{KEY_FILE_PATH}' is corrupted or unreadable: {e}. Cannot silently rotate signing key.")
 
     # Generate and persist a cryptographic 256-bit key for this workspace
     if _SESSION_HMAC_KEY is None:
@@ -52,11 +53,8 @@ def get_hmac_key() -> bytes:
                 f.write(new_key)
                 f.flush()
                 os.fsync(f.fileno())
-            if hasattr(os, "chmod"):
-                try:
-                    os.chmod(temp_key_file, 0o600)
-                except Exception:
-                    pass
+            if os.name != "nt" and hasattr(os, "chmod"):
+                os.chmod(temp_key_file, 0o600)
             os.replace(temp_key_file, KEY_FILE_PATH)
             _SESSION_HMAC_KEY = new_key
         except Exception as e:

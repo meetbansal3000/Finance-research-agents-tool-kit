@@ -169,10 +169,10 @@ def test_codex_institutional_audit_hardening(tmp_path):
     with pytest.raises(ValueError, match="strictly greater than -100%"):
         dcf(base_fcf=100.0, growth_rates=[-1.2], discount_rate=0.10, terminal_growth_rate=0.02, shares_outstanding=10.0)
 
-    with pytest.raises(ValueError, match="must be between -50%"):
+    with pytest.raises(ValueError, match="must be between -10%"):
         dcf(base_fcf=100.0, growth_rates=[0.10], discount_rate=0.10, terminal_growth_rate=-1.05, shares_outstanding=10.0)
 
-    with pytest.raises(ValueError, match="must be between -50%"):
+    with pytest.raises(ValueError, match="must be between -10%"):
         reverse_dcf(current_price=100.0, base_fcf=10.0, shares_outstanding=10.0, discount_rate=0.10, terminal_growth_rate=-1.05)
 
     # 2. Verify ledger recording in dcf and reverse_dcf

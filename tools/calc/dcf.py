@@ -60,15 +60,15 @@ def dcf(
             raise ValueError(f"Growth rate at period {idx + 1} must be finite, got {g}.")
         if g <= -1.0:
             raise ValueError(f"Growth rate at period {idx + 1} must be strictly greater than -100% (-1.0), got {g}.")
-        if g > 100.0:
-            raise ValueError(f"Growth rate at period {idx + 1} ({g}) exceeds maximum modeling bounds (10,000%).")
+        if g < -0.90 or g > 5.0:
+            raise ValueError(f"Growth rate at period {idx + 1} ({g}) must be within realistic modeling bounds (-90% to +500%).")
 
     if not isinstance(cash_flow_type, str) or cash_flow_type not in ("FCFF", "FCFE"):
         raise ValueError(f"cash_flow_type must be 'FCFF' or 'FCFE', got {cash_flow_type}.")
-    if discount_rate <= 0.0 or discount_rate > 2.0:
-        raise ValueError(f"Discount rate {discount_rate} must be strictly positive and <= 200% (2.0).")
-    if terminal_growth_rate < -0.50 or terminal_growth_rate > 0.20:
-        raise ValueError(f"Terminal growth rate {terminal_growth_rate} must be between -50% (-0.50) and 20% (0.20).")
+    if discount_rate <= 0.0 or discount_rate > 0.50:
+        raise ValueError(f"Discount rate {discount_rate} must be strictly positive and <= 50% (0.50).")
+    if terminal_growth_rate < -0.10 or terminal_growth_rate > 0.10:
+        raise ValueError(f"Terminal growth rate {terminal_growth_rate} must be between -10% (-0.10) and 10% (0.10).")
     if discount_rate <= terminal_growth_rate:
         raise ValueError("Discount rate must be strictly greater than terminal growth rate.")
     if shares_outstanding <= 0:
@@ -196,10 +196,10 @@ def reverse_dcf(
         if not isinstance(val, (int, float)) or not math.isfinite(val):
             raise ValueError(f"Input '{val_name}' must be a finite numerical value, got {val}.")
 
-    if discount_rate <= 0.0 or discount_rate > 2.0:
-        raise ValueError(f"Discount rate {discount_rate} must be strictly positive and <= 200% (2.0).")
-    if terminal_growth_rate < -0.50 or terminal_growth_rate > 0.20:
-        raise ValueError(f"Terminal growth rate {terminal_growth_rate} must be between -50% (-0.50) and 20% (0.20).")
+    if discount_rate <= 0.0 or discount_rate > 0.50:
+        raise ValueError(f"Discount rate {discount_rate} must be strictly positive and <= 50% (0.50).")
+    if terminal_growth_rate < -0.10 or terminal_growth_rate > 0.10:
+        raise ValueError(f"Terminal growth rate {terminal_growth_rate} must be between -10% (-0.10) and 10% (0.10).")
     if discount_rate <= terminal_growth_rate:
         raise ValueError("Discount rate must be strictly greater than terminal growth rate.")
     if current_price <= 0 or shares_outstanding <= 0:

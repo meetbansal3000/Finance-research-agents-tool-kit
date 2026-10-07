@@ -331,26 +331,18 @@ class FilingExtractor:
         target_end = anchor_fact.get("end")
         target_accn = anchor_fact.get("accn", "")
 
-        def get_matched_fact(concept_candidates: List[str], end_d: Optional[str] = None, require_accn: bool = True) -> Tuple[Optional[float], str]:
+        def get_matched_fact(concept_candidates: List[str], end_d: Optional[str] = None) -> Tuple[Optional[float], str]:
             eff_end = end_d or target_end
             for concept in concept_candidates:
                 if concept in ug:
                     units = ug[concept].get("units", {}).get("USD", [])
-                    # 1. Strictly match anchor filing accession and period end
+                    # Strictly lock fact to anchor filing accession and period end (never mix cross-accession facts)
                     accn_matched = [
                         u for u in units
                         if u.get("form") == "10-K" and u.get("end") == eff_end and u.get("accn") == target_accn and "val" in u
                     ]
                     if accn_matched:
                         return float(accn_matched[-1]["val"]), target_accn
-                    # 2. Strict default-deny: if accession is required, do not mix facts from other accessions
-                    if not require_accn and target_fy:
-                        fy_matched = [
-                            u for u in units
-                            if u.get("form") == "10-K" and u.get("end") == eff_end and u.get("fy") == target_fy and "val" in u
-                        ]
-                        if fy_matched:
-                            return float(fy_matched[-1]["val"]), fy_matched[-1].get("accn", target_accn)
             return None, target_accn
 
         # Duration metrics

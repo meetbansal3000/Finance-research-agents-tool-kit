@@ -188,10 +188,10 @@ class ReportVerifier:
                                 scale_str, raw_num_str = matches[0]
                                 base_val = float(raw_num_str.replace(',', ''))
                                 scale_mul = 10 ** int(scale_str) if scale_str else (1e6 if base_val < 1e9 else 1.0)
-                                doc_val = base_val * scale_mul
                                 diff = abs(doc_val - float(expected_val))
-                                if diff < 1.0 or (expected_val > 0 and (diff / float(expected_val)) < 0.005):
-                                    return (True, doc_val, f"Primary Filing Document ({os.path.basename(local_filing_path)}) iXBRL Tag us-gaap:{cc}")
+                                tolerance = max(1.0, abs(float(expected_val)) * 0.005)
+                                is_match = diff <= tolerance
+                                return (is_match, doc_val, f"Primary Filing Document ({os.path.basename(local_filing_path)}) iXBRL Tag us-gaap:{cc}")
                     except Exception:
                         pass
 
@@ -227,11 +227,14 @@ class ReportVerifier:
                                 elif not period_end and period and str(f.get("fy")) in str(period):
                                     filtered_facts.append(f)
                         if filtered_facts:
-                            selected_fact = filtered_facts[-1]
+                            sorted_facts = sorted(filtered_facts, key=lambda x: (str(x.get("end", "")), str(x.get("filed", ""))))
+                            selected_fact = sorted_facts[-1]
                             live_val = float(selected_fact["val"])
                             diff = abs(live_val - float(expected_val))
+                            tolerance = max(1.0, abs(float(expected_val)) * 0.005)
+                            passes = (diff <= tolerance)
                             source_info = f"SEC companyconcept API (CIK{cik}/us-gaap/{cc}, Accn: {selected_fact.get('accn')})"
-                            return (diff < 1.0, live_val, source_info)
+                            return (passes, live_val, source_info)
                     except Exception:
                         continue
                         
