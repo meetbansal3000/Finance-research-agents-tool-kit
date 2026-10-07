@@ -155,3 +155,83 @@ def test_verifier_four_tier_classification(tmp_path):
     assert summary["tiers"]["PRIMARY_LEDGER_CONSISTENT"] == 1
     assert summary["tiers"]["DERIVED_ANALYSIS"] == 1
     assert summary["tiers"]["UNVERIFIABLE_OR_UNCHECKED"] == 0
+
+def test_codex_institutional_audit_hardening(tmp_path):
+    from tools.calc.dcf import dcf, reverse_dcf
+    from tools.filing import FilingExtractor
+    from tools.data_layer import get_data_layer
+    from agents.verifier import ReportVerifier
+
+    # 1. Reject implausible negative growth rates <= -100% (-1.0)
+    with pytest.raises(ValueError, match="strictly greater than -100%"):
+        dcf(base_fcf=100.0, growth_rates=[-1.0], discount_rate=0.10, terminal_growth_rate=0.02, shares_outstanding=10.0)
+
+    with pytest.raises(ValueError, match="strictly greater than -100%"):
+        dcf(base_fcf=100.0, growth_rates=[-1.2], discount_rate=0.10, terminal_growth_rate=0.02, shares_outstanding=10.0)
+
+    with pytest.raises(ValueError, match="Terminal growth rate must be strictly greater than -100%"):
+        dcf(base_fcf=100.0, growth_rates=[0.10], discount_rate=0.10, terminal_growth_rate=-1.05, shares_outstanding=10.0)
+
+    with pytest.raises(ValueError, match="Terminal growth rate must be strictly greater than -100%"):
+        reverse_dcf(current_price=100.0, base_fcf=10.0, shares_outstanding=10.0, discount_rate=0.10, terminal_growth_rate=-1.05)
+
+    # 2. Verify ledger recording in dcf and reverse_dcf
+    test_ledger = ProvenanceLedger(run_id="run_dcf_hardening")
+    dcf_res = dcf(
+        base_fcf=100.0,
+        growth_rates=[0.10, 0.08, 0.05],
+        discount_rate=0.09,
+        terminal_growth_rate=0.02,
+        shares_outstanding=10.0,
+        currency="USD",
+        ledger=test_ledger
+    )
+    assert "ledger_id" in dcf_res
+    assert test_ledger.verify_entry_integrity(dcf_res["ledger_id"]) is True
+
+    rev_res = reverse_dcf(
+        current_price=150.0,
+        base_fcf=10.0,
+        shares_outstanding=10.0,
+        discount_rate=0.09,
+        terminal_growth_rate=0.02,
+        currency="USD",
+        ledger=test_ledger
+    )
+    assert "ledger_id" in rev_res
+    assert test_ledger.verify_entry_integrity(rev_res["ledger_id"]) is True
+
+    # 3. FilingExtractor document download cache verification with sidecar metadata
+    extractor = FilingExtractor()
+    test_doc = tmp_path / "mock_10k.htm"
+    test_doc.write_text("<html>Mock SEC 10-K Content</html>", encoding="utf-8")
+    meta_path = f"{str(test_doc)}.meta.json"
+    with open(meta_path, "w", encoding="utf-8") as f_meta:
+        import hashlib, datetime, json
+        json.dump({
+            "url": "https://data.sec.gov/mock_10k.htm",
+            "size": len("<html>Mock SEC 10-K Content</html>"),
+            "sha256": hashlib.sha256("<html>Mock SEC 10-K Content</html>".encode()).hexdigest(),
+            "downloaded_at": datetime.datetime.now().isoformat()
+        }, f_meta)
+
+    # 4. DataLayer fundamentals schema alignment and verifier refetch verification
+    dl = get_data_layer()
+    fund_ledger = ProvenanceLedger(run_id="run_fund_ledger")
+    aapl_funds = dl.get_fundamentals("AAPL", ledger=fund_ledger)
+    assert "revenue" in aapl_funds
+    assert "operating_income" in aapl_funds
+    assert len(fund_ledger.entries) >= 4  # multiple fundamental metrics registered
+
+    # Verify refetch_source schema compatibility with data_layer.get_fundamentals
+    dummy_rep = tmp_path / "dummy.md"
+    dummy_rep.write_text("# Dummy Report", encoding="utf-8")
+    v = ReportVerifier(report_path=str(dummy_rep))
+    status, val, src = v.refetch_source(entry={
+        "tool": "data_layer.get_fundamentals",
+        "inputs": {"ticker": "AAPL", "metric": "revenue"},
+        "raw_value": aapl_funds["revenue"]
+    })
+    assert status is True
+    assert val == aapl_funds["revenue"]
+

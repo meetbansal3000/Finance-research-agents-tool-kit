@@ -15,7 +15,8 @@ def dcf(
     cash_flow_type: str = "FCFF",
     mid_year: bool = False,
     currency: str = "USD",
-    currency_symbol: str = "$"
+    currency_symbol: str = "$",
+    ledger: Optional[Any] = None
 ) -> Dict[str, Any]:
     """Calculate Discounted Cash Flow (DCF) Enterprise & Equity Value per share.
     
@@ -30,6 +31,7 @@ def dcf(
         mid_year: Whether to apply mid-year discounting convention (t - 0.5). Default: False.
         currency: ISO-4217 Currency Code (default: 'USD').
         currency_symbol: Currency symbol for formatting (default: '$').
+        ledger: Optional ProvenanceLedger instance to record calculation.
     """
     if cash_flow_type not in ("FCFF", "FCFE"):
         raise ValueError(f"cash_flow_type must be either 'FCFF' or 'FCFE', got '{cash_flow_type}'.")
@@ -53,11 +55,15 @@ def dcf(
     for idx, g in enumerate(growth_rates):
         if not isinstance(g, (int, float)) or not math.isfinite(g):
             raise ValueError(f"Growth rate at period {idx + 1} must be finite, got {g}.")
+        if g <= -1.0:
+            raise ValueError(f"Growth rate at period {idx + 1} must be strictly greater than -100% (-1.0), got {g}.")
 
     if not isinstance(cash_flow_type, str) or cash_flow_type not in ("FCFF", "FCFE"):
         raise ValueError(f"cash_flow_type must be 'FCFF' or 'FCFE', got {cash_flow_type}.")
     if discount_rate <= -1.0:
         raise ValueError("Discount rate must be strictly greater than -100%.")
+    if terminal_growth_rate <= -1.0:
+        raise ValueError("Terminal growth rate must be strictly greater than -100% (-1.0).")
     if discount_rate <= terminal_growth_rate:
         raise ValueError("Discount rate must be strictly greater than terminal growth rate.")
     if shares_outstanding <= 0:
@@ -108,7 +114,7 @@ def dcf(
         "FCFE Model: Equity Value = PV(FCFE) + PV(TV); EV = Equity Value + Net Debt; Fair Value = Equity Value / Shares"
     )
 
-    return {
+    res = {
         "result": {
             "fair_value_per_share": fair_value_per_share,
             "equity_value": equity_value,
@@ -137,6 +143,27 @@ def dcf(
         },
         "formatted": f"Fair Value: {currency_symbol}{fair_value_per_share:.2f}/share ({currency}) [{cash_flow_type}{', Mid-Year' if mid_year else ''}] (Equity Val: {currency_symbol}{equity_value:,.2f}, EV: {currency_symbol}{enterprise_value:,.2f})"
     }
+    if ledger:
+        res["ledger_id"] = ledger.record(
+            tool="tools.calc.dcf",
+            inputs={
+                "base_fcf": base_fcf,
+                "growth_rates": growth_rates,
+                "discount_rate": discount_rate,
+                "terminal_growth_rate": terminal_growth_rate,
+                "shares_outstanding": shares_outstanding,
+                "net_debt": net_debt,
+                "cash_flow_type": cash_flow_type,
+                "mid_year": mid_year
+            },
+            output=fair_value_per_share,
+            raw_value=fair_value_per_share,
+            source=f"DCF Valuation Model ({cash_flow_type}{', Mid-Year' if mid_year else ''})",
+            currency=currency,
+            notes=f"DCF Fair Value: {currency_symbol}{fair_value_per_share:.2f} per share",
+            source_tag="DCF_CALC"
+        )
+    return res
 
 def reverse_dcf(
     current_price: float,
@@ -147,7 +174,8 @@ def reverse_dcf(
     projection_years: int = 5,
     net_debt: float = 0.0,
     currency: str = "USD",
-    currency_symbol: str = "$"
+    currency_symbol: str = "$",
+    ledger: Optional[Any] = None
 ) -> Dict[str, Any]:
     """Calculate the constant annual FCF growth rate implied by the current market price.
     Uses bisection method to solve for implied CAGR and returns explicit solver convergence status.
@@ -163,6 +191,8 @@ def reverse_dcf(
         if not isinstance(val, (int, float)) or not math.isfinite(val):
             raise ValueError(f"Input '{val_name}' must be a finite numerical value, got {val}.")
 
+    if terminal_growth_rate <= -1.0:
+        raise ValueError("Terminal growth rate must be strictly greater than -100% (-1.0).")
     if discount_rate <= terminal_growth_rate:
         raise ValueError("Discount rate must be strictly greater than terminal growth rate.")
     if current_price <= 0 or shares_outstanding <= 0:
@@ -238,7 +268,7 @@ def reverse_dcf(
             solver_status = "MAX_ITERATIONS_REACHED"
         
     implied_g_pct = implied_g * 100.0
-    return {
+    res = {
         "result": {
             "implied_growth_rate_pct": implied_g_pct,
             "solver_status": solver_status,
@@ -266,6 +296,26 @@ def reverse_dcf(
         },
         "formatted": f"Implied {projection_years}-Year FCF CAGR: {implied_g_pct:.2f}% [{solver_status}] (at {currency_symbol}{current_price:.2f}/share {currency}, WACC {discount_rate*100:.1f}%, Terminal g {terminal_growth_rate*100:.1f}%)"
     }
+    if ledger:
+        res["ledger_id"] = ledger.record(
+            tool="tools.calc.reverse_dcf",
+            inputs={
+                "current_price": current_price,
+                "base_fcf": base_fcf,
+                "shares_outstanding": shares_outstanding,
+                "discount_rate": discount_rate,
+                "terminal_growth_rate": terminal_growth_rate,
+                "projection_years": projection_years,
+                "net_debt": net_debt
+            },
+            output=implied_g_pct,
+            raw_value=implied_g_pct,
+            source=f"Reverse DCF Solver ({solver_status})",
+            currency=currency,
+            notes=f"Implied FCF CAGR: {implied_g_pct:.2f}%",
+            source_tag="DCF_CALC"
+        )
+    return res
 
 def dcf_sensitivity_matrix(
     base_fcf: float,

@@ -18,6 +18,7 @@ import hashlib
 import urllib.request
 import urllib.error
 import datetime
+import math
 from typing import Dict, Any, List, Optional, Tuple
 
 # Ensure project root is in sys.path
@@ -806,16 +807,22 @@ class DataLayer:
             has_valid_provenance = bool(cached.get("period") and cached.get("source"))
             if all_numeric_valid and has_valid_provenance:
                 if ledger:
-                    ledger.record(
-                        tool="data_layer.get_fundamentals",
-                        ticker=clean_ticker,
-                        inputs={"ticker": clean_ticker},
-                        output=cached.get("revenue"),
-                        raw_value=cached.get("revenue"),
-                        source=f"Cache ({cached.get('source')})",
-                        period=cached.get("period"),
-                        notes=f"Cached fundamentals for {clean_ticker}"
-                    )
+                    for met_k in ("revenue", "operating_income", "net_income", "operating_cash_flow", "capex"):
+                        met_v = cached.get(met_k)
+                        if met_v is not None:
+                            ledger.record(
+                                tool="data_layer.get_fundamentals",
+                                ticker=clean_ticker,
+                                currency=cached.get("currency"),
+                                inputs={"ticker": clean_ticker, "metric": met_k},
+                                output=met_v,
+                                raw_value=met_v,
+                                source=f"Cache ({cached.get('source')})",
+                                period=cached.get("period"),
+                                fiscal_year=cached.get("period"),
+                                accession=cached.get("accession"),
+                                notes=f"Cached fundamental metric {met_k} for {clean_ticker}: {met_v:,.0f}" if isinstance(met_v, (int, float)) else f"Cached metric {met_k}"
+                            )
                 return {**cached, "cached": True}
 
         # For US (AAPL) and Indian (TCS.NS), we integrate directly with primary verified tools
@@ -830,19 +837,20 @@ class DataLayer:
                 raise ValueError(f"Institutional Data Integrity Violation: Incomplete fundamentals for {clean_ticker}; metric '{required_m}' is missing or non-finite.")
 
         source_label = company_data.get("source")
+        accn = ""
+        if company_data.get("facts"):
+            facts_dict = company_data.get("facts", {})
+            for fact_item in facts_dict.values():
+                if isinstance(fact_item, dict) and fact_item.get("accn"):
+                    accn = fact_item["accn"]
+                    break
         if not source_label:
-            if company_data.get("facts"):
-                facts_dict = company_data.get("facts", {})
-                accn = ""
-                for fact_item in facts_dict.values():
-                    if isinstance(fact_item, dict) and fact_item.get("accn"):
-                        accn = fact_item["accn"]
-                        break
-                source_label = f"SEC EDGAR Form 10-K (Accn: {accn})" if accn else "SEC EDGAR Form 10-K"
+            if accn:
+                source_label = f"SEC EDGAR Form 10-K (Accn: {accn})"
             elif clean_ticker.startswith("TCS"):
                 source_label = "TCS Audited Financial Results Release (Ind AS / NSE / BSE)"
             else:
-                source_label = f"Market Data Provider (yfinance / Multi-source, {company_data.get('accounting_standard', 'Standard')})"
+                source_label = f"yfinance Verified Annual Financial Statements ({company_data.get('accounting_standard', 'Standard')})"
 
         res = {
             "ticker": clean_ticker,
@@ -855,20 +863,27 @@ class DataLayer:
             "net_income": company_data.get("net_income"),
             "operating_cash_flow": company_data.get("operating_cash_flow"),
             "capex": company_data.get("capex"),
-            "source": source_label
+            "source": source_label,
+            "accession": accn or None
         }
         self.cache.set(cache_key, res, self.ttl_financials)
         if ledger:
-            ledger.record(
-                tool="data_layer.get_fundamentals",
-                ticker=clean_ticker,
-                inputs={"ticker": clean_ticker},
-                output=res["revenue"],
-                raw_value=res["revenue"],
-                source=res["source"],
-                period=res["period"],
-                notes=f"Fundamentals for {clean_ticker}"
-            )
+            for met_k in ("revenue", "operating_income", "net_income", "operating_cash_flow", "capex"):
+                met_v = res.get(met_k)
+                if met_v is not None:
+                    ledger.record(
+                        tool="data_layer.get_fundamentals",
+                        ticker=clean_ticker,
+                        currency=res.get("currency"),
+                        inputs={"ticker": clean_ticker, "metric": met_k},
+                        output=met_v,
+                        raw_value=met_v,
+                        source=res["source"],
+                        period=res.get("period"),
+                        fiscal_year=res.get("period"),
+                        accession=res.get("accession"),
+                        notes=f"Fundamental metric {met_k} for {clean_ticker}: {met_v:,.0f}" if isinstance(met_v, (int, float)) else f"Fundamental metric {met_k} for {clean_ticker}"
+                    )
         return {**res, "cached": False}
 
     # -------------------------------------------------------------------------

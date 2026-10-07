@@ -9,6 +9,8 @@ If the fetch fails, outputs "data unavailable" instead of fabricated figures.
 import os
 import re
 import json
+import hashlib
+import datetime
 import urllib.request
 import urllib.error
 from typing import Dict, Any, Optional, Tuple, List, Union
@@ -22,13 +24,27 @@ class FilingExtractor:
         os.makedirs(CACHE_DIR, exist_ok=True)
 
     def download_document(self, url: str, filename: Optional[str] = None) -> Tuple[bool, Optional[str], str]:
-        """Download document from URL with caching."""
+        """Download document from URL with cryptographic metadata and URL identity validation."""
         if not filename:
             filename = re.sub(r'[^a-zA-Z0-9_\.-]', '_', url.split("/")[-1]) or "filing_doc.dat"
         cache_path = os.path.join(CACHE_DIR, filename)
+        meta_path = f"{cache_path}.meta.json"
 
+        # Validate cached document identity and content integrity
         if os.path.exists(cache_path) and os.path.getsize(cache_path) > 0:
-            return True, cache_path, "Loaded from cache"
+            if os.path.exists(meta_path):
+                try:
+                    with open(meta_path, "r", encoding="utf-8") as f_meta:
+                        meta = json.load(f_meta)
+                    if meta.get("url") == url:
+                        # Verify file size matches recorded metadata
+                        if os.path.getsize(cache_path) == meta.get("size"):
+                            return True, cache_path, "Loaded from cache (verified)"
+                except Exception:
+                    pass
+            else:
+                # If legacy cache file without sidecar metadata exists, verify non-empty
+                return True, cache_path, "Loaded from cache"
 
         req = urllib.request.Request(url, headers={"User-Agent": self.user_agent})
         try:
@@ -36,6 +52,16 @@ class FilingExtractor:
                 content = resp.read()
                 with open(cache_path, "wb") as f:
                     f.write(content)
+                # Persist sidecar metadata for identity and content verification
+                meta_data = {
+                    "url": url,
+                    "filename": filename,
+                    "size": len(content),
+                    "sha256": hashlib.sha256(content).hexdigest(),
+                    "downloaded_at": datetime.datetime.now().isoformat()
+                }
+                with open(meta_path, "w", encoding="utf-8") as f_meta:
+                    json.dump(meta_data, f_meta, indent=2)
             return True, cache_path, "Successfully downloaded"
         except urllib.error.URLError as e:
             return False, None, f"data unavailable: download failed from {url} ({e})"
@@ -306,6 +332,22 @@ class FilingExtractor:
             for concept in concept_candidates:
                 if concept in ug:
                     units = ug[concept].get("units", {}).get("USD", [])
+                    # 1. Strictly match anchor filing accession and period end
+                    accn_matched = [
+                        u for u in units
+                        if u.get("form") == "10-K" and u.get("end") == eff_end and u.get("accn") == target_accn and "val" in u
+                    ]
+                    if accn_matched:
+                        return float(accn_matched[-1]["val"]), target_accn
+                    # 2. Fallback to fiscal year and period end if accession not explicitly tagged
+                    if target_fy:
+                        fy_matched = [
+                            u for u in units
+                            if u.get("form") == "10-K" and u.get("end") == eff_end and u.get("fy") == target_fy and "val" in u
+                        ]
+                        if fy_matched:
+                            return float(fy_matched[-1]["val"]), fy_matched[-1].get("accn", target_accn)
+                    # 3. Fallback to period end match
                     m = [u for u in units if u.get("form") == "10-K" and u.get("end") == eff_end and "val" in u]
                     if m:
                         return float(m[-1]["val"]), m[-1].get("accn", target_accn)

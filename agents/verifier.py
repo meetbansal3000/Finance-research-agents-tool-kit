@@ -197,7 +197,9 @@ class ReportVerifier:
 
                 # Independent Code Path 2: SEC companyconcept API (distinct endpoint & schema from analyst companyfacts)
                 from tools.sec_cik import resolve_cik
-                cik = resolve_cik(ticker) or "0000320193"
+                cik = resolve_cik(ticker)
+                if not cik:
+                    return (False, None, f"Could not resolve SEC CIK for ticker {ticker}")
                 c_candidates = [concept_clean]
                 if "Revenue" in concept_clean or "rev" in concept_clean.lower():
                     c_candidates.extend(["RevenueFromContractWithCustomerExcludingAssessedTax", "SalesRevenueNet", "Revenues"])
@@ -219,7 +221,7 @@ class ReportVerifier:
                             if f.get("form") == form_type:
                                 if period_end and f.get("end") == period_end:
                                     filtered_facts.append(f)
-                                elif period and str(f.get("fy")) in str(period):
+                                elif not period_end and period and str(f.get("fy")) in str(period):
                                     filtered_facts.append(f)
                         if filtered_facts:
                             selected_fact = filtered_facts[-1]
@@ -260,17 +262,18 @@ class ReportVerifier:
                     return (abs(float(recomputed_val) - float(expected_val)) < 1e-4, recomputed_val, "Recomputed Calc Tool")
                     
             elif tool in ("yfinance.quote", "data_layer.get_quote"):
-                import yfinance as yf
+                from tools.data_layer import get_data_layer
+                dl = get_data_layer()
                 ticker_sym = inputs.get("symbol") or inputs.get("ticker")
                 if ticker_sym:
-                    t = yf.Ticker(ticker_sym)
-                    price = float(getattr(t.fast_info, "last_price", 0.0) or t.info.get("currentPrice") or t.info.get("regularMarketPrice") or 0.0)
+                    q_data = dl.get_quote(ticker_sym)
+                    price = float(q_data.get("price", 0.0) or 0.0)
                     if price <= 0:
                         return (False, None, "Live market quote <= 0 or unavailable")
                     expected_num = float(expected_val) if expected_val is not None else 0.0
                     if expected_num > 0:
                         diff_ratio = abs(price - expected_num) / expected_num
-                        passes = (diff_ratio <= 0.25)
+                        passes = (diff_ratio <= 0.10)
                         return (passes, price, f"Live Market Quote (${price:.2f} vs Recorded ${expected_num:.2f})")
                     return (True, price, "Live Market Quote")
                 return (False, None, "Missing ticker symbol in quote inputs")
@@ -278,6 +281,7 @@ class ReportVerifier:
             elif tool == "tools.filing.extract_metric":
                 metric_name = inputs.get("metric")
                 ticker_sym = inputs.get("ticker", "")
+                period_req = inputs.get("period", "")
                 from tools.filing import FilingParser
                 fp = FilingParser()
                 if "TCS" in ticker_sym:
@@ -296,6 +300,20 @@ class ReportVerifier:
                     if metric_name in res_data.get("metrics", {}):
                         refetched = res_data["metrics"][metric_name].get("val_raw")
                         return (True, refetched, "SEC 10-Q Re-parse")
+                else:
+                    # Dynamic re-parse for any US 10-K or 20-F filer
+                    from tools.sec_cik import resolve_cik
+                    resolved_cik = resolve_cik(ticker_sym)
+                    if resolved_cik:
+                        try:
+                            fy_match = re.search(r'\d{4}', str(period_req))
+                            fy_val = int(fy_match.group(0)) if fy_match else None
+                            res_data = fp.fetch_sec_10k_financials(ticker=ticker_sym, cik=resolved_cik, fiscal_year=fy_val)
+                            if metric_name in res_data.get("metrics", {}):
+                                refetched = res_data["metrics"][metric_name]
+                                return (True, refetched, f"Dynamic SEC 10-K Re-parse ({ticker_sym})")
+                        except Exception:
+                            pass
 
             elif tool.startswith("note_extractor."):
                 from agents.note_extractor import NoteExtractorAgent
@@ -315,7 +333,15 @@ class ReportVerifier:
                 dl = get_data_layer()
                 ticker_sym = inputs.get("ticker", "")
                 fund = dl.get_fundamentals(ticker_sym)
-                return (bool(fund and fund.get("metrics")), fund.get("metrics"), "Data Layer Fundamentals Re-fetch")
+                if not fund:
+                    return (False, None, f"No fundamentals returned for {ticker_sym}")
+                target_metric = inputs.get("metric", "revenue")
+                fund_val = fund.get(target_metric) if target_metric in fund else fund.get("revenue")
+                if fund_val is not None and expected_val is not None:
+                    diff = abs(float(fund_val) - float(expected_val))
+                    is_match = diff < 1.0 or (float(expected_val) > 0 and (diff / float(expected_val)) < 0.01)
+                    return (is_match, fund_val, f"Data Layer Fundamentals Re-fetch ({target_metric})")
+                return (fund_val is not None, fund_val, "Data Layer Fundamentals Re-fetch")
                 
         except Exception as e:
             return (False, None, f"Re-fetch exception: {e}")

@@ -14,9 +14,9 @@ import warnings
 import secrets
 from typing import Dict, Any, Optional, List
 
-DEFAULT_HMAC_KEY = b"antigravity-finance-hmac-key-v1"
 _SESSION_HMAC_KEY: Optional[bytes] = None
 KEY_FILE_PATH = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), ".provenance_key.sec")
+DEFAULT_HMAC_KEY = b"antigravity-finance-hmac-key-v1"
 
 def get_hmac_key() -> bytes:
     """Load HMAC signing key from environment or persistent workspace key file, enforcing cryptographic security."""
@@ -29,7 +29,7 @@ def get_hmac_key() -> bytes:
     if strict:
         raise ValueError("LEDGER_HMAC_KEY environment variable is required in strict mode.")
 
-    # If explicitly running in legacy mode without strict checking
+    # Explicit test/legacy override mode
     if os.getenv("LEDGER_HMAC_STRICT") == "0":
         return DEFAULT_HMAC_KEY
 
@@ -114,8 +114,21 @@ class ProvenanceLedger:
         ts = datetime.datetime.now().isoformat()
         
         resolved_ticker = ticker or inputs.get("ticker") or inputs.get("symbol")
-        resolved_currency = currency or ("USD" if resolved_ticker in ("AAPL", "MSFT", "NVDA") or (resolved_ticker and "." not in resolved_ticker) else ("INR" if resolved_ticker and "NS" in resolved_ticker else None))
-        resolved_unit = unit or "base"
+        resolved_currency = currency or inputs.get("currency")
+        if not resolved_currency:
+            if resolved_ticker in ("AAPL", "MSFT", "NVDA", "AMZN", "GOOGL", "META", "TSLA"):
+                resolved_currency = "USD"
+            elif resolved_ticker and (resolved_ticker.endswith(".NS") or resolved_ticker.endswith(".BO")):
+                resolved_currency = "INR"
+            elif resolved_ticker and resolved_ticker.endswith(".L"):
+                resolved_currency = "GBP"
+            elif resolved_ticker and resolved_ticker.endswith(".DE"):
+                resolved_currency = "EUR"
+            elif resolved_ticker and (resolved_ticker.endswith(".TO") or resolved_ticker.endswith(".V")):
+                resolved_currency = "CAD"
+            elif inputs.get("unit") in ("USD", "INR", "EUR", "GBP"):
+                resolved_currency = inputs.get("unit")
+        resolved_unit = unit or inputs.get("unit") or "base"
         
         resolved_period_end = period_end or inputs.get("period_end") or inputs.get("end_date") or inputs.get("end")
         resolved_fiscal_year = fiscal_year or inputs.get("fiscal_year") or inputs.get("fy")
