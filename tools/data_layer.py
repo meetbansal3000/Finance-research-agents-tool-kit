@@ -285,8 +285,8 @@ class TokenBucketRateLimiter:
                                 data = json.load(f)
                             if data.get("date") != today_str:
                                 data = {"date": today_str, "calls": 0}
-                        except Exception:
-                            data = {"date": today_str, "calls": 0}
+                        except Exception as e:
+                            raise RuntimeError(f"Institutional Quota State Violation: Corrupted or unreadable quota state in '{state_file}': {e}")
 
                     if data.get("calls", 0) >= 25:
                         return False, data.get("calls", 0)
@@ -306,8 +306,8 @@ class TokenBucketRateLimiter:
                         raise RuntimeError(f"Institutional Quota State Violation: Failed to persist Alpha Vantage quota state: {e}")
                     return True, data["calls"]
             except TimeoutError:
-                # Fail closed when quota lock acquisition times out
-                return False, 25
+                # Strictly fail closed when quota lock acquisition times out
+                raise TimeoutError("Institutional Concurrency Violation: Cross-process Alpha Vantage quota lock acquisition timed out. Operation halted under fail-closed concurrency policy.")
 
 
 # -----------------------------------------------------------------------------

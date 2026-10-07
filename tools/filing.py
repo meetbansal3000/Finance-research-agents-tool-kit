@@ -314,14 +314,18 @@ class FilingExtractor:
         for r_tag in rev_tags:
             if r_tag in ug:
                 u_list = ug[r_tag].get("units", {}).get("USD", [])
-                ten_k_facts = [u for u in u_list if u.get("form") == "10-K" and (u.get("fp") == "FY" or not u.get("fp"))]
+                ten_k_facts = [
+                    u for u in u_list
+                    if u.get("form") == "10-K" and (u.get("fp") == "FY" or not u.get("fp")) and u.get("accn")
+                ]
                 if fiscal_year:
                     ten_k_facts = [u for u in ten_k_facts if u.get("fy") == fiscal_year]
                 if ten_k_facts:
-                    anchor_fact = ten_k_facts[-1]
+                    sorted_facts = sorted(ten_k_facts, key=lambda x: (str(x.get("end", "")), str(x.get("filed", ""))))
+                    anchor_fact = sorted_facts[-1]
                     break
-        if not anchor_fact:
-            raise ValueError(f"No annual Form 10-K revenue anchor fact found for {ticker} (CIK{clean_cik})")
+        if not anchor_fact or not anchor_fact.get("accn"):
+            raise ValueError(f"No annual Form 10-K revenue anchor fact with valid accession found for {ticker} (CIK{clean_cik})")
 
         target_fy = anchor_fact.get("fy")
         target_end = anchor_fact.get("end")

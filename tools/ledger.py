@@ -45,9 +45,27 @@ def get_hmac_key() -> bytes:
 
     # Generate and persist a cryptographic 256-bit key for this workspace
     if _SESSION_HMAC_KEY is None:
-        _SESSION_HMAC_KEY = secrets.token_bytes(32)
-        with open(KEY_FILE_PATH, "wb") as f:
-            f.write(_SESSION_HMAC_KEY)
+        new_key = secrets.token_bytes(32)
+        temp_key_file = f"{KEY_FILE_PATH}.tmp.{os.getpid()}"
+        try:
+            with open(temp_key_file, "wb") as f:
+                f.write(new_key)
+                f.flush()
+                os.fsync(f.fileno())
+            if hasattr(os, "chmod"):
+                try:
+                    os.chmod(temp_key_file, 0o600)
+                except Exception:
+                    pass
+            os.replace(temp_key_file, KEY_FILE_PATH)
+            _SESSION_HMAC_KEY = new_key
+        except Exception as e:
+            if os.path.exists(temp_key_file):
+                try:
+                    os.remove(temp_key_file)
+                except OSError:
+                    pass
+            raise RuntimeError(f"Institutional Key Persistence Failure: Failed to securely write workspace HMAC key: {e}")
     return _SESSION_HMAC_KEY
 
 def compute_entry_hash(

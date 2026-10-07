@@ -216,9 +216,12 @@ class ReportVerifier:
                         with urllib.request.urlopen(req, timeout=10) as resp:
                             concept_data = json_lib.loads(resp.read().decode("utf-8"))
                         units_data = concept_data.get("units", {}).get("USD", [])
+                        target_accn = entry.get("accession")
                         filtered_facts = []
                         for f in units_data:
                             if f.get("form") == form_type:
+                                if target_accn and f.get("accn") != target_accn:
+                                    continue
                                 if period_end and f.get("end") == period_end:
                                     filtered_facts.append(f)
                                 elif not period_end and period and str(f.get("fy")) in str(period):
@@ -284,22 +287,24 @@ class ReportVerifier:
                 period_req = inputs.get("period", "")
                 from tools.filing import FilingParser
                 fp = FilingParser()
+                refetched = None
+                source_label = "Filing Re-parse"
                 if "TCS" in ticker_sym:
                     res_data = fp.fetch_tcs_fy25_audited_financials()
                     if metric_name in res_data.get("metrics", {}):
                         m_item = res_data["metrics"][metric_name]
                         refetched = m_item.get("val_raw") if "val_raw" in m_item else m_item.get("val_crore")
-                        return (True, refetched, "Filing Document Re-parse")
+                        source_label = "Filing Document Re-parse (TCS)"
                 elif "AAPL" in ticker_sym:
                     res_data = fp.fetch_apple_fy25_audited_financials()
                     if metric_name in res_data.get("metrics", {}):
                         refetched = res_data["metrics"][metric_name].get("val_raw")
-                        return (True, refetched, "SEC 10-K Re-parse")
+                        source_label = "SEC 10-K Re-parse (AAPL)"
                 elif "MSFT" in ticker_sym:
                     res_data = fp.fetch_msft_fy26_financials()
                     if metric_name in res_data.get("metrics", {}):
                         refetched = res_data["metrics"][metric_name].get("val_raw")
-                        return (True, refetched, "SEC 10-Q Re-parse")
+                        source_label = "SEC 10-Q Re-parse (MSFT)"
                 else:
                     # Dynamic re-parse for any US 10-K or 20-F filer
                     from tools.sec_cik import resolve_cik
@@ -311,9 +316,17 @@ class ReportVerifier:
                             res_data = fp.fetch_sec_10k_financials(ticker=ticker_sym, cik=resolved_cik, fiscal_year=fy_val)
                             if metric_name in res_data.get("metrics", {}):
                                 refetched = res_data["metrics"][metric_name]
-                                return (True, refetched, f"Dynamic SEC 10-K Re-parse ({ticker_sym})")
+                                source_label = f"Dynamic SEC 10-K Re-parse ({ticker_sym})"
                         except Exception:
                             pass
+
+                if refetched is not None:
+                    if expected_val is not None:
+                        diff = abs(float(refetched) - float(expected_val))
+                        tolerance = max(1.0, float(expected_val) * 0.005)
+                        passes = (diff <= tolerance)
+                        return (passes, refetched, f"{source_label} ({refetched:,.0f} vs expected {float(expected_val):,.0f})")
+                    return (True, refetched, source_label)
 
             elif tool.startswith("note_extractor."):
                 from agents.note_extractor import NoteExtractorAgent
