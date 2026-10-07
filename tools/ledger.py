@@ -46,11 +46,8 @@ def get_hmac_key() -> bytes:
     # Generate and persist a cryptographic 256-bit key for this workspace
     if _SESSION_HMAC_KEY is None:
         _SESSION_HMAC_KEY = secrets.token_bytes(32)
-        try:
-            with open(KEY_FILE_PATH, "wb") as f:
-                f.write(_SESSION_HMAC_KEY)
-        except Exception:
-            pass
+        with open(KEY_FILE_PATH, "wb") as f:
+            f.write(_SESSION_HMAC_KEY)
     return _SESSION_HMAC_KEY
 
 def compute_entry_hash(
@@ -66,11 +63,14 @@ def compute_entry_hash(
     fiscal_year: Optional[str] = None,
     run_id: Optional[str] = None,
     accession: Optional[str] = None,
-    url: Optional[str] = None
+    url: Optional[str] = None,
+    notes: Optional[str] = None,
+    source_tag: Optional[str] = None,
+    form: Optional[str] = None
 ) -> str:
-    """Compute true HMAC-SHA256 signature of ledger entry fields to detect tampering."""
+    """Compute true HMAC-SHA256 signature of all ledger entry fields to detect tampering."""
     serialized_inputs = json.dumps(inputs, sort_keys=True)
-    payload = f"{ledger_id}|{tool}|{serialized_inputs}|{raw_value}|{source}|{timestamp}|{currency or ''}|{unit or ''}|{period_end or ''}|{fiscal_year or ''}|{run_id or ''}|{accession or ''}|{url or ''}"
+    payload = f"{ledger_id}|{tool}|{serialized_inputs}|{raw_value}|{source}|{timestamp}|{currency or ''}|{unit or ''}|{period_end or ''}|{fiscal_year or ''}|{run_id or ''}|{accession or ''}|{url or ''}|{notes or ''}|{source_tag or ''}|{form or ''}"
     return hmac.new(get_hmac_key(), payload.encode("utf-8"), hashlib.sha256).hexdigest()
 
 class ProvenanceLedger:
@@ -158,7 +158,10 @@ class ProvenanceLedger:
             fiscal_year=resolved_fiscal_year,
             run_id=self.run_id,
             accession=resolved_accession,
-            url=resolved_url
+            url=resolved_url,
+            notes=notes,
+            source_tag=resolved_source_tag,
+            form=form
         )
         
         entry = {
@@ -205,7 +208,10 @@ class ProvenanceLedger:
             fiscal_year=entry.get("fiscal_year"),
             run_id=entry.get("run_id"),
             accession=entry.get("accession"),
-            url=entry.get("url")
+            url=entry.get("url"),
+            notes=entry.get("notes"),
+            source_tag=entry.get("source_tag"),
+            form=entry.get("form")
         )
         if hmac.compare_digest(entry["integrity_hash"], expected_hash):
             return True

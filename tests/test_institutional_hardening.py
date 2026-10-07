@@ -118,6 +118,12 @@ def test_ledger_strict_hmac_and_citations(monkeypatch):
     entry["url"] = "https://www.sec.gov"
     assert ledger.verify_entry_integrity(l_id) is True
 
+    # Tampering with notes or source_tag fails verification
+    entry["notes"] = "tampered notes content"
+    assert ledger.verify_entry_integrity(l_id) is False
+    entry["notes"] = None
+    assert ledger.verify_entry_integrity(l_id) is True
+
 def test_verifier_four_tier_classification(tmp_path):
     ledger = ProvenanceLedger(run_id="run_4tier")
     l1 = ledger.record(

@@ -247,7 +247,16 @@ class ReportVerifier:
                     res = calc_fn(**inputs)
                     recomputed_val = res.get("result")
                     if isinstance(recomputed_val, dict):
-                        return (True, recomputed_val, "Recomputed Calc Tool")
+                        # Compare target scalar metric against recorded value
+                        target_field = inputs.get("metric") or inputs.get("target") or "fair_value_per_share"
+                        scalar_val = recomputed_val.get(target_field) or recomputed_val.get("implied_cagr_pct") or recomputed_val.get("implied_cagr") or list(recomputed_val.values())[0]
+                        if isinstance(scalar_val, (int, float)) and expected_val is not None:
+                            try:
+                                matches = abs(float(scalar_val) - float(expected_val)) < 1e-4
+                                return (matches, scalar_val, "Recomputed Calc Tool")
+                            except (ValueError, TypeError):
+                                pass
+                        return (True, scalar_val, "Recomputed Calc Tool")
                     return (abs(float(recomputed_val) - float(expected_val)) < 1e-4, recomputed_val, "Recomputed Calc Tool")
                     
             elif tool in ("yfinance.quote", "data_layer.get_quote"):
@@ -256,7 +265,14 @@ class ReportVerifier:
                 if ticker_sym:
                     t = yf.Ticker(ticker_sym)
                     price = float(getattr(t.fast_info, "last_price", 0.0) or t.info.get("currentPrice") or t.info.get("regularMarketPrice") or 0.0)
-                    return (price > 0, price, "Live Market Quote")
+                    if price <= 0:
+                        return (False, None, "Live market quote <= 0 or unavailable")
+                    expected_num = float(expected_val) if expected_val is not None else 0.0
+                    if expected_num > 0:
+                        diff_ratio = abs(price - expected_num) / expected_num
+                        passes = (diff_ratio <= 0.25)
+                        return (passes, price, f"Live Market Quote (${price:.2f} vs Recorded ${expected_num:.2f})")
+                    return (True, price, "Live Market Quote")
                 return (False, None, "Missing ticker symbol in quote inputs")
 
             elif tool == "tools.filing.extract_metric":

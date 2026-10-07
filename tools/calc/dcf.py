@@ -54,6 +54,10 @@ def dcf(
         if not isinstance(g, (int, float)) or not math.isfinite(g):
             raise ValueError(f"Growth rate at period {idx + 1} must be finite, got {g}.")
 
+    if not isinstance(cash_flow_type, str) or cash_flow_type not in ("FCFF", "FCFE"):
+        raise ValueError(f"cash_flow_type must be 'FCFF' or 'FCFE', got {cash_flow_type}.")
+    if discount_rate <= -1.0:
+        raise ValueError("Discount rate must be strictly greater than -100%.")
     if discount_rate <= terminal_growth_rate:
         raise ValueError("Discount rate must be strictly greater than terminal growth rate.")
     if shares_outstanding <= 0:
@@ -91,6 +95,8 @@ def dcf(
         enterprise_value = equity_value + net_debt
 
     fair_value_per_share = equity_value / shares_outstanding
+    if not math.isfinite(fair_value_per_share) or not math.isfinite(equity_value) or not math.isfinite(enterprise_value):
+        raise ValueError("DCF projection resulted in arithmetic overflow or non-finite valuation values.")
     
     formula_desc = (
         "FCFF Model: EV = PV(FCFF) + PV(TV); Equity Value = EV - Net Debt; Fair Value = Equity Value / Shares"
@@ -157,8 +163,8 @@ def reverse_dcf(
         raise ValueError("Discount rate must be strictly greater than terminal growth rate.")
     if current_price <= 0 or shares_outstanding <= 0:
         raise ValueError("Current price and shares outstanding must be positive.")
-    if projection_years < 1 or projection_years > 30:
-        raise ValueError("Projection horizon must be between 1 and 30 years.")
+    if not isinstance(projection_years, int) or isinstance(projection_years, bool) or projection_years < 1 or projection_years > 30:
+        raise ValueError("Projection horizon must be an integer between 1 and 30 years.")
         
     target_equity_value = (current_price * shares_outstanding)
     
@@ -300,10 +306,36 @@ def dcf_sensitivity_matrix(
         if not isinstance(g, (int, float)) or not math.isfinite(g) or g <= -1.0:
             raise ValueError(f"terminal_growth_rates[{idx}] must be a finite number > -1.0, got {g}.")
 
-    # Format labels with full collision safety
+    if not isinstance(cash_flow_type, str) or cash_flow_type not in ("FCFF", "FCFE"):
+        raise ValueError(f"cash_flow_type must be 'FCFF' or 'FCFE', got {cash_flow_type}.")
+
+    if len(discount_rates) != len(set(discount_rates)):
+        raise ValueError("discount_rates must not contain duplicate values.")
+    if len(terminal_growth_rates) != len(set(terminal_growth_rates)):
+        raise ValueError("terminal_growth_rates must not contain duplicate values.")
+
+    # Upfront baseline validation of DCF model inputs
+    valid_pairs = [(r, g) for r in discount_rates for g in terminal_growth_rates if r > g]
+    if valid_pairs:
+        test_r, test_g = valid_pairs[0]
+        dcf(
+            base_fcf=base_fcf,
+            growth_rates=growth_rates,
+            discount_rate=test_r,
+            terminal_growth_rate=test_g,
+            shares_outstanding=shares_outstanding,
+            net_debt=net_debt,
+            cash_flow_type=cash_flow_type,
+            mid_year=mid_year,
+            currency=currency,
+            currency_symbol=currency_symbol
+        )
+
+    # Format labels with full collision safety and exact single percent signs
     def make_rate_label(val: float, seen: set) -> str:
         for decimals in (1, 2, 3, 4, 6):
-            lbl = f"{val * 100:.{decimals}f}%".rstrip("0").rstrip(".") + "%"
+            formatted_num = f"{val * 100:.{decimals}f}".rstrip("0").rstrip(".")
+            lbl = f"{formatted_num}%"
             if lbl not in seen:
                 seen.add(lbl)
                 return lbl

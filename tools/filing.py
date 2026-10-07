@@ -262,6 +262,112 @@ class FilingExtractor:
 
         return extracted_data
 
+    def fetch_sec_10k_financials(
+        self,
+        ticker: str,
+        cik: str,
+        fiscal_year: Optional[int] = None,
+        ledger: Optional[ProvenanceLedger] = None
+    ) -> Dict[str, Any]:
+        """
+        Dynamically extract audited annual financial metrics for any US SEC Form 10-K filer.
+        Queries SEC EDGAR company facts, locks to target fiscal year and accession number,
+        and records verified facts into the provenance ledger with full provenance metadata.
+        """
+        clean_cik = str(cik).strip().zfill(10)
+        from tools.data_layer import get_data_layer
+        sec_url = f"https://data.sec.gov/api/xbrl/companyfacts/CIK{clean_cik}.json"
+        facts_data = get_data_layer().fetch_sec_edgar(sec_url, is_json=True, ledger=ledger)
+        ug = facts_data.get("facts", {}).get("us-gaap", {})
+        if not ug:
+            raise ValueError(f"SEC EDGAR us-gaap facts unavailable for {ticker} (CIK{clean_cik})")
+
+        # Discover anchor annual filing (from Revenues)
+        rev_tags = ["Revenues", "RevenueFromContractWithCustomerExcludingAssessedTax", "SalesRevenueNet"]
+        anchor_fact = None
+        for r_tag in rev_tags:
+            if r_tag in ug:
+                u_list = ug[r_tag].get("units", {}).get("USD", [])
+                ten_k_facts = [u for u in u_list if u.get("form") == "10-K" and (u.get("fp") == "FY" or not u.get("fp"))]
+                if fiscal_year:
+                    ten_k_facts = [u for u in ten_k_facts if u.get("fy") == fiscal_year]
+                if ten_k_facts:
+                    anchor_fact = ten_k_facts[-1]
+                    break
+        if not anchor_fact:
+            raise ValueError(f"No annual Form 10-K revenue anchor fact found for {ticker} (CIK{clean_cik})")
+
+        target_fy = anchor_fact.get("fy")
+        target_end = anchor_fact.get("end")
+        target_accn = anchor_fact.get("accn", "")
+
+        def get_matched_fact(concept_candidates: List[str], end_d: Optional[str] = None) -> Tuple[Optional[float], str]:
+            eff_end = end_d or target_end
+            for concept in concept_candidates:
+                if concept in ug:
+                    units = ug[concept].get("units", {}).get("USD", [])
+                    m = [u for u in units if u.get("form") == "10-K" and u.get("end") == eff_end and "val" in u]
+                    if m:
+                        return float(m[-1]["val"]), m[-1].get("accn", target_accn)
+            return None, target_accn
+
+        cash_val, _ = get_matched_fact(["CashAndCashEquivalentsAtCarryingValue", "CashCashEquivalentsRestrictedCashAndRestrictedCashEquivalents"])
+        msc_val, _ = get_matched_fact(["MarketableSecuritiesCurrent"])
+        msnc_val, _ = get_matched_fact(["MarketableSecuritiesNoncurrent"])
+        cp_val, _ = get_matched_fact(["CommercialPaper"])
+        st_debt_val, _ = get_matched_fact(["LongTermDebtCurrent", "ShortTermBorrowings"])
+        lt_debt_val, _ = get_matched_fact(["LongTermDebtNoncurrent", "LongTermDebtAndCapitalLeaseObligations"])
+        rec_val, _ = get_matched_fact(["AccountsReceivableNetCurrent", "AccountsReceivableNet"])
+        inv_val, _ = get_matched_fact(["InventoryNet", "InventoriesNet"])
+
+        tot_liquid = (cash_val or 0.0) + (msc_val or 0.0) + (msnc_val or 0.0)
+        tot_debt = (cp_val or 0.0) + (st_debt_val or 0.0) + (lt_debt_val or 0.0)
+        net_debt = tot_debt - tot_liquid
+
+        metrics = {
+            "CashAndEquivalents": cash_val,
+            "MarketableSecuritiesCurrent": msc_val,
+            "MarketableSecuritiesNonCurrent": msnc_val,
+            "CommercialPaper": cp_val,
+            "ShortTermDebt": st_debt_val,
+            "LongTermDebtNonCurrent": lt_debt_val,
+            "TotalDebt": tot_debt,
+            "TotalLiquidCash": tot_liquid,
+            "NetDebt": net_debt,
+            "AccountsReceivable": rec_val,
+            "Inventories": inv_val
+        }
+
+        res = {
+            "ticker": ticker,
+            "cik": clean_cik,
+            "fiscal_year": f"FY{target_fy}",
+            "period_end": target_end,
+            "accession": target_accn,
+            "metrics": metrics,
+            "source_url": sec_url
+        }
+
+        if ledger:
+            for k, val in metrics.items():
+                if val is not None:
+                    ledger.record(
+                        tool="tools.filing.extract_metric",
+                        ticker=ticker,
+                        currency="USD",
+                        unit="base",
+                        inputs={"ticker": ticker, "metric": k, "period": f"FY{target_fy}", "period_end": target_end},
+                        output=val,
+                        raw_value=val,
+                        source=f"{sec_url} (Accn: {target_accn}, Period End: {target_end})",
+                        period=f"FY{target_fy}",
+                        period_end=target_end,
+                        fiscal_year=f"FY{target_fy}",
+                        accession=target_accn,
+                        notes=f"{ticker} 10-K {k} = ${val:,.0f}"
+                    )
+        return res
+
     def fetch_apple_fy25_audited_financials(self, ledger: Optional[ProvenanceLedger] = None) -> Dict[str, Any]:
         """
         Extract Apple Inc. (AAPL) Audited FY25 balance sheet liquidity and debt items dynamically from SEC 10-K.
@@ -723,6 +829,9 @@ class FilingExtractor:
                 continue
             tag_name = name_m.group(1).split(":")[-1]
 
+            context_m = re.search(r'contextRef=["\']([^"\']+)["\']', attrs_str, re.IGNORECASE)
+            context_ref = context_m.group(1) if context_m else "FY"
+
             scale_m = re.search(r'scale=["\'](-?\d+)["\']', attrs_str, re.IGNORECASE)
             scale = int(scale_m.group(1)) if scale_m else 0
 
@@ -750,7 +859,8 @@ class FilingExtractor:
                     "val_raw": numeric_val,
                     "unit": unit,
                     "scale": scale,
-                    "snippet": f"<{name_m.group(0)}>: {val_str.strip()}"
+                    "context_ref": context_ref,
+                    "snippet": f"<{name_m.group(0)} contextRef=\"{context_ref}\">: {val_str.strip()}"
                 }
             except Exception:
                 continue
@@ -765,10 +875,11 @@ class FilingExtractor:
                     ticker=ticker,
                     currency=item["unit"],
                     unit="base",
-                    inputs={"ticker": ticker, "tag": f"ifrs-full:{k}"},
+                    inputs={"ticker": ticker, "tag": f"ifrs-full:{k}", "context": item.get("context_ref")},
                     output=val,
                     raw_value=val,
                     source=f"ESEF iXBRL Document ({item['snippet']})",
+                    period=item.get("context_ref"),
                     notes=f"ESEF IFRS extracted tag: {k} = {val:,.0f} {item['unit']}",
                     source_tag="ESEF_IXBRL"
                 )

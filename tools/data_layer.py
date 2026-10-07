@@ -42,11 +42,32 @@ CACHE_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), "library", 
 os.makedirs(CACHE_DIR, exist_ok=True)
 
 # -----------------------------------------------------------------------------
+def _is_process_alive(pid: int) -> bool:
+    if pid <= 0:
+        return False
+    if sys.platform == "win32":
+        try:
+            import ctypes
+            kernel32 = ctypes.windll.kernel32
+            handle = kernel32.OpenProcess(0x1000, False, pid)
+            if handle:
+                kernel32.CloseHandle(handle)
+                return True
+            return False
+        except Exception:
+            return False
+    else:
+        try:
+            os.kill(pid, 0)
+            return True
+        except OSError:
+            return False
+
 # Process & Thread Safety: FileLock
 # -----------------------------------------------------------------------------
 class FileLock:
-    """Advisory inter-process file lock with crash recovery and stale lock clearing."""
-    def __init__(self, lock_file: str, timeout: float = 10.0, retry_delay: float = 0.05, stale_timeout: float = 5.0):
+    """Advisory inter-process file lock with process-liveness recovery."""
+    def __init__(self, lock_file: str, timeout: float = 10.0, retry_delay: float = 0.05, stale_timeout: float = 30.0):
         self.lock_file = lock_file
         self.timeout = timeout
         self.retry_delay = retry_delay
@@ -62,16 +83,22 @@ class FileLock:
                 os.write(self.fd, payload.encode("utf-8"))
                 return True
             except (FileExistsError, OSError):
-                # Inspect for stale lock left behind by crashed/terminated processes
+                # Inspect lock file for dead or terminated owner process
+                # Never break a lock held by an actively running process!
                 try:
                     if os.path.exists(self.lock_file):
-                        mtime = os.path.getmtime(self.lock_file)
-                        if (time.time() - mtime) > self.stale_timeout:
-                            try:
-                                os.remove(self.lock_file)
-                            except OSError:
-                                pass
-                except OSError:
+                        with open(self.lock_file, "r", encoding="utf-8") as f_lk:
+                            lk_content = f_lk.read().strip()
+                        if lk_content and ":" in lk_content:
+                            owner_pid_str, lk_time_str = lk_content.split(":", 1)
+                            owner_pid = int(owner_pid_str)
+                            if not _is_process_alive(owner_pid):
+                                # Owner process is confirmed dead; clear stranded lock safely
+                                try:
+                                    os.remove(self.lock_file)
+                                except OSError:
+                                    pass
+                except Exception:
                     pass
 
                 if time.time() - start_time >= self.timeout:
@@ -770,24 +797,33 @@ class DataLayer:
         cache_key = f"fundamentals_{clean_ticker}"
         cached = self.cache.get(cache_key)
         if cached:
-            if ledger:
-                ledger.record(
-                    tool="data_layer.get_fundamentals",
-                    ticker=clean_ticker,
-                    inputs={"ticker": clean_ticker},
-                    output=cached.get("revenue"),
-                    raw_value=cached.get("revenue"),
-                    source=f"Cache ({cached.get('source')})",
-                    period=cached.get("period"),
-                    notes=f"Cached fundamentals for {clean_ticker}"
-                )
-            return {**cached, "cached": True}
+            # Revalidate cached fundamentals to ensure complete required fields and verified source/period
+            required_keys = ["revenue", "operating_income", "net_income", "operating_cash_flow", "period", "source"]
+            if all(cached.get(k) is not None for k in required_keys):
+                if ledger:
+                    ledger.record(
+                        tool="data_layer.get_fundamentals",
+                        ticker=clean_ticker,
+                        inputs={"ticker": clean_ticker},
+                        output=cached.get("revenue"),
+                        raw_value=cached.get("revenue"),
+                        source=f"Cache ({cached.get('source')})",
+                        period=cached.get("period"),
+                        notes=f"Cached fundamentals for {clean_ticker}"
+                    )
+                return {**cached, "cached": True}
 
         # For US (AAPL) and Indian (TCS.NS), we integrate directly with primary verified tools
         from agents.analyst import AnalystAgent
         analyst = AnalystAgent(ledger=ledger)
         company_data = analyst.fetch_company_data(clean_ticker)
         
+        # Strict validation of fundamental metrics
+        for required_m in ("revenue", "operating_income", "net_income", "operating_cash_flow"):
+            val_chk = company_data.get(required_m)
+            if val_chk is None or not (isinstance(val_chk, (int, float)) and math.isfinite(val_chk)):
+                raise ValueError(f"Institutional Data Integrity Violation: Incomplete fundamentals for {clean_ticker}; metric '{required_m}' is missing or non-finite.")
+
         source_label = company_data.get("source")
         if not source_label:
             if company_data.get("facts"):
