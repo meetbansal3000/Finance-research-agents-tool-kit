@@ -177,7 +177,7 @@ def run_pipeline(
     print(f"  ✓ Final Report successfully synthesized: {final_report_path}")
     print(f"\n=======================================================")
     print(f"✅ PIPELINE COMPLETE FOR {ticker}!")
-    print(f"Overall Status: {audit_res['summary']['status']}")
+    print(f"Overall Status: {audit_res['summary']['status']} (Analyst) | {sk_audit['summary']['status']} (Skeptic)")
     print(f"All artifacts saved in: {target_dir}")
     print(f"=======================================================\n")
 
@@ -190,6 +190,7 @@ def run_pipeline(
         "skeptic_report_path": skeptic_report_path,
         "verification_audit_path": verification_audit_path,
         "audit_summary": audit_res["summary"],
+        "skeptic_audit_summary": sk_audit["summary"],
         "skeptic_verdict": skeptic_res["verdict"],
         "correction_performed": correction_performed
     }

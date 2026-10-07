@@ -40,7 +40,6 @@ from tools.ledger import ProvenanceLedger
 import threading
 
 CACHE_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), "library", "cache")
-os.makedirs(CACHE_DIR, exist_ok=True)
 
 # -----------------------------------------------------------------------------
 def _is_process_alive(pid: int) -> bool:
@@ -814,7 +813,7 @@ class DataLayer:
                 isinstance(cached.get(k), (int, float)) and math.isfinite(cached.get(k))
                 for k in required_numeric
             )
-            has_valid_provenance = bool(cached.get("period") and cached.get("source"))
+            has_valid_provenance = bool(cached.get("period") and cached.get("source") and (cached.get("period_end") or cached.get("period")))
             if all_numeric_valid and has_valid_provenance:
                 if ledger:
                     for met_k in ("revenue", "operating_income", "net_income", "operating_cash_flow", "capex"):
@@ -829,9 +828,11 @@ class DataLayer:
                                 raw_value=met_v,
                                 source=f"Cache ({cached.get('source')})",
                                 period=cached.get("period"),
+                                period_end=cached.get("period_end"),
                                 fiscal_year=cached.get("period"),
                                 accession=cached.get("accession"),
-                                notes=f"Cached fundamental metric {met_k} for {clean_ticker}: {met_v:,.0f}" if isinstance(met_v, (int, float)) else f"Cached metric {met_k}"
+                                notes=f"Cached fundamental metric {met_k} for {clean_ticker}: {met_v:,.0f}" if isinstance(met_v, (int, float)) else f"Cached metric {met_k}",
+                                source_tag=cached.get("source_tag", "VERIFIED_PRIMARY_FILING" if cached.get("accession") else "MARKET_DATA_SUMMARY")
                             )
                 return {**cached, "cached": True}
 
@@ -854,26 +855,32 @@ class DataLayer:
                 if isinstance(fact_item, dict) and fact_item.get("accn"):
                     accn = fact_item["accn"]
                     break
+
+        source_tag = "VERIFIED_PRIMARY_FILING" if (accn or clean_ticker.startswith("TCS")) else "MARKET_DATA_SUMMARY"
         if not source_label:
             if accn:
                 source_label = f"SEC EDGAR Form 10-K (Accn: {accn})"
             elif clean_ticker.startswith("TCS"):
                 source_label = "TCS Audited Financial Results Release (Ind AS / NSE / BSE)"
             else:
-                source_label = f"yfinance Verified Annual Financial Statements ({company_data.get('accounting_standard', 'Standard')})"
+                source_label = f"yfinance Standardized Financial Statements ({company_data.get('accounting_standard', 'Standard')})"
+                source_tag = "MARKET_DATA_SUMMARY"
 
+        period_end = company_data.get("period_end") or company_data.get("fiscal_year_end") or company_data.get("period")
         res = {
             "ticker": clean_ticker,
             "company_name": company_data.get("company_name"),
             "currency": company_data.get("currency"),
             "accounting_standard": company_data.get("accounting_standard"),
             "period": company_data.get("period"),
+            "period_end": period_end,
             "revenue": company_data.get("revenue"),
             "operating_income": company_data.get("operating_income"),
             "net_income": company_data.get("net_income"),
             "operating_cash_flow": company_data.get("operating_cash_flow"),
             "capex": company_data.get("capex"),
             "source": source_label,
+            "source_tag": source_tag,
             "accession": accn or None
         }
         self.cache.set(cache_key, res, self.ttl_financials)
@@ -890,9 +897,11 @@ class DataLayer:
                         raw_value=met_v,
                         source=res["source"],
                         period=res.get("period"),
+                        period_end=period_end,
                         fiscal_year=res.get("period"),
                         accession=res.get("accession"),
-                        notes=f"Fundamental metric {met_k} for {clean_ticker}: {met_v:,.0f}" if isinstance(met_v, (int, float)) else f"Fundamental metric {met_k} for {clean_ticker}"
+                        notes=f"Fundamental metric {met_k} for {clean_ticker}: {met_v:,.0f}" if isinstance(met_v, (int, float)) else f"Fundamental metric {met_k} for {clean_ticker}",
+                        source_tag=source_tag
                     )
         return {**res, "cached": False}
 

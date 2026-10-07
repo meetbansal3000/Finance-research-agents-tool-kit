@@ -16,6 +16,10 @@ def dcf(
     mid_year: bool = False,
     currency: str = "USD",
     currency_symbol: str = "$",
+    ticker: Optional[str] = None,
+    period: Optional[str] = None,
+    period_end: Optional[str] = None,
+    source_filing: Optional[str] = None,
     ledger: Optional[Any] = None
 ) -> Dict[str, Any]:
     """Calculate Discounted Cash Flow (DCF) Enterprise & Equity Value per share.
@@ -31,6 +35,10 @@ def dcf(
         mid_year: Whether to apply mid-year discounting convention (t - 0.5). Default: False.
         currency: ISO-4217 Currency Code (default: 'USD').
         currency_symbol: Currency symbol for formatting (default: '$').
+        ticker: Optional company ticker for provenance tracking.
+        period: Optional fiscal period (e.g. 'FY2025') for provenance tracking.
+        period_end: Optional period end date (e.g. '2025-09-27').
+        source_filing: Optional accession or primary filing URL.
         ledger: Optional ProvenanceLedger instance to record calculation.
     """
     if cash_flow_type not in ("FCFF", "FCFE"):
@@ -75,8 +83,10 @@ def dcf(
         raise ValueError("Shares outstanding must be positive.")
     
     warnings = []
+    negative_fcf_risk = False
     if base_fcf <= 0:
-        warnings.append("Base FCF is negative or zero; Gordon growth terminal value assumes eventual cash flow turnaround.")
+        negative_fcf_risk = True
+        warnings.append("NEGATIVE_BASE_FCF_ALERT: Base FCF is <= 0; terminal value relies critically on turnaround cash flows.")
 
     projected_fcf = []
     pv_fcf = []
@@ -132,7 +142,8 @@ def dcf(
             "mid_year": mid_year,
             "currency": currency,
             "currency_symbol": currency_symbol,
-            "warnings": warnings
+            "warnings": warnings,
+            "negative_fcf_risk": negative_fcf_risk
         },
         "formula": formula_desc,
         "inputs": {
@@ -144,28 +155,45 @@ def dcf(
             "net_debt": net_debt,
             "cash_flow_type": cash_flow_type,
             "mid_year": mid_year,
-            "currency": currency
+            "currency": currency,
+            "ticker": ticker,
+            "period": period,
+            "period_end": period_end,
+            "source_filing": source_filing
         },
         "formatted": f"Fair Value: {currency_symbol}{fair_value_per_share:.2f}/share ({currency}) [{cash_flow_type}{', Mid-Year' if mid_year else ''}] (Equity Val: {currency_symbol}{equity_value:,.2f}, EV: {currency_symbol}{enterprise_value:,.2f})"
     }
     if ledger:
+        inputs_dict = {
+            "base_fcf": base_fcf,
+            "growth_rates": growth_rates,
+            "discount_rate": discount_rate,
+            "terminal_growth_rate": terminal_growth_rate,
+            "shares_outstanding": shares_outstanding,
+            "net_debt": net_debt,
+            "cash_flow_type": cash_flow_type,
+            "mid_year": mid_year
+        }
+        if ticker:
+            inputs_dict["ticker"] = ticker
+        if period:
+            inputs_dict["period"] = period
+        if period_end:
+            inputs_dict["period_end"] = period_end
+        if source_filing:
+            inputs_dict["source_filing"] = source_filing
+
         res["ledger_id"] = ledger.record(
             tool="tools.calc.dcf",
-            inputs={
-                "base_fcf": base_fcf,
-                "growth_rates": growth_rates,
-                "discount_rate": discount_rate,
-                "terminal_growth_rate": terminal_growth_rate,
-                "shares_outstanding": shares_outstanding,
-                "net_debt": net_debt,
-                "cash_flow_type": cash_flow_type,
-                "mid_year": mid_year
-            },
+            ticker=ticker,
+            period=period,
+            period_end=period_end,
+            inputs=inputs_dict,
             output=fair_value_per_share,
             raw_value=fair_value_per_share,
-            source=f"DCF Valuation Model ({cash_flow_type}{', Mid-Year' if mid_year else ''})",
+            source=source_filing or f"DCF Valuation Model ({cash_flow_type}{', Mid-Year' if mid_year else ''})",
             currency=currency,
-            notes=f"DCF Fair Value: {currency_symbol}{fair_value_per_share:.2f} per share",
+            notes=f"DCF Fair Value: {currency_symbol}{fair_value_per_share:.2f} per share" + (" [NEGATIVE_FCF_ALERT]" if negative_fcf_risk else ""),
             source_tag="DCF_CALC"
         )
     return res
@@ -180,6 +208,10 @@ def reverse_dcf(
     net_debt: float = 0.0,
     currency: str = "USD",
     currency_symbol: str = "$",
+    ticker: Optional[str] = None,
+    period: Optional[str] = None,
+    period_end: Optional[str] = None,
+    source_filing: Optional[str] = None,
     ledger: Optional[Any] = None
 ) -> Dict[str, Any]:
     """Calculate the constant annual FCF growth rate implied by the current market price.
@@ -299,25 +331,42 @@ def reverse_dcf(
             "terminal_growth_rate": terminal_growth_rate,
             "projection_years": projection_years,
             "net_debt": net_debt,
-            "currency": currency
+            "currency": currency,
+            "ticker": ticker,
+            "period": period,
+            "period_end": period_end,
+            "source_filing": source_filing
         },
         "formatted": f"Implied {projection_years}-Year FCF CAGR: {implied_g_pct:.2f}% [{solver_status}] (at {currency_symbol}{current_price:.2f}/share {currency}, WACC {discount_rate*100:.1f}%, Terminal g {terminal_growth_rate*100:.1f}%)"
     }
     if ledger:
+        inputs_dict = {
+            "current_price": current_price,
+            "base_fcf": base_fcf,
+            "shares_outstanding": shares_outstanding,
+            "discount_rate": discount_rate,
+            "terminal_growth_rate": terminal_growth_rate,
+            "projection_years": projection_years,
+            "net_debt": net_debt
+        }
+        if ticker:
+            inputs_dict["ticker"] = ticker
+        if period:
+            inputs_dict["period"] = period
+        if period_end:
+            inputs_dict["period_end"] = period_end
+        if source_filing:
+            inputs_dict["source_filing"] = source_filing
+
         res["ledger_id"] = ledger.record(
             tool="tools.calc.reverse_dcf",
-            inputs={
-                "current_price": current_price,
-                "base_fcf": base_fcf,
-                "shares_outstanding": shares_outstanding,
-                "discount_rate": discount_rate,
-                "terminal_growth_rate": terminal_growth_rate,
-                "projection_years": projection_years,
-                "net_debt": net_debt
-            },
+            ticker=ticker,
+            period=period,
+            period_end=period_end,
+            inputs=inputs_dict,
             output=implied_g_pct,
             raw_value=implied_g_pct,
-            source=f"Reverse DCF Solver ({solver_status})",
+            source=source_filing or f"Reverse DCF Solver ({solver_status})",
             currency=currency,
             notes=f"Implied FCF CAGR: {implied_g_pct:.2f}%",
             source_tag="DCF_CALC"

@@ -331,7 +331,12 @@ class FilingExtractor:
         target_end = anchor_fact.get("end")
         target_accn = anchor_fact.get("accn", "")
 
-        def get_matched_fact(concept_candidates: List[str], end_d: Optional[str] = None) -> Tuple[Optional[float], str]:
+        def get_matched_fact(
+            concept_candidates: List[str],
+            end_d: Optional[str] = None,
+            is_duration: bool = False,
+            is_instant: bool = False
+        ) -> Tuple[Optional[float], str]:
             eff_end = end_d or target_end
             for concept in concept_candidates:
                 if concept in ug:
@@ -341,26 +346,43 @@ class FilingExtractor:
                         u for u in units
                         if u.get("form") == "10-K" and u.get("end") == eff_end and u.get("accn") == target_accn and "val" in u
                     ]
+                    if is_duration:
+                        # Duration facts must have start date and represent full annual period
+                        duration_facts = [
+                            u for u in accn_matched
+                            if u.get("start") and (u.get("fp") == "FY" or not u.get("fp"))
+                        ]
+                        if duration_facts:
+                            accn_matched = duration_facts
+                    elif is_instant:
+                        # Instant facts represent point-in-time balance sheet items (no duration start)
+                        instant_facts = [
+                            u for u in accn_matched
+                            if not u.get("start")
+                        ]
+                        if instant_facts:
+                            accn_matched = instant_facts
+
                     if accn_matched:
                         return float(accn_matched[-1]["val"]), target_accn
             return None, target_accn
 
         # Duration metrics
         rev_val = float(anchor_fact["val"]) if "val" in anchor_fact else None
-        op_inc_val, _ = get_matched_fact(["OperatingIncomeLoss", "OperatingIncome"])
-        net_inc_val, _ = get_matched_fact(["NetIncomeLoss", "ProfitLoss"])
-        ocf_val, _ = get_matched_fact(["NetCashProvidedByUsedInOperatingActivities"])
-        capex_val, _ = get_matched_fact(["PaymentsToAcquirePropertyPlantAndEquipment", "PaymentsToAcquireProductiveAssets"])
+        op_inc_val, _ = get_matched_fact(["OperatingIncomeLoss", "OperatingIncome"], is_duration=True)
+        net_inc_val, _ = get_matched_fact(["NetIncomeLoss", "ProfitLoss"], is_duration=True)
+        ocf_val, _ = get_matched_fact(["NetCashProvidedByUsedInOperatingActivities"], is_duration=True)
+        capex_val, _ = get_matched_fact(["PaymentsToAcquirePropertyPlantAndEquipment", "PaymentsToAcquireProductiveAssets"], is_duration=True)
 
         # Instant balance sheet metrics
-        cash_val, _ = get_matched_fact(["CashAndCashEquivalentsAtCarryingValue", "CashCashEquivalentsRestrictedCashAndRestrictedCashEquivalents", "CashAndCashEquivalents"])
-        msc_val, _ = get_matched_fact(["MarketableSecuritiesCurrent", "AvailableForSaleSecuritiesCurrent"])
-        msnc_val, _ = get_matched_fact(["MarketableSecuritiesNoncurrent", "AvailableForSaleSecuritiesNoncurrent"])
-        cp_val, _ = get_matched_fact(["CommercialPaper"])
-        st_debt_val, _ = get_matched_fact(["LongTermDebtCurrent", "ShortTermBorrowings", "DebtCurrent"])
-        lt_debt_val, _ = get_matched_fact(["LongTermDebtNoncurrent", "LongTermDebtAndCapitalLeaseObligations", "LongTermDebt"])
-        rec_val, _ = get_matched_fact(["AccountsReceivableNetCurrent", "AccountsReceivableNet"])
-        inv_val, _ = get_matched_fact(["InventoryNet", "InventoriesNet"])
+        cash_val, _ = get_matched_fact(["CashAndCashEquivalentsAtCarryingValue", "CashCashEquivalentsRestrictedCashAndRestrictedCashEquivalents", "CashAndCashEquivalents"], is_instant=True)
+        msc_val, _ = get_matched_fact(["MarketableSecuritiesCurrent", "AvailableForSaleSecuritiesCurrent"], is_instant=True)
+        msnc_val, _ = get_matched_fact(["MarketableSecuritiesNoncurrent", "AvailableForSaleSecuritiesNoncurrent"], is_instant=True)
+        cp_val, _ = get_matched_fact(["CommercialPaper"], is_instant=True)
+        st_debt_val, _ = get_matched_fact(["LongTermDebtCurrent", "ShortTermBorrowings", "DebtCurrent"], is_instant=True)
+        lt_debt_val, _ = get_matched_fact(["LongTermDebtNoncurrent", "LongTermDebtAndCapitalLeaseObligations", "LongTermDebt"], is_instant=True)
+        rec_val, _ = get_matched_fact(["AccountsReceivableNetCurrent", "AccountsReceivableNet"], is_instant=True)
+        inv_val, _ = get_matched_fact(["InventoryNet", "InventoriesNet"], is_instant=True)
 
         tot_liquid = (cash_val or 0.0) + (msc_val or 0.0) + (msnc_val or 0.0)
         tot_debt = (cp_val or 0.0) + (st_debt_val or 0.0) + (lt_debt_val or 0.0)
@@ -428,13 +450,34 @@ class FilingExtractor:
         if not ug:
             raise ValueError("SEC EDGAR us-gaap facts unavailable for Apple Inc. (CIK0000320193)")
 
-        def get_required_fact(concept_candidates: List[str], end_d: str = "2025-09-27") -> Tuple[float, str]:
+        # Discover anchor Form 10-K from Revenues
+        rev_units = ug.get("RevenueFromContractWithCustomerExcludingAssessedTax", {}).get("units", {}).get("USD", [])
+        m_rev = [u for u in rev_units if u.get("form") == "10-K" and u.get("end") == "2025-09-27" and u.get("accn")]
+        target_accn = m_rev[-1]["accn"] if m_rev else "0000320193-25-000079"
+        target_fy = m_rev[-1].get("fy", 2025) if m_rev else 2025
+
+        def get_required_fact(concept_candidates: List[str], end_d: str = "2025-09-27", is_instant: bool = True) -> Tuple[float, str]:
+            for concept in concept_candidates:
+                if concept in ug:
+                    units = ug[concept].get("units", {}).get("USD", [])
+                    m = [u for u in units if u.get("form") == "10-K" and u.get("end") == end_d and u.get("accn") == target_accn]
+                    if is_instant:
+                        m_inst = [u for u in m if not u.get("start")]
+                        if m_inst:
+                            m = m_inst
+                    if m:
+                        return float(m[-1]["val"]), m[-1]["accn"]
+            # Fallback for prior period if filed under prior accession
             for concept in concept_candidates:
                 if concept in ug:
                     units = ug[concept].get("units", {}).get("USD", [])
                     m = [u for u in units if u.get("form") == "10-K" and u.get("end") == end_d]
+                    if is_instant:
+                        m_inst = [u for u in m if not u.get("start")]
+                        if m_inst:
+                            m = m_inst
                     if m:
-                        return float(m[-1]["val"]), m[-1].get("accn", "0000320193-25-000079")
+                        return float(m[-1]["val"]), m[-1].get("accn", target_accn)
             raise ValueError(f"Required audited XBRL fact '{concept_candidates[0]}' (end: {end_d}) not found for AAPL in SEC EDGAR.")
 
         cash_val, accn_cash = get_required_fact(["CashAndCashEquivalentsAtCarryingValue"])
@@ -467,13 +510,13 @@ class FilingExtractor:
 
         data = {
             "ticker": "AAPL",
-            "period": "FY2025",
+            "period": f"FY{target_fy}",
             "period_end": "2025-09-27",
-            "fiscal_year": "FY2025",
-            "accession_number": "0000320193-25-000079",
+            "fiscal_year": f"FY{target_fy}",
+            "accession_number": target_accn,
             "currency": "USD",
             "unit": "base",
-            "source_url": "https://www.sec.gov/Archives/edgar/data/320193/000032019325000079/aapl-20250927.htm",
+            "source_url": f"https://www.sec.gov/Archives/edgar/data/320193/{target_accn.replace('-', '')}/aapl-20250927.htm",
             "metrics": {
                 "CashAndEquivalents": {
                     "val_raw": vals["CashAndEquivalents"],
@@ -565,90 +608,121 @@ class FilingExtractor:
 
     def fetch_msft_fy26_audited_financials(self, ledger: Optional[ProvenanceLedger] = None) -> Dict[str, Any]:
         """
-        Extract Microsoft Corporation (MSFT) Audited FY26 balance sheet liquidity and debt items from SEC 10-K.
-        Document URL: https://data.sec.gov/api/xbrl/companyfacts/CIK0000789019.json
-        Filing Reference: SEC Form 10-K for FY ended June 30, 2026 (Accn: 0001193125-26-323660).
+        Extract Microsoft Corporation (MSFT) audited balance sheet liquidity and debt items
+        dynamically from SEC Form 10-K filings using SEC EDGAR company facts.
         """
+        from tools.data_layer import get_data_layer
+        cik = "0000789019"
+        sec_url = f"https://data.sec.gov/api/xbrl/companyfacts/CIK{cik}.json"
+        facts_data = get_data_layer().fetch_sec_edgar(sec_url, is_json=True, ledger=ledger)
+        ug = facts_data.get("facts", {}).get("us-gaap", {})
+        if not ug:
+            raise ValueError(f"SEC EDGAR us-gaap facts unavailable for MSFT (CIK{cik})")
+
+        # Discover anchor annual Form 10-K from Revenues
+        rev_tags = ["RevenueFromContractWithCustomerExcludingAssessedTax", "Revenues"]
+        anchor_fact = None
+        for r_tag in rev_tags:
+            if r_tag in ug:
+                u_list = ug[r_tag].get("units", {}).get("USD", [])
+                ten_k_facts = [
+                    u for u in u_list
+                    if u.get("form") == "10-K" and (u.get("fp") == "FY" or not u.get("fp")) and u.get("accn")
+                ]
+                if ten_k_facts:
+                    sorted_facts = sorted(ten_k_facts, key=lambda x: (str(x.get("end", "")), str(x.get("filed", ""))))
+                    anchor_fact = sorted_facts[-1]
+                    break
+
+        if not anchor_fact:
+            raise ValueError(f"No annual Form 10-K revenue anchor fact found for MSFT (CIK{cik})")
+
+        target_accn = anchor_fact.get("accn")
+        target_end = anchor_fact.get("end")
+        target_fy = anchor_fact.get("fy")
+
+        def get_fact_val(candidates: List[str], end_d: str = target_end, is_instant: bool = True) -> Tuple[float, str]:
+            for cand in candidates:
+                if cand in ug:
+                    units = ug[cand].get("units", {}).get("USD", [])
+                    m = [u for u in units if u.get("form") == "10-K" and u.get("end") == end_d and u.get("accn") == target_accn]
+                    if is_instant:
+                        m_inst = [u for u in m if not u.get("start")]
+                        if m_inst:
+                            m = m_inst
+                    if m:
+                        return float(m[-1]["val"]), m[-1]["accn"]
+            for cand in candidates:
+                if cand in ug:
+                    units = ug[cand].get("units", {}).get("USD", [])
+                    m = [u for u in units if u.get("form") == "10-K" and u.get("end") == end_d]
+                    if is_instant:
+                        m_inst = [u for u in m if not u.get("start")]
+                        if m_inst:
+                            m = m_inst
+                    if m:
+                        return float(m[-1]["val"]), m[-1].get("accn", target_accn)
+            return 0.0, target_accn
+
+        # Dynamically extract audited metrics
+        cash_val, accn_cash = get_fact_val(["CashAndCashEquivalentsAtCarryingValue", "CashCashEquivalentsRestrictedCashAndRestrictedCashEquivalents", "CashAndCashEquivalents"])
+        sti_val, accn_sti = get_fact_val(["ShortTermInvestments", "MarketableSecuritiesCurrent"])
+        tot_liquid = cash_val + sti_val
+
+        st_debt, accn_st = get_fact_val(["LongTermDebtCurrent", "ShortTermBorrowings", "CommercialPaper"])
+        lt_debt, accn_lt = get_fact_val(["LongTermDebtNoncurrent", "LongTermDebtAndCapitalLeaseObligations", "LongTermDebt"])
+        tot_debt = st_debt + lt_debt
+        net_debt = tot_debt - tot_liquid
+
+        rec_curr, accn_rec = get_fact_val(["AccountsReceivableNetCurrent", "AccountsReceivableNet"])
+        inv_curr, accn_inv = get_fact_val(["InventoryNet", "InventoriesNet"])
+
+        # Prior year period
+        prev_year = int(target_end[:4]) - 1
+        prev_end = f"{prev_year}{target_end[4:]}"
+        rec_prev, _ = get_fact_val(["AccountsReceivableNetCurrent", "AccountsReceivableNet"], end_d=prev_end)
+        inv_prev, _ = get_fact_val(["InventoryNet", "InventoriesNet"], end_d=prev_end)
+
+        doc_url = f"https://data.sec.gov/api/xbrl/companyfacts/CIK{cik}.json"
         data = {
             "ticker": "MSFT",
-            "period": "FY2026",
+            "period": f"FY{target_fy}",
+            "period_end": target_end,
+            "accession_number": target_accn,
             "currency": "USD",
             "unit": "base",
-            "source_url": "https://data.sec.gov/api/xbrl/companyfacts/CIK0000789019.json",
+            "source_url": doc_url,
             "metrics": {
-                "CashAndEquivalents": {
-                    "val_raw": 20935000000.0,
-                    "page": "Consolidated Balance Sheets, Item 8",
-                    "snippet": "Cash and cash equivalents: $20,935 million as of June 30, 2026."
-                },
-                "ShortTermInvestments": {
-                    "val_raw": 55908000000.0,
-                    "page": "Consolidated Balance Sheets, Item 8",
-                    "snippet": "Short-term investments: $55,908 million as of June 30, 2026."
-                },
-                "TotalCashAndMarketableSecurities": {
-                    "val_raw": 76843000000.0,
-                    "page": "Consolidated Balance Sheets, Item 8 (Total Liquid Assets)",
-                    "snippet": "Total cash, cash equivalents and short-term investments: $76,843 million."
-                },
-                "ShortTermDebt": {
-                    "val_raw": 9227000000.0,
-                    "page": "Consolidated Balance Sheets, Item 8",
-                    "snippet": "Current portion of long-term debt: $9,227 million."
-                },
-                "LongTermDebtNoncurrent": {
-                    "val_raw": 31067000000.0,
-                    "page": "Consolidated Balance Sheets, Item 8",
-                    "snippet": "Long-term debt, non-current: $31,067 million."
-                },
-                "TotalDebt": {
-                    "val_raw": 40294000000.0,
-                    "page": "Consolidated Balance Sheets, Item 8",
-                    "snippet": "Total debt obligations including current portion ($9,227 million) and long-term debt ($31,067 million) = $40,294 million."
-                },
-                "NetDebt": {
-                    "val_raw": -36549000000.0,
-                    "page": "Calculated: Total Debt ($40,294M) - Liquid Assets ($76,843M)",
-                    "snippet": "Net Cash position of -$36,549 million ($36.55 billion net cash buffer)."
-                },
-                "AccountsReceivable": {
-                    "val_raw": 80876000000.0,
-                    "page": "Consolidated Balance Sheets, Item 8",
-                    "snippet": "Accounts receivable, net: $80,876 million."
-                },
-                "PriorAccountsReceivable": {
-                    "val_raw": 69905000000.0,
-                    "page": "Consolidated Balance Sheets, Item 8",
-                    "snippet": "Prior year accounts receivable: $69,905 million (YoY change: +15.69%)."
-                },
-                "Inventories": {
-                    "val_raw": 1397000000.0,
-                    "page": "Consolidated Balance Sheets, Item 8",
-                    "snippet": "Inventories: $1,397 million."
-                },
-                "PriorInventories": {
-                    "val_raw": 938000000.0,
-                    "page": "Consolidated Balance Sheets, Item 8",
-                    "snippet": "Prior year inventories: $938 million (YoY change: +48.93%)."
-                }
+                "CashAndEquivalents": {"val_raw": cash_val, "page": "Consolidated Balance Sheets", "snippet": f"Cash & Cash Equivalents: ${cash_val/1e6:,.0f}M"},
+                "ShortTermInvestments": {"val_raw": sti_val, "page": "Consolidated Balance Sheets", "snippet": f"Short-term Investments: ${sti_val/1e6:,.0f}M"},
+                "TotalCashAndMarketableSecurities": {"val_raw": tot_liquid, "page": "Consolidated Balance Sheets", "snippet": f"Total Liquid Securities: ${tot_liquid/1e6:,.0f}M"},
+                "ShortTermDebt": {"val_raw": st_debt, "page": "Consolidated Balance Sheets", "snippet": f"Current Debt: ${st_debt/1e6:,.0f}M"},
+                "LongTermDebtNoncurrent": {"val_raw": lt_debt, "page": "Consolidated Balance Sheets", "snippet": f"Long-term Debt: ${lt_debt/1e6:,.0f}M"},
+                "TotalDebt": {"val_raw": tot_debt, "page": "Consolidated Balance Sheets", "snippet": f"Total Debt Obligations: ${tot_debt/1e6:,.0f}M"},
+                "NetDebt": {"val_raw": net_debt, "page": "Consolidated Balance Sheets", "snippet": f"Net Debt: ${net_debt/1e6:,.0f}M"},
+                "AccountsReceivable": {"val_raw": rec_curr, "page": "Consolidated Balance Sheets", "snippet": f"Accounts Receivable: ${rec_curr/1e6:,.0f}M"},
+                "PriorAccountsReceivable": {"val_raw": rec_prev, "page": "Consolidated Balance Sheets", "snippet": f"Prior Accounts Receivable: ${rec_prev/1e6:,.0f}M"},
+                "Inventories": {"val_raw": inv_curr, "page": "Consolidated Balance Sheets", "snippet": f"Inventories: ${inv_curr/1e6:,.0f}M"},
+                "PriorInventories": {"val_raw": inv_prev, "page": "Consolidated Balance Sheets", "snippet": f"Prior Inventories: ${inv_prev/1e6:,.0f}M"}
             }
         }
-
         if ledger:
             for k, item in data["metrics"].items():
                 val = item["val_raw"]
                 item["ledger_id"] = ledger.record(
-                    tool="tools.filing.extract_metric",
+                    tool="filing.fetch_msft_audited_financials",
                     ticker="MSFT",
                     currency="USD",
-                    unit="base",
-                    inputs={"ticker": "MSFT", "metric": k, "period": "FY2026"},
+                    inputs={"ticker": "MSFT", "metric": k, "period_end": target_end, "accession": target_accn},
                     output=val,
                     raw_value=val,
-                    source=f"{data['source_url']} (Accn: 0001193125-26-323660, {item['page']})",
-                    period="FY2026",
+                    source=f"{doc_url} (Accn: {target_accn})",
+                    period=f"FY{target_fy}",
+                    period_end=target_end,
+                    accession=target_accn,
                     notes=f"{k}: \"{item['snippet']}\""
                 )
+        return data
 
         return data
 
@@ -862,6 +936,20 @@ class FilingExtractor:
         else:
             content = content_or_path
 
+        # Parse XBRL contexts to map contextRef to verified period end and dates
+        contexts_map = {}
+        context_pattern = re.compile(r'<(?:xbrli:)?context\b[^>]*id=["\']([^"\']+)["\'][^>]*>(.*?)</(?:xbrli:)?context>', re.IGNORECASE | re.DOTALL)
+        for c_id, c_body in context_pattern.findall(content):
+            end_m = re.search(r'<(?:xbrli:)?endDate>(\d{4}-\d{2}-\d{2})</(?:xbrli:)?endDate>', c_body, re.IGNORECASE)
+            inst_m = re.search(r'<(?:xbrli:)?instant>(\d{4}-\d{2}-\d{2})</(?:xbrli:)?instant>', c_body, re.IGNORECASE)
+            start_m = re.search(r'<(?:xbrli:)?startDate>(\d{4}-\d{2}-\d{2})</(?:xbrli:)?startDate>', c_body, re.IGNORECASE)
+            p_end = end_m.group(1) if end_m else (inst_m.group(1) if inst_m else None)
+            contexts_map[c_id] = {
+                "period_end": p_end,
+                "start_date": start_m.group(1) if start_m else None,
+                "is_instant": bool(inst_m)
+            }
+
         # Regex for ix:nonFraction tags
         tag_pattern = re.compile(
             r'<ix:nonFraction\b([^>]*)>(.*?)</ix:nonFraction>',
@@ -869,6 +957,7 @@ class FilingExtractor:
         )
 
         extracted = {}
+        all_facts = []
         for attrs_str, val_str in tag_pattern.findall(content):
             # Parse attributes
             name_m = re.search(r'name=["\'](ifrs-full:[a-zA-Z0-9]+)["\']', attrs_str, re.IGNORECASE)
@@ -902,13 +991,19 @@ class FilingExtractor:
                 if is_negative:
                     numeric_val = -abs(numeric_val)
 
-                extracted[tag_name] = {
+                resolved_ctx = contexts_map.get(context_ref, {})
+                period_end = resolved_ctx.get("period_end")
+
+                fact_data = {
                     "val_raw": numeric_val,
                     "unit": unit,
                     "scale": scale,
                     "context_ref": context_ref,
+                    "period_end": period_end,
                     "snippet": f"<{name_m.group(0)} contextRef=\"{context_ref}\">: {val_str.strip()}"
                 }
+                extracted[tag_name] = fact_data
+                all_facts.append({"tag": tag_name, **fact_data})
             except Exception:
                 continue
 
@@ -927,6 +1022,7 @@ class FilingExtractor:
                     raw_value=val,
                     source=f"ESEF iXBRL Document ({item['snippet']})",
                     period=item.get("context_ref"),
+                    period_end=item.get("period_end"),
                     notes=f"ESEF IFRS extracted tag: {k} = {val:,.0f} {item['unit']}",
                     source_tag="ESEF_IXBRL"
                 )

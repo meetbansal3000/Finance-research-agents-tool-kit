@@ -373,9 +373,19 @@ class ReportVerifier:
         units = []
         lines = text.splitlines()
         
+        in_audit_section = False
         for line_idx, line in enumerate(lines, start=1):
             s = line.strip()
             if not s:
+                continue
+
+            # Skip meta-audit results section in synthesized dossiers to avoid auditing audit counter statistics
+            if s.startswith("## 🛡️ I. Verification Audit Results") or s.startswith("## I. Verification Audit Results"):
+                in_audit_section = True
+                continue
+            if in_audit_section and s.startswith("## ") and not ("Verification Audit" in s):
+                in_audit_section = False
+            if in_audit_section:
                 continue
                 
             # Skip purely structural markdown dividers
