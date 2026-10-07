@@ -71,30 +71,34 @@ def dcf(
     pv_fcf = []
     current_fcf = base_fcf
     
-    for i, g in enumerate(growth_rates, start=1):
-        current_fcf = current_fcf * (1.0 + g)
-        period_t = (i - 0.5) if mid_year else float(i)
-        discount_factor = (1.0 + discount_rate) ** period_t
-        pv = current_fcf / discount_factor
-        projected_fcf.append(current_fcf)
-        pv_fcf.append(pv)
+    try:
+        for i, g in enumerate(growth_rates, start=1):
+            current_fcf = current_fcf * (1.0 + g)
+            period_t = (i - 0.5) if mid_year else float(i)
+            discount_factor = (1.0 + discount_rate) ** period_t
+            pv = current_fcf / discount_factor
+            projected_fcf.append(current_fcf)
+            pv_fcf.append(pv)
+            
+        n_years = len(growth_rates)
+        terminal_fcf = projected_fcf[-1] * (1.0 + terminal_growth_rate)
+        terminal_value = terminal_fcf / (discount_rate - terminal_growth_rate)
+        tv_period = (n_years - 0.5) if mid_year else float(n_years)
+        pv_terminal_value = terminal_value / ((1.0 + discount_rate) ** tv_period)
         
-    n_years = len(growth_rates)
-    terminal_fcf = projected_fcf[-1] * (1.0 + terminal_growth_rate)
-    terminal_value = terminal_fcf / (discount_rate - terminal_growth_rate)
-    tv_period = (n_years - 0.5) if mid_year else float(n_years)
-    pv_terminal_value = terminal_value / ((1.0 + discount_rate) ** tv_period)
-    
-    pv_explicit_cf = sum(pv_fcf)
+        pv_explicit_cf = sum(pv_fcf)
 
-    if cash_flow_type == "FCFF":
-        enterprise_value = pv_explicit_cf + pv_terminal_value
-        equity_value = enterprise_value - net_debt
-    else:  # FCFE
-        equity_value = pv_explicit_cf + pv_terminal_value
-        enterprise_value = equity_value + net_debt
+        if cash_flow_type == "FCFF":
+            enterprise_value = pv_explicit_cf + pv_terminal_value
+            equity_value = enterprise_value - net_debt
+        else:  # FCFE
+            equity_value = pv_explicit_cf + pv_terminal_value
+            enterprise_value = equity_value + net_debt
 
-    fair_value_per_share = equity_value / shares_outstanding
+        fair_value_per_share = equity_value / shares_outstanding
+    except (OverflowError, FloatingPointError):
+        raise ValueError("DCF projection resulted in arithmetic overflow.")
+        
     if not math.isfinite(fair_value_per_share) or not math.isfinite(equity_value) or not math.isfinite(enterprise_value):
         raise ValueError("DCF projection resulted in arithmetic overflow or non-finite valuation values.")
     
@@ -333,15 +337,13 @@ def dcf_sensitivity_matrix(
 
     # Format labels with full collision safety and exact single percent signs
     def make_rate_label(val: float, seen: set) -> str:
-        for decimals in (1, 2, 3, 4, 6):
+        for decimals in (1, 2, 3, 4, 6, 8, 10, 12):
             formatted_num = f"{val * 100:.{decimals}f}".rstrip("0").rstrip(".")
             lbl = f"{formatted_num}%"
             if lbl not in seen:
                 seen.add(lbl)
                 return lbl
-        lbl = f"{val * 100:.8f}%"
-        seen.add(lbl)
-        return lbl
+        raise ValueError(f"Sensitivity grid rate {val} collides with another rate in the matrix.")
 
     seen_r: set = set()
     r_map = {r: make_rate_label(r, seen_r) for r in sorted(discount_rates)}

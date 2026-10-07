@@ -260,13 +260,13 @@ class TokenBucketRateLimiter:
                         with open(temp_f, "w", encoding="utf-8") as f:
                             json.dump(data, f)
                         os.replace(temp_f, state_file)
-                    except Exception:
+                    except Exception as e:
                         if os.path.exists(temp_f):
                             os.remove(temp_f)
+                        raise RuntimeError(f"Institutional Concurrency Violation: Failed to persist rate limit state for '{provider}': {e}")
             except TimeoutError:
-                # If cross-process lock timed out, wait full min_interval to guarantee no breach
-                time.sleep(min_int)
-                self.last_call[provider] = time.time()
+                # Strictly fail-closed to prevent uncoordinated concurrent requests across processes
+                raise TimeoutError(f"Institutional Concurrency Violation: Cross-process rate limit state lock timed out for '{provider}'. Operation halted under fail-closed concurrency policy.")
 
     def check_alpha_vantage_quota(self) -> Tuple[bool, int]:
         """Tracks daily calls to Alpha Vantage against the 25 calls/day free tier limit with file-locking safety."""
@@ -798,8 +798,13 @@ class DataLayer:
         cached = self.cache.get(cache_key)
         if cached:
             # Revalidate cached fundamentals to ensure complete required fields and verified source/period
-            required_keys = ["revenue", "operating_income", "net_income", "operating_cash_flow", "period", "source"]
-            if all(cached.get(k) is not None for k in required_keys):
+            required_numeric = ["revenue", "operating_income", "net_income", "operating_cash_flow"]
+            all_numeric_valid = all(
+                isinstance(cached.get(k), (int, float)) and math.isfinite(cached.get(k))
+                for k in required_numeric
+            )
+            has_valid_provenance = bool(cached.get("period") and cached.get("source"))
+            if all_numeric_valid and has_valid_provenance:
                 if ledger:
                     ledger.record(
                         tool="data_layer.get_fundamentals",
