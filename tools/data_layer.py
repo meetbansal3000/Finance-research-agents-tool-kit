@@ -297,12 +297,13 @@ class TokenBucketRateLimiter:
                         with open(temp_file, "w", encoding="utf-8") as f:
                             json.dump(data, f, indent=2)
                         os.replace(temp_file, state_file)
-                    except Exception:
+                    except Exception as e:
                         if os.path.exists(temp_file):
                             try:
                                 os.remove(temp_file)
                             except OSError:
                                 pass
+                        raise RuntimeError(f"Institutional Quota State Violation: Failed to persist Alpha Vantage quota state: {e}")
                     return True, data["calls"]
             except TimeoutError:
                 # Fail closed when quota lock acquisition times out
@@ -527,12 +528,17 @@ class DataLayer:
             else:
                 missing_tickers.append(clean)
 
-        for sym in missing_tickers:
-            try:
-                q = self.get_quote(sym, ledger=ledger)
-                results[sym] = q
-            except Exception as e:
-                results[sym] = {"ticker": sym, "error": str(e), "price": None}
+        if missing_tickers:
+            import concurrent.futures
+            max_workers = min(8, len(missing_tickers))
+            with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
+                future_to_sym = {executor.submit(self.get_quote, sym, ledger): sym for sym in missing_tickers}
+                for future in concurrent.futures.as_completed(future_to_sym):
+                    sym = future_to_sym[future]
+                    try:
+                        results[sym] = future.result()
+                    except Exception as e:
+                        results[sym] = {"ticker": sym, "error": str(e), "price": None}
 
         return results
 
