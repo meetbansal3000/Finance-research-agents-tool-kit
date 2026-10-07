@@ -1,0 +1,127 @@
+---
+title: "Autonomous Equity Research & Econometric Dossier"
+author: "Antigravity Research Agents Committee & RStudio"
+date: "`r Sys.Date()`"
+output:
+  html_document:
+    theme: cosmo
+    toc: true
+    toc_float: true
+    number_sections: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
+source("agent_bridge.R")
+```
+
+# Executive Summary
+
+This institutional research document combines **Google Antigravity Finance Agents** with **RStudio & R Econometric Modeling**.
+
+- **Primary Source Filing:** Audited SEC Form 10-K / 20-F filings anchored strictly by Accession Number (`accn`).
+- **Valuation Models:** Deterministic DCF, Elastic Reverse DCF Solver, and Vectorized Monte Carlo Simulations.
+- **Provenance Integrity:** Every figure is verified by an independent Verifier against a tamper-evident HMAC-SHA256 ledger.
+
+---
+
+# Data Layer: Audited Financial Extraction
+
+```{r fetch_fundamentals}
+# Dynamically extract verified annual fundamental metrics
+aapl_data <- fetch_sec_financials("AAPL")
+
+cat(sprintf("Ticker: %s\n", aapl_data$ticker))
+cat(sprintf("Source: %s\n", aapl_data$source))
+cat(sprintf("Fiscal Period: %s (Period End: %s)\n", aapl_data$period, aapl_data$period_end))
+cat(sprintf("Revenue: $%s\n", format(aapl_data$revenue, big.mark = ",")))
+cat(sprintf("Operating Income: $%s\n", format(aapl_data$operating_income, big.mark = ",")))
+cat(sprintf("Operating Cash Flow: $%s\n", format(aapl_data$operating_cash_flow, big.mark = ",")))
+cat(sprintf("Free Cash Flow: $%s\n", format(aapl_data$operating_cash_flow - aapl_data$capex, big.mark = ",")))
+```
+
+---
+
+# Deterministic Discounted Cash Flow (DCF) Valuation
+
+```{r dcf_valuation}
+# Compute DCF Fair Value using verified baseline Free Cash Flow
+base_fcf <- (aapl_data$operating_cash_flow - aapl_data$capex)
+shares_out <- 15.1e9 # Diluted shares outstanding
+growth_projections <- c(0.08, 0.07, 0.06, 0.05, 0.04)
+
+dcf_result <- calc_dcf(
+  base_fcf = base_fcf,
+  growth_rates = growth_projections,
+  discount_rate = 0.088,
+  terminal_growth_rate = 0.025,
+  shares_outstanding = shares_out,
+  net_debt = 0.0,
+  mid_year = FALSE
+)
+
+cat(sprintf("DCF Fair Value per Share: %s\n", dcf_result$formatted))
+cat(sprintf("Enterprise Value: $%s\n", format(dcf_result$result$enterprise_value, big.mark = ",")))
+cat(sprintf("Present Value of Explicit FCFs: $%s\n", format(dcf_result$result$pv_explicit_fcf, big.mark = ",")))
+cat(sprintf("Present Value of Terminal Value: $%s\n", format(dcf_result$result$pv_terminal_value, big.mark = ",")))
+```
+
+---
+
+# Econometric Risk: Monte Carlo Valuation Simulation
+
+Using native R statistical sampling to shock WACC and growth rates under regulatory bounds:
+
+```{r monte_carlo}
+mc_sim <- r_monte_carlo_dcf(
+  base_fcf = base_fcf,
+  shares_outstanding = shares_out,
+  net_debt = 0.0,
+  wacc_mean = 0.088,
+  wacc_sd = 0.007,
+  growth_mean = 0.06,
+  growth_sd = 0.015,
+  terminal_g = 0.025,
+  n_sim = 2000
+)
+
+# Plot empirical distribution
+hist(
+  mc_sim$simulations,
+  breaks = 40,
+  col = "steelblue",
+  border = "white",
+  main = "Empirical Distribution of DCF Fair Value per Share",
+  xlab = "Fair Value per Share (USD)",
+  ylab = "Frequency"
+)
+abline(v = mc_sim$median_fair_value, col = "darkgreen", lwd = 2, lty = 1)
+abline(v = mc_sim$value_at_risk_5pct, col = "red", lwd = 2, lty = 2)
+abline(v = mc_sim$upside_95pct, col = "blue", lwd = 2, lty = 2)
+legend(
+  "topright",
+  legend = c(
+    sprintf("Median: $%.2f", mc_sim$median_fair_value),
+    sprintf("5%% VaR: $%.2f", mc_sim$value_at_risk_5pct),
+    sprintf("95%% Upside: $%.2f", mc_sim$upside_95pct)
+  ),
+  col = c("darkgreen", "red", "blue"),
+  lty = c(1, 2, 2),
+  lwd = 2
+)
+```
+
+---
+
+# Automated Research Dossier
+
+To run the complete 4-stage autonomous research pipeline directly inside RStudio:
+
+```{r run_pipeline_demo, eval=FALSE}
+# Executes Analyst, Verifier, and Skeptic committee pipeline
+dossier <- run_agent_pipeline("AAPL", workflow = 1, strict_audit = FALSE)
+cat(dossier$final_report)
+```
+
+---
+*Report generated via Antigravity Finance Agents Committee & RStudio v4.6.1.*
