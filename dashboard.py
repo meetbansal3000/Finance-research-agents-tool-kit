@@ -33,6 +33,17 @@ from tools.data_layer import DataLayer
 from tools.alerts import AlertMonitor
 from tools.calc.portfolio_opt import PortfolioQPOptimizer
 from tools.calc.supply_chain_opt import SupplyChainLogisticsOptimizer
+from tools.ticker_search import (
+    search_company_tickers,
+    lookup_primary_ticker,
+    load_saved_watchlist,
+    save_watchlist,
+    add_to_watchlist,
+    remove_from_watchlist,
+    reset_watchlist,
+    compute_ticker_scorecard_metrics,
+    DEFAULT_WATCHLIST
+)
 
 # Check if running in Streamlit
 try:
@@ -94,8 +105,15 @@ st.markdown("""
 
 
 # =============================================================================
-# DATA HELPERS
+# WATCHLIST & DATA HELPERS
 # =============================================================================
+if "watchlist" not in st.session_state:
+    st.session_state["watchlist"] = load_saved_watchlist()
+
+if "active_ticker" not in st.session_state:
+    st.session_state["active_ticker"] = "NVDA"
+
+
 @st.cache_data(ttl=1800)
 def load_historical_prices(ticker: str, period: str = "1y"):
     clean_sym = ticker.strip().upper()
@@ -104,41 +122,17 @@ def load_historical_prices(ticker: str, period: str = "1y"):
     return df
 
 
-@st.cache_data(ttl=3600)
-def get_shortlist_metrics():
-    universe = ["AAPL", "MSFT", "NVDA", "GOOGL", "AMZN", "TCS.NS"]
+@st.cache_data(ttl=600)
+def get_shortlist_metrics_for_universe(tickers_tuple):
     records = []
-    
-    baseline = {
-        "AAPL": {"op_margin": 0.312, "de_ratio": 1.48, "fcf_conv": 0.88, "net_cash": "$33.76B Buffer", "cust_conc": "<10% (Diversified)", "verdict": "VERIFIED BUY"},
-        "MSFT": {"op_margin": 0.446, "de_ratio": 0.38, "fcf_conv": 0.72, "net_cash": "$36.55B Buffer", "cust_conc": "<10% (Diversified)", "verdict": "VERIFIED BUY"},
-        "NVDA": {"op_margin": 0.618, "de_ratio": 0.15, "fcf_conv": 0.81, "net_cash": "$38.20B Buffer", "cust_conc": "22.0% (Customer A Flag)", "verdict": "BUY WITH SKEPTIC HEDGE"},
-        "GOOGL": {"op_margin": 0.320, "de_ratio": 0.11, "fcf_conv": 0.79, "net_cash": "$71.10B Buffer", "cust_conc": "<10% (Diversified)", "verdict": "VERIFIED BUY"},
-        "AMZN": {"op_margin": 0.098, "de_ratio": 0.58, "fcf_conv": 0.65, "net_cash": "$12.40B Buffer", "cust_conc": "<10% (Diversified)", "verdict": "NEUTRAL / HOLD"},
-        "TCS.NS": {"op_margin": 0.243, "de_ratio": 0.02, "fcf_conv": 0.92, "net_cash": "₹30,450 Cr Buffer", "cust_conc": "<10% (Diversified)", "verdict": "VERIFIED BUY"}
-    }
-    
-    dl = DataLayer()
-    quotes = dl.get_quotes_batch(universe)
-
-    for sym in universe:
-        q = quotes.get(sym, {})
-        b = baseline.get(sym, {})
-        records.append({
-            "Ticker": sym,
-            "Price": f"{q.get('price', 0.0):,.2f} {q.get('currency', 'USD')}",
-            "Operating Margin": f"{b.get('op_margin', 0.0) * 100:.1f}%",
-            "Debt/Equity": f"{b.get('de_ratio', 0.0):.2f}x",
-            "FCF Conversion": f"{b.get('fcf_conv', 0.0) * 100:.0f}%",
-            "Balance Sheet": b.get("net_cash"),
-            "Customer Risk": b.get("cust_conc"),
-            "Verdict": b.get("verdict")
-        })
+    for sym in tickers_tuple:
+        row = compute_ticker_scorecard_metrics(sym)
+        records.append(row)
     return pd.DataFrame(records)
 
 
 # =============================================================================
-# SIDEBAR NAVIGATION
+# SIDEBAR NAVIGATION & GLOBAL COMPANY SEARCH
 # =============================================================================
 st.sidebar.title("🦅 Antigravity Terminal")
 st.sidebar.markdown("**System:** Autonomous Multi-Agent Research")
@@ -159,54 +153,184 @@ nav_choice = st.sidebar.radio(
 )
 
 st.sidebar.divider()
+
+# Global Watchlist Quick View in Sidebar
+st.sidebar.subheader(f"⭐ Active Watchlist ({len(st.session_state['watchlist'])})")
+st.sidebar.caption(", ".join(st.session_state["watchlist"]))
+
+# Global Company Name to Ticker Search Tool in Sidebar
+with st.sidebar.expander("🔍 Find Ticker by Company Name", expanded=False):
+    search_q = st.text_input("Enter Company Name", placeholder="e.g. Tesla, Apple, Reliance, Palantir", key="sb_company_search")
+    if search_q.strip():
+        with st.spinner("Searching global exchanges..."):
+            found = search_company_tickers(search_q, max_results=5)
+        if found:
+            for item in found:
+                col_info, col_btn = st.columns([3, 1])
+                with col_info:
+                    st.markdown(f"**{item['symbol']}** — {item['name']}\n*{item['exchange']} ({item['type']})*")
+                with col_btn:
+                    if st.button("➕ Add", key=f"sb_add_{item['symbol']}"):
+                        ok, msg, updated = add_to_watchlist(item['symbol'])
+                        st.session_state["watchlist"] = updated
+                        st.sidebar.success(msg)
+                        st.rerun()
+        else:
+            st.info(f"No tickers found for '{search_q}'. Try a different keyword.")
+
+st.sidebar.divider()
 st.sidebar.info("💡 **Universal Ticker Support:** Works for any US equity (NYSE/NASDAQ), Foreign 20-F (TSM, ASML), Indian stocks (.NS/.BO), UK (.L), Europe (.DE/.PA), Japan (.T), or global ETFs (SPY, QQQ).")
 
 
 # =============================================================================
-# VIEW 1: SHORTLISTING SCORECARD
+# VIEW 1: SHORTLISTING SCORECARD & WATCHLIST MANAGER
 # =============================================================================
 if nav_choice == "🏆 Shortlisting Scorecard":
-    st.markdown('<div class="header-style">🏆 Institutional Shortlisting Scorecard</div>', unsafe_allow_html=True)
-    st.markdown("Multi-factor fundamental scorecard comparing primary coverage candidates.")
+    st.markdown('<div class="header-style">🏆 Institutional Shortlist & Watchlist Scorecard</div>', unsafe_allow_html=True)
+    st.markdown("Multi-factor fundamental scorecard comparing primary coverage candidates. Add any global company to evaluate.")
+
+    # Watchlist Addition & Management Box
+    with st.container():
+        st.markdown("### ➕ Add Stocks to Your Watchlist")
+        w_col1, w_col2, w_col3 = st.columns([3, 1, 1])
+        with w_col1:
+            stock_to_add = st.text_input(
+                "Search by Company Name or Ticker Symbol",
+                placeholder="e.g. Tesla, Apple, Palantir, Tata Motors, RELIANCE.NS, TSLA",
+                help="Type any company name (e.g. 'Tesla') or direct symbol (e.g. 'TSLA') to add."
+            )
+            # Show live resolution preview if text is entered
+            resolved_preview = None
+            if stock_to_add.strip():
+                resolved_preview = lookup_primary_ticker(stock_to_add)
+                if resolved_preview:
+                    st.caption(f"✨ **Resolved Ticker:** `{resolved_preview}` (Matches: '{stock_to_add.strip()}')")
+
+        with w_col2:
+            st.write("")
+            st.write("")
+            if st.button("➕ Add to Watchlist", type="primary", use_container_width=True):
+                if stock_to_add.strip():
+                    ok, msg, updated = add_to_watchlist(stock_to_add)
+                    st.session_state["watchlist"] = updated
+                    if ok:
+                        st.success(msg)
+                    else:
+                        st.error(msg)
+                    st.rerun()
+                else:
+                    st.warning("Please enter a company name or ticker.")
+
+        with w_col3:
+            st.write("")
+            st.write("")
+            if st.button("🔄 Reset to Default", use_container_width=True, help="Reset watchlist back to the 6 institutional core stocks"):
+                updated = reset_watchlist()
+                st.session_state["watchlist"] = updated
+                st.info("Watchlist reset to default baseline.")
+                st.rerun()
+
+    # Active Watchlist Tags & Removal
+    st.markdown(f"**Current Watchlist ({len(st.session_state['watchlist'])} Stocks):** " + " • ".join([f"`{s}`" for s in st.session_state["watchlist"]]))
     
+    with st.expander("Manage / Remove Watchlist Items"):
+        rem_col1, rem_col2 = st.columns([3, 1])
+        with rem_col1:
+            to_remove = st.selectbox("Select Stock to Remove", ["(Select stock to remove)"] + st.session_state["watchlist"])
+        with rem_col2:
+            st.write("")
+            st.write("")
+            if st.button("❌ Remove Stock", use_container_width=True):
+                if to_remove and to_remove != "(Select stock to remove)":
+                    updated = remove_from_watchlist(to_remove)
+                    st.session_state["watchlist"] = updated
+                    st.success(f"Removed '{to_remove}' from Watchlist.")
+                    st.rerun()
+
+    st.divider()
+
+    # Filters
     col_f1, col_f2, col_f3 = st.columns(3)
     with col_f1:
-        min_margin = st.slider("Min Operating Margin (%)", min_value=10, max_value=50, value=20)
+        min_margin = st.slider("Min Operating Margin (%)", min_value=0, max_value=50, value=15)
     with col_f2:
-        max_de = st.slider("Max Debt/Equity Ratio (x)", min_value=0.2, max_value=2.0, value=1.5, step=0.1)
+        max_de = st.slider("Max Debt/Equity Ratio (x)", min_value=0.1, max_value=3.0, value=1.5, step=0.1)
     with col_f3:
         st.write("")
         st.write("")
-        show_all = st.checkbox("Show Non-US Equities (TCS.NS)", value=True)
+        show_all = st.checkbox("Show International Equities (.NS, .L, etc.)", value=True)
 
-    df_scorecard = get_shortlist_metrics()
-    if not show_all:
+    with st.spinner("Calculating live fundamental scorecard metrics..."):
+        df_scorecard = get_shortlist_metrics_for_universe(tuple(st.session_state["watchlist"]))
+
+    if not show_all and not df_scorecard.empty:
         df_scorecard = df_scorecard[~df_scorecard["Ticker"].str.contains(r"\.")]
 
-    st.dataframe(df_scorecard, use_container_width=True, hide_index=True)
+    # Apply sliders filter if columns parseable
+    if not df_scorecard.empty:
+        try:
+            op_nums = df_scorecard["Operating Margin"].str.rstrip("%").astype(float)
+            de_nums = df_scorecard["Debt/Equity"].str.rstrip("x").astype(float)
+            filtered_df = df_scorecard[(op_nums >= min_margin) & (de_nums <= max_de)]
+        except Exception:
+            filtered_df = df_scorecard
+
+        st.dataframe(filtered_df, use_container_width=True, hide_index=True)
+        
+        # CSV Export
+        csv_data = filtered_df.to_csv(index=False).encode('utf-8')
+        st.download_button(
+            label="📥 Download Watchlist Scorecard (CSV)",
+            data=csv_data,
+            file_name=f"watchlist_scorecard_{datetime.date.today().strftime('%Y%m%d')}.csv",
+            mime="text/csv",
+        )
+    else:
+        st.info("Watchlist is currently empty. Use the box above to add companies.")
 
     st.subheader("💡 Key Shortlisting Takeaways")
     col_t1, col_t2 = st.columns(2)
     with col_t1:
-        st.success("**Green Flags Identified:**\n- **MSFT & NVDA:** Exceptional operating margins (>40%) and massive net cash buffers.\n- **TCS.NS:** Near-zero debt (0.02x D/E) with >90% FCF cash conversion.\n- **GOOGL:** Strongest pure liquidity buffer ($71B+ net cash).")
+        st.success("**Institutional Green Flags:**\n- **High Operating Margin (>25%):** Pricing power and moats that sustain reinvestment.\n- **Low Leverage (<0.5x D/E):** Strong solvency protecting equity in downturns.\n- **High FCF Conversion (>70%):** Accounting profits convert to cash available for shareholders.")
     with col_t2:
-        st.warning("**Red Flags & Skeptic Checks:**\n- **NVDA Customer Concentration:** Direct Customer A represents 22.0% of revenues (Note 19 disclosure).\n- **AAPL Leverage:** Higher Debt/Equity (1.48x) due to aggressive multi-year share buyback program.\n- **AMZN Operating Margin:** Below 10% threshold during infrastructure reinvestment cycles.")
+        st.warning("**Red Flags & Skeptic Checks:**\n- **Customer Concentration:** Reliance on single customer >10% creates binary earnings risk.\n- **Leverage Accumulation:** High D/E (>1.5x) limits debt capacity and increases interest rate sensitivity.\n- **Thin Margins (<10%):** Vulnerable to cost inflation and commodity price shocks.")
 
 
 # =============================================================================
-# VIEW 2: LIVE CANDLESTICK CHARTS (UNIVERSAL TICKER INPUT)
+# VIEW 2: LIVE CANDLESTICK CHARTS (COMPANY NAME & TICKER SEARCH)
 # =============================================================================
 elif nav_choice == "📊 Live Candlestick Charts":
     st.markdown('<div class="header-style">📊 Live Market Price & Volume Candlesticks</div>', unsafe_allow_html=True)
-    st.markdown("Interactive chart engine supporting **any stock ticker in the world** (e.g. `TSLA`, `AMD`, `LLY`, `TCS.NS`, `SHEL.L`).")
+    st.markdown("Search by **Company Name** (e.g. `Tesla`, `Microsoft`, `Apple`, `Reliance`) or **Ticker Symbol** (`TSLA`, `MSFT`, `TCS.NS`).")
 
     c_col1, c_col2 = st.columns([1, 3])
     with c_col1:
-        ticker_input = st.text_input("Enter Any Stock Ticker", value="NVDA", help="Examples: AAPL, NVDA, TSLA, TSM, TCS.NS, SHEL.L, SPY")
-        selected_ticker = ticker_input.strip().upper()
+        # Quick pick from watchlist
+        wl_options = ["(Custom Search)"] + st.session_state["watchlist"]
+        picked_wl = st.selectbox("⭐ Quick Pick from Watchlist", options=wl_options)
+
+        default_input = picked_wl if picked_wl != "(Custom Search)" else st.session_state.get("active_ticker", "NVDA")
+        user_input = st.text_input("Enter Company Name or Ticker", value=default_input, help="Type 'Tesla', 'Apple', 'Palantir' or exact symbol 'NVDA', 'TCS.NS'")
+        
+        # Resolve company name to ticker
+        resolved_ticker = lookup_primary_ticker(user_input) or user_input.strip().upper()
+        if resolved_ticker != user_input.strip().upper():
+            st.info(f"✨ Resolved '{user_input.strip()}' to **{resolved_ticker}**")
+
+        st.session_state["active_ticker"] = resolved_ticker
+        selected_ticker = resolved_ticker
+
         chart_period = st.select_slider("Time Horizon", options=["1mo", "3mo", "6mo", "1y", "2y", "5y"], value="1y")
         show_sma50 = st.checkbox("Show 50-Day Moving Average", value=True)
         show_sma200 = st.checkbox("Show 200-Day Moving Average", value=True)
+        
+        # Quick button to add this ticker to watchlist if not already there
+        if selected_ticker not in st.session_state["watchlist"]:
+            if st.button(f"➕ Add {selected_ticker} to Watchlist"):
+                ok, msg, updated = add_to_watchlist(selected_ticker)
+                st.session_state["watchlist"] = updated
+                st.success(msg)
+                st.rerun()
 
     with c_col2:
         with st.spinner(f"Loading live market data for {selected_ticker}..."):
@@ -255,7 +379,7 @@ elif nav_choice == "📊 Live Candlestick Charts":
             )
             st.plotly_chart(fig, use_container_width=True)
         else:
-            st.error(f"Unable to load historical price series for '{selected_ticker}'. Please verify ticker symbol.")
+            st.error(f"Unable to load historical price series for '{selected_ticker}'. Please verify company name or ticker symbol.")
 
 
 # =============================================================================
@@ -369,7 +493,13 @@ elif nav_choice == "🤖 Autonomous Research Committee":
 
     col_r1, col_r2 = st.columns([2, 1])
     with col_r1:
-        research_ticker = st.text_input("Enter Stock Ticker to Research", value="AAPL", help="Any US or international ticker (e.g. AAPL, NVDA, TSLA, TSM, TCS.NS)").strip().upper()
+        wl_opts = ["(Custom Input)"] + st.session_state["watchlist"]
+        r_picked = st.selectbox("⭐ Quick Pick from Watchlist", wl_opts)
+        default_r = r_picked if r_picked != "(Custom Input)" else "AAPL"
+        r_input = st.text_input("Enter Company Name or Stock Ticker to Research", value=default_r, help="Type company name (e.g. 'Tesla', 'Apple', 'Palantir') or ticker (e.g. 'NVDA')")
+        research_ticker = lookup_primary_ticker(r_input) or r_input.strip().upper()
+        if research_ticker != r_input.strip().upper():
+            st.caption(f"✨ Resolved '{r_input.strip()}' to ticker `{research_ticker}`")
     with col_r2:
         workflow_type = st.selectbox("Research Workflow", ["Workflow 1: Comprehensive Valuation Deep Dive", "Workflow 2: Rapid Fundamental Screen"])
         workflow_num = 1 if "1" in workflow_type else 2
@@ -408,7 +538,9 @@ elif nav_choice == "⚡ NVIDIA cuOpt Portfolio Optimizer":
 
     p_col1, p_col2 = st.columns([2, 1])
     with p_col1:
-        port_input = st.text_input("Portfolio Universe (Comma-separated)", value="AAPL, MSFT, NVDA, AMZN", help="Type any list of stocks (e.g. AAPL, NVDA, MSFT, TSLA, GOOGL)")
+        wl_preview_str = ", ".join(st.session_state["watchlist"][:5])
+        port_input = st.text_input("Portfolio Universe (Comma-separated)", value=wl_preview_str, help="Type any list of stocks or use your active Watchlist")
+        use_all_wl = st.checkbox(f"Use All {len(st.session_state['watchlist'])} Stocks in Current Watchlist", value=False)
     with p_col2:
         strategy_choice = st.selectbox("Optimization Strategy", ["min_variance (Global Minimum Variance)", "mean_variance (Markowitz Efficient)"])
         strat = "min_variance" if "min_variance" in strategy_choice else "mean_variance"
@@ -416,7 +548,10 @@ elif nav_choice == "⚡ NVIDIA cuOpt Portfolio Optimizer":
     max_w_cap = st.slider("Single-Asset Concentration Cap", min_value=0.20, max_value=1.0, value=0.40, step=0.05)
 
     if st.button("⚡ Solve Optimal Portfolio Allocation", type="primary"):
-        tickers_list = [t.strip().upper() for t in port_input.split(",") if t.strip()]
+        if use_all_wl:
+            tickers_list = list(st.session_state["watchlist"])
+        else:
+            tickers_list = [t.strip().upper() for t in port_input.split(",") if t.strip()]
         with st.spinner(f"Solving quadratic program for {tickers_list}..."):
             try:
                 sandbox = BacktestSandbox()
