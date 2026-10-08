@@ -218,3 +218,79 @@ run_nvidia_adversarial_stress <- function(ticker, thesis_text = "", growth_pct =
     list(error = paste("NVIDIA execution error:", paste(out, collapse = "\n")))
   })
 }
+
+#' Run NVIDIA cuOpt Formulated Portfolio Quadratic Program from RStudio
+#'
+#' @param tickers Character vector of stock tickers
+#' @param cov_matrix Numeric matrix (covariance of asset returns)
+#' @param expected_returns Numeric vector of expected annualized returns
+#' @param max_weight Maximum weight cap per asset (default 0.40)
+#' @param strategy "min_variance" or "mean_variance"
+#' @return List with optimal weights, portfolio variance, volatility, Sharpe ratio, and dual multipliers
+solve_portfolio_qp <- function(tickers, cov_matrix, expected_returns = NULL, max_weight = 0.40, strategy = "min_variance") {
+  py_exe <- .get_python_path()
+  t_json <- jsonlite::toJSON(tickers)
+  c_json <- jsonlite::toJSON(as.matrix(cov_matrix))
+  mu_json <- if (is.null(expected_returns)) "null" else jsonlite::toJSON(as.numeric(expected_returns))
+
+  code <- sprintf(
+    "import json, numpy as np; from tools.calc.portfolio_opt import PortfolioQPOptimizer; opt = PortfolioQPOptimizer(); tickers = json.loads('%s'); cov = np.array(json.loads('%s')); mu = np.array(json.loads('%s')) if '%s' != 'null' else None; res = opt.solve_mean_variance(tickers, cov, mu, max_weight=%f) if '%s' == 'mean_variance' and mu is not None else opt.solve_global_minimum_variance(tickers, cov, max_weight=%f, expected_returns=mu); print(json.dumps(res))",
+    t_json, c_json, mu_json, mu_json, max_weight, strategy, max_weight
+  )
+  out <- system2(py_exe, args = c("-c", shQuote(code)), stdout = TRUE, stderr = TRUE)
+  tryCatch({
+    jsonlite::fromJSON(paste(out, collapse = "\n"))
+  }, error = function(e) {
+    list(error = paste("Portfolio QP error:", paste(out, collapse = "\n")))
+  })
+}
+
+#' Run NVIDIA cuOpt Supply Chain & Logistics VRP from RStudio
+#'
+#' @param cost_matrix Numeric distance or cost matrix between distribution hubs
+#' @param demands Numeric vector of order demands per location
+#' @param vehicle_capacity Maximum capacity per fleet vehicle
+#' @param num_vehicles Number of fleet vehicles available
+#' @return List with route sequences, total transport costs, capacity utilization, and fuel inflation sensitivity
+solve_supply_chain_routing <- function(cost_matrix, demands, vehicle_capacity, num_vehicles) {
+  py_exe <- .get_python_path()
+  c_json <- jsonlite::toJSON(as.matrix(cost_matrix))
+  d_json <- jsonlite::toJSON(as.numeric(demands))
+
+  code <- sprintf(
+    "import json, numpy as np; from tools.calc.supply_chain_opt import SupplyChainLogisticsOptimizer; opt = SupplyChainLogisticsOptimizer(); c_mat = np.array(json.loads('%s')); dem = json.loads('%s'); res = opt.solve_capacitated_vrp(c_mat, dem, vehicle_capacity=%f, num_vehicles=%d); print(json.dumps(res))",
+    c_json, d_json, vehicle_capacity, as.integer(num_vehicles)
+  )
+  out <- system2(py_exe, args = c("-c", shQuote(code)), stdout = TRUE, stderr = TRUE)
+  tryCatch({
+    jsonlite::fromJSON(paste(out, collapse = "\n"))
+  }, error = function(e) {
+    list(error = paste("Supply chain routing error:", paste(out, collapse = "\n")))
+  })
+}
+
+#' Run NVIDIA TileGym Autotuned Monte Carlo Risk Simulation from RStudio
+#'
+#' @param weights Numeric vector of asset weights
+#' @param expected_returns Numeric vector of asset mean returns
+#' @param cov_matrix Numeric covariance matrix
+#' @param num_simulations Total simulation paths (default 10000)
+#' @return List with VaR 95%, CVaR 95%, distribution parameters, and kernel execution metrics
+run_autotuned_monte_carlo <- function(weights, expected_returns, cov_matrix, num_simulations = 10000) {
+  py_exe <- .get_python_path()
+  w_json <- jsonlite::toJSON(as.numeric(weights))
+  mu_json <- jsonlite::toJSON(as.numeric(expected_returns))
+  c_json <- jsonlite::toJSON(as.matrix(cov_matrix))
+
+  code <- sprintf(
+    "import json, numpy as np; from tools.calc.gpu_autotune_sim import FinancialKernelAutotuner; tuner = FinancialKernelAutotuner(); w = np.array(json.loads('%s')); mu = np.array(json.loads('%s')); cov = np.array(json.loads('%s')); res = tuner.run_monte_carlo_portfolio_sim(w, mu, cov, num_simulations=%d); print(json.dumps(res))",
+    w_json, mu_json, c_json, as.integer(num_simulations)
+  )
+  out <- system2(py_exe, args = c("-c", shQuote(code)), stdout = TRUE, stderr = TRUE)
+  tryCatch({
+    jsonlite::fromJSON(paste(out, collapse = "\n"))
+  }, error = function(e) {
+    list(error = paste("Autotuned MC simulation error:", paste(out, collapse = "\n")))
+  })
+}
+

@@ -25,6 +25,15 @@ from tools.calc.dcf import (
 from tools.calc.fx import (
     convert_currency
 )
+from tools.calc.portfolio_opt import (
+    PortfolioQPOptimizer
+)
+from tools.calc.supply_chain_opt import (
+    SupplyChainLogisticsOptimizer
+)
+from tools.calc.gpu_autotune_sim import (
+    FinancialKernelAutotuner
+)
 
 __all__ = [
     "yoy_growth",
@@ -42,5 +51,9 @@ __all__ = [
     "dcf",
     "reverse_dcf",
     "dcf_sensitivity_matrix",
-    "convert_currency"
+    "convert_currency",
+    "PortfolioQPOptimizer",
+    "SupplyChainLogisticsOptimizer",
+    "FinancialKernelAutotuner"
 ]
+

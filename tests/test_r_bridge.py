@@ -56,3 +56,32 @@ def test_r_agent_bridge_script():
     res = bridge.execute_expression(r_code)
     assert res["success"] is True
     assert "VAL:" in res["stdout"]
+
+
+def test_r_portfolio_qp_execution():
+    bridge = RStudioBridge()
+    r_code = (
+        "source('r_studio/agent_bridge.R'); "
+        "cov <- matrix(c(0.04, 0.01, 0.01, 0.03), nrow=2); "
+        "tickers <- c('AAPL', 'MSFT'); "
+        "res <- solve_portfolio_qp(tickers, cov, max_weight=0.60); "
+        "cat(sprintf('VOL:%.4f|SHARPE:%.2f', res$annualized_volatility, res$sharpe_ratio))"
+    )
+    res = bridge.execute_expression(r_code)
+    assert res["success"] is True
+    assert "VOL:" in res["stdout"]
+
+
+def test_r_supply_chain_routing_execution():
+    bridge = RStudioBridge()
+    r_code = (
+        "source('r_studio/agent_bridge.R'); "
+        "cost_mat <- matrix(c(0, 10, 10, 0), nrow=2); "
+        "demands <- c(0, 15); "
+        "res <- solve_supply_chain_routing(cost_mat, demands, vehicle_capacity=50, num_vehicles=1); "
+        "cat(sprintf('DIST:%.1f|COST:%.2f', res$total_network_distance, res$total_transport_cost))"
+    )
+    res = bridge.execute_expression(r_code)
+    assert res["success"] is True
+    assert "DIST:" in res["stdout"]
+

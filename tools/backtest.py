@@ -12,8 +12,10 @@ import datetime
 from typing import Dict, Any, List, Optional
 import numpy as np
 import yfinance as yf
+from tools.calc.portfolio_opt import PortfolioQPOptimizer
 
 BACKTESTS_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), "backtests")
+
 WATCHLIST_FILE = os.path.join(os.path.dirname(os.path.dirname(__file__)), "watchlist.txt")
 
 
@@ -166,6 +168,104 @@ class BacktestSandbox:
         self._save_backtest_report(report_path, summary)
 
         return summary
+
+    def run_optimized_portfolio_backtest(
+        self,
+        tickers: List[str],
+        benchmark: str = "SPY",
+        period: str = "1y",
+        max_weight: float = 0.40,
+        strategy: str = "min_variance"
+    ) -> Dict[str, Any]:
+        """
+        Runs portfolio backtest with weights determined by NVIDIA cuOpt QP optimizer.
+        Supports strategy="min_variance" (Global Minimum Variance) or strategy="mean_variance".
+        """
+        all_symbols = list(set(tickers + [benchmark]))
+        data = yf.download(all_symbols, period=period, progress=False)["Close"]
+
+        if data.empty or benchmark not in data.columns:
+            raise ValueError(f"Could not retrieve historical price series for {all_symbols}")
+
+        returns = data.pct_change().dropna()
+        portfolio_tickers = [t for t in tickers if t in returns.columns]
+        if not portfolio_tickers:
+            raise ValueError("No portfolio tickers found in downloaded price data.")
+
+        # Annualized covariance matrix and expected returns
+        port_asset_returns = returns[portfolio_tickers]
+        cov_matrix = port_asset_returns.cov().to_numpy() * 252
+        mean_returns = port_asset_returns.mean().to_numpy() * 252
+
+        # Solve QP via PortfolioQPOptimizer
+        optimizer = PortfolioQPOptimizer()
+        if strategy == "mean_variance":
+            qp_sol = optimizer.solve_mean_variance(
+                tickers=portfolio_tickers,
+                cov_matrix=cov_matrix,
+                expected_returns=mean_returns,
+                max_weight=max_weight
+            )
+        else:
+            qp_sol = optimizer.solve_global_minimum_variance(
+                tickers=portfolio_tickers,
+                cov_matrix=cov_matrix,
+                max_weight=max_weight,
+                expected_returns=mean_returns
+            )
+
+        weights_arr = np.array([qp_sol["weights"][t] for t in portfolio_tickers])
+
+        # Compute weighted portfolio daily returns
+        port_returns = port_asset_returns.dot(weights_arr)
+        bench_returns = returns[benchmark]
+
+        # Cumulative returns
+        port_cum = (1 + port_returns).cumprod() - 1
+        bench_cum = (1 + bench_returns).cumprod() - 1
+
+        total_port_ret = float(port_cum.iloc[-1]) * 100.0
+        total_bench_ret = float(bench_cum.iloc[-1]) * 100.0
+        alpha = total_port_ret - total_bench_ret
+
+        # Annualized volatility
+        port_vol = float(port_returns.std() * np.sqrt(252)) * 100.0
+        bench_vol = float(bench_returns.std() * np.sqrt(252)) * 100.0
+
+        # Sharpe ratio (risk-free rate 4.25%)
+        rf_daily = 0.0425 / 252
+        excess_daily = port_returns - rf_daily
+        sharpe = float((excess_daily.mean() / port_returns.std()) * np.sqrt(252)) if port_returns.std() > 0 else 0.0
+
+        # Max drawdown
+        cum_series = (1 + port_returns).cumprod()
+        peak = cum_series.cummax()
+        drawdown = (cum_series - peak) / peak
+        max_drawdown = float(drawdown.min()) * 100.0
+
+        summary = {
+            "period": period,
+            "tickers": portfolio_tickers,
+            "benchmark": benchmark,
+            "strategy": strategy,
+            "optimal_weights": qp_sol["weights"],
+            "qp_solution": qp_sol,
+            "portfolio_return_pct": round(total_port_ret, 2),
+            "benchmark_return_pct": round(total_bench_ret, 2),
+            "alpha_pct": round(alpha, 2),
+            "annualized_volatility_pct": round(port_vol, 2),
+            "benchmark_volatility_pct": round(bench_vol, 2),
+            "sharpe_ratio": round(sharpe, 2),
+            "max_drawdown_pct": round(max_drawdown, 2)
+        }
+
+        # Save markdown report
+        date_str = datetime.datetime.now().strftime("%Y-%m-%d")
+        report_path = os.path.join(self.output_dir, f"backtest_optimized_{date_str}.md")
+        self._save_backtest_report(report_path, summary)
+
+        return summary
+
 
     def _save_backtest_report(self, filepath: str, summary: Dict[str, Any]):
         lines = [

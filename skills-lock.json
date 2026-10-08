@@ -1,0 +1,23 @@
+{
+  "version": 1,
+  "skills": {
+    "cuopt-numerical-optimization-formulation": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/cuopt-numerical-optimization-formulation/SKILL.md",
+      "computedHash": "0472b1d101c3e63dfb7dae62b44219c92fbe28a42d7eb33868df0775e739dcb7"
+    },
+    "cuopt-routing-api-python": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/cuopt-routing-api-python/SKILL.md",
+      "computedHash": "1dfd929ce24971accfe01a00d3ae5b8be7e017cc288df2687c201284e54d15fd"
+    },
+    "tilegym-cutile-autotuning": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/tilegym-cutile-autotuning/SKILL.md",
+      "computedHash": "d05120f1aa3fd8062a1a2260d78272fb90b4c44e9e41d31e44d5dbee12222283"
+    }
+  }
+}
