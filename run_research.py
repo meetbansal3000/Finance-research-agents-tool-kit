@@ -39,7 +39,8 @@ def run_pipeline(
     workflow_number: int = 1,
     output_dir: Optional[str] = None,
     perform_refetch: bool = True,
-    strict_audit: bool = False
+    strict_audit: bool = False,
+    enable_nvidia: bool = False
 ) -> Dict[str, Any]:
     """
     Execute full autonomous research pipeline for a given ticker and workflow.
@@ -131,7 +132,7 @@ def run_pipeline(
     print(f"\n[Stage 3/4] 🐻 Skeptic Agent: Executing adversarial stress-testing...")
     skeptic_ledger = ProvenanceLedger(run_id=f"{ticker}_skeptic_{date_str}")
     skeptic = SkepticAgent(ledger=skeptic_ledger)
-    skeptic_res = skeptic.evaluate_thesis(**analyst_res["skeptic_inputs"])
+    skeptic_res = skeptic.evaluate_thesis(**analyst_res["skeptic_inputs"], enable_nvidia=enable_nvidia)
 
     skeptic_report_path = os.path.join(target_dir, "skeptic_review.md")
     skeptic_sidecar_path = os.path.join(target_dir, "skeptic_review.provenance.json")
@@ -294,13 +295,15 @@ def main():
     parser.add_argument("workflow", type=int, nargs="?", default=1, help="Playbook workflow number (default: 1)")
     parser.add_argument("--no-refetch", action="store_true", help="Disable live network re-fetch in Verifier")
     parser.add_argument("--output-dir", type=str, default=None, help="Custom output directory")
+    parser.add_argument("--enable-nvidia", action="store_true", help="Enable NVIDIA NIM hardware accelerated adversarial stress-testing")
 
     args = parser.parse_args()
     run_pipeline(
         ticker=args.ticker,
         workflow_number=args.workflow,
         output_dir=args.output_dir,
-        perform_refetch=not args.no_refetch
+        perform_refetch=not args.no_refetch,
+        enable_nvidia=args.enable_nvidia
     )
 
 if __name__ == "__main__":

@@ -696,7 +696,7 @@ class SkepticAgent:
         # Optional NVIDIA NIM Accelerated Adversarial Deep Dive
         nvidia_critique_text = None
         nvidia_ledger_id = None
-        if enable_nvidia or os.getenv("ENABLE_NVIDIA_AGENTS", "").lower() in ("1", "true", "yes"):
+        if enable_nvidia:
             try:
                 from tools.nvidia_client import NvidiaNimClient
                 nim_client = NvidiaNimClient()

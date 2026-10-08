@@ -176,7 +176,8 @@ class NvidiaResearchAgent:
         (e.g., Nemotron 70B, Llama 3.1 70B, Mixtral 8x22B) to eliminate single-model bias.
         """
         target_models = models or [
-            "nvidia/llama-3.1-nemotron-70b-instruct",
+            "nvidia/nemotron-3-ultra-550b-a55b",
+            "nvidia/nemotron-3.5-lightning-30b-a3b",
             "meta/llama-3.1-70b-instruct",
         ]
 
