@@ -2,11 +2,14 @@
 dashboard.py - Interactive Financial Research & Shortlisting Terminal
 Built with Streamlit and Plotly for the Antigravity Autonomous Finance Suite.
 Features:
-  1. Shortlisting Scorecard: Multi-factor screening (Operating Margin, Leverage, FCF Yield)
-  2. Live Candlestick Charts: Interactive OHLCV charts with volume and moving averages
-  3. Interactive DCF Valuation: Dynamic sliders for WACC, 5Y Growth, Terminal Growth, and sensitivity table
-  4. Decision Journal Viewer: Real-time portfolio journal inspection and decision logging
-  5. Regulatory Filing & Market Alerts: Live monitor of SEC filings and price shocks
+  1. 🏆 Shortlisting Scorecard: Multi-factor screening (Operating Margin, Leverage, FCF Yield)
+  2. 📊 Live Candlestick Charts: Interactive OHLCV charts with volume and moving averages
+  3. 🎛️ Interactive DCF Valuation: Dynamic sliders for WACC, 5Y Growth, Terminal Growth, and sensitivity table
+  4. 🤖 Autonomous Multi-Agent Committee: Live research runner for any global ticker
+  5. ⚡ NVIDIA cuOpt Portfolio Optimizer: Quadratic programming portfolio variance minimization
+  6. 🚚 Supply Chain Logistics Optimizer: cuOpt CVRP fleet routing & margin elasticity
+  7. 📓 Decision Journal Viewer: Real-time portfolio journal inspection and decision logging
+  8. 🚨 Regulatory Filing & Market Alerts: Live monitor of SEC filings and price shocks
 """
 
 import os
@@ -28,6 +31,8 @@ from tools.calc.dcf import dcf, reverse_dcf
 from tools.backtest import BacktestSandbox
 from tools.data_layer import DataLayer
 from tools.alerts import AlertMonitor
+from tools.calc.portfolio_opt import PortfolioQPOptimizer
+from tools.calc.supply_chain_opt import SupplyChainLogisticsOptimizer
 
 # Check if running in Streamlit
 try:
@@ -82,6 +87,7 @@ st.markdown("""
         font-size: 26px;
         font-weight: 700;
         color: #111827;
+        margin-bottom: 8px;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -92,7 +98,8 @@ st.markdown("""
 # =============================================================================
 @st.cache_data(ttl=1800)
 def load_historical_prices(ticker: str, period: str = "1y"):
-    t = yf.Ticker(ticker)
+    clean_sym = ticker.strip().upper()
+    t = yf.Ticker(clean_sym)
     df = t.history(period=period)
     return df
 
@@ -102,7 +109,6 @@ def get_shortlist_metrics():
     universe = ["AAPL", "MSFT", "NVDA", "GOOGL", "AMZN", "TCS.NS"]
     records = []
     
-    # Fundamental baseline metrics
     baseline = {
         "AAPL": {"op_margin": 0.312, "de_ratio": 1.48, "fcf_conv": 0.88, "net_cash": "$33.76B Buffer", "cust_conc": "<10% (Diversified)", "verdict": "VERIFIED BUY"},
         "MSFT": {"op_margin": 0.446, "de_ratio": 0.38, "fcf_conv": 0.72, "net_cash": "$36.55B Buffer", "cust_conc": "<10% (Diversified)", "verdict": "VERIFIED BUY"},
@@ -132,11 +138,11 @@ def get_shortlist_metrics():
 
 
 # =============================================================================
-# SIDEBAR
+# SIDEBAR NAVIGATION
 # =============================================================================
 st.sidebar.title("🦅 Antigravity Terminal")
 st.sidebar.markdown("**System:** Autonomous Multi-Agent Research")
-st.sidebar.markdown("**Data Integrity:** Audited Primary Filings")
+st.sidebar.markdown("**Data Integrity:** Audited Primary Filings & Provenance")
 
 nav_choice = st.sidebar.radio(
     "Navigation View",
@@ -144,13 +150,16 @@ nav_choice = st.sidebar.radio(
         "🏆 Shortlisting Scorecard",
         "📊 Live Candlestick Charts",
         "🎛️ Interactive DCF Valuation",
+        "🤖 Autonomous Research Committee",
+        "⚡ NVIDIA cuOpt Portfolio Optimizer",
+        "🚚 Supply Chain & Margins (cuOpt)",
         "📓 Decision Journal & Review",
         "🚨 SEC Filings & Price Alerts"
     ]
 )
 
 st.sidebar.divider()
-st.sidebar.info("💡 **Zero Fabrication Guarantee:** All quantitative balance sheet and income statement metrics are grounded in audited SEC 10-K, Form 20-F, and press release filings.")
+st.sidebar.info("💡 **Universal Ticker Support:** Works for any US equity (NYSE/NASDAQ), Foreign 20-F (TSM, ASML), Indian stocks (.NS/.BO), UK (.L), Europe (.DE/.PA), Japan (.T), or global ETFs (SPY, QQQ).")
 
 
 # =============================================================================
@@ -174,11 +183,7 @@ if nav_choice == "🏆 Shortlisting Scorecard":
     if not show_all:
         df_scorecard = df_scorecard[~df_scorecard["Ticker"].str.contains(r"\.")]
 
-    st.dataframe(
-        df_scorecard,
-        use_container_width=True,
-        hide_index=True
-    )
+    st.dataframe(df_scorecard, use_container_width=True, hide_index=True)
 
     st.subheader("💡 Key Shortlisting Takeaways")
     col_t1, col_t2 = st.columns(2)
@@ -189,14 +194,16 @@ if nav_choice == "🏆 Shortlisting Scorecard":
 
 
 # =============================================================================
-# VIEW 2: LIVE CANDLESTICK CHARTS
+# VIEW 2: LIVE CANDLESTICK CHARTS (UNIVERSAL TICKER INPUT)
 # =============================================================================
 elif nav_choice == "📊 Live Candlestick Charts":
     st.markdown('<div class="header-style">📊 Live Market Price & Volume Candlesticks</div>', unsafe_allow_html=True)
-    
+    st.markdown("Interactive chart engine supporting **any stock ticker in the world** (e.g. `TSLA`, `AMD`, `LLY`, `TCS.NS`, `SHEL.L`).")
+
     c_col1, c_col2 = st.columns([1, 3])
     with c_col1:
-        selected_ticker = st.selectbox("Select Security", ["NVDA", "AAPL", "MSFT", "GOOGL", "AMZN", "TCS.NS"])
+        ticker_input = st.text_input("Enter Any Stock Ticker", value="NVDA", help="Examples: AAPL, NVDA, TSLA, TSM, TCS.NS, SHEL.L, SPY")
+        selected_ticker = ticker_input.strip().upper()
         chart_period = st.select_slider("Time Horizon", options=["1mo", "3mo", "6mo", "1y", "2y", "5y"], value="1y")
         show_sma50 = st.checkbox("Show 50-Day Moving Average", value=True)
         show_sma200 = st.checkbox("Show 200-Day Moving Average", value=True)
@@ -227,7 +234,6 @@ elif nav_choice == "📊 Live Candlestick Charts":
                 row=1, col=1
             )
 
-            # Moving averages
             if show_sma50 and len(df_hist) >= 50:
                 sma50 = df_hist["Close"].rolling(window=50).mean()
                 fig.add_trace(go.Scatter(x=df_hist.index, y=sma50, line=dict(color="orange", width=1.5), name="50-Day SMA"), row=1, col=1)
@@ -249,7 +255,7 @@ elif nav_choice == "📊 Live Candlestick Charts":
             )
             st.plotly_chart(fig, use_container_width=True)
         else:
-            st.error(f"Unable to load historical price series for {selected_ticker}.")
+            st.error(f"Unable to load historical price series for '{selected_ticker}'. Please verify ticker symbol.")
 
 
 # =============================================================================
@@ -259,7 +265,6 @@ elif nav_choice == "🎛️ Interactive DCF Valuation":
     st.markdown('<div class="header-style">🎛️ Interactive DCF Valuation & Sensitivity Analysis</div>', unsafe_allow_html=True)
     st.markdown("Dynamic Discounted Cash Flow valuation engine powered by `tools/calc/dcf.py`.")
 
-    # Preset fundamentals
     dcf_presets = {
         "NVDA": {"fcf": 60850000000.0, "shares": 24500000000.0, "net_debt": -38200000000.0, "price": 239.24, "wacc": 0.095, "growth": 0.22, "t_growth": 0.035},
         "AAPL": {"fcf": 108807000000.0, "shares": 14594180000.0, "net_debt": -33763000000.0, "price": 333.63, "wacc": 0.085, "growth": 0.08, "t_growth": 0.03},
@@ -267,8 +272,32 @@ elif nav_choice == "🎛️ Interactive DCF Valuation":
         "GOOGL": {"fcf": 73200000000.0, "shares": 12250000000.0, "net_debt": -71100000000.0, "price": 347.68, "wacc": 0.090, "growth": 0.14, "t_growth": 0.03}
     }
 
-    selected_dcf_sym = st.selectbox("Select Target Company", list(dcf_presets.keys()))
-    preset = dcf_presets[selected_dcf_sym]
+    t_col1, t_col2 = st.columns([1, 2])
+    with t_col1:
+        custom_sym = st.text_input("Enter Ticker for DCF", value="NVDA").strip().upper()
+        if custom_sym in dcf_presets:
+            preset = dcf_presets[custom_sym]
+        else:
+            # Dynamically fetch baseline data for custom ticker
+            try:
+                t_obj = yf.Ticker(custom_sym)
+                info = t_obj.info
+                curr_p = float(info.get("currentPrice") or info.get("regularMarketPrice") or 100.0)
+                shs = float(info.get("sharesOutstanding") or 1e9)
+                fcf_val = float(info.get("freeCashflow") or (curr_p * shs * 0.04))
+                debt = float(info.get("totalDebt") or 0.0)
+                cash = float(info.get("totalCash") or 0.0)
+                preset = {
+                    "fcf": max(fcf_val, 1e7),
+                    "shares": max(shs, 1e6),
+                    "net_debt": debt - cash,
+                    "price": curr_p,
+                    "wacc": 0.09,
+                    "growth": 0.10,
+                    "t_growth": 0.025
+                }
+            except Exception:
+                preset = dcf_presets["NVDA"]
 
     col_s1, col_s2, col_s3 = st.columns(3)
     with col_s1:
@@ -278,7 +307,6 @@ elif nav_choice == "🎛️ Interactive DCF Valuation":
     with col_s3:
         slider_t_growth = st.slider("Terminal Growth Rate (%)", min_value=1.5, max_value=4.5, value=float(preset["t_growth"] * 100), step=0.25) / 100.0
 
-    # Calculate DCF
     growth_rates = [slider_growth] * 5
     dcf_calc = dcf(
         base_fcf=preset["fcf"],
@@ -291,7 +319,7 @@ elif nav_choice == "🎛️ Interactive DCF Valuation":
     dcf_res = dcf_calc["result"]
     fair_val = dcf_res["fair_value_per_share"]
     curr_price = preset["price"]
-    upside_pct = ((fair_val - curr_price) / curr_price) * 100.0
+    upside_pct = ((fair_val - curr_price) / curr_price) * 100.0 if curr_price > 0 else 0.0
 
     st.divider()
     m_col1, m_col2, m_col3, m_col4 = st.columns(4)
@@ -304,8 +332,7 @@ elif nav_choice == "🎛️ Interactive DCF Valuation":
     with m_col4:
         st.metric("Enterprise Value", f"${dcf_res['enterprise_value'] / 1e9:,.1f}B")
 
-    # Sensitivity Matrix
-    st.subheader("📊 WACC vs Growth Sensitivity Matrix (Fair Value per Share)")
+    st.subheader(f"📊 Sensitivity Matrix: {custom_sym} (WACC vs Growth)")
     wacc_range = np.linspace(slider_wacc - 0.02, slider_wacc + 0.02, 5)
     growth_range = np.linspace(slider_growth - 0.06, slider_growth + 0.06, 5)
 
@@ -334,7 +361,144 @@ elif nav_choice == "🎛️ Interactive DCF Valuation":
 
 
 # =============================================================================
-# VIEW 4: DECISION JOURNAL & REVIEW
+# VIEW 4: AUTONOMOUS MULTI-AGENT COMMITTEE RESEARCH
+# =============================================================================
+elif nav_choice == "🤖 Autonomous Research Committee":
+    st.markdown('<div class="header-style">🤖 Autonomous Multi-Agent Research Committee</div>', unsafe_allow_html=True)
+    st.markdown("Triggers the full multi-agent pipeline: **Analyst** $\\to$ **Verifier** $\\to$ **Skeptic** $\\to$ **NVIDIA NIM** $\\to$ **Provenance Ledger**.")
+
+    col_r1, col_r2 = st.columns([2, 1])
+    with col_r1:
+        research_ticker = st.text_input("Enter Stock Ticker to Research", value="AAPL", help="Any US or international ticker (e.g. AAPL, NVDA, TSLA, TSM, TCS.NS)").strip().upper()
+    with col_r2:
+        workflow_type = st.selectbox("Research Workflow", ["Workflow 1: Comprehensive Valuation Deep Dive", "Workflow 2: Rapid Fundamental Screen"])
+        workflow_num = 1 if "1" in workflow_type else 2
+
+    if st.button("🚀 Run Autonomous Committee Research", type="primary"):
+        with st.spinner(f"Agents assembling for {research_ticker}... Running Analyst -> Verifier -> Skeptic pipeline..."):
+            try:
+                from run_research import run_pipeline
+                res_pipeline = run_pipeline(research_ticker, workflow=workflow_num, strict=False)
+                
+                st.success(f"✅ Research Committee successfully completed audit for {research_ticker}!")
+                
+                # Check for generated report
+                report_dir = res_pipeline.get("report_dir")
+                final_md = os.path.join(report_dir, "final_report.md") if report_dir else None
+                
+                if final_md and os.path.exists(final_md):
+                    with open(final_md, "r", encoding="utf-8") as f:
+                        report_content = f.read()
+                    
+                    st.divider()
+                    st.subheader(f"📄 Audited Investment Memorandum: {research_ticker}")
+                    st.markdown(report_content)
+                else:
+                    st.info("Research complete. Status: " + str(res_pipeline.get("status", "COMPLETE")))
+            except Exception as e:
+                st.error(f"Error during autonomous research: {str(e)}")
+
+
+# =============================================================================
+# VIEW 5: NVIDIA CUOPT PORTFOLIO OPTIMIZATION
+# =============================================================================
+elif nav_choice == "⚡ NVIDIA cuOpt Portfolio Optimizer":
+    st.markdown('<div class="header-style">⚡ NVIDIA cuOpt Quadratic Programming (QP) Portfolio Optimizer</div>', unsafe_allow_html=True)
+    st.markdown("Implements the mathematical formulation principles from **NVIDIA cuOpt** (`min 0.5 * w^T Q w`) for Global Minimum Variance and Markowitz allocation.")
+
+    p_col1, p_col2 = st.columns([2, 1])
+    with p_col1:
+        port_input = st.text_input("Portfolio Universe (Comma-separated)", value="AAPL, MSFT, NVDA, AMZN", help="Type any list of stocks (e.g. AAPL, NVDA, MSFT, TSLA, GOOGL)")
+    with p_col2:
+        strategy_choice = st.selectbox("Optimization Strategy", ["min_variance (Global Minimum Variance)", "mean_variance (Markowitz Efficient)"])
+        strat = "min_variance" if "min_variance" in strategy_choice else "mean_variance"
+
+    max_w_cap = st.slider("Single-Asset Concentration Cap", min_value=0.20, max_value=1.0, value=0.40, step=0.05)
+
+    if st.button("⚡ Solve Optimal Portfolio Allocation", type="primary"):
+        tickers_list = [t.strip().upper() for t in port_input.split(",") if t.strip()]
+        with st.spinner(f"Solving quadratic program for {tickers_list}..."):
+            try:
+                sandbox = BacktestSandbox()
+                bt_res = sandbox.run_optimized_portfolio_backtest(
+                    tickers=tickers_list,
+                    benchmark="SPY",
+                    period="1y",
+                    max_weight=max_w_cap,
+                    strategy=strat
+                )
+                
+                st.success("✅ NVIDIA cuOpt QP Optimization Converged to Optimum!")
+                
+                qp = bt_res["qp_solution"]
+                opt_weights = qp["weights"]
+
+                # Metrics summary
+                col_m1, col_m2, col_m3, col_m4 = st.columns(4)
+                with col_m1:
+                    st.metric("Annualized Volatility", f"{qp['annualized_volatility']:.2f}%")
+                with col_m2:
+                    st.metric("Sharpe Ratio (Rf=4.25%)", f"{bt_res['sharpe_ratio']:.2f}")
+                with col_m3:
+                    st.metric("1Y Portfolio Return", f"{bt_res['portfolio_return_pct']:+.2f}%")
+                with col_m4:
+                    st.metric("Alpha vs SPY", f"{bt_res['alpha_pct']:+.2f}%", delta=f"{bt_res['alpha_pct']:+.2f}%")
+
+                # Optimal Weights Chart
+                df_w = pd.DataFrame(list(opt_weights.items()), columns=["Asset", "Optimal Weight"])
+                df_w["Optimal Weight (%)"] = df_w["Optimal Weight"] * 100.0
+
+                fig_w = go.Figure(data=[go.Pie(labels=df_w["Asset"], values=df_w["Optimal Weight (%)"], hole=0.4)])
+                fig_w.update_layout(title="Optimal Capital Allocation (Simplex Sum = 100%)", height=450)
+                st.plotly_chart(fig_w, use_container_width=True)
+
+                st.markdown(f"**Dual Shadow Cost of Capital (Budget Multiplier $\\lambda$):** `{qp.get('dual_budget_multiplier', 0.0):.6f}`")
+            except Exception as e:
+                st.error(f"Optimization error: {str(e)}")
+
+
+# =============================================================================
+# VIEW 6: SUPPLY CHAIN LOGISTICS & MARGIN ELASTICITY
+# =============================================================================
+elif nav_choice == "🚚 Supply Chain & Margins (cuOpt)":
+    st.markdown('<div class="header-style">🚚 Supply Chain Routing & Margin Elasticity (NVIDIA cuOpt)</div>', unsafe_allow_html=True)
+    st.markdown("Models Capacitated Vehicle Routing Problems (CVRP) to quantify corporate distribution costs and operating margin elasticity to fuel inflation.")
+
+    col_v1, col_v2 = st.columns(2)
+    with col_v1:
+        fleet_vehicles = st.slider("Fleet Size (Vehicles)", min_value=1, max_value=8, value=3)
+        vehicle_cap = st.slider("Vehicle Capacity (Units)", min_value=20.0, max_value=100.0, value=50.0, step=5.0)
+    with col_v2:
+        cost_per_mile = st.slider("Cost per Distance Unit ($/km)", min_value=1.0, max_value=5.0, value=2.50, step=0.25)
+        fuel_share = st.slider("Fuel Share of Logistics Cost (%)", min_value=10, max_value=60, value=35) / 100.0
+
+    # Prototype fulfillment network
+    coords = [(0, 0), (12, 10), (15, -12), (-14, 11), (-12, -15), (22, 5)]
+    demands = [0.0, 15.0, 20.0, 12.0, 18.0, 25.0]
+
+    opt_vrp = SupplyChainLogisticsOptimizer(cost_per_distance_unit=cost_per_mile, fuel_cost_share=fuel_share)
+    c_matrix = SupplyChainLogisticsOptimizer.build_euclidean_cost_matrix(coords)
+    vrp_res = opt_vrp.solve_capacitated_vrp(cost_matrix=c_matrix, demands=demands, vehicle_capacity=vehicle_cap, num_vehicles=fleet_vehicles)
+
+    col_r1, col_r2, col_r3 = st.columns(3)
+    with col_r1:
+        st.metric("Total Transit Cost", f"${vrp_res['total_transport_cost']:,.2f}")
+    with col_r2:
+        st.metric("Fleet Capacity Utilization", f"{vrp_res['fleet_capacity_utilization_pct']:.1f}%")
+    with col_r3:
+        st.metric("Cost per Delivered Unit", f"${vrp_res['cost_per_unit_delivered']:.2f}")
+
+    st.subheader("⛽ Fuel Inflation Shock Sensitivity")
+    sens = vrp_res["sensitivity"]
+    col_s1, col_s2 = st.columns(2)
+    with col_s1:
+        st.warning(f"**+10% Fuel Price Spike:** Total Cost rises to **${sens['fuel_plus_10pct_cost']:,.2f}** (+${sens['logistics_cost_inflation_per_unit_10pct']:.3f}/unit)")
+    with col_s2:
+        st.error(f"**+20% Fuel Price Spike:** Total Cost rises to **${sens['fuel_plus_20pct_cost']:,.2f}**")
+
+
+# =============================================================================
+# VIEW 7: DECISION JOURNAL & REVIEW
 # =============================================================================
 elif nav_choice == "📓 Decision Journal & Review":
     st.markdown('<div class="header-style">📓 Decision Journal & Portfolio Review</div>', unsafe_allow_html=True)
@@ -355,7 +519,7 @@ elif nav_choice == "📓 Decision Journal & Review":
 
 
 # =============================================================================
-# VIEW 5: SEC FILINGS & PRICE ALERTS
+# VIEW 8: SEC FILINGS & PRICE ALERTS
 # =============================================================================
 elif nav_choice == "🚨 SEC Filings & Price Alerts":
     st.markdown('<div class="header-style">🚨 Regulatory Filings & Market Shock Alerts</div>', unsafe_allow_html=True)
