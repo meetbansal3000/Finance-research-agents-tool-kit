@@ -446,19 +446,156 @@ def build_catalog():
             if col_idx in (1, 2):
                 cell.font = bold_font
 
+    # =========================================================================
+    # SHEET 6: Universal Ticker Coverage & Global Markets
+    # =========================================================================
+    ws_tickers = wb.create_sheet(title="Ticker & Market Coverage")
+    ws_tickers.views.sheetView[0].showGridLines = True
+
+    ticker_headers = [
+        "Market / Asset Class", "Exchange / Region", "Ticker Suffix & Format",
+        "Data Pipeline & SEC Engine", "Supported Capabilities", "Example Tickers You Can Run",
+        "How to Access / Run Command"
+    ]
+    ws_tickers.row_dimensions[1].height = 28
+    dark_blue_fill = PatternFill(start_color="1B365D", end_color="1B365D", fill_type="solid")
+
+    for col_idx, h in enumerate(ticker_headers, start=1):
+        cell = ws_tickers.cell(row=1, column=col_idx, value=h)
+        cell.font = header_font
+        cell.fill = dark_blue_fill
+        cell.alignment = Alignment(horizontal="center", vertical="center", wrap_text=True)
+
+    tickers_data = [
+        [
+            "US Public Equities (Large, Mid, Small Cap)",
+            "NYSE, NASDAQ, AMEX (United States)",
+            "Bare symbol: <TICKER> (e.g. AAPL, NVDA, TSLA)",
+            "SEC EDGAR XBRL (tools/filing.py CIKResolver) + yFinance + DataLayer",
+            "Full primary audited 10-K / 10-Q statement extraction, analytical DCF valuation, capital returns yield, footnote concentration (>10%), verifier re-fetch",
+            "AAPL, NVDA, MSFT, TSLA, AMZN, GOOGL, META, AMD, LLY, JPM, PLTR, BRK-B, COST, WMT, NFLX, DIS",
+            "CLI: python run_research.py TSLA 1\nUI: Type TSLA in Streamlit\nWatchlist: Add TSLA to watchlist.txt"
+        ],
+        [
+            "Foreign Private Issuers (ADRs / US Listed)",
+            "NYSE / NASDAQ (International filers with SEC)",
+            "US listing symbol: <TICKER> (e.g. TSM, ASML, NVO)",
+            "SEC Form 20-F Parser (tools/filing.py) under ifrs-full taxonomy",
+            "Audited IFRS balance sheet, income statement, operating cash flows, Capex, analytical DCF in USD, SEC CIK resolution",
+            "TSM (Taiwan Semi), ASML (Netherlands), NVO (Novo Nordisk), BABA (Alibaba), SAP (Germany), AZN (AstraZeneca), SONY (Japan)",
+            "CLI: python run_research.py TSM 1\nUI: Type TSM in Streamlit\nAPI: dl.get_fundamentals('TSM')"
+        ],
+        [
+            "Indian Equities (National Stock Exchange)",
+            "NSE (India)",
+            "Ticker with .NS suffix: <SYMBOL>.NS",
+            "Multi-source DataLayer + Yahoo Finance India + ESEF / Corporate Filing Engine",
+            "Real-time and historical quotes in INR, consolidated P&L, balance sheet, cash flows, DCF valuation with INR currency handling",
+            "TCS.NS, INFY.NS, RELIANCE.NS, HDFCBANK.NS, TATAMOTORS.NS, ICICIBANK.NS, BHARTIARTL.NS, WIPRO.NS",
+            "CLI: python run_research.py TCS.NS 1\nUI: Type TCS.NS in Streamlit\nR: fetch_sec_financials('TCS.NS')"
+        ],
+        [
+            "Indian Equities (Bombay Stock Exchange)",
+            "BSE (India)",
+            "Ticker / Scrip code with .BO suffix: <SYMBOL>.BO",
+            "Multi-source DataLayer + yFinance + BSE feeds",
+            "Quotes in INR, multi-source fallback, historical returns, backtesting and screening",
+            "500325.BO (Reliance), 532540.BO (TCS), 500180.BO (HDFC Bank), 500209.BO (Infosys)",
+            "CLI: python run_research.py 500325.BO 1\nWatchlist: Add to watchlist.txt"
+        ],
+        [
+            "United Kingdom Equities",
+            "London Stock Exchange (LSE, United Kingdom)",
+            "Ticker with .L suffix: <SYMBOL>.L",
+            "Multi-source DataLayer (yFinance + Finnhub) with GBP currency normalization",
+            "Quotes in GBP/GBp, multi-currency conversion via tools/calc/fx.py, historical returns, DCF valuation",
+            "SHEL.L (Shell), BP.L (BP), HSBA.L (HSBC), AZN.L (AstraZeneca), ULVR.L (Unilever), RIO.L (Rio Tinto)",
+            "CLI: python run_research.py SHEL.L 1\nR: calc_dcf(...) with currency='GBP'"
+        ],
+        [
+            "German & European Equities",
+            "XETRA / Frankfurt (Germany)",
+            "Ticker with .DE suffix: <SYMBOL>.DE",
+            "Multi-source DataLayer with EUR currency normalization",
+            "Quotes in EUR, European corporate disclosures, DCF valuation, multi-asset backtesting",
+            "BMW.DE (BMW), VOW3.DE (Volkswagen), SIE.DE (Siemens), SAP.DE (SAP), ALV.DE (Allianz)",
+            "CLI: python run_research.py BMW.DE 1\nQuant: BacktestSandbox(['BMW.DE', 'SIE.DE'])"
+        ],
+        [
+            "French & Euronext Equities",
+            "Euronext Paris (France)",
+            "Ticker with .PA suffix: <SYMBOL>.PA",
+            "Multi-source DataLayer with EUR currency normalization",
+            "Quotes in EUR, luxury/industrial fundamentals, cash flow modeling, alert monitoring",
+            "MC.PA (LVMH), OR.PA (L'Oréal), AIR.PA (Airbus), RMS.PA (Hermès), TTE.PA (TotalEnergies)",
+            "CLI: python run_research.py MC.PA 1\nUI: Type MC.PA in Streamlit"
+        ],
+        [
+            "Canadian Equities",
+            "Toronto Stock Exchange (TSX, Canada)",
+            "Ticker with .TO suffix: <SYMBOL>.TO",
+            "Multi-source DataLayer with CAD currency normalization",
+            "Quotes in CAD, banking & energy fundamentals, DCF valuation, factor screening",
+            "SHOP.TO (Shopify), RY.TO (Royal Bank of Canada), TD.TO (Toronto-Dominion), ENB.TO (Enbridge)",
+            "CLI: python run_research.py SHOP.TO 1\nWatchlist: Add to watchlist.txt"
+        ],
+        [
+            "Japanese Equities",
+            "Tokyo Stock Exchange (TSE, Japan)",
+            "Numeric ticker with .T suffix: <NUM>.T",
+            "Multi-source DataLayer with JPY currency normalization",
+            "Quotes in JPY, historical volatility, DCF valuation, portfolio covariance estimation",
+            "7203.T (Toyota), 6758.T (Sony), 9984.T (SoftBank), 6861.T (Keyence), 8035.T (Tokyo Electron)",
+            "CLI: python run_research.py 7203.T 1\nQuant: cuOpt QP optimization across .T assets"
+        ],
+        [
+            "Australian Equities",
+            "Australian Securities Exchange (ASX, Australia)",
+            "Ticker with .AX suffix: <SYMBOL>.AX",
+            "Multi-source DataLayer with AUD currency normalization",
+            "Quotes in AUD, mining/banking fundamentals, DCF valuation, dividend yield tracking",
+            "BHP.AX (BHP Group), CBA.AX (Commonwealth Bank), CSL.AX (CSL Limited), FMG.AX (Fortescue)",
+            "CLI: python run_research.py BHP.AX 1\nWatchlist: Add to watchlist.txt"
+        ],
+        [
+            "Exchange Traded Funds (ETFs) & Benchmarks",
+            "Global ETF Markets (US, Global)",
+            "Bare symbol: SPY, QQQ, SMH, etc.",
+            "BacktestSandbox + AlertMonitor + yFinance Historical Engine",
+            "Benchmark comparative returns, Alpha calculation, Sharpe ratio, Max Drawdown, cuOpt QP optimal weighting",
+            "SPY (S&P 500), QQQ (Nasdaq 100), SMH (Semiconductors), XLK (Tech), IWM (Russell 2000), VTI (Total US), GLD (Gold)",
+            "CLI: python -m tools.backtest\nAPI: sandbox.run_optimized_portfolio_backtest(['AAPL', 'NVDA'], benchmark='QQQ')"
+        ]
+    ]
+
+    for row_idx, r_data in enumerate(tickers_data, start=2):
+        ws_tickers.row_dimensions[row_idx].height = 24
+        for col_idx, val in enumerate(r_data, start=1):
+            cell = ws_tickers.cell(row=row_idx, column=col_idx, value=val)
+            cell.font = regular_font
+            cell.border = thin_border
+            if row_idx % 2 == 1:
+                cell.fill = gray_fill
+            if col_idx in (1, 3):
+                cell.font = bold_font
+
     # Auto-adjust column widths across all sheets
-    for ws in [ws_summary, ws_agents, ws_skills, ws_nvidia, ws_arch]:
+    for ws in [ws_summary, ws_agents, ws_skills, ws_nvidia, ws_arch, ws_tickers]:
         for col in ws.columns:
             max_len = 0
             col_letter = get_column_letter(col[0].column)
             for cell in col:
                 val = str(cell.value or "")
-                if len(val) > max_len:
-                    max_len = len(val)
-            ws.column_dimensions[col_letter].width = min(max(max_len + 3, 12), 48)
+                # Handle multi-line strings
+                lines = val.split("\n")
+                line_max = max(len(l) for l in lines) if lines else 0
+                if line_max > max_len:
+                    max_len = line_max
+            ws.column_dimensions[col_letter].width = min(max(max_len + 3, 14), 52)
 
     wb.save(OUTPUT_PATH)
     print(f"Catalog successfully saved to: {OUTPUT_PATH}")
 
 if __name__ == "__main__":
     build_catalog()
+
