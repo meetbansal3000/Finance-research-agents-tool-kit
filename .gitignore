@@ -4,6 +4,7 @@ __pycache__/
 .env
 .pytest_cache/
 *.log
+logs-*.txt
 library/chroma_db/
 library/cache/
 *.sec
