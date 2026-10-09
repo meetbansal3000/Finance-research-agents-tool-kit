@@ -508,7 +508,7 @@ elif nav_choice == "🤖 Autonomous Research Committee":
         with st.spinner(f"Agents assembling for {research_ticker}... Running Analyst -> Verifier -> Skeptic pipeline..."):
             try:
                 from run_research import run_pipeline
-                res_pipeline = run_pipeline(research_ticker, workflow=workflow_num, strict=False)
+                res_pipeline = run_pipeline(ticker=research_ticker, workflow_number=workflow_num, strict_audit=False)
                 
                 st.success(f"✅ Research Committee successfully completed audit for {research_ticker}!")
                 

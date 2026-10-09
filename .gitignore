@@ -7,6 +7,8 @@ __pycache__/
 logs-*.txt
 library/chroma_db/
 library/cache/
+library/filings/
+reports/
 *.sec
 .Rproj.user
 .Rhistory
