@@ -124,20 +124,50 @@ st.markdown("""
     [data-testid="stVerticalBlock"] { gap:.85rem; }
     hr { border:0; border-top:1px solid var(--line); margin:1.2rem 0; }
     section[data-testid="stSidebar"] { background:var(--pine); border-right:1px solid #273a31; }
-    section[data-testid="stSidebar"] > div { padding:1.25rem .9rem 1.35rem; }
+    section[data-testid="stSidebar"] > div { padding:.8rem .9rem 1.25rem; }
+    section[data-testid="stSidebar"] [data-testid="stSidebarContent"],
+    section[data-testid="stSidebar"] [data-testid="stSidebarUserContent"] { padding-top:.6rem !important; }
     section[data-testid="stSidebar"] [data-testid="stMarkdownContainer"] p,
-    section[data-testid="stSidebar"] label,section[data-testid="stSidebar"] small,
+    section[data-testid="stSidebar"] label,
+    section[data-testid="stSidebar"] small,
     section[data-testid="stSidebar"] [data-testid="stCaptionContainer"] { color:#d0d9d2; }
+    section[data-testid="stSidebar"] [data-testid="stMarkdownContainer"] div[style*="Georgia"] { font-size:1.6rem !important; }
     section[data-testid="stSidebar"] h1,section[data-testid="stSidebar"] h2,
     section[data-testid="stSidebar"] h3,section[data-testid="stSidebar"] h4 { color:#f4f3ec; letter-spacing:-.01em; }
-    section[data-testid="stSidebar"] [role="radiogroup"] { gap:.18rem; }
-    section[data-testid="stSidebar"] [role="radiogroup"] label {
-        min-height:2.55rem; border:1px solid transparent; border-radius:var(--control-radius);
-        padding:.48rem .65rem; color:#c7d1ca; transition:background .14s ease,color .14s ease,border-color .14s ease;
+    section[data-testid="stSidebar"] [data-testid="stRadio"] [role="radiogroup"] { gap:.32rem; }
+    section[data-testid="stSidebar"] [data-testid="stRadio"] [role="radiogroup"] > label[data-baseweb="radio"] {
+        position:relative; display:flex !important; align-items:center;
+        width:100%; min-height:2.75rem; box-sizing:border-box;
+        border:1px solid transparent; border-radius:var(--control-radius);
+        padding:.5rem .7rem !important; color:#d5ddd6 !important;
+        background:transparent !important;
+        transition:background .14s ease,color .14s ease,border-color .14s ease;
     }
-    section[data-testid="stSidebar"] [role="radiogroup"] label:hover { background:rgba(255,255,255,.055); color:#fff; }
-    section[data-testid="stSidebar"] [role="radiogroup"] label:has(input:checked) { background:var(--acid); border-color:var(--acid); color:var(--pine); font-weight:700; }
-    section[data-testid="stSidebar"] [role="radiogroup"] label:focus-within { outline:2px solid var(--acid); outline-offset:2px; }
+    section[data-testid="stSidebar"] [data-testid="stRadio"] [role="radiogroup"] > label[data-baseweb="radio"]:hover {
+        background:rgba(255,255,255,.07) !important; border-color:rgba(255,255,255,.1);
+        color:#fff !important;
+    }
+    section[data-testid="stSidebar"] [data-testid="stRadio"] [role="radiogroup"] > label[data-baseweb="radio"] > div:first-child > div[aria-hidden="true"] {
+        width:.68rem !important; height:.68rem !important; min-width:.68rem !important;
+        border:1px solid #809087 !important; border-radius:2px !important;
+        background:transparent !important; box-shadow:none !important;
+    }
+    section[data-testid="stSidebar"] [data-testid="stRadio"] [role="radiogroup"] > label[data-baseweb="radio"]:has(input:checked) {
+        background:var(--pine-soft) !important; border-color:#40564a !important;
+        color:#f7f8f1 !important; box-shadow:inset 3px 0 0 var(--acid) !important;
+        font-weight:700;
+    }
+    section[data-testid="stSidebar"] [data-testid="stRadio"] [role="radiogroup"] > label[data-baseweb="radio"]:has(input:checked) [data-testid="stMarkdownContainer"],
+    section[data-testid="stSidebar"] [data-testid="stRadio"] [role="radiogroup"] > label[data-baseweb="radio"]:has(input:checked) [data-testid="stMarkdownContainer"] p {
+        color:#f7f8f1 !important;
+    }
+    section[data-testid="stSidebar"] [data-testid="stRadio"] [role="radiogroup"] > label[data-baseweb="radio"]:has(input:checked) > div:first-child > div[aria-hidden="true"] {
+        border-color:var(--acid) !important; background:var(--acid) !important;
+        box-shadow:inset 0 0 0 2px var(--pine-soft) !important;
+    }
+    section[data-testid="stSidebar"] [data-testid="stRadio"] [role="radiogroup"] > label[data-baseweb="radio"]:focus-within {
+        outline:2px solid var(--acid) !important; outline-offset:2px;
+    }
     section[data-testid="stSidebar"] [data-testid="stExpander"] { border:1px solid var(--line-dark); border-radius:var(--control-radius); background:rgba(255,255,255,.035); }
     section[data-testid="stSidebar"] [data-testid="stExpander"] summary { color:#eef1e9; }
     section[data-testid="stSidebar"] hr { border-color:var(--line-dark); }
