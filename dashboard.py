@@ -124,20 +124,50 @@ st.markdown("""
     [data-testid="stVerticalBlock"] { gap:.85rem; }
     hr { border:0; border-top:1px solid var(--line); margin:1.2rem 0; }
     section[data-testid="stSidebar"] { background:var(--pine); border-right:1px solid #273a31; }
-    section[data-testid="stSidebar"] > div { padding:1.25rem .9rem 1.35rem; }
+    section[data-testid="stSidebar"] > div { padding:.8rem .9rem 1.25rem; }
+    section[data-testid="stSidebar"] [data-testid="stSidebarContent"],
+    section[data-testid="stSidebar"] [data-testid="stSidebarUserContent"] { padding-top:.6rem !important; }
     section[data-testid="stSidebar"] [data-testid="stMarkdownContainer"] p,
-    section[data-testid="stSidebar"] label,section[data-testid="stSidebar"] small,
+    section[data-testid="stSidebar"] label,
+    section[data-testid="stSidebar"] small,
     section[data-testid="stSidebar"] [data-testid="stCaptionContainer"] { color:#d0d9d2; }
+    section[data-testid="stSidebar"] [data-testid="stMarkdownContainer"] div[style*="Georgia"] { font-size:1.6rem !important; }
     section[data-testid="stSidebar"] h1,section[data-testid="stSidebar"] h2,
     section[data-testid="stSidebar"] h3,section[data-testid="stSidebar"] h4 { color:#f4f3ec; letter-spacing:-.01em; }
-    section[data-testid="stSidebar"] [role="radiogroup"] { gap:.18rem; }
-    section[data-testid="stSidebar"] [role="radiogroup"] label {
-        min-height:2.55rem; border:1px solid transparent; border-radius:var(--control-radius);
-        padding:.48rem .65rem; color:#c7d1ca; transition:background .14s ease,color .14s ease,border-color .14s ease;
+    section[data-testid="stSidebar"] [data-testid="stRadio"] [role="radiogroup"] { gap:.32rem; }
+    section[data-testid="stSidebar"] [data-testid="stRadio"] [role="radiogroup"] > label[data-baseweb="radio"] {
+        position:relative; display:flex !important; align-items:center;
+        width:100%; min-height:2.75rem; box-sizing:border-box;
+        border:1px solid transparent; border-radius:var(--control-radius);
+        padding:.5rem .7rem !important; color:#d5ddd6 !important;
+        background:transparent !important;
+        transition:background .14s ease,color .14s ease,border-color .14s ease;
     }
-    section[data-testid="stSidebar"] [role="radiogroup"] label:hover { background:rgba(255,255,255,.055); color:#fff; }
-    section[data-testid="stSidebar"] [role="radiogroup"] label:has(input:checked) { background:var(--acid); border-color:var(--acid); color:var(--pine); font-weight:700; }
-    section[data-testid="stSidebar"] [role="radiogroup"] label:focus-within { outline:2px solid var(--acid); outline-offset:2px; }
+    section[data-testid="stSidebar"] [data-testid="stRadio"] [role="radiogroup"] > label[data-baseweb="radio"]:hover {
+        background:rgba(255,255,255,.07) !important; border-color:rgba(255,255,255,.1);
+        color:#fff !important;
+    }
+    section[data-testid="stSidebar"] [data-testid="stRadio"] [role="radiogroup"] > label[data-baseweb="radio"] > div:first-child > div[aria-hidden="true"] {
+        width:.68rem !important; height:.68rem !important; min-width:.68rem !important;
+        border:1px solid #809087 !important; border-radius:2px !important;
+        background:transparent !important; box-shadow:none !important;
+    }
+    section[data-testid="stSidebar"] [data-testid="stRadio"] [role="radiogroup"] > label[data-baseweb="radio"]:has(input:checked) {
+        background:var(--pine-soft) !important; border-color:#40564a !important;
+        color:#f7f8f1 !important; box-shadow:inset 3px 0 0 var(--acid) !important;
+        font-weight:700;
+    }
+    section[data-testid="stSidebar"] [data-testid="stRadio"] [role="radiogroup"] > label[data-baseweb="radio"]:has(input:checked) [data-testid="stMarkdownContainer"],
+    section[data-testid="stSidebar"] [data-testid="stRadio"] [role="radiogroup"] > label[data-baseweb="radio"]:has(input:checked) [data-testid="stMarkdownContainer"] p {
+        color:#f7f8f1 !important;
+    }
+    section[data-testid="stSidebar"] [data-testid="stRadio"] [role="radiogroup"] > label[data-baseweb="radio"]:has(input:checked) > div:first-child > div[aria-hidden="true"] {
+        border-color:var(--acid) !important; background:var(--acid) !important;
+        box-shadow:inset 0 0 0 2px var(--pine-soft) !important;
+    }
+    section[data-testid="stSidebar"] [data-testid="stRadio"] [role="radiogroup"] > label[data-baseweb="radio"]:focus-within {
+        outline:2px solid var(--acid) !important; outline-offset:2px;
+    }
     section[data-testid="stSidebar"] [data-testid="stExpander"] { border:1px solid var(--line-dark); border-radius:var(--control-radius); background:rgba(255,255,255,.035); }
     section[data-testid="stSidebar"] [data-testid="stExpander"] summary { color:#eef1e9; }
     section[data-testid="stSidebar"] hr { border-color:var(--line-dark); }
@@ -234,6 +264,7 @@ nav_choice = st.sidebar.radio(
     [
         "⌂  Overview",
         "↘  Process map",
+        "▦  Finance playbooks",
         "◎  Watchlist",
         "◒  Markets & charts",
         "◇  Valuation",
@@ -952,6 +983,91 @@ elif nav_choice == "◉  Alerts & filings":
                 st.warning(f"**[{a.get('type')}] {a.get('ticker')}**: {a.get('details')}")
         else:
             st.success("✅ All monitored securities within normal volatility bands. No unfiled 8-K / 10-K events detected.")
+
+
+
+# =============================================================================
+# VIEW 9: OPENACCOUNTANT FINANCE PLAYBOOKS
+# =============================================================================
+elif nav_choice == "▦  Finance playbooks":
+    from tools.finance_playbooks import load_openaccountant_playbooks
+
+    playbooks = load_openaccountant_playbooks()
+    st.markdown('<div class="header-style">Finance playbooks</div>', unsafe_allow_html=True)
+    st.markdown(
+        '<div class="meridian-intro">Browse the OpenAccountant guides installed in this workspace, with their inputs and tool requirements.</div>',
+        unsafe_allow_html=True,
+    )
+
+    if not playbooks:
+        st.warning("No OpenAccountant playbooks were found in the project skill lockfile.")
+    else:
+        st.info(
+            f"{len(playbooks)} playbooks are installed for Codex in this workspace. "
+            "They are Markdown workflows, not executable app features. This dashboard has no Wilson transaction store, bank sync, or Plaid connector."
+        )
+
+        filter_col, search_col = st.columns([1, 2])
+        with filter_col:
+            categories = ["All categories"] + sorted({item["category"] for item in playbooks})
+            chosen_category = st.selectbox("Category", categories, key="finance_playbook_category")
+        with search_col:
+            search_text = st.text_input(
+                "Find a playbook",
+                placeholder="Search by name or topic",
+                key="finance_playbook_search",
+            ).strip().casefold()
+
+        filtered = [
+            item for item in playbooks
+            if (chosen_category == "All categories" or item["category"] == chosen_category)
+            and (not search_text or search_text in item["name"].casefold() or search_text in item["description"].casefold() or search_text in item["slug"])
+        ]
+
+        if not filtered:
+            st.info("No playbooks match those filters.")
+        else:
+            selected_slug = st.selectbox(
+                f"Choose from {len(filtered)} playbooks",
+                options=[item["slug"] for item in filtered],
+                format_func=lambda slug: next(item["name"] for item in filtered if item["slug"] == slug),
+                key="finance_playbook_selected",
+            )
+            selected = next(item for item in filtered if item["slug"] == selected_slug)
+
+            st.subheader(selected["name"])
+            st.write(selected["description"])
+            status_col, category_col = st.columns(2)
+            with status_col:
+                st.metric("Availability in this app", "Read-only guide")
+            with category_col:
+                st.metric("Collection", selected["category"])
+
+            if selected["pro_required"]:
+                st.warning("This playbook describes Wilson Pro or Plaid setup. Neither integration is configured in this app.")
+            elif selected["wilson_tools"]:
+                st.caption("Wilson tool calls are documented in this guide but are unavailable in this app.")
+            else:
+                st.caption("Use the steps as a manual reference; this page does not execute the workflow.")
+
+            if selected["wilson_tools"]:
+                st.markdown("**Tools referenced by the playbook**")
+                st.write(" · ".join(f"`{tool}`" for tool in selected["wilson_tools"]))
+
+            if selected["manual_workflow"]:
+                with st.expander("Manual workflow", expanded=True):
+                    st.markdown(selected["manual_workflow"])
+            with st.expander("Full playbook", expanded=False):
+                st.markdown(selected["body"])
+
+            source_url = f"https://github.com/openaccountant/skills/blob/main/{selected['source_path']}"
+            st.markdown(f"[View source playbook on GitHub]({source_url})")
+
+        st.divider()
+        st.caption(
+            "The installed files live in `.agents/skills` and are discoverable by Codex agents working in this repository. "
+            "The app’s Python research agents do not automatically execute these bookkeeping workflows; the existing Analyst, Verifier, and Skeptic pipeline remains unchanged."
+        )
 
 
 if __name__ == "__main__":

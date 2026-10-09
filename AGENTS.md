@@ -66,3 +66,10 @@ Antigravity automatically discovers skills and agents across two layers:
 - **Interactive UI:** Launch Streamlit dashboard via `.\.venv\Scripts\streamlit.exe run dashboard.py`.
 - **Master Excel Catalog:** Generated at [`agents_and_skills_catalog.xlsx`](agents_and_skills_catalog.xlsx) via `python scripts/generate_agents_skills_catalog.py`.
 - **Git Version Control:** Main branch synced with `origin/main` (Release tag: `v1.4.0`).
+
+## 6. OpenAccountant Finance Playbooks
+- The 44 OpenAccountant playbooks are installed under `.agents/skills/` and pinned in `skills-lock.json`. Workspace Codex agents can discover them when a task matches a playbook.
+- Treat playbooks as workflow guidance, not as financial evidence or executable Python tools. Continue to enforce the source, period-integrity, and provenance rules above.
+- Do not claim Wilson transaction search, bookkeeping writes, bank synchronization, or Plaid access; this repository does not configure those services. Use the playbook's manual/exported-data path only when the user supplies suitable data.
+- Keep the equity research committee's Analyst → Verifier → Skeptic flow unchanged unless a separately scoped, auditable runtime integration is implemented.
+- The Streamlit Finance playbooks page is a read-only browser for the installed guides. It must identify unavailable integrations and must not imply that merely opening a guide ran its workflow.
