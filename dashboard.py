@@ -45,9 +45,20 @@ from tools.ticker_search import (
     DEFAULT_WATCHLIST
 )
 
+from tools.tradingview import (
+    format_tradingview_symbol,
+    render_tradingview_advanced_chart,
+    render_tradingview_technical_analysis,
+    render_tradingview_financials,
+    render_tradingview_company_profile,
+    launch_tradingview_desktop,
+    get_tradingview_web_url
+)
+
 # Check if running in Streamlit
 try:
     import streamlit as st
+    import streamlit.components.v1 as components
     HAS_STREAMLIT = True
 except ImportError:
     HAS_STREAMLIT = False
@@ -142,7 +153,7 @@ nav_choice = st.sidebar.radio(
     "Navigation View",
     [
         "🏆 Shortlisting Scorecard",
-        "📊 Live Candlestick Charts",
+        "📈 TradingView & Market Charts",
         "🎛️ Interactive DCF Valuation",
         "🤖 Autonomous Research Committee",
         "⚡ NVIDIA cuOpt Portfolio Optimizer",
@@ -179,6 +190,15 @@ with st.sidebar.expander("🔍 Find Ticker by Company Name", expanded=False):
             st.info(f"No tickers found for '{search_q}'. Try a different keyword.")
 
 st.sidebar.divider()
+
+# TradingView Desktop Application Launcher
+if st.sidebar.button("🖥️ Open TradingView Desktop", use_container_width=True, help="Launch installed TradingView Desktop application on Windows"):
+    success = launch_tradingview_desktop()
+    if success:
+        st.sidebar.success("🚀 Launched TradingView Desktop!")
+    else:
+        st.sidebar.warning("Could not launch TradingView Desktop. Please verify Windows installation.")
+
 st.sidebar.info("💡 **Universal Ticker Support:** Works for any US equity (NYSE/NASDAQ), Foreign 20-F (TSM, ASML), Indian stocks (.NS/.BO), UK (.L), Europe (.DE/.PA), Japan (.T), or global ETFs (SPY, QQQ).")
 
 
@@ -297,11 +317,11 @@ if nav_choice == "🏆 Shortlisting Scorecard":
 
 
 # =============================================================================
-# VIEW 2: LIVE CANDLESTICK CHARTS (COMPANY NAME & TICKER SEARCH)
+# VIEW 2: TRADINGVIEW & LIVE MARKET CHARTS
 # =============================================================================
-elif nav_choice == "📊 Live Candlestick Charts":
-    st.markdown('<div class="header-style">📊 Live Market Price & Volume Candlesticks</div>', unsafe_allow_html=True)
-    st.markdown("Search by **Company Name** (e.g. `Tesla`, `Microsoft`, `Apple`, `Reliance`) or **Ticker Symbol** (`TSLA`, `MSFT`, `TCS.NS`).")
+elif "TradingView" in nav_choice or "Candlestick" in nav_choice:
+    st.markdown('<div class="header-style">📈 TradingView Interactive Pro Terminal</div>', unsafe_allow_html=True)
+    st.markdown("Real-time TradingView charting engine with institutional indicators, drawing tools, technical consensus gauges, and desktop app integration.")
 
     c_col1, c_col2 = st.columns([1, 3])
     with c_col1:
@@ -319,67 +339,119 @@ elif nav_choice == "📊 Live Candlestick Charts":
 
         st.session_state["active_ticker"] = resolved_ticker
         selected_ticker = resolved_ticker
+        tv_symbol = format_tradingview_symbol(selected_ticker)
 
-        chart_period = st.select_slider("Time Horizon", options=["1mo", "3mo", "6mo", "1y", "2y", "5y"], value="1y")
-        show_sma50 = st.checkbox("Show 50-Day Moving Average", value=True)
-        show_sma200 = st.checkbox("Show 200-Day Moving Average", value=True)
-        
         # Quick button to add this ticker to watchlist if not already there
         if selected_ticker not in st.session_state["watchlist"]:
-            if st.button(f"➕ Add {selected_ticker} to Watchlist"):
+            if st.button(f"➕ Add {selected_ticker} to Watchlist", use_container_width=True):
                 ok, msg, updated = add_to_watchlist(selected_ticker)
                 st.session_state["watchlist"] = updated
                 st.success(msg)
                 st.rerun()
 
+        st.divider()
+        st.markdown("**🖥️ Desktop & Web Launchers**")
+        if st.button("🚀 Open in TradingView Desktop", use_container_width=True, help="Open installed TradingView app on Windows (Drive D)"):
+            launched = launch_tradingview_desktop()
+            if launched:
+                st.success("Launched TradingView Desktop App!")
+            else:
+                st.warning("Could not launch TradingView Desktop.")
+
+        tv_web_url = get_tradingview_web_url(selected_ticker)
+        st.markdown(f'<a href="{tv_web_url}" target="_blank"><button style="width:100%;padding:8px;border-radius:6px;border:1px solid #1f77b4;background:#1f77b4;color:white;cursor:pointer;font-weight:600;">🌐 Open on TradingView.com</button></a>', unsafe_allow_html=True)
+
+        st.divider()
+        chart_theme = st.radio("Chart Theme", ["light", "dark"], horizontal=True)
+        chart_interval = st.selectbox("Default Interval", ["D (Daily)", "W (Weekly)", "1 (1 Minute)", "5 (5 Minutes)", "15 (15 Minutes)", "60 (1 Hour)", "240 (4 Hours)", "M (Monthly)"], index=0)
+        parsed_interval = chart_interval.split()[0]
+
     with c_col2:
-        with st.spinner(f"Loading live market data for {selected_ticker}..."):
-            df_hist = load_historical_prices(selected_ticker, period=chart_period)
+        tv_tab1, tv_tab2, tv_tab3, tv_tab4 = st.tabs([
+            "📈 TradingView Live Chart",
+            "🧭 Technical Analysis Gauge",
+            "🏢 Fundamental Financials",
+            "📊 Quantitative Candlestick & SMAs"
+        ])
 
-        if df_hist is not None and not df_hist.empty:
-            fig = make_subplots(
-                rows=2, cols=1,
-                shared_xaxes=True,
-                vertical_spacing=0.08,
-                subplot_titles=(f"{selected_ticker} Daily Price History", "Volume"),
-                row_width=[0.25, 0.75]
+        with tv_tab1:
+            st.caption(f"Showing real-time streaming chart for **{tv_symbol}** ({selected_ticker}). Use the top toolbar for technical indicators and drawing tools.")
+            chart_html = render_tradingview_advanced_chart(
+                symbol=selected_ticker,
+                theme=chart_theme,
+                interval=parsed_interval,
+                height=650
             )
+            components.html(chart_html, height=670, scrolling=False)
 
-            # Candlestick
-            fig.add_trace(
-                go.Candlestick(
-                    x=df_hist.index,
-                    open=df_hist["Open"],
-                    high=df_hist["High"],
-                    low=df_hist["Low"],
-                    close=df_hist["Close"],
-                    name="OHLC"
-                ),
-                row=1, col=1
+        with tv_tab2:
+            st.caption(f"Real-time technical analysis consensus gauge across 26 technical indicators for **{tv_symbol}**.")
+            ta_html = render_tradingview_technical_analysis(
+                symbol=selected_ticker,
+                theme=chart_theme,
+                interval="1D",
+                height=460
             )
+            components.html(ta_html, height=480, scrolling=False)
 
-            if show_sma50 and len(df_hist) >= 50:
-                sma50 = df_hist["Close"].rolling(window=50).mean()
-                fig.add_trace(go.Scatter(x=df_hist.index, y=sma50, line=dict(color="orange", width=1.5), name="50-Day SMA"), row=1, col=1)
-
-            if show_sma200 and len(df_hist) >= 200:
-                sma200 = df_hist["Close"].rolling(window=200).mean()
-                fig.add_trace(go.Scatter(x=df_hist.index, y=sma200, line=dict(color="blue", width=1.5), name="200-Day SMA"), row=1, col=1)
-
-            # Volume
-            fig.add_trace(
-                go.Bar(x=df_hist.index, y=df_hist["Volume"], name="Volume", marker_color="rgba(0,100,250,0.5)"),
-                row=2, col=1
+        with tv_tab3:
+            st.caption(f"Financial statements, operating margin ratios, and balance sheet structure for **{tv_symbol}**.")
+            fin_html = render_tradingview_financials(
+                symbol=selected_ticker,
+                theme=chart_theme,
+                height=550
             )
+            components.html(fin_html, height=570, scrolling=False)
 
-            fig.update_layout(
-                height=650,
-                xaxis_rangeslider_visible=False,
-                margin=dict(l=20, r=20, t=40, b=20)
-            )
-            st.plotly_chart(fig, use_container_width=True)
-        else:
-            st.error(f"Unable to load historical price series for '{selected_ticker}'. Please verify company name or ticker symbol.")
+        with tv_tab4:
+            st.caption("Quantitative historical candlestick analysis with 50-Day and 200-Day moving averages.")
+            q_col1, q_col2 = st.columns([1, 1])
+            with q_col1:
+                chart_period = st.select_slider("Time Horizon", options=["1mo", "3mo", "6mo", "1y", "2y", "5y"], value="1y")
+            with q_col2:
+                show_sma50 = st.checkbox("Show 50-Day SMA", value=True)
+                show_sma200 = st.checkbox("Show 200-Day SMA", value=True)
+
+            with st.spinner(f"Loading quantitative price data for {selected_ticker}..."):
+                df_hist = load_historical_prices(selected_ticker, period=chart_period)
+
+            if df_hist is not None and not df_hist.empty:
+                fig = make_subplots(
+                    rows=2, cols=1,
+                    shared_xaxes=True,
+                    vertical_spacing=0.08,
+                    subplot_titles=(f"{selected_ticker} Daily Price History", "Volume"),
+                    row_width=[0.25, 0.75]
+                )
+                fig.add_trace(
+                    go.Candlestick(
+                        x=df_hist.index,
+                        open=df_hist["Open"],
+                        high=df_hist["High"],
+                        low=df_hist["Low"],
+                        close=df_hist["Close"],
+                        name="OHLC"
+                    ),
+                    row=1, col=1
+                )
+                if show_sma50 and len(df_hist) >= 50:
+                    sma50 = df_hist["Close"].rolling(window=50).mean()
+                    fig.add_trace(go.Scatter(x=df_hist.index, y=sma50, line=dict(color="orange", width=1.5), name="50-Day SMA"), row=1, col=1)
+                if show_sma200 and len(df_hist) >= 200:
+                    sma200 = df_hist["Close"].rolling(window=200).mean()
+                    fig.add_trace(go.Scatter(x=df_hist.index, y=sma200, line=dict(color="blue", width=1.5), name="200-Day SMA"), row=1, col=1)
+                fig.add_trace(
+                    go.Bar(x=df_hist.index, y=df_hist["Volume"], name="Volume", marker_color="rgba(0,100,250,0.5)"),
+                    row=2, col=1
+                )
+                fig.update_layout(
+                    height=550,
+                    xaxis_rangeslider_visible=False,
+                    margin=dict(l=20, r=20, t=40, b=20)
+                )
+                st.plotly_chart(fig, use_container_width=True)
+            else:
+                st.error(f"Unable to load historical price series for '{selected_ticker}'. Please verify company name or ticker symbol.")
 
 
 # =============================================================================

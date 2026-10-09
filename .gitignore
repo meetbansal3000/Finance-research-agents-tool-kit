@@ -10,6 +10,7 @@ library/cache/
 library/filings/
 reports/
 *.sec
+*.zip
 .Rproj.user
 .Rhistory
 .RData
