@@ -99,87 +99,107 @@ st.set_page_config(
 st.markdown("""
 <style>
     :root {
-        --meridian-ink: #17241f;
-        --meridian-muted: #69766f;
-        --meridian-green: #356b54;
-        --meridian-lime: #d8e8a8;
-        --meridian-paper: #f5f6f1;
-        --meridian-line: #e2e7df;
+        color-scheme: light;
+        --m-ink: #17231f; --m-muted: #63716a; --m-green: #286a52;
+        --m-green-dark: #1d503e; --m-lime: #d9e8aa; --m-gold: #c79743;
+        --m-paper: #f3f5f1; --m-surface: #fff; --m-line: #dfe6e0;
+        --m-shadow: 0 12px 30px rgba(23,35,31,.055);
+        --m-shadow-sm: 0 3px 12px rgba(23,35,31,.045); --m-radius: 16px;
     }
-    .stApp { background: var(--meridian-paper); color: var(--meridian-ink); }
-    [data-testid="stHeader"] { background: rgba(245, 246, 241, .92); }
+    html, body, [class*="css"] { font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+    .stApp {
+        color: var(--m-ink);
+        background: radial-gradient(ellipse at 14% 0%, rgba(219,233,222,.72), transparent 35rem), var(--m-paper);
+    }
+    [data-testid="stAppViewContainer"], [data-testid="stMain"] { background: transparent; }
+    [data-testid="stHeader"] { background: rgba(243,245,241,.88); }
     [data-testid="stToolbar"] { right: 1.5rem; }
-    section[data-testid="stSidebar"] {
-        background: #17241f;
-        border-right: 1px solid #293a32;
-    }
-    section[data-testid="stSidebar"] > div { padding-top: 1.35rem; }
+    .main .block-container { max-width: 1440px; padding: 2.3rem clamp(1rem,4vw,3.4rem) 4rem; }
+    h1,h2,h3,h4 { color: var(--m-ink); letter-spacing: -.035em; }
+    h1,.header-style { font-family: Georgia,"Times New Roman",serif; }
+    h1 { font-size: clamp(2rem,3.3vw,3.15rem); line-height: 1.08; font-weight: 600; }
+    h2 { font-size: clamp(1.35rem,2vw,1.8rem); line-height: 1.2; font-weight: 650; }
+    h3 { font-size: 1.12rem; line-height: 1.3; font-weight: 650; }
+    .header-style { color: var(--m-ink); font-size: clamp(2rem,3.3vw,3.15rem); font-weight: 600; line-height: 1.08; letter-spacing: -.045em; margin: .15rem 0 .55rem; }
+    .meridian-eyebrow { color: var(--m-green); font-size: .72rem; font-weight: 760; letter-spacing: .15em; line-height: 1.4; text-transform: uppercase; margin: 0 0 .65rem; }
+    .meridian-intro { color: var(--m-muted); font-size: 1rem; line-height: 1.65; max-width: 790px; margin: .45rem 0 1.7rem; }
+    p,li { line-height: 1.62; }
+    [data-testid="stCaptionContainer"] { color: var(--m-muted); }
+    [data-testid="stCaptionContainer"] p { line-height: 1.5; }
+    [data-testid="stVerticalBlock"] { gap: 1rem; }
+    hr { border: 0; border-top: 1px solid var(--m-line); margin: 1.4rem 0; }
+    section[data-testid="stSidebar"] { background: linear-gradient(180deg,#182923 0%,#14221d 58%,#111e1a 100%); border-right: 1px solid #2b3d34; }
+    section[data-testid="stSidebar"] > div { padding: 1.35rem 1rem 1.5rem; }
     section[data-testid="stSidebar"] [data-testid="stMarkdownContainer"] p,
-    section[data-testid="stSidebar"] label,
-    section[data-testid="stSidebar"] small { color: #d4ded7; }
-    section[data-testid="stSidebar"] h1,
-    section[data-testid="stSidebar"] h2,
-    section[data-testid="stSidebar"] h3 { color: #f7faf7; }
-    section[data-testid="stSidebar"] [role="radiogroup"] { gap: .25rem; }
+    section[data-testid="stSidebar"] label, section[data-testid="stSidebar"] small,
+    section[data-testid="stSidebar"] [data-testid="stCaptionContainer"] { color: #c9d5cd; }
+    section[data-testid="stSidebar"] h1,section[data-testid="stSidebar"] h2,
+    section[data-testid="stSidebar"] h3,section[data-testid="stSidebar"] h4 { color: #f5f7f3; letter-spacing: -.015em; }
+    section[data-testid="stSidebar"] [role="radiogroup"] { gap: .24rem; }
     section[data-testid="stSidebar"] [role="radiogroup"] label {
-        border-radius: 9px;
-        padding: .42rem .55rem;
-        transition: background .18s ease;
+        position: relative; min-height: 2.65rem; border: 1px solid transparent;
+        border-radius: 10px; padding: .55rem .7rem; color: #ced8d1;
+        transition: background .18s ease,border-color .18s ease,color .18s ease;
     }
-    section[data-testid="stSidebar"] [role="radiogroup"] label:hover { background: #263930; }
+    section[data-testid="stSidebar"] [role="radiogroup"] label:hover { background: rgba(255,255,255,.065); color: #fff; }
     section[data-testid="stSidebar"] [role="radiogroup"] label:has(input:checked) {
-        background: #2a4035;
-        color: #f5f8f5;
+        background: rgba(217,232,170,.12); border-color: rgba(217,232,170,.18);
+        color: #f9fbf6; box-shadow: inset 3px 0 0 var(--m-lime);
     }
-    .main .block-container { max-width: 1480px; padding: 2.2rem 3rem 4rem; }
-    h1, h2, h3 { color: var(--meridian-ink); letter-spacing: -.025em; }
-    h1, .header-style { font-family: Georgia, 'Times New Roman', serif; }
-    .header-style { font-size: clamp(1.8rem, 3vw, 2.5rem); font-weight: 600; line-height: 1.15; margin: 0 0 .45rem; }
-    [data-testid="stCaptionContainer"] { color: var(--meridian-muted); }
-    [data-testid="stMetric"] {
-        background: #fff;
-        border: 1px solid var(--meridian-line);
-        border-radius: 14px;
-        padding: 1rem 1.1rem;
-        box-shadow: 0 2px 8px rgba(23, 36, 31, .035);
+    section[data-testid="stSidebar"] [role="radiogroup"] label:focus-within { outline: 2px solid var(--m-lime); outline-offset: 2px; }
+    section[data-testid="stSidebar"] [data-testid="stExpander"] { border-color: #35483e; background: rgba(255,255,255,.035); border-radius: 12px; }
+    section[data-testid="stSidebar"] [data-testid="stExpander"] summary { color: #edf3ed; }
+    section[data-testid="stSidebar"] hr { border-color: #34483d; }
+    [data-testid="stMetric"] { background: linear-gradient(145deg,#fff 0%,#fbfcfa 100%); border: 1px solid var(--m-line); border-radius: var(--m-radius); padding: 1.05rem 1.15rem; box-shadow: var(--m-shadow-sm); }
+    [data-testid="stMetricLabel"] { color: var(--m-muted); font-size: .82rem; font-weight: 600; }
+    [data-testid="stMetricValue"] { color: var(--m-ink); font-weight: 680; letter-spacing: -.035em; }
+    [data-testid="stMetricDelta"] { font-weight: 650; }
+    div[data-testid="stVerticalBlockBorderWrapper"] { border-color: var(--m-line); border-radius: var(--m-radius); background: rgba(255,255,255,.86); box-shadow: var(--m-shadow-sm); }
+    div.stButton > button,[data-testid="stDownloadButton"] button {
+        min-height: 2.75rem; border-radius: 10px; border: 1px solid #cbd8ce;
+        color: var(--m-ink); font-weight: 650;
+        transition: background .16s ease,border-color .16s ease,box-shadow .16s ease,transform .16s ease;
     }
-    [data-testid="stMetricLabel"] { color: var(--meridian-muted); }
-    [data-testid="stMetricValue"] { color: var(--meridian-ink); font-weight: 650; }
-    div[data-testid="stVerticalBlockBorderWrapper"] {
-        border-color: var(--meridian-line);
-        border-radius: 14px;
-        background: rgba(255,255,255,.82);
+    div.stButton > button:hover,[data-testid="stDownloadButton"] button:hover { border-color: var(--m-green); box-shadow: 0 5px 14px rgba(23,35,31,.1); transform: translateY(-1px); }
+    div.stButton > button[kind="primary"] { background: var(--m-green); border-color: var(--m-green); color: #fff; }
+    div.stButton > button[kind="primary"]:hover { background: var(--m-green-dark); border-color: var(--m-green-dark); }
+    button:focus-visible,a:focus-visible,input:focus-visible,textarea:focus-visible,[role="slider"]:focus-visible { outline: 3px solid rgba(199,151,67,.8) !important; outline-offset: 2px; }
+    [data-baseweb="input"] > div,[data-baseweb="select"] > div,[data-baseweb="textarea"] > div { border-color: #cbd6cf; border-radius: 10px; background: #fff; }
+    [data-baseweb="input"] > div:focus-within,[data-baseweb="select"] > div:focus-within,[data-baseweb="textarea"] > div:focus-within { border-color: var(--m-green); box-shadow: 0 0 0 2px rgba(40,106,82,.13); }
+    [data-testid="stSlider"] [role="slider"] { box-shadow: 0 0 0 3px rgba(40,106,82,.12); }
+    [data-testid="stCheckbox"] label,[data-testid="stRadio"] label { color: var(--m-ink); }
+    [data-testid="stTabs"] [role="tablist"] { gap: .25rem; border-bottom: 1px solid var(--m-line); }
+    [data-testid="stTabs"] button[role="tab"] { min-height: 2.8rem; padding: .55rem .9rem; color: var(--m-muted); font-weight: 650; }
+    [data-testid="stTabs"] button[role="tab"][aria-selected="true"] { color: var(--m-green-dark); border-bottom-color: var(--m-green); }
+    [data-testid="stExpander"] { border: 1px solid var(--m-line); border-radius: 12px; background: rgba(255,255,255,.74); }
+    [data-testid="stExpander"] summary { font-weight: 650; color: var(--m-ink); }
+    [data-testid="stDataFrame],[data-testid="stTable"] { border: 1px solid var(--m-line); border-radius: 12px; overflow: hidden; box-shadow: var(--m-shadow-sm); }
+    [data-testid="stPlotlyChart"] { border: 1px solid var(--m-line); border-radius: var(--m-radius); background: var(--m-surface); padding: .25rem; box-shadow: var(--m-shadow-sm); }
+    [data-testid="stAlert"] { border-radius: 12px; }
+    .meridian-card { position: relative; overflow: hidden; background: linear-gradient(145deg,#fff 0%,#f9fbf8 100%); border: 1px solid var(--m-line); border-radius: var(--m-radius); padding: 1.3rem 1.4rem; height: 100%; box-shadow: var(--m-shadow-sm); }
+    .meridian-card:before { content: ""; position: absolute; inset: 0 auto 0 0; width: 3px; background: linear-gradient(180deg,var(--m-green),var(--m-lime)); }
+    .meridian-card-label { color: var(--m-muted); font-size: .74rem; font-weight: 700; letter-spacing: .09em; text-transform: uppercase; }
+    .meridian-card-value { color: var(--m-ink); font: 600 1.9rem Georgia,"Times New Roman",serif; letter-spacing: -.04em; margin: .42rem 0 .2rem; }
+    .meridian-card-note { color: var(--m-muted); font-size: .84rem; line-height: 1.5; }
+    .process-hierarchy { display: grid; gap: .85rem; margin: 1rem 0 1.6rem; }
+    .process-root { background: linear-gradient(120deg,#172923,#244c3a); color: #f5f7f3; border: 1px solid rgba(23,35,31,.15); border-radius: var(--m-radius); padding: 1.1rem 1.3rem; text-align: center; box-shadow: var(--m-shadow); }
+    .process-root small { display: block; color: #c0d1c6; margin-top: .25rem; }
+    .process-arrow { color: var(--m-green); font-size: 1.3rem; font-weight: 700; line-height: 1; text-align: center; }
+    .process-row { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: .9rem; }
+    .process-node { background: #fff; color: var(--m-ink); border: 1px solid var(--m-line); border-radius: 14px; padding: 1.05rem 1.1rem; min-height: 112px; box-shadow: var(--m-shadow-sm); }
+    .process-node strong { display: block; font-size: 1rem; margin-bottom: .38rem; }
+    .process-node span { display: block; color: var(--m-muted); font-size: .86rem; line-height: 1.55; }
+    .process-node .process-tag { display: inline-block; margin-top: .7rem; color: var(--m-green-dark); background: #edf4ea; border-radius: 999px; padding: .22rem .6rem; font-size: .72rem; font-weight: 700; }
+    .process-support { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: .9rem; }
+    @media (max-width: 800px) {
+        .process-row,.process-support { grid-template-columns: 1fr; }
+        .main .block-container { padding: 1.4rem 1rem 3rem; }
+        [data-testid="stMetric"] { padding: .85rem; }
+        .header-style { font-size: clamp(1.9rem,8vw,2.5rem); }
     }
-    div.stButton > button {
-        min-height: 2.65rem;
-        border-radius: 9px;
-        border-color: #cbd7cd;
-        font-weight: 600;
-        transition: transform .15s ease, box-shadow .15s ease;
+    @media (prefers-reduced-motion: reduce) {
+        *,*::before,*::after { scroll-behavior: auto !important; transition-duration: .01ms !important; animation-duration: .01ms !important; }
     }
-    div.stButton > button:hover { transform: translateY(-1px); box-shadow: 0 5px 14px rgba(23,36,31,.10); border-color: var(--meridian-green); }
-    div.stButton > button[kind="primary"] { background: var(--meridian-green); border-color: var(--meridian-green); }
-    [data-testid="stDataFrame"], [data-testid="stTable"] { border: 1px solid var(--meridian-line); border-radius: 12px; overflow: hidden; }
-    [data-testid="stTabs"] button[role="tab"] { font-weight: 600; }
-    hr { border-color: var(--meridian-line); }
-    .meridian-eyebrow { color: var(--meridian-green); font-size: .72rem; font-weight: 750; letter-spacing: .14em; text-transform: uppercase; margin-bottom: .5rem; }
-    .meridian-intro { color: var(--meridian-muted); font-size: 1rem; max-width: 760px; margin: .4rem 0 1.5rem; }
-    .meridian-card { background:#fff; border:1px solid var(--meridian-line); border-radius:14px; padding:1.15rem 1.25rem; height:100%; box-shadow:0 2px 8px rgba(23,36,31,.035); }
-    .meridian-card-label { color:var(--meridian-muted); font-size:.78rem; font-weight:650; letter-spacing:.07em; text-transform:uppercase; }
-    .meridian-card-value { color:var(--meridian-ink); font:600 1.8rem Georgia,serif; margin:.4rem 0 .15rem; }
-    .meridian-card-note { color:var(--meridian-muted); font-size:.83rem; }
-    .process-hierarchy { display:grid; gap:.75rem; margin:1rem 0 1.5rem; }
-    .process-root { background:#17241f; color:#f7faf7; border-radius:14px; padding:1rem 1.2rem; text-align:center; box-shadow:0 5px 16px rgba(23,36,31,.10); }
-    .process-root small { display:block; color:#b7c8bc; margin-top:.2rem; }
-    .process-arrow { color:#83948a; font-size:1.25rem; line-height:1; text-align:center; }
-    .process-row { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:.85rem; }
-    .process-node { background:#fff; color:var(--meridian-ink); border:1px solid var(--meridian-line); border-radius:13px; padding:1rem 1.05rem; min-height:112px; box-shadow:0 2px 8px rgba(23,36,31,.035); }
-    .process-node strong { display:block; font-size:1rem; margin-bottom:.35rem; }
-    .process-node span { display:block; color:var(--meridian-muted); font-size:.86rem; line-height:1.5; }
-    .process-node .process-tag { display:inline-block; margin-top:.65rem; color:var(--meridian-green); background:#edf4ed; border-radius:999px; padding:.18rem .55rem; font-size:.72rem; font-weight:700; }
-    .process-support { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:.85rem; }
-    @media (max-width: 800px) { .process-row,.process-support { grid-template-columns:1fr; } }
-    @media (max-width: 800px) { .main .block-container { padding: 1.4rem 1rem 3rem; } }
 </style>
 """, unsafe_allow_html=True)
 
@@ -400,8 +420,9 @@ elif nav_choice == "↘  Process map":
             st.markdown(f"[Ledger sidecars · run_research.py lines 83–88]({source_base}run_research.py#L83-L88)")
 
 elif nav_choice == "◎  Watchlist":
-    st.markdown('<div class="header-style">🏆 Institutional Shortlist & Watchlist Scorecard</div>', unsafe_allow_html=True)
-    st.markdown("Multi-factor fundamental scorecard comparing primary coverage candidates. Add any global company to evaluate.")
+    st.markdown('<div class="meridian-eyebrow">Company research</div>', unsafe_allow_html=True)
+    st.markdown('<div class="header-style">Coverage & watchlist</div>', unsafe_allow_html=True)
+    st.markdown('<div class="meridian-intro">Screen the companies you follow, compare key fundamentals, and manage the tickers in your coverage list.</div>', unsafe_allow_html=True)
 
     # Watchlist Addition & Management Box
     with st.container():
@@ -514,8 +535,9 @@ elif nav_choice == "◎  Watchlist":
 # VIEW 2: TRADINGVIEW & LIVE MARKET CHARTS
 # =============================================================================
 elif "Markets & charts" in nav_choice:
-    st.markdown('<div class="header-style">📈 TradingView Interactive Pro Terminal</div>', unsafe_allow_html=True)
-    st.markdown("Real-time TradingView charting engine with institutional indicators, drawing tools, technical consensus gauges, and desktop app integration.")
+    st.markdown('<div class="meridian-eyebrow">Market data</div>', unsafe_allow_html=True)
+    st.markdown('<div class="header-style">Markets & charts</div>', unsafe_allow_html=True)
+    st.markdown('<div class="meridian-intro">Explore interactive price charts, technical summaries, company financials, and historical market data.</div>', unsafe_allow_html=True)
 
     c_col1, c_col2 = st.columns([1, 3])
     with c_col1:
@@ -652,8 +674,9 @@ elif "Markets & charts" in nav_choice:
 # VIEW 3: INTERACTIVE DCF VALUATION & SENSITIVITY
 # =============================================================================
 elif nav_choice == "◇  Valuation":
-    st.markdown('<div class="header-style">🎛️ Interactive DCF Valuation & Sensitivity Analysis</div>', unsafe_allow_html=True)
-    st.markdown("Dynamic Discounted Cash Flow valuation engine powered by `tools/calc/dcf.py`.")
+    st.markdown('<div class="meridian-eyebrow">Valuation</div>', unsafe_allow_html=True)
+    st.markdown('<div class="header-style">Discounted cash flow</div>', unsafe_allow_html=True)
+    st.markdown('<div class="meridian-intro">Adjust core assumptions and see how growth and discount rates shape the model valuation.</div>', unsafe_allow_html=True)
 
     dcf_presets = {
         "NVDA": {"fcf": 60850000000.0, "shares": 24500000000.0, "net_debt": -38200000000.0, "price": 239.24, "wacc": 0.095, "growth": 0.22, "t_growth": 0.035},
@@ -754,8 +777,9 @@ elif nav_choice == "◇  Valuation":
 # VIEW 4: AUTONOMOUS MULTI-AGENT COMMITTEE RESEARCH
 # =============================================================================
 elif nav_choice == "✦  Research studio":
-    st.markdown('<div class="header-style">🤖 Autonomous Multi-Agent Research Committee</div>', unsafe_allow_html=True)
-    st.markdown("Runs the Analyst, Verifier, and Skeptic stages through the research orchestrator. NVIDIA NIM is an optional path and is off in this dashboard flow.")
+    st.markdown('<div class="meridian-eyebrow">Research</div>', unsafe_allow_html=True)
+    st.markdown('<div class="header-style">Research committee</div>', unsafe_allow_html=True)
+    st.markdown('<div class="meridian-intro">Run the Analyst, Verifier, and Skeptic workflow, then review the resulting source-backed investment memorandum.</div>', unsafe_allow_html=True)
 
     col_r1, col_r2 = st.columns([2, 1])
     with col_r1:
@@ -799,8 +823,9 @@ elif nav_choice == "✦  Research studio":
 # VIEW 5: NVIDIA CUOPT PORTFOLIO OPTIMIZATION
 # =============================================================================
 elif nav_choice == "▤  Portfolio lab":
-    st.markdown('<div class="header-style">⚡ NVIDIA cuOpt Quadratic Programming (QP) Portfolio Optimizer</div>', unsafe_allow_html=True)
-    st.markdown("Implements the mathematical formulation principles from **NVIDIA cuOpt** (`min 0.5 * w^T Q w`) for Global Minimum Variance and Markowitz allocation.")
+    st.markdown('<div class="meridian-eyebrow">Portfolio construction</div>', unsafe_allow_html=True)
+    st.markdown('<div class="header-style">Portfolio optimizer</div>', unsafe_allow_html=True)
+    st.markdown('<div class="meridian-intro">Choose a stock universe and optimization strategy to calculate a portfolio allocation.</div>', unsafe_allow_html=True)
 
     p_col1, p_col2 = st.columns([2, 1])
     with p_col1:
@@ -862,8 +887,9 @@ elif nav_choice == "▤  Portfolio lab":
 # VIEW 6: SUPPLY CHAIN LOGISTICS & MARGIN ELASTICITY
 # =============================================================================
 elif nav_choice == "↗  Supply chain":
-    st.markdown('<div class="header-style">🚚 Supply Chain Routing & Margin Elasticity (NVIDIA cuOpt)</div>', unsafe_allow_html=True)
-    st.markdown("Models Capacitated Vehicle Routing Problems (CVRP) to quantify corporate distribution costs and operating margin elasticity to fuel inflation.")
+    st.markdown('<div class="meridian-eyebrow">Operations</div>', unsafe_allow_html=True)
+    st.markdown('<div class="header-style">Supply chain & margins</div>', unsafe_allow_html=True)
+    st.markdown('<div class="meridian-intro">Explore fleet routing costs, capacity use, and the impact of fuel price shocks on delivery economics.</div>', unsafe_allow_html=True)
 
     col_v1, col_v2 = st.columns(2)
     with col_v1:
@@ -902,8 +928,9 @@ elif nav_choice == "↗  Supply chain":
 # VIEW 7: DECISION JOURNAL & REVIEW
 # =============================================================================
 elif nav_choice == "▧  Decision journal":
-    st.markdown('<div class="header-style">📓 Decision Journal & Portfolio Review</div>', unsafe_allow_html=True)
-    st.markdown("Immutable record of institutional investment decisions and exit rules.")
+    st.markdown('<div class="meridian-eyebrow">Decision records</div>', unsafe_allow_html=True)
+    st.markdown('<div class="header-style">Investment journal</div>', unsafe_allow_html=True)
+    st.markdown('<div class="meridian-intro">Review logged investment decisions and the latest portfolio review in one place.</div>', unsafe_allow_html=True)
 
     journal_csv_path = os.path.join(PROJECT_DIR, "journal", "journal.csv")
     if os.path.exists(journal_csv_path):
@@ -923,8 +950,9 @@ elif nav_choice == "▧  Decision journal":
 # VIEW 8: SEC FILINGS & PRICE ALERTS
 # =============================================================================
 elif nav_choice == "◉  Alerts & filings":
-    st.markdown('<div class="header-style">🚨 Regulatory Filings & Market Shock Alerts</div>', unsafe_allow_html=True)
-    st.markdown("Live monitoring of official SEC EDGAR submissions and intraday price shocks.")
+    st.markdown('<div class="meridian-eyebrow">Monitoring</div>', unsafe_allow_html=True)
+    st.markdown('<div class="header-style">Filings & price alerts</div>', unsafe_allow_html=True)
+    st.markdown('<div class="meridian-intro">Review saved alerts or check monitored companies for market and filing events.</div>', unsafe_allow_html=True)
 
     alerts_json_path = os.path.join(PROJECT_DIR, "reports", "active_alerts.json")
     if os.path.exists(alerts_json_path):
