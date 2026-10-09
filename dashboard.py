@@ -358,7 +358,7 @@ elif nav_choice == "↘  Process map":
       <div class="process-arrow">↓ calls each stage</div>
       <div class="process-row">
         <div class="process-node"><strong>1 · Analyst</strong><span>Retrieves filing and market data, calculates metrics, records provenance, and drafts the report.</span><span class="process-tag">Returns report + skeptic_inputs</span></div>
-        <div class="process-node"><strong>2 · Verifier</strong><span>Checks the report against its ledger and, when enabled, independently refetches source values.</span><span class="process-tag">Returns audit + wrong_items</span></div>
+        <div class="process-node"><strong>2 · Verifier · both reports</strong><span>Audits the Analyst report before the Skeptic runs, then audits the Skeptic review before synthesis.</span><span class="process-tag">Returns audit + wrong_items</span></div>
         <div class="process-node"><strong>3 · Skeptic</strong><span>Stress-tests assumptions using the structured inputs prepared by the Analyst.</span><span class="process-tag">Returns verdict + review</span></div>
       </div>
       <div class="process-arrow">↓ uses shared tools · saves outputs</div>
@@ -375,9 +375,10 @@ elif nav_choice == "↘  Process map":
     handoffs = [
         ("Dashboard → pipeline", "The dashboard calls `run_pipeline(ticker, workflow_number)`. The pipeline resolves the ticker and creates the report folder.", "dashboard.py lines 582–589 · run_research.py lines 37–75", "dashboard.py#L582-L589"),
         ("Pipeline → Analyst → pipeline", "`run_workflow()` returns `markdown_report`, its `ledger`, `metrics`, and `skeptic_inputs` as a Python dictionary.", "run_research.py lines 78–88 · agents/analyst.py lines 1310–1344", "run_research.py#L78-L88"),
-        ("Pipeline → Verifier → pipeline", "The Verifier receives the report and provenance sidecar paths, then returns an audit summary and any wrong or unverifiable claims.", "run_research.py lines 95–101 · agents/verifier.py line 533", "run_research.py#L95-L101"),
+        ("Pipeline → Verifier → pipeline", "The first audit receives the Analyst report and its provenance sidecar, then returns an audit summary and any wrong or unverifiable claims. Independent source refetch is enabled by the pipeline default.", "run_research.py lines 95–101 · agents/verifier.py line 533", "run_research.py#L95-L101"),
         ("Verifier → Analyst · conditional", "Only when wrong figures are found, the orchestrator passes `wrong_items`, the report text, and the ledger to `correct_report()`, then audits once more.", "run_research.py lines 105–129 · agents/analyst.py lines 1356–1365", "run_research.py#L105-L129"),
         ("Pipeline → Skeptic → pipeline", "The orchestrator expands `skeptic_inputs` into `evaluate_thesis(...)`. The Skeptic returns a verdict, review markdown, and its own ledger.", "run_research.py lines 152–162 · agents/analyst.py lines 1310–1344", "run_research.py#L152-L162"),
+        ("Pipeline → Verifier · Skeptic audit", "After saving the Skeptic review and its sidecar, the orchestrator creates a second Verifier and audits that review before synthesis.", "run_research.py lines 157–175", "run_research.py#L157-L175"),
         ("Pipeline → reports → dashboard", "The orchestrator saves the final dossier and sidecars; the dashboard opens `final_report.md` and displays it.", "run_research.py lines 177–194 · dashboard.py lines 586–595", "run_research.py#L177-L194"),
     ]
     source_base = "https://github.com/meetbansal3000/Finance-research-agents-tool-kit/blob/5065a97a5685eed92abbfb0f0b9584145b4eb47e/"
