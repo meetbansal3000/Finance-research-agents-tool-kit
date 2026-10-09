@@ -264,6 +264,7 @@ nav_choice = st.sidebar.radio(
     [
         "⌂  Overview",
         "↘  Process map",
+        "▦  Finance playbooks",
         "◎  Watchlist",
         "◒  Markets & charts",
         "◇  Valuation",
@@ -982,6 +983,91 @@ elif nav_choice == "◉  Alerts & filings":
                 st.warning(f"**[{a.get('type')}] {a.get('ticker')}**: {a.get('details')}")
         else:
             st.success("✅ All monitored securities within normal volatility bands. No unfiled 8-K / 10-K events detected.")
+
+
+
+# =============================================================================
+# VIEW 9: OPENACCOUNTANT FINANCE PLAYBOOKS
+# =============================================================================
+elif nav_choice == "▦  Finance playbooks":
+    from tools.finance_playbooks import load_openaccountant_playbooks
+
+    playbooks = load_openaccountant_playbooks()
+    st.markdown('<div class="header-style">Finance playbooks</div>', unsafe_allow_html=True)
+    st.markdown(
+        '<div class="meridian-intro">Browse the OpenAccountant guides installed in this workspace, with their inputs and tool requirements.</div>',
+        unsafe_allow_html=True,
+    )
+
+    if not playbooks:
+        st.warning("No OpenAccountant playbooks were found in the project skill lockfile.")
+    else:
+        st.info(
+            f"{len(playbooks)} playbooks are installed for Codex in this workspace. "
+            "They are Markdown workflows, not executable app features. This dashboard has no Wilson transaction store, bank sync, or Plaid connector."
+        )
+
+        filter_col, search_col = st.columns([1, 2])
+        with filter_col:
+            categories = ["All categories"] + sorted({item["category"] for item in playbooks})
+            chosen_category = st.selectbox("Category", categories, key="finance_playbook_category")
+        with search_col:
+            search_text = st.text_input(
+                "Find a playbook",
+                placeholder="Search by name or topic",
+                key="finance_playbook_search",
+            ).strip().casefold()
+
+        filtered = [
+            item for item in playbooks
+            if (chosen_category == "All categories" or item["category"] == chosen_category)
+            and (not search_text or search_text in item["name"].casefold() or search_text in item["description"].casefold() or search_text in item["slug"])
+        ]
+
+        if not filtered:
+            st.info("No playbooks match those filters.")
+        else:
+            selected_slug = st.selectbox(
+                f"Choose from {len(filtered)} playbooks",
+                options=[item["slug"] for item in filtered],
+                format_func=lambda slug: next(item["name"] for item in filtered if item["slug"] == slug),
+                key="finance_playbook_selected",
+            )
+            selected = next(item for item in filtered if item["slug"] == selected_slug)
+
+            st.subheader(selected["name"])
+            st.write(selected["description"])
+            status_col, category_col = st.columns(2)
+            with status_col:
+                st.metric("Availability in this app", "Read-only guide")
+            with category_col:
+                st.metric("Collection", selected["category"])
+
+            if selected["pro_required"]:
+                st.warning("This playbook describes Wilson Pro or Plaid setup. Neither integration is configured in this app.")
+            elif selected["wilson_tools"]:
+                st.caption("Wilson tool calls are documented in this guide but are unavailable in this app.")
+            else:
+                st.caption("Use the steps as a manual reference; this page does not execute the workflow.")
+
+            if selected["wilson_tools"]:
+                st.markdown("**Tools referenced by the playbook**")
+                st.write(" · ".join(f"`{tool}`" for tool in selected["wilson_tools"]))
+
+            if selected["manual_workflow"]:
+                with st.expander("Manual workflow", expanded=True):
+                    st.markdown(selected["manual_workflow"])
+            with st.expander("Full playbook", expanded=False):
+                st.markdown(selected["body"])
+
+            source_url = f"https://github.com/openaccountant/skills/blob/main/{selected['source_path']}"
+            st.markdown(f"[View source playbook on GitHub]({source_url})")
+
+        st.divider()
+        st.caption(
+            "The installed files live in `.agents/skills` and are discoverable by Codex agents working in this repository. "
+            "The app’s Python research agents do not automatically execute these bookkeeping workflows; the existing Analyst, Verifier, and Skeptic pipeline remains unchanged."
+        )
 
 
 if __name__ == "__main__":
