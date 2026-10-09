@@ -100,106 +100,95 @@ st.markdown("""
 <style>
     :root {
         color-scheme: light;
-        --m-ink: #17231f; --m-muted: #63716a; --m-green: #286a52;
-        --m-green-dark: #1d503e; --m-lime: #d9e8aa; --m-gold: #c79743;
-        --m-paper: #f3f5f1; --m-surface: #fff; --m-line: #dfe6e0;
-        --m-shadow: 0 12px 30px rgba(23,35,31,.055);
-        --m-shadow-sm: 0 3px 12px rgba(23,35,31,.045); --m-radius: 16px;
+        --ink:#18211e; --muted:#65716b; --pine:#1c2a25; --pine-soft:#2c4137;
+        --paper:#f1efe6; --surface:#faf9f4; --white:#fffefa; --line:#d9ddd3;
+        --line-dark:#33453b; --acid:#d6ed75; --positive:#26744d; --negative:#b34e43;
+        --control-radius:7px; --panel-radius:10px;
     }
-    html, body, [class*="css"] { font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
-    .stApp {
-        color: var(--m-ink);
-        background: radial-gradient(ellipse at 14% 0%, rgba(219,233,222,.72), transparent 35rem), var(--m-paper);
-    }
-    [data-testid="stAppViewContainer"], [data-testid="stMain"] { background: transparent; }
-    [data-testid="stHeader"] { background: rgba(243,245,241,.88); }
-    [data-testid="stToolbar"] { right: 1.5rem; }
-    .main .block-container { max-width: 1440px; padding: 2.3rem clamp(1rem,4vw,3.4rem) 4rem; }
-    h1,h2,h3,h4 { color: var(--m-ink); letter-spacing: -.035em; }
-    h1,.header-style { font-family: Georgia,"Times New Roman",serif; }
-    h1 { font-size: clamp(2rem,3.3vw,3.15rem); line-height: 1.08; font-weight: 600; }
-    h2 { font-size: clamp(1.35rem,2vw,1.8rem); line-height: 1.2; font-weight: 650; }
-    h3 { font-size: 1.12rem; line-height: 1.3; font-weight: 650; }
-    .header-style { color: var(--m-ink); font-size: clamp(2rem,3.3vw,3.15rem); font-weight: 600; line-height: 1.08; letter-spacing: -.045em; margin: .15rem 0 .55rem; }
-    .meridian-eyebrow { color: var(--m-green); font-size: .72rem; font-weight: 760; letter-spacing: .15em; line-height: 1.4; text-transform: uppercase; margin: 0 0 .65rem; }
-    .meridian-intro { color: var(--m-muted); font-size: 1rem; line-height: 1.65; max-width: 790px; margin: .45rem 0 1.7rem; }
-    p,li { line-height: 1.62; }
-    [data-testid="stCaptionContainer"] { color: var(--m-muted); }
-    [data-testid="stCaptionContainer"] p { line-height: 1.5; }
-    [data-testid="stVerticalBlock"] { gap: 1rem; }
-    hr { border: 0; border-top: 1px solid var(--m-line); margin: 1.4rem 0; }
-    section[data-testid="stSidebar"] { background: linear-gradient(180deg,#182923 0%,#14221d 58%,#111e1a 100%); border-right: 1px solid #2b3d34; }
-    section[data-testid="stSidebar"] > div { padding: 1.35rem 1rem 1.5rem; }
+    html,body,[class*="css"] { font-family:"Segoe UI","Aptos",Arial,sans-serif; }
+    .stApp,[data-testid="stAppViewContainer"],[data-testid="stMain"] { color:var(--ink); background:var(--paper); }
+    [data-testid="stHeader"] { background:rgba(241,239,230,.96); border-bottom:1px solid rgba(24,33,30,.08); }
+    [data-testid="stToolbar"] { right:1.5rem; }
+    .main .block-container { max-width:1480px; padding:1.6rem clamp(1rem,3.2vw,3rem) 3.5rem; }
+    h1,h2,h3,h4 { color:var(--ink); letter-spacing:-.025em; }
+    h1,.header-style { font-family:Georgia,"Times New Roman",serif; }
+    h1 { font-size:clamp(1.8rem,3vw,2.8rem); font-weight:600; line-height:1.08; }
+    h2 { font-size:clamp(1.25rem,2vw,1.55rem); font-weight:650; line-height:1.22; }
+    h3 { font-size:1.08rem; font-weight:650; line-height:1.3; }
+    .header-style { color:var(--ink); font-size:clamp(1.85rem,3vw,2.75rem); font-weight:600; line-height:1.08; letter-spacing:-.04em; margin:.1rem 0 .35rem; }
+    .meridian-eyebrow { display:none; }
+    .meridian-intro { color:var(--muted); font-size:.97rem; line-height:1.55; max-width:820px; margin:.25rem 0 1.35rem; }
+    p,li { line-height:1.55; }
+    [data-testid="stCaptionContainer"] { color:var(--muted); }
+    [data-testid="stCaptionContainer"] p { line-height:1.45; }
+    [data-testid="stVerticalBlock"] { gap:.85rem; }
+    hr { border:0; border-top:1px solid var(--line); margin:1.2rem 0; }
+    section[data-testid="stSidebar"] { background:var(--pine); border-right:1px solid #273a31; }
+    section[data-testid="stSidebar"] > div { padding:1.25rem .9rem 1.35rem; }
     section[data-testid="stSidebar"] [data-testid="stMarkdownContainer"] p,
-    section[data-testid="stSidebar"] label, section[data-testid="stSidebar"] small,
-    section[data-testid="stSidebar"] [data-testid="stCaptionContainer"] { color: #c9d5cd; }
+    section[data-testid="stSidebar"] label,section[data-testid="stSidebar"] small,
+    section[data-testid="stSidebar"] [data-testid="stCaptionContainer"] { color:#d0d9d2; }
     section[data-testid="stSidebar"] h1,section[data-testid="stSidebar"] h2,
-    section[data-testid="stSidebar"] h3,section[data-testid="stSidebar"] h4 { color: #f5f7f3; letter-spacing: -.015em; }
-    section[data-testid="stSidebar"] [role="radiogroup"] { gap: .24rem; }
+    section[data-testid="stSidebar"] h3,section[data-testid="stSidebar"] h4 { color:#f4f3ec; letter-spacing:-.01em; }
+    section[data-testid="stSidebar"] [role="radiogroup"] { gap:.18rem; }
     section[data-testid="stSidebar"] [role="radiogroup"] label {
-        position: relative; min-height: 2.65rem; border: 1px solid transparent;
-        border-radius: 10px; padding: .55rem .7rem; color: #ced8d1;
-        transition: background .18s ease,border-color .18s ease,color .18s ease;
+        min-height:2.55rem; border:1px solid transparent; border-radius:var(--control-radius);
+        padding:.48rem .65rem; color:#c7d1ca; transition:background .14s ease,color .14s ease,border-color .14s ease;
     }
-    section[data-testid="stSidebar"] [role="radiogroup"] label:hover { background: rgba(255,255,255,.065); color: #fff; }
-    section[data-testid="stSidebar"] [role="radiogroup"] label:has(input:checked) {
-        background: rgba(217,232,170,.12); border-color: rgba(217,232,170,.18);
-        color: #f9fbf6; box-shadow: inset 3px 0 0 var(--m-lime);
-    }
-    section[data-testid="stSidebar"] [role="radiogroup"] label:focus-within { outline: 2px solid var(--m-lime); outline-offset: 2px; }
-    section[data-testid="stSidebar"] [data-testid="stExpander"] { border-color: #35483e; background: rgba(255,255,255,.035); border-radius: 12px; }
-    section[data-testid="stSidebar"] [data-testid="stExpander"] summary { color: #edf3ed; }
-    section[data-testid="stSidebar"] hr { border-color: #34483d; }
-    [data-testid="stMetric"] { background: linear-gradient(145deg,#fff 0%,#fbfcfa 100%); border: 1px solid var(--m-line); border-radius: var(--m-radius); padding: 1.05rem 1.15rem; box-shadow: var(--m-shadow-sm); }
-    [data-testid="stMetricLabel"] { color: var(--m-muted); font-size: .82rem; font-weight: 600; }
-    [data-testid="stMetricValue"] { color: var(--m-ink); font-weight: 680; letter-spacing: -.035em; }
-    [data-testid="stMetricDelta"] { font-weight: 650; }
-    div[data-testid="stVerticalBlockBorderWrapper"] { border-color: var(--m-line); border-radius: var(--m-radius); background: rgba(255,255,255,.86); box-shadow: var(--m-shadow-sm); }
+    section[data-testid="stSidebar"] [role="radiogroup"] label:hover { background:rgba(255,255,255,.055); color:#fff; }
+    section[data-testid="stSidebar"] [role="radiogroup"] label:has(input:checked) { background:var(--acid); border-color:var(--acid); color:var(--pine); font-weight:700; }
+    section[data-testid="stSidebar"] [role="radiogroup"] label:focus-within { outline:2px solid var(--acid); outline-offset:2px; }
+    section[data-testid="stSidebar"] [data-testid="stExpander"] { border:1px solid var(--line-dark); border-radius:var(--control-radius); background:rgba(255,255,255,.035); }
+    section[data-testid="stSidebar"] [data-testid="stExpander"] summary { color:#eef1e9; }
+    section[data-testid="stSidebar"] hr { border-color:var(--line-dark); }
+    [data-testid="stMetric"] { background:transparent; border:0; border-bottom:1px solid var(--line); border-radius:0; padding:.55rem .1rem .8rem; box-shadow:none; }
+    [data-testid="stMetricLabel"] { color:var(--muted); font-size:.78rem; font-weight:650; }
+    [data-testid="stMetricValue"] { color:var(--ink); font-weight:680; letter-spacing:-.035em; }
+    [data-testid="stMetricDelta"] { font-weight:650; }
+    div[data-testid="stVerticalBlockBorderWrapper"] { border-color:var(--line); border-radius:var(--panel-radius); background:var(--white); box-shadow:none; }
     div.stButton > button,[data-testid="stDownloadButton"] button {
-        min-height: 2.75rem; border-radius: 10px; border: 1px solid #cbd8ce;
-        color: var(--m-ink); font-weight: 650;
-        transition: background .16s ease,border-color .16s ease,box-shadow .16s ease,transform .16s ease;
+        min-height:2.65rem; border:1px solid #aebbb0; border-radius:var(--control-radius);
+        color:var(--ink); font-weight:650; background:var(--white);
+        transition:background .14s ease,border-color .14s ease,transform .14s ease;
     }
-    div.stButton > button:hover,[data-testid="stDownloadButton"] button:hover { border-color: var(--m-green); box-shadow: 0 5px 14px rgba(23,35,31,.1); transform: translateY(-1px); }
-    div.stButton > button[kind="primary"] { background: var(--m-green); border-color: var(--m-green); color: #fff; }
-    div.stButton > button[kind="primary"]:hover { background: var(--m-green-dark); border-color: var(--m-green-dark); }
-    button:focus-visible,a:focus-visible,input:focus-visible,textarea:focus-visible,[role="slider"]:focus-visible { outline: 3px solid rgba(199,151,67,.8) !important; outline-offset: 2px; }
-    [data-baseweb="input"] > div,[data-baseweb="select"] > div,[data-baseweb="textarea"] > div { border-color: #cbd6cf; border-radius: 10px; background: #fff; }
-    [data-baseweb="input"] > div:focus-within,[data-baseweb="select"] > div:focus-within,[data-baseweb="textarea"] > div:focus-within { border-color: var(--m-green); box-shadow: 0 0 0 2px rgba(40,106,82,.13); }
-    [data-testid="stSlider"] [role="slider"] { box-shadow: 0 0 0 3px rgba(40,106,82,.12); }
-    [data-testid="stCheckbox"] label,[data-testid="stRadio"] label { color: var(--m-ink); }
-    [data-testid="stTabs"] [role="tablist"] { gap: .25rem; border-bottom: 1px solid var(--m-line); }
-    [data-testid="stTabs"] button[role="tab"] { min-height: 2.8rem; padding: .55rem .9rem; color: var(--m-muted); font-weight: 650; }
-    [data-testid="stTabs"] button[role="tab"][aria-selected="true"] { color: var(--m-green-dark); border-bottom-color: var(--m-green); }
-    [data-testid="stExpander"] { border: 1px solid var(--m-line); border-radius: 12px; background: rgba(255,255,255,.74); }
-    [data-testid="stExpander"] summary { font-weight: 650; color: var(--m-ink); }
-    [data-testid="stDataFrame],[data-testid="stTable"] { border: 1px solid var(--m-line); border-radius: 12px; overflow: hidden; box-shadow: var(--m-shadow-sm); }
-    [data-testid="stPlotlyChart"] { border: 1px solid var(--m-line); border-radius: var(--m-radius); background: var(--m-surface); padding: .25rem; box-shadow: var(--m-shadow-sm); }
-    [data-testid="stAlert"] { border-radius: 12px; }
-    .meridian-card { position: relative; overflow: hidden; background: linear-gradient(145deg,#fff 0%,#f9fbf8 100%); border: 1px solid var(--m-line); border-radius: var(--m-radius); padding: 1.3rem 1.4rem; height: 100%; box-shadow: var(--m-shadow-sm); }
-    .meridian-card:before { content: ""; position: absolute; inset: 0 auto 0 0; width: 3px; background: linear-gradient(180deg,var(--m-green),var(--m-lime)); }
-    .meridian-card-label { color: var(--m-muted); font-size: .74rem; font-weight: 700; letter-spacing: .09em; text-transform: uppercase; }
-    .meridian-card-value { color: var(--m-ink); font: 600 1.9rem Georgia,"Times New Roman",serif; letter-spacing: -.04em; margin: .42rem 0 .2rem; }
-    .meridian-card-note { color: var(--m-muted); font-size: .84rem; line-height: 1.5; }
-    .process-hierarchy { display: grid; gap: .85rem; margin: 1rem 0 1.6rem; }
-    .process-root { background: linear-gradient(120deg,#172923,#244c3a); color: #f5f7f3; border: 1px solid rgba(23,35,31,.15); border-radius: var(--m-radius); padding: 1.1rem 1.3rem; text-align: center; box-shadow: var(--m-shadow); }
-    .process-root small { display: block; color: #c0d1c6; margin-top: .25rem; }
-    .process-arrow { color: var(--m-green); font-size: 1.3rem; font-weight: 700; line-height: 1; text-align: center; }
-    .process-row { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: .9rem; }
-    .process-node { background: #fff; color: var(--m-ink); border: 1px solid var(--m-line); border-radius: 14px; padding: 1.05rem 1.1rem; min-height: 112px; box-shadow: var(--m-shadow-sm); }
-    .process-node strong { display: block; font-size: 1rem; margin-bottom: .38rem; }
-    .process-node span { display: block; color: var(--m-muted); font-size: .86rem; line-height: 1.55; }
-    .process-node .process-tag { display: inline-block; margin-top: .7rem; color: var(--m-green-dark); background: #edf4ea; border-radius: 999px; padding: .22rem .6rem; font-size: .72rem; font-weight: 700; }
-    .process-support { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: .9rem; }
-    @media (max-width: 800px) {
-        .process-row,.process-support { grid-template-columns: 1fr; }
-        .main .block-container { padding: 1.4rem 1rem 3rem; }
-        [data-testid="stMetric"] { padding: .85rem; }
-        .header-style { font-size: clamp(1.9rem,8vw,2.5rem); }
+    div.stButton > button:hover,[data-testid="stDownloadButton"] button:hover { border-color:var(--pine); background:#f2f3eb; transform:translateY(-1px); }
+    div.stButton > button[kind="primary"] { background:var(--acid); border-color:var(--acid); color:var(--pine); }
+    div.stButton > button[kind="primary"]:hover { background:#c8e45e; border-color:#c8e45e; }
+    button:focus-visible,a:focus-visible,input:focus-visible,textarea:focus-visible,[role="slider"]:focus-visible { outline:3px solid #a6c43f !important; outline-offset:2px; }
+    [data-baseweb="input"] > div,[data-baseweb="select"] > div,[data-baseweb="textarea"] > div { background:var(--white); border-color:#bfc8bd; border-radius:var(--control-radius); }
+    [data-baseweb="input"] > div:focus-within,[data-baseweb="select"] > div:focus-within,[data-baseweb="textarea"] > div:focus-within { border-color:var(--pine); box-shadow:0 0 0 2px rgba(40,80,61,.12); }
+    [data-testid="stSlider"] [role="slider"] { box-shadow:0 0 0 3px rgba(214,237,117,.45); }
+    [data-testid="stCheckbox"] label,[data-testid="stRadio"] label { color:var(--ink); }
+    [data-testid="stTabs"] [role="tablist"] { gap:.15rem; border-bottom:1px solid var(--line); }
+    [data-testid="stTabs"] button[role="tab"] { min-height:2.7rem; padding:.45rem .8rem; color:var(--muted); font-weight:650; border-bottom-width:2px; }
+    [data-testid="stTabs"] button[role="tab"][aria-selected="true"] { color:var(--pine); border-bottom-color:var(--pine); }
+    [data-testid="stExpander"] { border:1px solid var(--line); border-radius:var(--control-radius); background:rgba(255,254,250,.78); }
+    [data-testid="stExpander"] summary { color:var(--ink); font-weight:650; }
+    [data-testid="stDataFrame"],[data-testid="stTable"] { border:1px solid var(--line); border-radius:var(--control-radius); overflow:hidden; box-shadow:none; background:var(--white); }
+    [data-testid="stPlotlyChart"] { border:1px solid var(--line); border-radius:var(--panel-radius); background:var(--white); padding:.1rem; box-shadow:none; }
+    [data-testid="stAlert"] { border-radius:var(--control-radius); }
+    .meridian-card { background:var(--white); border:1px solid var(--line); border-radius:var(--panel-radius); padding:1.05rem 1.15rem; height:100%; box-shadow:none; }
+    .meridian-card:before { display:none; }
+    .meridian-card-label { color:var(--muted); font-size:.72rem; font-weight:700; letter-spacing:.08em; text-transform:uppercase; }
+    .meridian-card-value { color:var(--ink); font:600 1.8rem Georgia,"Times New Roman",serif; letter-spacing:-.035em; margin:.35rem 0 .15rem; }
+    .meridian-card-note { color:var(--muted); font-size:.82rem; line-height:1.45; }
+    .process-hierarchy { display:grid; gap:.7rem; margin:.8rem 0 1.4rem; }
+    .process-root { background:var(--pine); color:#f4f3ec; border:1px solid var(--pine); border-radius:var(--panel-radius); padding:.9rem 1rem; text-align:center; box-shadow:none; }
+    .process-root small { display:block; color:#c7d1ca; margin-top:.2rem; }
+    .process-arrow { color:#70867a; font-size:1.1rem; line-height:1; text-align:center; }
+    .process-row { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:.7rem; }
+    .process-node { background:var(--white); color:var(--ink); border:1px solid var(--line); border-radius:var(--control-radius); padding:.9rem 1rem; min-height:106px; box-shadow:none; }
+    .process-node strong { display:block; font-size:.96rem; margin-bottom:.32rem; }
+    .process-node span { display:block; color:var(--muted); font-size:.84rem; line-height:1.5; }
+    .process-node .process-tag { display:inline-block; margin-top:.58rem; color:var(--pine); background:#eef3d8; border-radius:4px; padding:.16rem .42rem; font-size:.7rem; font-weight:700; }
+    .process-support { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:.7rem; }
+    @media (max-width:800px) {
+        .process-row,.process-support { grid-template-columns:1fr; }
+        .main .block-container { padding:1.2rem .9rem 2.5rem; }
+        [data-testid="stMetric"] { padding:.4rem .05rem .65rem; }
+        .header-style { font-size:clamp(1.8rem,8vw,2.35rem); }
     }
-    @media (prefers-reduced-motion: reduce) {
-        *,*::before,*::after { scroll-behavior: auto !important; transition-duration: .01ms !important; animation-duration: .01ms !important; }
-    }
+    @media (prefers-reduced-motion:reduce) { *,*::before,*::after { scroll-behavior:auto !important; transition-duration:.01ms !important; animation-duration:.01ms !important; } }
 </style>
 """, unsafe_allow_html=True)
 
@@ -300,9 +289,8 @@ st.sidebar.info("💡 **Universal Ticker Support:** Works for any US equity (NYS
 # VIEW 1: SHORTLISTING SCORECARD & WATCHLIST MANAGER
 # =============================================================================
 if nav_choice == "⌂  Overview":
-    st.markdown('<div class="meridian-eyebrow">Research workspace</div>', unsafe_allow_html=True)
-    st.markdown('<div class="header-style">A clearer view of your coverage.</div>', unsafe_allow_html=True)
-    st.markdown('<div class="meridian-intro">Follow the companies you care about, run a source-backed research review, and keep your decisions and watchlist in one place.</div>', unsafe_allow_html=True)
+    st.markdown('<div class="header-style">Research, in one place.</div>', unsafe_allow_html=True)
+    st.markdown('<div class="meridian-intro">Follow your coverage, open recent dossiers, or start a research task.</div>', unsafe_allow_html=True)
 
     reports_root = os.path.join(PROJECT_DIR, "reports")
     report_dirs = []
@@ -363,9 +351,8 @@ if nav_choice == "⌂  Overview":
         st.caption("Financial figures in research reports retain their source and audit trail. Market feeds may be delayed.")
 
 elif nav_choice == "↘  Process map":
-    st.markdown('<div class="meridian-eyebrow">System guide</div>', unsafe_allow_html=True)
-    st.markdown('<div class="header-style">Inside the research process.</div>', unsafe_allow_html=True)
-    st.markdown('<div class="meridian-intro">See who controls each stage, what information moves between agents, and where the audited outputs are saved.</div>', unsafe_allow_html=True)
+    st.markdown('<div class="header-style">How research moves through Meridian</div>', unsafe_allow_html=True)
+    st.markdown('<div class="meridian-intro">Follow the handoffs, verification steps, and saved outputs from request to final report.</div>', unsafe_allow_html=True)
 
     st.markdown("### Hierarchy")
     st.markdown("""
@@ -420,9 +407,8 @@ elif nav_choice == "↘  Process map":
             st.markdown(f"[Ledger sidecars · run_research.py lines 83–88]({source_base}run_research.py#L83-L88)")
 
 elif nav_choice == "◎  Watchlist":
-    st.markdown('<div class="meridian-eyebrow">Company research</div>', unsafe_allow_html=True)
-    st.markdown('<div class="header-style">Coverage & watchlist</div>', unsafe_allow_html=True)
-    st.markdown('<div class="meridian-intro">Screen the companies you follow, compare key fundamentals, and manage the tickers in your coverage list.</div>', unsafe_allow_html=True)
+    st.markdown('<div class="header-style">Company coverage</div>', unsafe_allow_html=True)
+    st.markdown('<div class="meridian-intro">Compare fundamental signals and manage the companies in your watchlist.</div>', unsafe_allow_html=True)
 
     # Watchlist Addition & Management Box
     with st.container():
@@ -535,9 +521,8 @@ elif nav_choice == "◎  Watchlist":
 # VIEW 2: TRADINGVIEW & LIVE MARKET CHARTS
 # =============================================================================
 elif "Markets & charts" in nav_choice:
-    st.markdown('<div class="meridian-eyebrow">Market data</div>', unsafe_allow_html=True)
     st.markdown('<div class="header-style">Markets & charts</div>', unsafe_allow_html=True)
-    st.markdown('<div class="meridian-intro">Explore interactive price charts, technical summaries, company financials, and historical market data.</div>', unsafe_allow_html=True)
+    st.markdown('<div class="meridian-intro">Explore price action, technical summaries, company financials, and historical market data.</div>', unsafe_allow_html=True)
 
     c_col1, c_col2 = st.columns([1, 3])
     with c_col1:
@@ -674,9 +659,8 @@ elif "Markets & charts" in nav_choice:
 # VIEW 3: INTERACTIVE DCF VALUATION & SENSITIVITY
 # =============================================================================
 elif nav_choice == "◇  Valuation":
-    st.markdown('<div class="meridian-eyebrow">Valuation</div>', unsafe_allow_html=True)
-    st.markdown('<div class="header-style">Discounted cash flow</div>', unsafe_allow_html=True)
-    st.markdown('<div class="meridian-intro">Adjust core assumptions and see how growth and discount rates shape the model valuation.</div>', unsafe_allow_html=True)
+    st.markdown('<div class="header-style">Valuation model</div>', unsafe_allow_html=True)
+    st.markdown('<div class="meridian-intro">Adjust core assumptions and inspect how growth and discount rates shape the model output.</div>', unsafe_allow_html=True)
 
     dcf_presets = {
         "NVDA": {"fcf": 60850000000.0, "shares": 24500000000.0, "net_debt": -38200000000.0, "price": 239.24, "wacc": 0.095, "growth": 0.22, "t_growth": 0.035},
@@ -777,9 +761,8 @@ elif nav_choice == "◇  Valuation":
 # VIEW 4: AUTONOMOUS MULTI-AGENT COMMITTEE RESEARCH
 # =============================================================================
 elif nav_choice == "✦  Research studio":
-    st.markdown('<div class="meridian-eyebrow">Research</div>', unsafe_allow_html=True)
     st.markdown('<div class="header-style">Research committee</div>', unsafe_allow_html=True)
-    st.markdown('<div class="meridian-intro">Run the Analyst, Verifier, and Skeptic workflow, then review the resulting source-backed investment memorandum.</div>', unsafe_allow_html=True)
+    st.markdown('<div class="meridian-intro">Run the Analyst, Verifier, and Skeptic workflow, then review the source-backed investment memorandum.</div>', unsafe_allow_html=True)
 
     col_r1, col_r2 = st.columns([2, 1])
     with col_r1:
@@ -823,9 +806,8 @@ elif nav_choice == "✦  Research studio":
 # VIEW 5: NVIDIA CUOPT PORTFOLIO OPTIMIZATION
 # =============================================================================
 elif nav_choice == "▤  Portfolio lab":
-    st.markdown('<div class="meridian-eyebrow">Portfolio construction</div>', unsafe_allow_html=True)
-    st.markdown('<div class="header-style">Portfolio optimizer</div>', unsafe_allow_html=True)
-    st.markdown('<div class="meridian-intro">Choose a stock universe and optimization strategy to calculate a portfolio allocation.</div>', unsafe_allow_html=True)
+    st.markdown('<div class="header-style">Portfolio construction</div>', unsafe_allow_html=True)
+    st.markdown('<div class="meridian-intro">Choose a stock universe and strategy to calculate a portfolio allocation.</div>', unsafe_allow_html=True)
 
     p_col1, p_col2 = st.columns([2, 1])
     with p_col1:
@@ -887,8 +869,7 @@ elif nav_choice == "▤  Portfolio lab":
 # VIEW 6: SUPPLY CHAIN LOGISTICS & MARGIN ELASTICITY
 # =============================================================================
 elif nav_choice == "↗  Supply chain":
-    st.markdown('<div class="meridian-eyebrow">Operations</div>', unsafe_allow_html=True)
-    st.markdown('<div class="header-style">Supply chain & margins</div>', unsafe_allow_html=True)
+    st.markdown('<div class="header-style">Supply chain economics</div>', unsafe_allow_html=True)
     st.markdown('<div class="meridian-intro">Explore fleet routing costs, capacity use, and the impact of fuel price shocks on delivery economics.</div>', unsafe_allow_html=True)
 
     col_v1, col_v2 = st.columns(2)
@@ -928,8 +909,7 @@ elif nav_choice == "↗  Supply chain":
 # VIEW 7: DECISION JOURNAL & REVIEW
 # =============================================================================
 elif nav_choice == "▧  Decision journal":
-    st.markdown('<div class="meridian-eyebrow">Decision records</div>', unsafe_allow_html=True)
-    st.markdown('<div class="header-style">Investment journal</div>', unsafe_allow_html=True)
+    st.markdown('<div class="header-style">Decision journal</div>', unsafe_allow_html=True)
     st.markdown('<div class="meridian-intro">Review logged investment decisions and the latest portfolio review in one place.</div>', unsafe_allow_html=True)
 
     journal_csv_path = os.path.join(PROJECT_DIR, "journal", "journal.csv")
@@ -950,7 +930,6 @@ elif nav_choice == "▧  Decision journal":
 # VIEW 8: SEC FILINGS & PRICE ALERTS
 # =============================================================================
 elif nav_choice == "◉  Alerts & filings":
-    st.markdown('<div class="meridian-eyebrow">Monitoring</div>', unsafe_allow_html=True)
     st.markdown('<div class="header-style">Filings & price alerts</div>', unsafe_allow_html=True)
     st.markdown('<div class="meridian-intro">Review saved alerts or check monitored companies for market and filing events.</div>', unsafe_allow_html=True)
 
