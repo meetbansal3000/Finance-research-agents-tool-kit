@@ -168,6 +168,17 @@ st.markdown("""
     .meridian-card-label { color:var(--meridian-muted); font-size:.78rem; font-weight:650; letter-spacing:.07em; text-transform:uppercase; }
     .meridian-card-value { color:var(--meridian-ink); font:600 1.8rem Georgia,serif; margin:.4rem 0 .15rem; }
     .meridian-card-note { color:var(--meridian-muted); font-size:.83rem; }
+    .process-hierarchy { display:grid; gap:.75rem; margin:1rem 0 1.5rem; }
+    .process-root { background:#17241f; color:#f7faf7; border-radius:14px; padding:1rem 1.2rem; text-align:center; box-shadow:0 5px 16px rgba(23,36,31,.10); }
+    .process-root small { display:block; color:#b7c8bc; margin-top:.2rem; }
+    .process-arrow { color:#83948a; font-size:1.25rem; line-height:1; text-align:center; }
+    .process-row { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:.85rem; }
+    .process-node { background:#fff; color:var(--meridian-ink); border:1px solid var(--meridian-line); border-radius:13px; padding:1rem 1.05rem; min-height:112px; box-shadow:0 2px 8px rgba(23,36,31,.035); }
+    .process-node strong { display:block; font-size:1rem; margin-bottom:.35rem; }
+    .process-node span { display:block; color:var(--meridian-muted); font-size:.86rem; line-height:1.5; }
+    .process-node .process-tag { display:inline-block; margin-top:.65rem; color:var(--meridian-green); background:#edf4ed; border-radius:999px; padding:.18rem .55rem; font-size:.72rem; font-weight:700; }
+    .process-support { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:.85rem; }
+    @media (max-width: 800px) { .process-row,.process-support { grid-template-columns:1fr; } }
     @media (max-width: 800px) { .main .block-container { padding: 1.4rem 1rem 3rem; } }
 </style>
 """, unsafe_allow_html=True)
@@ -213,6 +224,7 @@ nav_choice = st.sidebar.radio(
     "WORKSPACE",
     [
         "⌂  Overview",
+        "↘  Process map",
         "◎  Watchlist",
         "◒  Markets & charts",
         "◇  Valuation",
@@ -329,6 +341,62 @@ if nav_choice == "⌂  Overview":
         else:
             st.info("Your watchlist is empty. Add a company to begin tracking it.")
         st.caption("Financial figures in research reports retain their source and audit trail. Market feeds may be delayed.")
+
+elif nav_choice == "↘  Process map":
+    st.markdown('<div class="meridian-eyebrow">System guide</div>', unsafe_allow_html=True)
+    st.markdown('<div class="header-style">Inside the research process.</div>', unsafe_allow_html=True)
+    st.markdown('<div class="meridian-intro">See who controls each stage, what information moves between agents, and where the audited outputs are saved.</div>', unsafe_allow_html=True)
+
+    st.markdown("### Hierarchy")
+    st.markdown("""
+    <div class="process-hierarchy">
+      <div class="process-root"><strong>Researcher</strong><small>Chooses a company and a workflow</small></div>
+      <div class="process-arrow">↓</div>
+      <div class="process-root"><strong>Meridian dashboard</strong><small>Collects the ticker and starts the research run</small></div>
+      <div class="process-arrow">↓</div>
+      <div class="process-root"><strong>Pipeline orchestrator · <code>run_research.run_pipeline</code></strong><small>Controls the order, passes data between agents, and writes the final dossier</small></div>
+      <div class="process-arrow">↓ calls each stage</div>
+      <div class="process-row">
+        <div class="process-node"><strong>1 · Analyst</strong><span>Retrieves filing and market data, calculates metrics, records provenance, and drafts the report.</span><span class="process-tag">Returns report + skeptic_inputs</span></div>
+        <div class="process-node"><strong>2 · Verifier</strong><span>Checks the report against its ledger and, when enabled, independently refetches source values.</span><span class="process-tag">Returns audit + wrong_items</span></div>
+        <div class="process-node"><strong>3 · Skeptic</strong><span>Stress-tests assumptions using the structured inputs prepared by the Analyst.</span><span class="process-tag">Returns verdict + review</span></div>
+      </div>
+      <div class="process-arrow">↓ uses shared tools · saves outputs</div>
+      <div class="process-support">
+        <div class="process-node"><strong>Evidence tools</strong><span>FilingExtractor, DataLayer, calculation functions, and the provenance ledger.</span></div>
+        <div class="process-node"><strong>Reports and audit trail</strong><span>Analyst and skeptic markdown, verification results, and JSON provenance sidecars in <code>reports/</code>.</span></div>
+      </div>
+    </div>
+    """, unsafe_allow_html=True)
+
+    st.info("Agents communicate through direct Python method calls and returned dictionaries. There is no separate agent chat loop or message broker in this pipeline.")
+
+    st.markdown("### What each handoff carries")
+    handoffs = [
+        ("Dashboard → pipeline", "The dashboard calls `run_pipeline(ticker, workflow_number)`. The pipeline resolves the ticker and creates the report folder.", "dashboard.py lines 582–589 · run_research.py lines 37–75", "dashboard.py#L582-L589"),
+        ("Pipeline → Analyst → pipeline", "`run_workflow()` returns `markdown_report`, its `ledger`, `metrics`, and `skeptic_inputs` as a Python dictionary.", "run_research.py lines 78–88 · agents/analyst.py lines 1310–1344", "run_research.py#L78-L88"),
+        ("Pipeline → Verifier → pipeline", "The Verifier receives the report and provenance sidecar paths, then returns an audit summary and any wrong or unverifiable claims.", "run_research.py lines 95–101 · agents/verifier.py line 533", "run_research.py#L95-L101"),
+        ("Verifier → Analyst · conditional", "Only when wrong figures are found, the orchestrator passes `wrong_items`, the report text, and the ledger to `correct_report()`, then audits once more.", "run_research.py lines 105–129 · agents/analyst.py lines 1356–1365", "run_research.py#L105-L129"),
+        ("Pipeline → Skeptic → pipeline", "The orchestrator expands `skeptic_inputs` into `evaluate_thesis(...)`. The Skeptic returns a verdict, review markdown, and its own ledger.", "run_research.py lines 152–162 · agents/analyst.py lines 1310–1344", "run_research.py#L152-L162"),
+        ("Pipeline → reports → dashboard", "The orchestrator saves the final dossier and sidecars; the dashboard opens `final_report.md` and displays it.", "run_research.py lines 177–194 · dashboard.py lines 586–595", "run_research.py#L177-L194"),
+    ]
+    source_base = "https://github.com/meetbansal3000/Finance-research-agents-tool-kit/blob/5065a97a5685eed92abbfb0f0b9584145b4eb47e/"
+    for idx, (title, detail, source_label, source_path) in enumerate(handoffs, start=1):
+        with st.expander(f"{idx:02d}  {title}", expanded=(idx == 1)):
+            st.markdown(detail)
+            st.markdown(f"[{source_label}]({source_base + source_path})")
+
+    nvidia_col, correction_col = st.columns(2)
+    with nvidia_col:
+        with st.container(border=True):
+            st.markdown("**Optional · NVIDIA NIM**")
+            st.caption("The Skeptic can request an NVIDIA NIM critique when `enable_nvidia=True`. The dashboard call leaves this flag at its default `False`.")
+            st.markdown(f"[Skeptic condition · agents/skeptic.py lines 699–714]({source_base}agents/skeptic.py#L699-L714)")
+    with correction_col:
+        with st.container(border=True):
+            st.markdown("**Evidence stays attached**")
+            st.caption("Analyst and Skeptic each keep a ledger; the orchestrator saves those as JSON sidecars beside their reports.")
+            st.markdown(f"[Ledger sidecars · run_research.py lines 83–88]({source_base}run_research.py#L83-L88)")
 
 elif nav_choice == "◎  Watchlist":
     st.markdown('<div class="header-style">🏆 Institutional Shortlist & Watchlist Scorecard</div>', unsafe_allow_html=True)
@@ -686,7 +754,7 @@ elif nav_choice == "◇  Valuation":
 # =============================================================================
 elif nav_choice == "✦  Research studio":
     st.markdown('<div class="header-style">🤖 Autonomous Multi-Agent Research Committee</div>', unsafe_allow_html=True)
-    st.markdown("Triggers the full multi-agent pipeline: **Analyst** $\\to$ **Verifier** $\\to$ **Skeptic** $\\to$ **NVIDIA NIM** $\\to$ **Provenance Ledger**.")
+    st.markdown("Runs the Analyst, Verifier, and Skeptic stages through the research orchestrator. NVIDIA NIM is an optional path and is off in this dashboard flow.")
 
     col_r1, col_r2 = st.columns([2, 1])
     with col_r1:
