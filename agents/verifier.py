@@ -43,7 +43,19 @@ class ReportVerifier:
         rfy_match = re.search(r'(?:^#+\s+.*?\b(FY\d{4})\b|\b(?:Period|Fiscal Year):\s*(FY\d{4})\b)', self.report_text, re.MULTILINE | re.IGNORECASE)
         self.report_fiscal_year = (rfy_match.group(1) or rfy_match.group(2)).upper() if rfy_match else None
         rpe_match = re.search(r'(?:^#+\s+.*?\b(20\d{2}-\d{2}-\d{2})\b|\b(?:Period End|Date):\s*(20\d{2}-\d{2}-\d{2})\b)', self.report_text, re.MULTILINE | re.IGNORECASE)
-        self.report_period_end = (rpe_match.group(1) or rpe_match.group(2)) if rpe_match else None
+        if rpe_match:
+            self.report_period_end = rpe_match.group(1) or rpe_match.group(2)
+        else:
+            word_date_match = re.search(r'\b(September|October|November|December|January|February|March|April|May|June|July|August)\s+(\d{1,2}),?\s+(20\d{2})\b', self.report_text, re.IGNORECASE)
+            if word_date_match:
+                m_names = {"january": "01", "february": "02", "march": "03", "april": "04", "may": "05", "june": "06",
+                           "july": "07", "august": "08", "september": "09", "october": "10", "november": "11", "december": "12"}
+                m_str = m_names.get(word_date_match.group(1).lower(), "01")
+                d_str = f"{int(word_date_match.group(2)):02d}"
+                y_str = word_date_match.group(3)
+                self.report_period_end = f"{y_str}-{m_str}-{d_str}"
+            else:
+                self.report_period_end = None
             
         if os.path.exists(self.ledger_path):
             self.ledger = ProvenanceLedger.load_sidecar(self.ledger_path)
@@ -288,8 +300,8 @@ class ReportVerifier:
                 metric_name = inputs.get("metric")
                 ticker_sym = inputs.get("ticker", "")
                 period_req = inputs.get("period", "")
-                from tools.filing import FilingParser
-                fp = FilingParser()
+                from tools.filing import FilingExtractor
+                fp = FilingExtractor()
                 refetched = None
                 source_label = "Filing Re-parse"
                 if "TCS" in ticker_sym:
@@ -917,6 +929,24 @@ class ReportVerifier:
                                 "source": source_url,
                                 "error_type": "PERIOD_MISMATCH",
                                 "failure_reason": f"Figure period {entry_fiscal_year} differs from report stated period {self.report_fiscal_year}."
+                            })
+                            period_mismatch = True
+
+                    # Strict period_end integrity check:
+                    # If report states a specific period end (e.g. 2025-09-27) and ledger entry records a different period_end
+                    if not period_mismatch and self.report_period_end and entry_period_end:
+                        is_prior_line = any(w in unit_str.lower() for w in ["prior", "previous", "earlier", "ago", "last year", "fy2024", "fy2023", "2024-09-28"])
+                        if not is_prior_line and str(entry_period_end).strip() != str(self.report_period_end).strip():
+                            unit_wrong.append({
+                                "line": line_idx,
+                                "ledger_id": l_id,
+                                "claim": unit_str,
+                                "stated_in_report": f"Current period claim in {self.report_period_end} report",
+                                "actual_ledger_value": f"Ledger period_end: {entry_period_end}",
+                                "correct_value": f"Period mismatch: figure period_end is {entry_period_end}, report stated period_end is {self.report_period_end}",
+                                "source": source_url,
+                                "error_type": "PERIOD_MISMATCH",
+                                "failure_reason": f"Figure period_end {entry_period_end} differs from report stated period_end {self.report_period_end}."
                             })
                             period_mismatch = True
                 if period_mismatch:

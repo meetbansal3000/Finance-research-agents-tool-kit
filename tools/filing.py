@@ -1035,3 +1035,5 @@ class FilingExtractor:
             "metrics": extracted,
             "ledger_ids": ledger_ids
         }
+
+FilingParser = FilingExtractor

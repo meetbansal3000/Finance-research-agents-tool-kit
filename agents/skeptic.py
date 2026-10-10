@@ -545,7 +545,7 @@ class SkepticAgent:
             is_immaterial = rev_total > 0 and (wcd["inv_curr"] / rev_total) < 0.02
             if is_immaterial:
                 checklist_rows.append(("Inventory Divergence", f"Divergence {inv_div:+.2f}% [{l_inv}] (Immaterial: <2% of revenue)", f"[{l_inv}]", "NOT APPLICABLE"))
-                unperformed_count += 1
+                # Immaterial inventory is NOT APPLICABLE and excluded from performed checks count
             else:
                 inv_pass = inv_div <= 5.0
                 checklist_rows.append(("Inventory Divergence", f"Divergence {inv_div:+.2f}% [{l_inv}]", f"[{l_inv}]", "PASS" if inv_pass else "FAIL"))
@@ -568,7 +568,7 @@ class SkepticAgent:
                 failures.append(f"Inventory Divergence: Inventory growth diverged from revenue by {inv_div:+.2f}% [{l_inv}].")
         else:
             checklist_rows.append(("Inventory Divergence", "Service/Software Business (No Physical Inventory)", "N/A", "NOT APPLICABLE"))
-            unperformed_count += 1
+            # Software/service without physical inventory is NOT APPLICABLE and excluded from performed checks count
 
         # Check 7: Refinancing / Liquidity Risk
         if short_term_debt is not None and liquid_cash > 0:
@@ -598,12 +598,12 @@ class SkepticAgent:
                 inputs={"customer_concentration": max_customer_concentration_pct},
                 output=max_customer_concentration_pct,
                 raw_value=max_customer_concentration_pct,
-                source="SEC 10-K Note Disclosures / XBRL us-gaap:ConcentrationRiskPercentage1",
+                source="SEC 10-K Note Disclosures / Textual Note Extraction",
                 notes="Max single customer revenue %"
             )
             cust_pass = max_customer_concentration_pct <= 10.0
             display_val = "<10%" if max_customer_concentration_pct <= 0.0 else f"{max_customer_concentration_pct:.2f}%"
-            checklist_rows.append(("Customer Concentration", f"Top Customer = {display_val} [{l_cust}]", f"[{l_cust}]", "PASS" if cust_pass else "FAIL"))
+            checklist_rows.append(("Customer Concentration", f"Top Customer = {display_val} [{l_cust}] (Method: SEC 10-K Note Disclosure Analysis)", f"[{l_cust}]", "PASS" if cust_pass else "FAIL"))
             if not cust_pass:
                 failures.append(f"Customer Concentration: Top customer accounts for {display_val} [{l_cust}] of total revenue.")
         else:
@@ -612,17 +612,18 @@ class SkepticAgent:
 
         # Evaluate Overall Verdict strictly by written quantitative policy
         total_checks = len(checklist_rows)
-        performed_checks = total_checks - unperformed_count
+        applicable_checks = len([r for r in checklist_rows if r[3] != "NOT APPLICABLE"])
+        performed_checks = applicable_checks - unperformed_count
 
-        if unperformed_count > 2:
-            verdict_text = "INCONCLUSIVE"
-            verdict_detail = f"[ANALYSIS] INCONCLUSIVE: {unperformed_count} of {total_checks} checks were NOT CHECKED due to unavailable filing data."
-        elif len(failures) > 0:
+        if len(failures) > 0:
             verdict_text = "VULNERABLE / STRETCHED"
             verdict_detail = f"[ANALYSIS] VULNERABLE: Found {len(failures)} quantitative failure(s) across {performed_checks} performed checks."
+        elif unperformed_count > 2:
+            verdict_text = "INCONCLUSIVE"
+            verdict_detail = f"[ANALYSIS] INCONCLUSIVE: {unperformed_count} of {applicable_checks} applicable checks were NOT CHECKED due to unavailable filing data."
         else:
             verdict_text = "ROBUST / NO STRONG COUNTER-EVIDENCE FOUND"
-            verdict_detail = f"[ANALYSIS] No strong counter-evidence found among the checks performed ({performed_checks} of {total_checks} checks performed, {unperformed_count} data checks unavailable)."
+            verdict_detail = f"[ANALYSIS] No strong counter-evidence found among the checks performed ({performed_checks} of {applicable_checks} applicable checks performed and passed, {unperformed_count} data checks unavailable)."
 
         # Generate Markdown Report
         skeptic_report = f"""# Skeptic Adversarial Review: {ticker}
@@ -731,6 +732,7 @@ class SkepticAgent:
         return {
             "ticker": ticker,
             "verdict": verdict_text,
+            "verdict_text": verdict_text,
             "unperformed_count": unperformed_count,
             "markdown_report": skeptic_report,
             "ledger": self.ledger,
@@ -741,6 +743,7 @@ class SkepticAgent:
             "implied_cagr": implied_cagr,
             "grid_results": grid_results,
             "checklist": checklist_rows,
+            "checklist_rows": checklist_rows,
             "failures": failures,
             "nvidia_critique": nvidia_critique_text,
             "nvidia_ledger_id": nvidia_ledger_id

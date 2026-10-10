@@ -1399,17 +1399,20 @@ class AnalystAgent:
                 # Scaled in crore
                 val_cr = target_val / 1e7 if target_val > 1e6 else target_val
                 formatted_val = f"₹{val_cr:,.0f} Crore"
-            elif "M" in original_line or (target_val > 1e6 and "%" not in original_line):
-                val_m = target_val / 1e6 if target_val > 1e5 else target_val
+            elif "M" in original_line or (abs(target_val) > 1e6 and "%" not in original_line):
+                val_m = target_val / 1e6 if abs(target_val) > 1e5 else target_val
                 sym = "$" if curr == "USD" else ("₹" if curr == "INR" else "")
-                formatted_val = f"{sym}{val_m:,.0f}M"
+                if val_m < 0:
+                    formatted_val = f"-{sym}{abs(val_m):,.0f}M"
+                else:
+                    formatted_val = f"{sym}{val_m:,.0f}M"
             elif "%" in original_line:
                 formatted_val = f"{target_val:.2f}%"
             else:
                 formatted_val = f"{target_val:,.2f}"
 
             # Replace the wrong figure preceding [LEDGER_XXXX] in the text
-            num_pattern = re.compile(rf'(\$|₹|£|€)?\s*(-?[0-9,]+(?:\.[0-9]+)?)\s*(M|B|Crore|Cr|%)?\s*(?=\[{re.escape(ledger_id)}\])')
+            num_pattern = re.compile(rf'(-)?\s*(\$|₹|£|€)?\s*(-?[0-9,]+(?:\.[0-9]+)?)\s*(M|B|Crore|Cr|%)?\s*(?=\[{re.escape(ledger_id)}\])')
             if num_pattern.search(corrected_text):
                 corrected_text = num_pattern.sub(f"{formatted_val} ", corrected_text)
             elif stated_num is not None:
