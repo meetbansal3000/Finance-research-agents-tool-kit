@@ -118,7 +118,8 @@ class ProvenanceLedger:
         fiscal_year: Optional[str] = None,
         source_tag: Optional[str] = None,
         accession: Optional[str] = None,
-        url: Optional[str] = None
+        url: Optional[str] = None,
+        doc_path: Optional[str] = None
     ) -> str:
         """Record a data extraction or calculation in the provenance ledger.
         Generates a unique ledger ID and cryptographic integrity signature.
@@ -206,6 +207,7 @@ class ProvenanceLedger:
             "fiscal_year": resolved_fiscal_year,
             "accession": resolved_accession,
             "url": resolved_url,
+            "doc_path": doc_path or inputs.get("doc_path"),
             "source_tag": resolved_source_tag,
             "inputs": inputs,
             "output": output,

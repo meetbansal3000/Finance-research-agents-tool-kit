@@ -53,9 +53,11 @@ class FilingExtractor:
                 with open(cache_path, "wb") as f:
                     f.write(content)
                 # Persist sidecar metadata for identity and content verification
+                http_status = getattr(resp, 'status', getattr(resp, 'code', 200))
                 meta_data = {
                     "url": url,
                     "filename": filename,
+                    "http_status": http_status,
                     "size": len(content),
                     "sha256": hashlib.sha256(content).hexdigest(),
                     "downloaded_at": datetime.datetime.now().isoformat()

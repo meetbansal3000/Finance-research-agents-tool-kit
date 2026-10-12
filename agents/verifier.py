@@ -8,6 +8,7 @@ Never edits the original report.
 import os
 import re
 import json
+import hashlib
 import datetime
 from typing import Dict, Any, List, Tuple, Optional
 from tools.ledger import ProvenanceLedger
@@ -554,7 +555,9 @@ class ReportVerifier:
         
         # 1. Check Ledger Cryptographic HMAC Integrity
         if self.ledger:
+            filings_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "library", "filings")
             for l_id in list(self.ledger.entries.keys()):
+                entry = self.ledger.entries[l_id]
                 if not self.ledger.verify_entry_integrity(l_id):
                     self.wrong.append({
                         "line": 0,
@@ -562,11 +565,97 @@ class ReportVerifier:
                         "claim": f"Ledger entry {l_id}",
                         "error_type": "LEDGER_TAMPERED",
                         "stated_in_report": "N/A",
-                        "actual_ledger_value": self.ledger.entries[l_id].get("raw_value"),
+                        "actual_ledger_value": entry.get("raw_value"),
                         "correct_value": "INTEGRITY_COMPROMISED",
-                        "source": self.ledger.entries[l_id].get("source"),
+                        "source": entry.get("source"),
                         "failure_reason": f"Cryptographic HMAC signature mismatch on {l_id}. Entry was manually edited or injected!"
                     })
+
+                # Check Document Sidecar Metadata and SHA-256 Integrity
+                doc_candidates = []
+                entry_inputs = entry.get("inputs") or {}
+                if entry.get("doc_path"):
+                    doc_candidates.append(entry.get("doc_path"))
+                if entry_inputs.get("doc_path"):
+                    doc_candidates.append(entry_inputs.get("doc_path"))
+
+                src_str = str(entry.get("source") or "")
+                # Extract filename or path mentioned in source
+                m_f = re.search(r'([a-zA-Z0-9_\.-]+\.(?:htm|html|md|pdf|json|txt))', src_str, re.IGNORECASE)
+                if m_f:
+                    extracted_fname = m_f.group(1)
+                    if not extracted_fname.endswith(".meta.json"):
+                        doc_candidates.append(extracted_fname)
+                        doc_candidates.append(os.path.join(filings_dir, extracted_fname))
+
+                # Resolve each candidate path
+                resolved_cands = []
+                rep_dir = os.path.dirname(self.report_path) if hasattr(self, "report_path") and self.report_path else None
+                for cand in doc_candidates:
+                    if not cand:
+                        continue
+                    cand_str = str(cand)
+                    if os.path.isabs(cand_str) and os.path.exists(cand_str):
+                        resolved_cands.append(cand_str)
+                    elif rep_dir and os.path.exists(os.path.join(rep_dir, cand_str)):
+                        resolved_cands.append(os.path.join(rep_dir, cand_str))
+                    elif rep_dir and os.path.exists(os.path.join(os.path.dirname(rep_dir), cand_str)):
+                        resolved_cands.append(os.path.join(os.path.dirname(rep_dir), cand_str))
+                    elif os.path.exists(os.path.join(filings_dir, os.path.basename(cand_str))):
+                        resolved_cands.append(os.path.join(filings_dir, os.path.basename(cand_str)))
+                    elif os.path.exists(cand_str):
+                        resolved_cands.append(cand_str)
+
+                # Deduplicate candidates
+                resolved_cands = list(dict.fromkeys(resolved_cands))
+
+                for cand in resolved_cands:
+                    norm_cand = os.path.normpath(cand)
+                    if os.path.exists(norm_cand) and os.path.isfile(norm_cand):
+                        meta_file = f"{norm_cand}.meta.json"
+                        if not os.path.exists(meta_file):
+                            self.wrong.append({
+                                "line": 0,
+                                "ledger_id": l_id,
+                                "claim": f"Document {os.path.basename(norm_cand)} backing {l_id}",
+                                "error_type": "MISSING_DOCUMENT_SIDECAR",
+                                "stated_in_report": "N/A",
+                                "actual_ledger_value": entry.get("raw_value"),
+                                "correct_value": "SIDECAR_METADATA_REQUIRED",
+                                "source": entry.get("source"),
+                                "failure_reason": f"Filing document '{os.path.basename(norm_cand)}' has no .meta.json sidecar written by downloader. Hand-written files are strictly prohibited!"
+                            })
+                        else:
+                            try:
+                                with open(meta_file, "r", encoding="utf-8") as f_meta:
+                                    meta_data = json.load(f_meta)
+                                with open(norm_cand, "rb") as f_doc:
+                                    actual_hash = hashlib.sha256(f_doc.read()).hexdigest()
+                                expected_hash = meta_data.get("sha256")
+                                if actual_hash != expected_hash:
+                                    self.wrong.append({
+                                        "line": 0,
+                                        "ledger_id": l_id,
+                                        "claim": f"Document {os.path.basename(norm_cand)} backing {l_id}",
+                                        "error_type": "DOCUMENT_HASH_MISMATCH",
+                                        "stated_in_report": "N/A",
+                                        "actual_ledger_value": entry.get("raw_value"),
+                                        "correct_value": "INTEGRITY_COMPROMISED",
+                                        "source": entry.get("source"),
+                                        "failure_reason": f"Filing document '{os.path.basename(norm_cand)}' SHA-256 ({actual_hash}) does not match sidecar metadata ({expected_hash})!"
+                                    })
+                            except Exception as e:
+                                self.wrong.append({
+                                    "line": 0,
+                                    "ledger_id": l_id,
+                                    "claim": f"Document {os.path.basename(norm_cand)} backing {l_id}",
+                                    "error_type": "DOCUMENT_METADATA_ERROR",
+                                    "stated_in_report": "N/A",
+                                    "actual_ledger_value": entry.get("raw_value"),
+                                    "correct_value": "CORRUPTED_METADATA",
+                                    "source": entry.get("source"),
+                                    "failure_reason": f"Failed reading sidecar metadata for '{os.path.basename(norm_cand)}': {e}"
+                                })
 
         units = self._split_into_units(self.report_text)
         self.not_refetched = []
