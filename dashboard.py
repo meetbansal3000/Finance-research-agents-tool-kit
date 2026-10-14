@@ -690,6 +690,10 @@ with st.sidebar.form(key="sb_add_stock_form", clear_on_submit=True):
         if sb_search_input.strip():
             ok, msg, updated = add_to_watchlist(sb_search_input)
             st.session_state["watchlist"] = updated
+            try:
+                get_shortlist_metrics_for_universe.clear()
+            except Exception:
+                pass
             if ok:
                 st.sidebar.success(msg)
             else:
@@ -847,6 +851,10 @@ elif nav_choice == "◎  Coverage & Screening":
                 if add_query.strip():
                     ok, msg, updated = add_to_watchlist(add_query)
                     st.session_state["watchlist"] = updated
+                    try:
+                        get_shortlist_metrics_for_universe.clear()
+                    except Exception:
+                        pass
                     if ok:
                         st.success(msg)
                     else:
@@ -858,6 +866,10 @@ elif nav_choice == "◎  Coverage & Screening":
             if submit_rst:
                 updated = reset_watchlist()
                 st.session_state["watchlist"] = updated
+                try:
+                    get_shortlist_metrics_for_universe.clear()
+                except Exception:
+                    pass
                 st.info("Coverage universe reset to institutional baseline.")
                 st.rerun()
 
@@ -874,17 +886,21 @@ elif nav_choice == "◎  Coverage & Screening":
                 if stock_to_del and stock_to_del != "(Select ticker)":
                     updated = remove_from_watchlist(stock_to_del)
                     st.session_state["watchlist"] = updated
+                    try:
+                        get_shortlist_metrics_for_universe.clear()
+                    except Exception:
+                        pass
                     st.success(f"Removed '{stock_to_del}' from coverage list.")
                     st.rerun()
 
     st.divider()
 
-    # Filter Controls
+    # Filter Controls (Default to 0% margin and 3.0x debt so ALL newly added stocks are visible immediately)
     col_f1, col_f2, col_f3 = st.columns(3)
     with col_f1:
-        min_margin = st.slider("Minimum Operating Margin (%)", min_value=0, max_value=50, value=15, step=1)
+        min_margin = st.slider("Minimum Operating Margin (%)", min_value=0, max_value=50, value=0, step=1, help="Default 0% displays all universe stocks. Raise to screen for high operating margin businesses.")
     with col_f2:
-        max_de = st.slider("Maximum Debt-to-Equity Ratio (x)", min_value=0.1, max_value=3.0, value=1.5, step=0.1)
+        max_de = st.slider("Maximum Debt-to-Equity Ratio (x)", min_value=0.1, max_value=5.0, value=3.0, step=0.1, help="Default 3.0x displays all stocks. Lower to filter for low-debt balance sheets.")
     with col_f3:
         st.write("")
         st.write("")
@@ -904,6 +920,12 @@ elif nav_choice == "◎  Coverage & Screening":
             filtered_df = df_scorecard[(op_nums >= min_margin) & (de_nums <= max_de)]
         except Exception:
             filtered_df = df_scorecard
+
+        tot_ct = len(df_scorecard)
+        vis_ct = len(filtered_df)
+        if vis_ct < tot_ct:
+            excluded = [t for t in df_scorecard["Ticker"] if t not in set(filtered_df["Ticker"])]
+            st.info(f"ℹ️ **Screener Filter Active:** Showing **{vis_ct} of {tot_ct}** stocks in coverage universe ({tot_ct - vis_ct} hidden by margin/debt filters: **{', '.join(excluded)}**). Adjust sliders to 0% / 3.0x to view all.")
 
         st.dataframe(filtered_df, use_container_width=True, hide_index=True)
 
