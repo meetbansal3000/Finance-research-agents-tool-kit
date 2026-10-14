@@ -12,6 +12,7 @@ import os
 import sys
 import datetime
 import json
+import glob
 import pandas as pd
 import numpy as np
 
@@ -544,8 +545,16 @@ def get_agent_and_market_prediction(ticker: str):
     curr_p = market_data["current_price"]
     if clean_sym in dcf_presets:
         p = dcf_presets[clean_sym]
-        res_dcf = dcf(p["fcf"], p["growth"], p["t_growth"], p["wacc"], 5, p["shares"], p["net_debt"])
-        fv = res_dcf.get("fair_value_per_share", 0.0)
+        dcf_calc = dcf(
+            base_fcf=p["fcf"],
+            growth_rates=[p["growth"]] * 5,
+            discount_rate=p["wacc"],
+            terminal_growth_rate=p["t_growth"],
+            shares_outstanding=p["shares"],
+            net_debt=p["net_debt"]
+        )
+        dcf_res = dcf_calc.get("result", {})
+        fv = dcf_res.get("fair_value_per_share", 0.0)
         agent_data["analyst_fair_value"] = fv
         if curr_p > 0 and fv > 0:
             mos = ((fv - curr_p) / curr_p) * 100.0
