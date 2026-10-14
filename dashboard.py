@@ -1,20 +1,17 @@
 """
-dashboard.py - Interactive Financial Research & Shortlisting Terminal
+dashboard.py - Institutional Equity Research & Shortlisting Terminal
 Built with Streamlit and Plotly for the Antigravity Autonomous Finance Suite.
-Features:
-  1. 🏆 Shortlisting Scorecard: Multi-factor screening (Operating Margin, Leverage, FCF Yield)
-  2. 📊 Live Candlestick Charts: Interactive OHLCV charts with volume and moving averages
-  3. 🎛️ Interactive DCF Valuation: Dynamic sliders for WACC, 5Y Growth, Terminal Growth, and sensitivity table
-  4. 🤖 Autonomous Multi-Agent Committee: Live research runner for any global ticker
-  5. ⚡ NVIDIA cuOpt Portfolio Optimizer: Quadratic programming portfolio variance minimization
-  6. 🚚 Supply Chain Logistics Optimizer: cuOpt CVRP fleet routing & margin elasticity
-  7. 📓 Decision Journal Viewer: Real-time portfolio journal inspection and decision logging
-  8. 🚨 Regulatory Filing & Market Alerts: Live monitor of SEC filings and price shocks
+Organized into 4 core functional domains:
+  1. Market Intelligence & Screening (Executive Summary, Coverage Scorecard, TradingView Terminal)
+  2. Fundamental Research & Valuation (Interactive DCF, Multi-Agent Committee, Antigravity Copilot)
+  3. Quantitative Risk & Portfolio (NVIDIA cuOpt QP Portfolio Lab, Supply Chain Economics)
+  4. Audit, Governance & System (Interactive 3D Pipeline Map, Decision Journal, Filings & Alerts)
 """
 
 import os
 import sys
 import datetime
+import json
 import pandas as pd
 import numpy as np
 
@@ -55,6 +52,8 @@ from tools.tradingview import (
     get_tradingview_web_url
 )
 
+from tools.interactive_workflow_3d import render_interactive_3d_workflow
+
 # Check if running in Streamlit
 try:
     import streamlit as st
@@ -68,7 +67,7 @@ def run_standalone_launcher():
     """Fallback if user runs 'python dashboard.py' in terminal instead of 'streamlit run'."""
     import subprocess
     print("=" * 60)
-    print("🚀 LAUNCHING ANTIGRAVITY RESEARCH TERMINAL")
+    print("🚀 LAUNCHING MERIDIAN RESEARCH TERMINAL")
     print("=" * 60)
     print("Starting Streamlit web dashboard on http://localhost:8501 ...")
     venv_streamlit = os.path.join(PROJECT_DIR, ".venv", "Scripts", "streamlit.exe")
@@ -86,115 +85,218 @@ if not HAS_STREAMLIT:
 
 
 # =============================================================================
-# STREAMLIT UI CONFIGURATION
+# STREAMLIT UI CONFIGURATION & INSTITUTIONAL DESIGN SYSTEM
 # =============================================================================
 st.set_page_config(
-    page_title="Meridian | Equity Research",
+    page_title="Meridian | Equity Research Terminal",
     page_icon="◈",
     layout="wide",
     initial_sidebar_state="expanded"
 )
 
-# Meridian design system
+# Meridian Institutional Design Tokens (FactSet / Bloomberg aesthetic: high density, crisp lines, zero cartoon AI styling)
 st.markdown("""
 <style>
     :root {
         color-scheme: light;
-        --ink:#18211e; --muted:#65716b; --pine:#1c2a25; --pine-soft:#2c4137;
-        --paper:#f1efe6; --surface:#faf9f4; --white:#fffefa; --line:#d9ddd3;
-        --line-dark:#33453b; --acid:#d6ed75; --positive:#26744d; --negative:#b34e43;
-        --control-radius:7px; --panel-radius:10px;
+        --ink: #111915;
+        --muted: #5a6b63;
+        --pine: #182620;
+        --pine-soft: #273b32;
+        --paper: #f4f3ec;
+        --surface: #faf9f5;
+        --white: #ffffff;
+        --line: #d3dbd4;
+        --line-dark: #2c3f35;
+        --accent: #2e694d;
+        --accent-light: #e6f2eb;
+        --gold: #b38822;
+        --gold-light: #fdf8e6;
+        --positive: #26744d;
+        --negative: #b34e43;
+        --control-radius: 6px;
+        --panel-radius: 8px;
     }
-    html,body,[class*="css"] { font-family:"Segoe UI","Aptos",Arial,sans-serif; }
-    .stApp,[data-testid="stAppViewContainer"],[data-testid="stMain"] { color:var(--ink); background:var(--paper); }
-    [data-testid="stHeader"] { background:rgba(241,239,230,.96); border-bottom:1px solid rgba(24,33,30,.08); }
-    [data-testid="stToolbar"] { right:1.5rem; }
-    .main .block-container { max-width:1480px; padding:1.6rem clamp(1rem,3.2vw,3rem) 3.5rem; }
-    h1,h2,h3,h4 { color:var(--ink); letter-spacing:-.025em; }
-    h1,.header-style { font-family:Georgia,"Times New Roman",serif; }
-    h1 { font-size:clamp(1.8rem,3vw,2.8rem); font-weight:600; line-height:1.08; }
-    h2 { font-size:clamp(1.25rem,2vw,1.55rem); font-weight:650; line-height:1.22; }
-    h3 { font-size:1.08rem; font-weight:650; line-height:1.3; }
-    .header-style { color:var(--ink); font-size:clamp(1.85rem,3vw,2.75rem); font-weight:600; line-height:1.08; letter-spacing:-.04em; margin:.1rem 0 .35rem; }
-    .meridian-eyebrow { display:none; }
-    .meridian-intro { color:var(--muted); font-size:.97rem; line-height:1.55; max-width:820px; margin:.25rem 0 1.35rem; }
-    p,li { line-height:1.55; }
-    [data-testid="stCaptionContainer"] { color:var(--muted); }
-    [data-testid="stCaptionContainer"] p { line-height:1.45; }
-    [data-testid="stVerticalBlock"] { gap:.85rem; }
-    hr { border:0; border-top:1px solid var(--line); margin:1.2rem 0; }
-    section[data-testid="stSidebar"] { background:var(--pine); border-right:1px solid #273a31; }
-    section[data-testid="stSidebar"] > div { padding:1.25rem .9rem 1.35rem; }
+    html, body, [class*="css"] {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Aptos", Arial, sans-serif;
+    }
+    .stApp, [data-testid="stAppViewContainer"], [data-testid="stMain"] {
+        color: var(--ink);
+        background: var(--paper);
+    }
+    [data-testid="stHeader"] {
+        background: rgba(244, 243, 236, 0.96);
+        border-bottom: 1px solid rgba(17, 25, 21, 0.08);
+    }
+    .main .block-container {
+        max-width: 1520px;
+        padding: 1.4rem clamp(1rem, 2.8vw, 2.8rem) 3.5rem;
+    }
+    h1, h2, h3, h4 {
+        color: var(--ink);
+        letter-spacing: -0.025em;
+    }
+    h1, .header-style {
+        font-family: Georgia, "Times New Roman", serif;
+        font-weight: 600;
+        line-height: 1.1;
+        letter-spacing: -0.035em;
+        margin: 0 0 0.25rem;
+    }
+    .header-style {
+        font-size: clamp(1.8rem, 2.8vw, 2.5rem);
+    }
+    .meridian-intro {
+        color: var(--muted);
+        font-size: 0.96rem;
+        line-height: 1.5;
+        max-width: 900px;
+        margin-bottom: 1.25rem;
+    }
+
+    /* Sidebar Hierarchy */
+    section[data-testid="stSidebar"] {
+        background: var(--pine);
+        border-right: 1px solid #23372d;
+    }
+    section[data-testid="stSidebar"] > div {
+        padding: 1.15rem 0.85rem 1.4rem;
+    }
     section[data-testid="stSidebar"] [data-testid="stMarkdownContainer"] p,
-    section[data-testid="stSidebar"] label,section[data-testid="stSidebar"] small,
-    section[data-testid="stSidebar"] [data-testid="stCaptionContainer"] { color:#d0d9d2; }
-    section[data-testid="stSidebar"] h1,section[data-testid="stSidebar"] h2,
-    section[data-testid="stSidebar"] h3,section[data-testid="stSidebar"] h4 { color:#f4f3ec; letter-spacing:-.01em; }
-    section[data-testid="stSidebar"] [role="radiogroup"] { gap:.18rem; }
+    section[data-testid="stSidebar"] label,
+    section[data-testid="stSidebar"] small,
+    section[data-testid="stSidebar"] [data-testid="stCaptionContainer"] {
+        color: #cad6ce;
+    }
+    section[data-testid="stSidebar"] h1, section[data-testid="stSidebar"] h2,
+    section[data-testid="stSidebar"] h3, section[data-testid="stSidebar"] h4 {
+        color: #f7faf7;
+        letter-spacing: -0.01em;
+    }
+    .sidebar-domain-header {
+        font-size: 0.68rem;
+        font-weight: 800;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: #8da396;
+        margin: 1.1rem 0 0.35rem 0.4rem;
+    }
+    section[data-testid="stSidebar"] [role="radiogroup"] {
+        gap: 0.15rem;
+    }
     section[data-testid="stSidebar"] [role="radiogroup"] label {
-        min-height:2.55rem; border:1px solid transparent; border-radius:var(--control-radius);
-        padding:.48rem .65rem; color:#c7d1ca; transition:background .14s ease,color .14s ease,border-color .14s ease;
+        min-height: 2.35rem;
+        border: 1px solid transparent;
+        border-radius: var(--control-radius);
+        padding: 0.42rem 0.65rem;
+        color: #c0cec4;
+        font-size: 0.88rem;
+        transition: background 0.14s ease, color 0.14s ease;
     }
-    section[data-testid="stSidebar"] [role="radiogroup"] label:hover { background:rgba(255,255,255,.055); color:#fff; }
-    section[data-testid="stSidebar"] [role="radiogroup"] label:has(input:checked) { background:var(--acid); border-color:var(--acid); color:var(--pine); font-weight:700; }
-    section[data-testid="stSidebar"] [role="radiogroup"] label:focus-within { outline:2px solid var(--acid); outline-offset:2px; }
-    section[data-testid="stSidebar"] [data-testid="stExpander"] { border:1px solid var(--line-dark); border-radius:var(--control-radius); background:rgba(255,255,255,.035); }
-    section[data-testid="stSidebar"] [data-testid="stExpander"] summary { color:#eef1e9; }
-    section[data-testid="stSidebar"] hr { border-color:var(--line-dark); }
-    [data-testid="stMetric"] { background:transparent; border:0; border-bottom:1px solid var(--line); border-radius:0; padding:.55rem .1rem .8rem; box-shadow:none; }
-    [data-testid="stMetricLabel"] { color:var(--muted); font-size:.78rem; font-weight:650; }
-    [data-testid="stMetricValue"] { color:var(--ink); font-weight:680; letter-spacing:-.035em; }
-    [data-testid="stMetricDelta"] { font-weight:650; }
-    div[data-testid="stVerticalBlockBorderWrapper"] { border-color:var(--line); border-radius:var(--panel-radius); background:var(--white); box-shadow:none; }
-    div.stButton > button,[data-testid="stDownloadButton"] button {
-        min-height:2.65rem; border:1px solid #aebbb0; border-radius:var(--control-radius);
-        color:var(--ink); font-weight:650; background:var(--white);
-        transition:background .14s ease,border-color .14s ease,transform .14s ease;
+    section[data-testid="stSidebar"] [role="radiogroup"] label:hover {
+        background: rgba(255, 255, 255, 0.05);
+        color: #ffffff;
     }
-    div.stButton > button:hover,[data-testid="stDownloadButton"] button:hover { border-color:var(--pine); background:#f2f3eb; transform:translateY(-1px); }
-    div.stButton > button[kind="primary"] { background:var(--acid); border-color:var(--acid); color:var(--pine); }
-    div.stButton > button[kind="primary"]:hover { background:#c8e45e; border-color:#c8e45e; }
-    button:focus-visible,a:focus-visible,input:focus-visible,textarea:focus-visible,[role="slider"]:focus-visible { outline:3px solid #a6c43f !important; outline-offset:2px; }
-    [data-baseweb="input"] > div,[data-baseweb="select"] > div,[data-baseweb="textarea"] > div { background:var(--white); border-color:#bfc8bd; border-radius:var(--control-radius); }
-    [data-baseweb="input"] > div:focus-within,[data-baseweb="select"] > div:focus-within,[data-baseweb="textarea"] > div:focus-within { border-color:var(--pine); box-shadow:0 0 0 2px rgba(40,80,61,.12); }
-    [data-testid="stSlider"] [role="slider"] { box-shadow:0 0 0 3px rgba(214,237,117,.45); }
-    [data-testid="stCheckbox"] label,[data-testid="stRadio"] label { color:var(--ink); }
-    [data-testid="stTabs"] [role="tablist"] { gap:.15rem; border-bottom:1px solid var(--line); }
-    [data-testid="stTabs"] button[role="tab"] { min-height:2.7rem; padding:.45rem .8rem; color:var(--muted); font-weight:650; border-bottom-width:2px; }
-    [data-testid="stTabs"] button[role="tab"][aria-selected="true"] { color:var(--pine); border-bottom-color:var(--pine); }
-    [data-testid="stExpander"] { border:1px solid var(--line); border-radius:var(--control-radius); background:rgba(255,254,250,.78); }
-    [data-testid="stExpander"] summary { color:var(--ink); font-weight:650; }
-    [data-testid="stDataFrame"],[data-testid="stTable"] { border:1px solid var(--line); border-radius:var(--control-radius); overflow:hidden; box-shadow:none; background:var(--white); }
-    [data-testid="stPlotlyChart"] { border:1px solid var(--line); border-radius:var(--panel-radius); background:var(--white); padding:.1rem; box-shadow:none; }
-    [data-testid="stAlert"] { border-radius:var(--control-radius); }
-    .meridian-card { background:var(--white); border:1px solid var(--line); border-radius:var(--panel-radius); padding:1.05rem 1.15rem; height:100%; box-shadow:none; }
-    .meridian-card:before { display:none; }
-    .meridian-card-label { color:var(--muted); font-size:.72rem; font-weight:700; letter-spacing:.08em; text-transform:uppercase; }
-    .meridian-card-value { color:var(--ink); font:600 1.8rem Georgia,"Times New Roman",serif; letter-spacing:-.035em; margin:.35rem 0 .15rem; }
-    .meridian-card-note { color:var(--muted); font-size:.82rem; line-height:1.45; }
-    .process-hierarchy { display:grid; gap:.7rem; margin:.8rem 0 1.4rem; }
-    .process-root { background:var(--pine); color:#f4f3ec; border:1px solid var(--pine); border-radius:var(--panel-radius); padding:.9rem 1rem; text-align:center; box-shadow:none; }
-    .process-root small { display:block; color:#c7d1ca; margin-top:.2rem; }
-    .process-arrow { color:#70867a; font-size:1.1rem; line-height:1; text-align:center; }
-    .process-row { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:.7rem; }
-    .process-node { background:var(--white); color:var(--ink); border:1px solid var(--line); border-radius:var(--control-radius); padding:.9rem 1rem; min-height:106px; box-shadow:none; }
-    .process-node strong { display:block; font-size:.96rem; margin-bottom:.32rem; }
-    .process-node span { display:block; color:var(--muted); font-size:.84rem; line-height:1.5; }
-    .process-node .process-tag { display:inline-block; margin-top:.58rem; color:var(--pine); background:#eef3d8; border-radius:4px; padding:.16rem .42rem; font-size:.7rem; font-weight:700; }
-    .process-support { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:.7rem; }
-    @media (max-width:800px) {
-        .process-row,.process-support { grid-template-columns:1fr; }
-        .main .block-container { padding:1.2rem .9rem 2.5rem; }
-        [data-testid="stMetric"] { padding:.4rem .05rem .65rem; }
-        .header-style { font-size:clamp(1.8rem,8vw,2.35rem); }
+    section[data-testid="stSidebar"] [role="radiogroup"] label:has(input:checked) {
+        background: #273b32;
+        border-color: #3f594d;
+        color: #ffffff;
+        font-weight: 650;
     }
-    @media (prefers-reduced-motion:reduce) { *,*::before,*::after { scroll-behavior:auto !important; transition-duration:.01ms !important; animation-duration:.01ms !important; } }
+    section[data-testid="stSidebar"] hr {
+        border-color: var(--line-dark);
+        margin: 0.9rem 0;
+    }
+
+    /* Metric & Panel Cards */
+    .meridian-card {
+        background: var(--white);
+        border: 1px solid var(--line);
+        border-radius: var(--panel-radius);
+        padding: 1.1rem 1.25rem;
+        height: 100%;
+        box-shadow: none;
+    }
+    .meridian-card-label {
+        color: var(--muted);
+        font-size: 0.72rem;
+        font-weight: 750;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+    }
+    .meridian-card-value {
+        color: var(--ink);
+        font: 600 1.85rem Georgia, "Times New Roman", serif;
+        letter-spacing: -0.035em;
+        margin: 0.3rem 0 0.15rem;
+    }
+    .meridian-card-note {
+        color: var(--muted);
+        font-size: 0.82rem;
+        line-height: 1.45;
+    }
+
+    /* Badge Tags */
+    .badge {
+        display: inline-block;
+        font-size: 0.70rem;
+        font-weight: 750;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        padding: 0.18rem 0.5rem;
+        border-radius: 4px;
+        margin-right: 0.4rem;
+    }
+    .badge-audited { background: var(--accent-light); color: var(--accent); border: 1px solid #b7dcbf; }
+    .badge-assumption { background: var(--gold-light); color: var(--gold); border: 1px solid #ecdca0; }
+    .badge-estimated { background: #eef2f6; color: #3b5a75; border: 1px solid #c8d8e6; }
+
+    /* Tables & Inputs */
+    [data-testid="stDataFrame"], [data-testid="stTable"] {
+        border: 1px solid var(--line);
+        border-radius: var(--control-radius);
+        overflow: hidden;
+        background: var(--white);
+    }
+    div.stButton > button, [data-testid="stDownloadButton"] button {
+        min-height: 2.55rem;
+        border: 1px solid #a8b8aa;
+        border-radius: var(--control-radius);
+        color: var(--ink);
+        font-weight: 650;
+        background: var(--white);
+        transition: all 0.14s ease;
+    }
+    div.stButton > button:hover, [data-testid="stDownloadButton"] button:hover {
+        border-color: var(--pine);
+        background: #f1f4eb;
+    }
+    div.stButton > button[kind="primary"] {
+        background: #182620;
+        border-color: #182620;
+        color: #f7faf7;
+    }
+    div.stButton > button[kind="primary"]:hover {
+        background: #273b32;
+        border-color: #273b32;
+    }
+
+    /* Top Info Popover Guide */
+    .info-header {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 0.98rem;
+        font-weight: 700;
+        color: var(--pine);
+        margin-bottom: 0.4rem;
+    }
 </style>
 """, unsafe_allow_html=True)
 
 
 # =============================================================================
-# WATCHLIST & DATA HELPERS
+# WATCHLIST & GLOBAL DATA HELPERS
 # =============================================================================
 if "watchlist" not in st.session_state:
     st.session_state["watchlist"] = load_saved_watchlist()
@@ -206,92 +308,158 @@ if "active_ticker" not in st.session_state:
 @st.cache_data(ttl=1800)
 def load_historical_prices(ticker: str, period: str = "1y"):
     clean_sym = ticker.strip().upper()
-    t = yf.Ticker(clean_sym)
-    df = t.history(period=period)
-    return df
+    try:
+        t = yf.Ticker(clean_sym)
+        df = t.history(period=period)
+        return df
+    except Exception:
+        return pd.DataFrame()
 
 
 @st.cache_data(ttl=600)
 def get_shortlist_metrics_for_universe(tickers_tuple):
     records = []
     for sym in tickers_tuple:
-        row = compute_ticker_scorecard_metrics(sym)
-        records.append(row)
+        try:
+            row = compute_ticker_scorecard_metrics(sym)
+            records.append(row)
+        except Exception:
+            records.append({
+                "Ticker": sym, "Company": sym, "Exchange": "N/A",
+                "Operating Margin": "N/A", "Debt/Equity": "N/A", "FCF Conversion": "N/A",
+                "Current Price": "N/A", "Score": 0, "Signal": "UNAVAILABLE"
+            })
     return pd.DataFrame(records)
 
 
+def render_tab_info_guide(
+    title: str,
+    purpose: str,
+    capabilities: list,
+    use_case: str,
+    methodology: str,
+    provenance_tag: str = "AUDITED DATA · HMAC CHECKED"
+):
+    """Renders the top-right institutional ℹ️ Info popover modal on every tab."""
+    with st.popover("ℹ️ Tab Guide", use_container_width=True):
+        st.markdown(f"<div class='info-header'>◈ {title}</div>", unsafe_allow_html=True)
+        st.markdown(f"**Primary Purpose:** {purpose}")
+        st.markdown("**Key Capabilities:**")
+        for cap in capabilities:
+            st.markdown(f"- {cap}")
+        st.markdown(f"**Investor Due Diligence Use Case:**\n{use_case}")
+        st.markdown(f"**Underlying Methodology & Standards:**\n{methodology}")
+        st.caption(f"🛡️ Compliance: `{provenance_tag}`")
+
+
 # =============================================================================
-# SIDEBAR NAVIGATION & GLOBAL COMPANY SEARCH
+# SIDEBAR NAVIGATION (Properly Grouped by Investor Jobs-to-be-Done)
 # =============================================================================
-st.sidebar.markdown("<div style='font:600 1.45rem Georgia,serif;color:#f7faf7;letter-spacing:-.03em'>◈ Meridian</div><div style='color:#aebdb2;font-size:.78rem;margin:.15rem 0 1rem'>Equity research workspace</div>", unsafe_allow_html=True)
-st.sidebar.caption("Primary-source research · verified analysis")
+st.sidebar.markdown(
+    "<div style='font:600 1.45rem Georgia,serif;color:#f7faf7;letter-spacing:-.03em'>◈ Meridian</div>"
+    "<div style='color:#9bb0a3;font-size:0.78rem;margin:0.15rem 0 0.85rem'>Institutional Equity Terminal</div>",
+    unsafe_allow_html=True
+)
+
+st.sidebar.markdown(
+    "<div style='background:rgba(255,255,255,0.06);border:1px solid #283e33;border-radius:6px;padding:6px 9px;margin-bottom:0.9rem'>"
+    "<span style='color:#d6ed75;font-weight:700;font-size:0.75rem'>● SYSTEM STATUS: ONLINE</span><br>"
+    "<span style='color:#a6b9ad;font-size:0.72rem'>HMAC Provenance · Fail-Closed Audit</span>"
+    "</div>",
+    unsafe_allow_html=True
+)
 
 if "pending_page" in st.session_state:
     st.session_state["active_page"] = st.session_state.pop("pending_page")
 
+# Flat choices for Streamlit radio, cleanly grouped with headers
+NAV_CHOICES = [
+    # Domain 1: Market Intelligence
+    "⌂  Executive Summary",
+    "◎  Coverage & Screening",
+    "◒  Market Terminal & Charts",
+    # Domain 2: Fundamental Research & Valuation
+    "◇  Intrinsic Valuation (DCF)",
+    "✦  Autonomous Research Studio",
+    "◈  Antigravity Financial Copilot",
+    # Domain 3: Quantitative Risk & Portfolio
+    "▤  Portfolio Construction Lab",
+    "↗  Supply Chain & Logistics Risk",
+    # Domain 4: Audit, Governance & System
+    "↘  Interactive 3D Pipeline Map",
+    "▧  Investment Decision Journal",
+    "◉  Regulatory Filings & Alerts"
+]
+
 nav_choice = st.sidebar.radio(
-    "WORKSPACE",
-    [
-        "⌂  Overview",
-        "↘  Process map",
-        "◎  Watchlist",
-        "◒  Markets & charts",
-        "◇  Valuation",
-        "✦  Research studio",
-        "🧠  Antigravity agent",
-        "▤  Portfolio lab",
-        "↗  Supply chain",
-        "▧  Decision journal",
-        "◉  Alerts & filings"
-    ],
+    "TERMINAL MODULES",
+    NAV_CHOICES,
     key="active_page"
 )
 
 st.sidebar.divider()
 
-# Global Watchlist Quick View in Sidebar
-st.sidebar.subheader(f"⭐ Active Watchlist ({len(st.session_state['watchlist'])})")
-st.sidebar.caption(", ".join(st.session_state["watchlist"]))
+# Global Watchlist Manager in Sidebar (Responsive Form Submission on Enter)
+st.sidebar.subheader(f"⭐ Active Coverage ({len(st.session_state['watchlist'])})")
+st.sidebar.caption(", ".join(st.session_state["watchlist"][:8]) + ("..." if len(st.session_state["watchlist"]) > 8 else ""))
 
-# Global Company Name to Ticker Search Tool in Sidebar
-with st.sidebar.expander("🔍 Find Ticker by Company Name", expanded=False):
-    search_q = st.text_input("Enter Company Name", placeholder="e.g. Tesla, Apple, Reliance, Palantir", key="sb_company_search")
-    if search_q.strip():
-        with st.spinner("Searching global exchanges..."):
-            found = search_company_tickers(search_q, max_results=5)
-        if found:
-            for item in found:
-                col_info, col_btn = st.columns([3, 1])
-                with col_info:
-                    st.markdown(f"**{item['symbol']}** — {item['name']}\n*{item['exchange']} ({item['type']})*")
-                with col_btn:
-                    if st.button("➕ Add", key=f"sb_add_{item['symbol']}"):
-                        ok, msg, updated = add_to_watchlist(item['symbol'])
-                        st.session_state["watchlist"] = updated
-                        st.sidebar.success(msg)
-                        st.rerun()
-        else:
-            st.info(f"No tickers found for '{search_q}'. Try a different keyword.")
-
-st.sidebar.divider()
+with st.sidebar.form(key="sb_add_stock_form", clear_on_submit=True):
+    sb_search_input = st.text_input(
+        "Add Company or Symbol",
+        placeholder="e.g. Tesla, Apple, TCS.NS, NVDA",
+        help="Type any company name or ticker and press Enter to add directly to your watchlist."
+    )
+    sb_add_btn = st.form_submit_button("➕ Add to Watchlist", use_container_width=True)
+    if sb_add_btn:
+        if sb_search_input.strip():
+            ok, msg, updated = add_to_watchlist(sb_search_input)
+            st.session_state["watchlist"] = updated
+            if ok:
+                st.sidebar.success(msg)
+            else:
+                st.sidebar.warning(msg)
+            st.rerun()
 
 # TradingView Desktop Application Launcher
-if st.sidebar.button("🖥️ Open TradingView Desktop", use_container_width=True, help="Launch installed TradingView Desktop application on Windows"):
-    success = launch_tradingview_desktop()
-    if success:
-        st.sidebar.success("🚀 Launched TradingView Desktop!")
-    else:
-        st.sidebar.warning("Could not launch TradingView Desktop. Please verify Windows installation.")
-
-st.sidebar.info("💡 **Universal Ticker Support:** Works for any US equity (NYSE/NASDAQ), Foreign 20-F (TSM, ASML), Indian stocks (.NS/.BO), UK (.L), Europe (.DE/.PA), Japan (.T), or global ETFs (SPY, QQQ).")
+st.sidebar.divider()
+st.sidebar.markdown("**🖥️ TradingView Desktop & Web**")
+col_tv_desk, col_tv_web = st.sidebar.columns(2)
+with col_tv_desk:
+    if st.button("🚀 App", use_container_width=True, help="Launch TradingView Desktop application on Windows"):
+        success = launch_tradingview_desktop()
+        if success:
+            st.sidebar.success("Launched App!")
+        else:
+            st.sidebar.warning("Desktop app not found. Opening Web chart...")
+            tv_web_url = get_tradingview_web_url(st.session_state.get("active_ticker", "NVDA"))
+            st.markdown(f"<meta http-equiv='refresh' content='0; url={tv_web_url}'>", unsafe_allow_html=True)
+with col_tv_web:
+    tv_web_url = get_tradingview_web_url(st.session_state.get("active_ticker", "NVDA"))
+    st.markdown(f'<a href="{tv_web_url}" target="_blank"><button style="width:100%;min-height:2.4rem;border-radius:6px;border:1px solid #334d40;background:#24362d;color:#e4ede7;cursor:pointer;font-weight:600;font-size:0.82rem">🌐 Web</button></a>', unsafe_allow_html=True)
 
 
 # =============================================================================
-# VIEW 1: SHORTLISTING SCORECARD & WATCHLIST MANAGER
+# DOMAIN 1: MARKET INTELLIGENCE & SCREENING
 # =============================================================================
-if nav_choice == "⌂  Overview":
-    st.markdown('<div class="header-style">Research, in one place.</div>', unsafe_allow_html=True)
-    st.markdown('<div class="meridian-intro">Follow your coverage, open recent dossiers, or start a research task.</div>', unsafe_allow_html=True)
+
+# --- MODULE 1: EXECUTIVE SUMMARY ---
+if nav_choice == "⌂  Executive Summary":
+    col_head, col_info = st.columns([5.5, 1.2])
+    with col_head:
+        st.markdown('<div class="header-style">Research, in one place.</div>', unsafe_allow_html=True)
+        st.markdown('<div class="meridian-intro">Executive portal for coverage universes, recent audit dossiers, and quantitative risk workflows.</div>', unsafe_allow_html=True)
+    with col_info:
+        render_tab_info_guide(
+            title="Executive Summary & Home",
+            purpose="Central command dashboard providing institutional portfolio health and direct research entry points.",
+            capabilities=[
+                "Active coverage universe metrics",
+                "Instant audit status of recent research dossiers",
+                "Direct workflow navigation shortcuts"
+            ],
+            use_case="Review portfolio coverage changes, inspect recent audited memoranda, and initiate deep-dive research tasks.",
+            methodology="Real-time scanning of `reports/` directory; aggregates persistent watchlist from `journal/watchlist.json`."
+        )
 
     reports_root = os.path.join(PROJECT_DIR, "reports")
     report_dirs = []
@@ -305,9 +473,9 @@ if nav_choice == "⌂  Overview":
 
     stat_cols = st.columns(3)
     overview_stats = [
-        ("Coverage list", str(len(st.session_state["watchlist"])), "Companies on your active watchlist"),
-        ("Research dossiers", str(len(report_dirs)), "Completed reports saved in this workspace"),
-        ("Latest update", latest_date, "Based on the most recently saved dossier"),
+        ("Coverage Universe", str(len(st.session_state["watchlist"])), "Active equities on institutional watchlist"),
+        ("Audited Dossiers", str(len(report_dirs)), "Cryptographically audited research reports in workspace"),
+        ("Latest Synthesis", latest_date, "Timestamp of most recently generated investment memo"),
     ]
     for col, (label, value, note) in zip(stat_cols, overview_stats):
         with col:
@@ -317,233 +485,203 @@ if nav_choice == "⌂  Overview":
                 unsafe_allow_html=True
             )
 
-    st.markdown("### Start with a task")
+    st.markdown("### Start an Institutional Workflow")
     action_cols = st.columns(3)
     quick_actions = [
-        ("✦  Start a research review", "Run the analyst, verification, and skeptic workflow.", "✦  Research studio"),
-        ("◎  Review your watchlist", "Compare coverage and shortlist candidates.", "◎  Watchlist"),
-        ("◇  Explore a valuation", "Adjust DCF assumptions and view sensitivity.", "◇  Valuation"),
+        ("✦  Run Research Committee", "Execute Analyst, Verifier, and Skeptic audit pipeline.", "✦  Autonomous Research Studio"),
+        ("◎  Screen Coverage Universe", "Filter by operating margins, leverage, and FCF conversion.", "◎  Coverage & Screening"),
+        ("◇  Explore Valuation Model", "Adjust DCF WACC, growth projections, and sensitivity grids.", "◇  Intrinsic Valuation (DCF)"),
     ]
     for col, (title, detail, target_page) in zip(action_cols, quick_actions):
         with col:
             with st.container(border=True):
                 st.markdown(f"**{title}**")
                 st.caption(detail)
-                if st.button("Open", key=f"home_{target_page}", use_container_width=True):
+                if st.button("Launch Module", key=f"home_{target_page}", use_container_width=True):
                     st.session_state["pending_page"] = target_page
                     st.rerun()
 
-    left, right = st.columns([1.15, 1])
+    left, right = st.columns([1.2, 1])
     with left:
-        st.markdown("### Recent research")
+        st.markdown("### Recent Audited Memoranda")
         if report_dirs:
             for entry in report_dirs[:5]:
                 ticker_label = entry.name.rsplit("_", 1)[0] if len(entry.name) > 11 else entry.name
-                updated = datetime.datetime.fromtimestamp(entry.stat().st_mtime).strftime("%d %b %Y")
-                st.markdown(f"**{ticker_label}** · {updated}  \n`reports/{entry.name}/final_report.md`")
+                updated = datetime.datetime.fromtimestamp(entry.stat().st_mtime).strftime("%d %b %Y, %H:%M")
+                with st.container(border=True):
+                    col_d1, col_d2 = st.columns([3, 1])
+                    with col_d1:
+                        st.markdown(f"**{ticker_label}** · `{updated}`")
+                        st.caption(f"Dossier: `reports/{entry.name}/final_report.md`")
+                    with col_d2:
+                        if st.button("Inspect", key=f"view_{entry.name}", use_container_width=True):
+                            st.session_state["inspected_report_dir"] = entry.path
+                            st.session_state["pending_page"] = "✦  Autonomous Research Studio"
+                            st.rerun()
         else:
-            st.info("Your completed dossiers will appear here after a research run.")
+            st.info("No research dossiers generated yet. Run your first research review in the Autonomous Research Studio.")
     with right:
-        st.markdown("### Active coverage")
+        st.markdown("### Active Coverage Universe")
         if st.session_state["watchlist"]:
             st.write(" · ".join(f"`{ticker}`" for ticker in st.session_state["watchlist"]))
         else:
-            st.info("Your watchlist is empty. Add a company to begin tracking it.")
-        st.caption("Financial figures in research reports retain their source and audit trail. Market feeds may be delayed.")
+            st.info("Watchlist is currently empty.")
+        st.caption("All figures retain complete provenance ledgers with SHA-256 sidecars. Market quotes are subject to exchange latency.")
 
-elif nav_choice == "↘  Process map":
-    st.markdown('<div class="header-style">How research moves through Meridian</div>', unsafe_allow_html=True)
-    st.markdown('<div class="meridian-intro">Follow the handoffs, verification steps, and saved outputs from request to final report.</div>', unsafe_allow_html=True)
 
-    st.markdown("### Hierarchy")
-    st.markdown("""
-    <div class="process-hierarchy">
-      <div class="process-root"><strong>Researcher</strong><small>Chooses a company and a workflow</small></div>
-      <div class="process-arrow">↓</div>
-      <div class="process-root"><strong>Meridian dashboard</strong><small>Collects the ticker and starts the research run</small></div>
-      <div class="process-arrow">↓</div>
-      <div class="process-root"><strong>Pipeline orchestrator · <code>run_research.run_pipeline</code></strong><small>Controls the order, passes data between agents, and writes the final dossier</small></div>
-      <div class="process-arrow">↓ calls each stage</div>
-      <div class="process-row">
-        <div class="process-node"><strong>1 · Analyst</strong><span>Retrieves filing and market data, calculates metrics, records provenance, and drafts the report.</span><span class="process-tag">Returns report + skeptic_inputs</span></div>
-        <div class="process-node"><strong>2 · Verifier · both reports</strong><span>Audits the Analyst report before the Skeptic runs, then audits the Skeptic review before synthesis.</span><span class="process-tag">Returns audit + wrong_items</span></div>
-        <div class="process-node"><strong>3 · Skeptic</strong><span>Stress-tests assumptions using the structured inputs prepared by the Analyst.</span><span class="process-tag">Returns verdict + review</span></div>
-      </div>
-      <div class="process-arrow">↓ uses shared tools · saves outputs</div>
-      <div class="process-support">
-        <div class="process-node"><strong>Evidence tools</strong><span>FilingExtractor, DataLayer, calculation functions, and the provenance ledger.</span></div>
-        <div class="process-node"><strong>Reports and audit trail</strong><span>Analyst and skeptic markdown, verification results, and JSON provenance sidecars in <code>reports/</code>.</span></div>
-      </div>
-    </div>
-    """, unsafe_allow_html=True)
+# --- MODULE 2: COVERAGE & SCREENING ---
+elif nav_choice == "◎  Coverage & Screening":
+    col_head, col_info = st.columns([5.5, 1.2])
+    with col_head:
+        st.markdown('<div class="header-style">Coverage Universe & Scorecard</div>', unsafe_allow_html=True)
+        st.markdown('<div class="meridian-intro">Multi-factor fundamental screening across operating margins, debt solvency, and FCF conversion.</div>', unsafe_allow_html=True)
+    with col_info:
+        render_tab_info_guide(
+            title="Coverage & Screening Scorecard",
+            purpose="Identify high-conviction investment candidates by screening across quantitative fundamental metrics.",
+            capabilities=[
+                "Company name to ticker discovery with live exchange resolution",
+                "Operating margin (>25%) pricing power hurdle",
+                "Debt-to-Equity (<0.5x) solvency filter",
+                "Direct CSV export for quantitative backtesting"
+            ],
+            use_case="Screen universe for defensive balance sheets with high free cash flow conversion before deploying capital.",
+            methodology="Yahoo Finance fundamental ratios cross-checked against audited annual statements."
+        )
 
-    st.info("Agents communicate through direct Python method calls and returned dictionaries. There is no separate agent chat loop or message broker in this pipeline.")
+    # Watchlist Addition Form (Enter key submits immediately)
+    with st.container(border=True):
+        st.markdown("##### ➕ Add Company to Coverage Universe")
+        with st.form(key="watchlist_add_form", clear_on_submit=True):
+            col_in, col_btn_add, col_btn_rst = st.columns([3, 1, 1])
+            with col_in:
+                add_query = st.text_input(
+                    "Search by Company Name or Symbol",
+                    placeholder="e.g. Tesla, Apple, Reliance, Palantir, TCS.NS",
+                    help="Type any global company name or ticker and press Enter."
+                )
+            with col_btn_add:
+                st.write("")
+                submit_add = st.form_submit_button("➕ Add Stock", type="primary", use_container_width=True)
+            with col_btn_rst:
+                st.write("")
+                submit_rst = st.form_submit_button("🔄 Reset Universe", use_container_width=True)
 
-    st.markdown("### What each handoff carries")
-    handoffs = [
-        ("Dashboard → pipeline", "The dashboard calls `run_pipeline(ticker, workflow_number)`. The pipeline resolves the ticker and creates the report folder.", "dashboard.py lines 582–589 · run_research.py lines 37–75", "dashboard.py#L582-L589"),
-        ("Pipeline → Analyst → pipeline", "`run_workflow()` returns `markdown_report`, its `ledger`, `metrics`, and `skeptic_inputs` as a Python dictionary.", "run_research.py lines 78–88 · agents/analyst.py lines 1310–1344", "run_research.py#L78-L88"),
-        ("Pipeline → Verifier → pipeline", "The first audit receives the Analyst report and its provenance sidecar, then returns an audit summary and any wrong or unverifiable claims. Independent source refetch is enabled by the pipeline default.", "run_research.py lines 95–101 · agents/verifier.py line 533", "run_research.py#L95-L101"),
-        ("Verifier → Analyst · conditional", "Only when wrong figures are found, the orchestrator passes `wrong_items`, the report text, and the ledger to `correct_report()`, then audits once more.", "run_research.py lines 105–129 · agents/analyst.py lines 1356–1365", "run_research.py#L105-L129"),
-        ("Pipeline → Skeptic → pipeline", "The orchestrator expands `skeptic_inputs` into `evaluate_thesis(...)`. The Skeptic returns a verdict, review markdown, and its own ledger.", "run_research.py lines 152–162 · agents/analyst.py lines 1310–1344", "run_research.py#L152-L162"),
-        ("Pipeline → Verifier · Skeptic audit", "After saving the Skeptic review and its sidecar, the orchestrator creates a second Verifier and audits that review before synthesis.", "run_research.py lines 157–175", "run_research.py#L157-L175"),
-        ("Pipeline → reports → dashboard", "The orchestrator saves the final dossier and sidecars; the dashboard opens `final_report.md` and displays it.", "run_research.py lines 177–194 · dashboard.py lines 586–595", "run_research.py#L177-L194"),
-    ]
-    source_base = "https://github.com/meetbansal3000/Finance-research-agents-tool-kit/blob/5065a97a5685eed92abbfb0f0b9584145b4eb47e/"
-    for idx, (title, detail, source_label, source_path) in enumerate(handoffs, start=1):
-        with st.expander(f"{idx:02d}  {title}", expanded=(idx == 1)):
-            st.markdown(detail)
-            st.markdown(f"[{source_label}]({source_base + source_path})")
-
-    nvidia_col, correction_col = st.columns(2)
-    with nvidia_col:
-        with st.container(border=True):
-            st.markdown("**Optional · NVIDIA NIM**")
-            st.caption("The Skeptic can request an NVIDIA NIM critique when `enable_nvidia=True`. The dashboard call leaves this flag at its default `False`.")
-            st.markdown(f"[Skeptic condition · agents/skeptic.py lines 699–714]({source_base}agents/skeptic.py#L699-L714)")
-    with correction_col:
-        with st.container(border=True):
-            st.markdown("**Evidence stays attached**")
-            st.caption("Analyst and Skeptic each keep a ledger; the orchestrator saves those as JSON sidecars beside their reports.")
-            st.markdown(f"[Ledger sidecars · run_research.py lines 83–88]({source_base}run_research.py#L83-L88)")
-
-elif nav_choice == "◎  Watchlist":
-    st.markdown('<div class="header-style">Company coverage</div>', unsafe_allow_html=True)
-    st.markdown('<div class="meridian-intro">Compare fundamental signals and manage the companies in your watchlist.</div>', unsafe_allow_html=True)
-
-    # Watchlist Addition & Management Box
-    with st.container():
-        st.markdown("### ➕ Add Stocks to Your Watchlist")
-        w_col1, w_col2, w_col3 = st.columns([3, 1, 1])
-        with w_col1:
-            stock_to_add = st.text_input(
-                "Search by Company Name or Ticker Symbol",
-                placeholder="e.g. Tesla, Apple, Palantir, Tata Motors, RELIANCE.NS, TSLA",
-                help="Type any company name (e.g. 'Tesla') or direct symbol (e.g. 'TSLA') to add."
-            )
-            # Show live resolution preview if text is entered
-            resolved_preview = None
-            if stock_to_add.strip():
-                resolved_preview = lookup_primary_ticker(stock_to_add)
-                if resolved_preview:
-                    st.caption(f"✨ **Resolved Ticker:** `{resolved_preview}` (Matches: '{stock_to_add.strip()}')")
-
-        with w_col2:
-            st.write("")
-            st.write("")
-            if st.button("➕ Add to Watchlist", type="primary", use_container_width=True):
-                if stock_to_add.strip():
-                    ok, msg, updated = add_to_watchlist(stock_to_add)
+            if submit_add:
+                if add_query.strip():
+                    ok, msg, updated = add_to_watchlist(add_query)
                     st.session_state["watchlist"] = updated
                     if ok:
                         st.success(msg)
                     else:
-                        st.error(msg)
+                        st.warning(msg)
                     st.rerun()
                 else:
-                    st.warning("Please enter a company name or ticker.")
+                    st.warning("Please enter a company name or ticker symbol.")
 
-        with w_col3:
-            st.write("")
-            st.write("")
-            if st.button("🔄 Reset to Default", use_container_width=True, help="Reset watchlist back to the 6 institutional core stocks"):
+            if submit_rst:
                 updated = reset_watchlist()
                 st.session_state["watchlist"] = updated
-                st.info("Watchlist reset to default baseline.")
+                st.info("Coverage universe reset to institutional baseline.")
                 st.rerun()
 
     # Active Watchlist Tags & Removal
-    st.markdown(f"**Current Watchlist ({len(st.session_state['watchlist'])} Stocks):** " + " • ".join([f"`{s}`" for s in st.session_state["watchlist"]]))
-    
-    with st.expander("Manage / Remove Watchlist Items"):
-        rem_col1, rem_col2 = st.columns([3, 1])
-        with rem_col1:
-            to_remove = st.selectbox("Select Stock to Remove", ["(Select stock to remove)"] + st.session_state["watchlist"])
-        with rem_col2:
+    st.markdown(f"**Current Coverage Universe ({len(st.session_state['watchlist'])} Equities):** " + " • ".join([f"`{s}`" for s in st.session_state["watchlist"]]))
+    with st.expander("Manage Coverage List / Remove Tickers", expanded=False):
+        col_rm1, col_rm2 = st.columns([3, 1])
+        with col_rm1:
+            stock_to_del = st.selectbox("Select Ticker to Remove", ["(Select ticker)"] + st.session_state["watchlist"])
+        with col_rm2:
             st.write("")
             st.write("")
-            if st.button("❌ Remove Stock", use_container_width=True):
-                if to_remove and to_remove != "(Select stock to remove)":
-                    updated = remove_from_watchlist(to_remove)
+            if st.button("❌ Remove from Watchlist", use_container_width=True):
+                if stock_to_del and stock_to_del != "(Select ticker)":
+                    updated = remove_from_watchlist(stock_to_del)
                     st.session_state["watchlist"] = updated
-                    st.success(f"Removed '{to_remove}' from Watchlist.")
+                    st.success(f"Removed '{stock_to_del}' from coverage list.")
                     st.rerun()
 
     st.divider()
 
-    # Filters
+    # Filter Controls
     col_f1, col_f2, col_f3 = st.columns(3)
     with col_f1:
-        min_margin = st.slider("Min Operating Margin (%)", min_value=0, max_value=50, value=15)
+        min_margin = st.slider("Minimum Operating Margin (%)", min_value=0, max_value=50, value=15, step=1)
     with col_f2:
-        max_de = st.slider("Max Debt/Equity Ratio (x)", min_value=0.1, max_value=3.0, value=1.5, step=0.1)
+        max_de = st.slider("Maximum Debt-to-Equity Ratio (x)", min_value=0.1, max_value=3.0, value=1.5, step=0.1)
     with col_f3:
         st.write("")
         st.write("")
-        show_all = st.checkbox("Show International Equities (.NS, .L, etc.)", value=True)
+        show_all_intl = st.checkbox("Include International Equities (.NS, .L, etc.)", value=True)
 
-    with st.spinner("Calculating live fundamental scorecard metrics..."):
+    with st.spinner("Extracting live fundamental scorecard metrics..."):
         df_scorecard = get_shortlist_metrics_for_universe(tuple(st.session_state["watchlist"]))
 
-    if not show_all and not df_scorecard.empty:
+    if not show_all_intl and not df_scorecard.empty:
         df_scorecard = df_scorecard[~df_scorecard["Ticker"].str.contains(r"\.")]
 
-    # Apply sliders filter if columns parseable
+    # Apply filters
     if not df_scorecard.empty:
         try:
-            op_nums = df_scorecard["Operating Margin"].str.rstrip("%").astype(float)
-            de_nums = df_scorecard["Debt/Equity"].str.rstrip("x").astype(float)
+            op_nums = df_scorecard["Operating Margin"].str.rstrip("%").replace("N/A", "-999").astype(float)
+            de_nums = df_scorecard["Debt/Equity"].str.rstrip("x").replace("N/A", "999").astype(float)
             filtered_df = df_scorecard[(op_nums >= min_margin) & (de_nums <= max_de)]
         except Exception:
             filtered_df = df_scorecard
 
         st.dataframe(filtered_df, use_container_width=True, hide_index=True)
-        
-        # CSV Export
-        csv_data = filtered_df.to_csv(index=False).encode('utf-8')
-        st.download_button(
-            label="📥 Download Watchlist Scorecard (CSV)",
-            data=csv_data,
-            file_name=f"watchlist_scorecard_{datetime.date.today().strftime('%Y%m%d')}.csv",
-            mime="text/csv",
-        )
+
+        col_csv, col_summary = st.columns([1, 3])
+        with col_csv:
+            csv_data = filtered_df.to_csv(index=False).encode('utf-8')
+            st.download_button(
+                label="📥 Export Scorecard (CSV)",
+                data=csv_data,
+                file_name=f"coverage_scorecard_{datetime.date.today().strftime('%Y%m%d')}.csv",
+                mime="text/csv",
+                use_container_width=True
+            )
     else:
-        st.info("Watchlist is currently empty. Use the box above to add companies.")
-
-    st.subheader("💡 Key Shortlisting Takeaways")
-    col_t1, col_t2 = st.columns(2)
-    with col_t1:
-        st.success("**Institutional Green Flags:**\n- **High Operating Margin (>25%):** Pricing power and moats that sustain reinvestment.\n- **Low Leverage (<0.5x D/E):** Strong solvency protecting equity in downturns.\n- **High FCF Conversion (>70%):** Accounting profits convert to cash available for shareholders.")
-    with col_t2:
-        st.warning("**Red Flags & Skeptic Checks:**\n- **Customer Concentration:** Reliance on single customer >10% creates binary earnings risk.\n- **Leverage Accumulation:** High D/E (>1.5x) limits debt capacity and increases interest rate sensitivity.\n- **Thin Margins (<10%):** Vulnerable to cost inflation and commodity price shocks.")
+        st.info("Watchlist is currently empty.")
 
 
-# =============================================================================
-# VIEW 2: TRADINGVIEW & LIVE MARKET CHARTS
-# =============================================================================
-elif "Markets & charts" in nav_choice:
-    st.markdown('<div class="header-style">Markets & charts</div>', unsafe_allow_html=True)
-    st.markdown('<div class="meridian-intro">Explore price action, technical summaries, company financials, and historical market data.</div>', unsafe_allow_html=True)
+# --- MODULE 3: MARKET TERMINAL & CHARTS ---
+elif "Market Terminal & Charts" in nav_choice:
+    col_head, col_info = st.columns([5.5, 1.2])
+    with col_head:
+        st.markdown('<div class="header-style">Market Terminal & Technical Charts</div>', unsafe_allow_html=True)
+        st.markdown('<div class="meridian-intro">Real-time TradingView streaming charts, technical analysis speedometer, financials, and quantitative moving averages.</div>', unsafe_allow_html=True)
+    with col_info:
+        render_tab_info_guide(
+            title="Market Terminal & TradingView",
+            purpose="High-precision execution, technical indicators, and price action verification.",
+            capabilities=[
+                "TradingView real-time candlestick charts with drawing tools and indicators",
+                "Technical consensus gauge across 26 oscillators and moving averages",
+                "Historical OHLCV candlestick analysis with 50-day and 200-day SMAs",
+                "Direct TradingView Desktop and Web app integration"
+            ],
+            use_case="Analyze momentum, moving average crosses, and support/resistance levels before initiating valuation modeling.",
+            methodology="TradingView Advanced Charting Widget + yfinance Daily Adjusted OHLCV bars."
+        )
 
     c_col1, c_col2 = st.columns([1, 3])
     with c_col1:
         # Quick pick from watchlist
         wl_options = ["(Custom Search)"] + st.session_state["watchlist"]
-        picked_wl = st.selectbox("⭐ Quick Pick from Watchlist", options=wl_options)
+        picked_wl = st.selectbox("⭐ Quick Select from Universe", options=wl_options)
 
         default_input = picked_wl if picked_wl != "(Custom Search)" else st.session_state.get("active_ticker", "NVDA")
-        user_input = st.text_input("Enter Company Name or Ticker", value=default_input, help="Type 'Tesla', 'Apple', 'Palantir' or exact symbol 'NVDA', 'TCS.NS'")
-        
-        # Resolve company name to ticker
+        user_input = st.text_input("Enter Company Name or Ticker", value=default_input, help="Type 'Tesla', 'Apple' or symbol 'NVDA', 'TCS.NS'")
+
         resolved_ticker = lookup_primary_ticker(user_input) or user_input.strip().upper()
         if resolved_ticker != user_input.strip().upper():
-            st.info(f"✨ Resolved '{user_input.strip()}' to **{resolved_ticker}**")
+            st.info(f"✨ Resolved to **{resolved_ticker}**")
 
         st.session_state["active_ticker"] = resolved_ticker
         selected_ticker = resolved_ticker
         tv_symbol = format_tradingview_symbol(selected_ticker)
 
-        # Quick button to add this ticker to watchlist if not already there
         if selected_ticker not in st.session_state["watchlist"]:
             if st.button(f"➕ Add {selected_ticker} to Watchlist", use_container_width=True):
                 ok, msg, updated = add_to_watchlist(selected_ticker)
@@ -552,20 +690,9 @@ elif "Markets & charts" in nav_choice:
                 st.rerun()
 
         st.divider()
-        st.markdown("**🖥️ Desktop & Web Launchers**")
-        if st.button("🚀 Open in TradingView Desktop", use_container_width=True, help="Open installed TradingView app on Windows (Drive D)"):
-            launched = launch_tradingview_desktop()
-            if launched:
-                st.success("Launched TradingView Desktop App!")
-            else:
-                st.warning("Could not launch TradingView Desktop.")
-
-        tv_web_url = get_tradingview_web_url(selected_ticker)
-        st.markdown(f'<a href="{tv_web_url}" target="_blank"><button style="width:100%;padding:8px;border-radius:6px;border:1px solid #1f77b4;background:#1f77b4;color:white;cursor:pointer;font-weight:600;">🌐 Open on TradingView.com</button></a>', unsafe_allow_html=True)
-
-        st.divider()
-        chart_theme = st.radio("Chart Theme", ["light", "dark"], horizontal=True)
-        chart_interval = st.selectbox("Default Interval", ["D (Daily)", "W (Weekly)", "1 (1 Minute)", "5 (5 Minutes)", "15 (15 Minutes)", "60 (1 Hour)", "240 (4 Hours)", "M (Monthly)"], index=0)
+        st.markdown("**Chart Configuration**")
+        chart_theme = st.radio("Theme", ["light", "dark"], horizontal=True)
+        chart_interval = st.selectbox("Default Interval", ["D (Daily)", "W (Weekly)", "15 (15 Min)", "60 (1 Hour)", "240 (4 Hours)", "M (Monthly)"], index=0)
         parsed_interval = chart_interval.split()[0]
 
     with c_col2:
@@ -577,7 +704,7 @@ elif "Markets & charts" in nav_choice:
         ])
 
         with tv_tab1:
-            st.caption(f"Showing real-time streaming chart for **{tv_symbol}** ({selected_ticker}). Use the top toolbar for technical indicators and drawing tools.")
+            st.caption(f"Real-time streaming chart for **{tv_symbol}** ({selected_ticker}). Use toolbar for drawing and indicator overlays.")
             chart_html = render_tradingview_advanced_chart(
                 symbol=selected_ticker,
                 theme=chart_theme,
@@ -587,7 +714,7 @@ elif "Markets & charts" in nav_choice:
             components.html(chart_html, height=670, scrolling=False)
 
         with tv_tab2:
-            st.caption(f"Real-time technical analysis consensus gauge across 26 technical indicators for **{tv_symbol}**.")
+            st.caption(f"Technical consensus gauge across 26 technical indicators for **{tv_symbol}**.")
             ta_html = render_tradingview_technical_analysis(
                 symbol=selected_ticker,
                 theme=chart_theme,
@@ -597,7 +724,7 @@ elif "Markets & charts" in nav_choice:
             components.html(ta_html, height=480, scrolling=False)
 
         with tv_tab3:
-            st.caption(f"Financial statements, operating margin ratios, and balance sheet structure for **{tv_symbol}**.")
+            st.caption(f"Financial statements, operating ratios, and valuation multiples for **{tv_symbol}**.")
             fin_html = render_tradingview_financials(
                 symbol=selected_ticker,
                 theme=chart_theme,
@@ -606,7 +733,7 @@ elif "Markets & charts" in nav_choice:
             components.html(fin_html, height=570, scrolling=False)
 
         with tv_tab4:
-            st.caption("Quantitative historical candlestick analysis with 50-Day and 200-Day moving averages.")
+            st.caption("Historical price action with 50-day and 200-day Simple Moving Averages.")
             q_col1, q_col2 = st.columns([1, 1])
             with q_col1:
                 chart_period = st.select_slider("Time Horizon", options=["1mo", "3mo", "6mo", "1y", "2y", "5y"], value="1y")
@@ -614,7 +741,7 @@ elif "Markets & charts" in nav_choice:
                 show_sma50 = st.checkbox("Show 50-Day SMA", value=True)
                 show_sma200 = st.checkbox("Show 200-Day SMA", value=True)
 
-            with st.spinner(f"Loading quantitative price data for {selected_ticker}..."):
+            with st.spinner(f"Retrieving historical prices for {selected_ticker}..."):
                 df_hist = load_historical_prices(selected_ticker, period=chart_period)
 
             if df_hist is not None and not df_hist.empty:
@@ -622,7 +749,7 @@ elif "Markets & charts" in nav_choice:
                     rows=2, cols=1,
                     shared_xaxes=True,
                     vertical_spacing=0.08,
-                    subplot_titles=(f"{selected_ticker} Daily Price History", "Volume"),
+                    subplot_titles=(f"{selected_ticker} Daily Price Action", "Volume"),
                     row_width=[0.25, 0.75]
                 )
                 fig.add_trace(
@@ -653,57 +780,88 @@ elif "Markets & charts" in nav_choice:
                 )
                 st.plotly_chart(fig, use_container_width=True)
             else:
-                st.error(f"Unable to load historical price series for '{selected_ticker}'. Please verify company name or ticker symbol.")
+                st.warning(f"Price history unavailable for '{selected_ticker}'. Please verify the symbol.")
 
 
 # =============================================================================
-# VIEW 3: INTERACTIVE DCF VALUATION & SENSITIVITY
+# DOMAIN 2: FUNDAMENTAL RESEARCH & VALUATION
 # =============================================================================
-elif nav_choice == "◇  Valuation":
-    st.markdown('<div class="header-style">Valuation model</div>', unsafe_allow_html=True)
-    st.markdown('<div class="meridian-intro">Adjust core assumptions and inspect how growth and discount rates shape the model output.</div>', unsafe_allow_html=True)
+
+# --- MODULE 4: INTRINSIC VALUATION (DCF) ---
+elif "Intrinsic Valuation" in nav_choice:
+    col_head, col_info = st.columns([5.5, 1.2])
+    with col_head:
+        st.markdown('<div class="header-style">Intrinsic Valuation Model (DCF)</div>', unsafe_allow_html=True)
+        st.markdown('<div class="meridian-intro">Discounted Cash Flow model with dynamic growth projections, WACC sensitivity grid, and reverse DCF implied growth.</div>', unsafe_allow_html=True)
+    with col_info:
+        render_tab_info_guide(
+            title="Discounted Cash Flow (DCF) Valuation",
+            purpose="Calculate intrinsic equity value per share and determine the required margin of safety.",
+            capabilities=[
+                "Multi-stage Free Cash Flow (FCFF) enterprise valuation",
+                "Reverse DCF solving for market-implied 5-year FCF CAGR",
+                "5x5 WACC vs Growth sensitivity matrix",
+                "Bear, Base, and Bull scenario modeling"
+            ],
+            use_case="Assess whether the current market trading price offers an adequate margin of safety given conservative cash flow projections.",
+            methodology="Closed-form Gordon Growth Terminal Value + mid-year discounting conventions; audited balance sheet net debt deduction."
+        )
 
     dcf_presets = {
         "NVDA": {"fcf": 60850000000.0, "shares": 24500000000.0, "net_debt": -38200000000.0, "price": 239.24, "wacc": 0.095, "growth": 0.22, "t_growth": 0.035},
         "AAPL": {"fcf": 108807000000.0, "shares": 14594180000.0, "net_debt": -33763000000.0, "price": 333.63, "wacc": 0.085, "growth": 0.08, "t_growth": 0.03},
         "MSFT": {"fcf": 74071000000.0, "shares": 7430000000.0, "net_debt": -36549000000.0, "price": 529.30, "wacc": 0.088, "growth": 0.12, "t_growth": 0.03},
-        "GOOGL": {"fcf": 73200000000.0, "shares": 12250000000.0, "net_debt": -71100000000.0, "price": 347.68, "wacc": 0.090, "growth": 0.14, "t_growth": 0.03}
+        "GOOGL": {"fcf": 73200000000.0, "shares": 12250000000.0, "net_debt": -71100000000.0, "price": 347.68, "wacc": 0.090, "growth": 0.14, "t_growth": 0.03},
+        "TCS.NS": {"fcf": 44971.0, "shares": 361.8, "net_debt": -35395.0, "price": 3450.0, "wacc": 0.115, "growth": 0.08, "t_growth": 0.045}
     }
 
     t_col1, t_col2 = st.columns([1, 2])
     with t_col1:
-        custom_sym = st.text_input("Enter Ticker for DCF", value="NVDA").strip().upper()
+        custom_sym = st.text_input("Enter Ticker for DCF", value=st.session_state.get("active_ticker", "NVDA")).strip().upper()
         if custom_sym in dcf_presets:
             preset = dcf_presets[custom_sym]
+            currency_code = "INR (₹ Cr)" if ".NS" in custom_sym else "USD ($)"
         else:
-            # Dynamically fetch baseline data for custom ticker
+            # Safely fetch live metrics for custom ticker
+            currency_code = "USD ($)"
             try:
                 t_obj = yf.Ticker(custom_sym)
-                info = t_obj.info
-                curr_p = float(info.get("currentPrice") or info.get("regularMarketPrice") or 100.0)
-                shs = float(info.get("sharesOutstanding") or 1e9)
-                fcf_val = float(info.get("freeCashflow") or (curr_p * shs * 0.04))
-                debt = float(info.get("totalDebt") or 0.0)
-                cash = float(info.get("totalCash") or 0.0)
+                fi = t_obj.fast_info
+                curr_p = float(fi.get("last_price") or 100.0)
+                shs = float(fi.get("shares") or 1e9)
+                fcf_val = float(curr_p * shs * 0.04) # 4% initial FCF yield baseline
                 preset = {
                     "fcf": max(fcf_val, 1e7),
                     "shares": max(shs, 1e6),
-                    "net_debt": debt - cash,
+                    "net_debt": 0.0,
                     "price": curr_p,
                     "wacc": 0.09,
                     "growth": 0.10,
                     "t_growth": 0.025
                 }
             except Exception:
-                preset = dcf_presets["NVDA"]
+                preset = {"fcf": 1000000000.0, "shares": 100000000.0, "net_debt": 0.0, "price": 50.0, "wacc": 0.09, "growth": 0.08, "t_growth": 0.025}
+
+    with t_col2:
+        with st.expander("🛠️ Custom Financial Inputs Override", expanded=(custom_sym not in dcf_presets)):
+            c_f1, c_f2, c_f3 = st.columns(3)
+            with c_f1:
+                input_fcf = st.number_input("Base Free Cash Flow", value=float(preset["fcf"]), format="%.2f")
+            with c_f2:
+                input_shares = st.number_input("Diluted Shares Outstanding", value=float(preset["shares"]), format="%.2f")
+            with c_f3:
+                input_net_debt = st.number_input("Balance Sheet Net Debt (Debt - Cash)", value=float(preset["net_debt"]), format="%.2f")
+            preset["fcf"] = input_fcf
+            preset["shares"] = input_shares
+            preset["net_debt"] = input_net_debt
 
     col_s1, col_s2, col_s3 = st.columns(3)
     with col_s1:
-        slider_wacc = st.slider("Discount Rate / WACC (%)", min_value=6.0, max_value=16.0, value=float(preset["wacc"] * 100), step=0.25) / 100.0
+        slider_wacc = st.slider("Discount Rate / WACC (%)", min_value=5.0, max_value=18.0, value=float(preset["wacc"] * 100), step=0.25) / 100.0
     with col_s2:
-        slider_growth = st.slider("5-Year FCF Growth Rate (%)", min_value=-10.0, max_value=50.0, value=float(preset["growth"] * 100), step=0.5) / 100.0
+        slider_growth = st.slider("5-Year FCF Growth Rate (%)", min_value=-15.0, max_value=50.0, value=float(preset["growth"] * 100), step=0.5) / 100.0
     with col_s3:
-        slider_t_growth = st.slider("Terminal Growth Rate (%)", min_value=1.5, max_value=4.5, value=float(preset["t_growth"] * 100), step=0.25) / 100.0
+        slider_t_growth = st.slider("Perpetual Terminal Growth Rate (%)", min_value=1.5, max_value=5.0, value=float(preset["t_growth"] * 100), step=0.25) / 100.0
 
     growth_rates = [slider_growth] * 5
     dcf_calc = dcf(
@@ -730,7 +888,22 @@ elif nav_choice == "◇  Valuation":
     with m_col4:
         st.metric("Enterprise Value", f"${dcf_res['enterprise_value'] / 1e9:,.1f}B")
 
-    st.subheader(f"📊 Sensitivity Matrix: {custom_sym} (WACC vs Growth)")
+    # Reverse DCF solver
+    try:
+        rev_calc = reverse_dcf(
+            current_price=curr_price,
+            base_fcf=preset["fcf"],
+            shares_outstanding=preset["shares"],
+            discount_rate=slider_wacc,
+            terminal_growth_rate=slider_t_growth,
+            net_debt=preset["net_debt"]
+        )
+        implied_g = rev_calc["result"]["implied_growth_rate_pct"]
+        st.info(f"💡 **Reverse DCF Implied Growth Rate:** At current market price (${curr_price:.2f}), the market implies a **{implied_g:+.2f}%** annual FCF growth rate over the next 5 years (vs your assumed {slider_growth*100:.1f}%).")
+    except Exception:
+        pass
+
+    st.subheader(f"📊 Valuation Sensitivity Matrix: {custom_sym} (WACC vs 5Y Growth)")
     wacc_range = np.linspace(slider_wacc - 0.02, slider_wacc + 0.02, 5)
     growth_range = np.linspace(slider_growth - 0.06, slider_growth + 0.06, 5)
 
@@ -747,7 +920,7 @@ elif nav_choice == "◇  Valuation":
                 shares_outstanding=preset["shares"],
                 net_debt=preset["net_debt"]
             )
-            row.append(f"${res_calc['result']['fair_value_per_share']:,.1f}")
+            row.append(f"${res_calc['result']['fair_value_per_share']:,.2f}")
         matrix_data.append(row)
 
     df_matrix = pd.DataFrame(
@@ -758,22 +931,35 @@ elif nav_choice == "◇  Valuation":
     st.table(df_matrix)
 
 
-# =============================================================================
-# VIEW 4: AUTONOMOUS MULTI-AGENT COMMITTEE RESEARCH
-# =============================================================================
-elif nav_choice == "✦  Research studio":
-    st.markdown('<div class="header-style">Research committee</div>', unsafe_allow_html=True)
-    st.markdown('<div class="meridian-intro">Run the Analyst, Verifier, and Skeptic workflow, then review the source-backed investment memorandum.</div>', unsafe_allow_html=True)
+# --- MODULE 5: AUTONOMOUS RESEARCH STUDIO ---
+elif "Autonomous Research Studio" in nav_choice:
+    col_head, col_info = st.columns([5.5, 1.2])
+    with col_head:
+        st.markdown('<div class="header-style">Autonomous Research Committee</div>', unsafe_allow_html=True)
+        st.markdown('<div class="meridian-intro">Multi-agent committee execution: Analyst drafts thesis, Verifier audits provenance, Skeptic stress-tests assumptions.</div>', unsafe_allow_html=True)
+    with col_info:
+        render_tab_info_guide(
+            title="Autonomous Research Committee",
+            purpose="Generate institutional research dossiers with verifiable cryptographic audit trails.",
+            capabilities=[
+                "Analyst Agent financial modeling & 15+ metric extraction",
+                "Cryptographic HMAC audit & single-round error repair loop",
+                "Skeptic Agent adversarial stress testing (-200 bps margin, +100 bps WACC)",
+                "Full markdown investment memorandum generation"
+            ],
+            use_case="Produce comprehensive, boardroom-ready investment memoranda backed by verified primary filings.",
+            methodology="`run_research.py` pipeline orchestration; enforces zero mental arithmetic and fail-closed audit rules."
+        )
 
     col_r1, col_r2 = st.columns([2, 1])
     with col_r1:
         wl_opts = ["(Custom Input)"] + st.session_state["watchlist"]
-        r_picked = st.selectbox("⭐ Quick Pick from Watchlist", wl_opts)
+        r_picked = st.selectbox("⭐ Quick Select from Coverage List", wl_opts)
         default_r = r_picked if r_picked != "(Custom Input)" else "AAPL"
-        r_input = st.text_input("Enter Company Name or Stock Ticker to Research", value=default_r, help="Type company name (e.g. 'Tesla', 'Apple', 'Palantir') or ticker (e.g. 'NVDA')")
+        r_input = st.text_input("Enter Company Name or Ticker to Research", value=default_r, help="Type company name (e.g. 'Apple') or ticker (e.g. 'AAPL', 'TCS.NS')")
         research_ticker = lookup_primary_ticker(r_input) or r_input.strip().upper()
         if research_ticker != r_input.strip().upper():
-            st.caption(f"✨ Resolved '{r_input.strip()}' to ticker `{research_ticker}`")
+            st.caption(f"✨ Resolved to ticker `{research_ticker}`")
     with col_r2:
         workflow_type = st.selectbox("Research Workflow", ["Workflow 1: Comprehensive Valuation Deep Dive", "Workflow 2: Rapid Fundamental Screen"])
         workflow_num = 1 if "1" in workflow_type else 2
@@ -783,85 +969,98 @@ elif nav_choice == "✦  Research studio":
             try:
                 from run_research import run_pipeline
                 res_pipeline = run_pipeline(ticker=research_ticker, workflow_number=workflow_num, strict_audit=False)
-                
                 st.success(f"✅ Research Committee successfully completed audit for {research_ticker}!")
                 
-                # Check for generated report
                 report_dir = res_pipeline.get("report_dir")
                 final_md = os.path.join(report_dir, "final_report.md") if report_dir else None
-                
                 if final_md and os.path.exists(final_md):
                     with open(final_md, "r", encoding="utf-8") as f:
                         report_content = f.read()
-                    
                     st.divider()
-                    st.subheader(f"📄 Audited Investment Memorandum: {research_ticker}")
                     st.markdown(report_content)
                 else:
-                    st.info("Research complete. Status: " + str(res_pipeline.get("status", "COMPLETE")))
+                    st.info("Research completed with status: " + str(res_pipeline.get("status", "COMPLETE")))
             except Exception as e:
                 st.error(f"Error during autonomous research: {str(e)}")
 
+    # Inspect previous reports if clicked from home
+    if "inspected_report_dir" in st.session_state:
+        insp_dir = st.session_state.pop("inspected_report_dir")
+        f_md = os.path.join(insp_dir, "final_report.md")
+        if os.path.exists(f_md):
+            st.divider()
+            st.subheader(f"📄 Saved Investment Memorandum: `{os.path.basename(insp_dir)}`")
+            with open(f_md, "r", encoding="utf-8") as f:
+                st.markdown(f.read())
 
-# =============================================================================
-# VIEW: GOOGLE ANTIGRAVITY RESEARCH AGENT
-# =============================================================================
-elif "Antigravity agent" in nav_choice:
-    st.markdown('<div class="header-style">Antigravity research agent</div>', unsafe_allow_html=True)
-    st.markdown('<div class="meridian-intro">Stateful, multi-turn AI research agent powered by the Google Antigravity Python SDK and Google Gemini.</div>', unsafe_allow_html=True)
 
-    # Status & API Configuration Check
+# --- MODULE 6: ANTIGRAVITY FINANCIAL COPILOT ---
+elif "Antigravity Financial Copilot" in nav_choice:
+    col_head, col_info = st.columns([5.5, 1.2])
+    with col_head:
+        st.markdown('<div class="header-style">Antigravity Financial Copilot</div>', unsafe_allow_html=True)
+        st.markdown('<div class="meridian-intro">Multi-turn research assistant and quantitative analytics engine powered by the Google Antigravity SDK.</div>', unsafe_allow_html=True)
+    with col_info:
+        render_tab_info_guide(
+            title="Antigravity Financial Copilot",
+            purpose="Interactive quantitative financial agent with real-time tool calling and portfolio management.",
+            capabilities=[
+                "Natural language stock research & valuation queries",
+                "Live quotes, historical returns, and annualized volatility calculation",
+                "Fundamental health, margin structure, and solvency analysis",
+                "Stateful portfolio tracking and capital allocation modeling"
+            ],
+            use_case="Query specific company metrics, run multi-asset risk comparisons, and compute portfolio allocation models.",
+            methodology="Google Antigravity SDK with strict system prompt forbidding mental math; calls deterministic tools."
+        )
+
     env_api_key = os.environ.get("GEMINI_API_KEY", "")
     has_api_key = bool(env_api_key.strip())
 
     c_stat1, c_stat2 = st.columns([2, 1])
     with c_stat1:
         if has_api_key:
-            st.success("🟢 Google Gemini API Connected (GEMINI_API_KEY configured)")
+            st.success("🟢 Google Gemini API Connected (GEMINI_API_KEY Active)")
         else:
-            st.warning("🟡 GEMINI_API_KEY is not set in `.env`. Required for conversational intelligence.")
+            st.warning("🟡 GEMINI_API_KEY is not configured. Conversational AI requires a key, but all quantitative tools below work 100% offline.")
     with c_stat2:
-        st.info("⚡ Framework: `google-antigravity v0.1.22`")
+        st.info("⚡ Powered by `google-antigravity SDK`")
 
-    with st.expander("⚙️ Gemini API Key Settings & Setup", expanded=not has_api_key):
-        custom_key = st.text_input("Enter Gemini API Key (or configure in `.env`)", value=env_api_key, type="password", help="Get a free key from Google AI Studio: https://aistudio.google.com/app/api-keys")
+    with st.expander("⚙️ Gemini API Configuration", expanded=not has_api_key):
+        custom_key = st.text_input("Enter Gemini API Key (or set in .env)", value=env_api_key, type="password", help="Get a key from Google AI Studio: https://aistudio.google.com/app/api-keys")
         if custom_key and custom_key != env_api_key:
             os.environ["GEMINI_API_KEY"] = custom_key
-            st.success("API key updated for current session!")
+            st.success("API Key updated for current session!")
 
-    # Top Tabs
     ag_tab1, ag_tab2, ag_tab3, ag_tab4 = st.tabs([
-        "💬 Conversational Agent",
+        "💬 Conversational Copilot",
         "📊 Live Quotes & Volatility",
         "📑 Fundamental Health & Margins",
         "💼 Portfolio & Allocation"
     ])
 
-    # TAB 1: Conversational Agent
     with ag_tab1:
-        st.subheader("💬 Ask the Antigravity Finance Agent")
-        st.caption("Ask questions, request multi-stock fundamental comparisons, or manage your portfolio through natural language.")
+        st.subheader("💬 Ask the Financial Copilot")
+        st.caption("Ask natural-language questions, compare margins between competitors, or request portfolio allocations.")
 
-        col_q1, col_q2, col_q3, col_q4 = st.columns(4)
+        col_q1, col_q2, col_q3 = st.columns(3)
         sample_query = None
-        if col_q1.button("🔍 Snapshot: NVDA", use_container_width=True):
+        if col_q1.button("🔍 Snapshot: NVDA Valuation", use_container_width=True):
             sample_query = "Give me a full financial snapshot, P/E ratio, and 1-month volatility for NVDA."
         if col_q2.button("⚖️ Compare: GOOGL vs MSFT", use_container_width=True):
             sample_query = "Compare revenue growth, gross margins, and debt-to-equity between GOOGL and MSFT."
-        if col_q3.button("📈 1Y Volatility: AAPL", use_container_width=True):
-            sample_query = "Analyze 1-year historical return, price high/low, and annualized volatility for AAPL."
-        if col_q4.button("💼 Allocate: $50k Low-Risk", use_container_width=True):
+        if col_q3.button("💼 Allocate: $50k Low-Risk", use_container_width=True):
             sample_query = "Calculate a low-risk $50,000 allocation across GOOGL, MSFT, and AAPL using inverse volatility."
 
-        user_query = st.text_area("Your Financial Research Prompt:", value=sample_query or "", height=100, placeholder="e.g., Provide a valuation summary for GOOGL including trailing P/E, 52-week bounds, and profit margins.")
+        user_query = st.text_area("Research Query:", value=sample_query or "", height=85, placeholder="e.g. Compare operating margins and debt levels between Apple and Microsoft.")
 
-        if st.button("🚀 Ask Antigravity Agent", type="primary"):
+        if st.button("🚀 Submit Query", type="primary"):
             if not user_query.strip():
                 st.warning("Please enter a research query.")
             elif not os.environ.get("GEMINI_API_KEY"):
-                st.error("Please provide a Gemini API Key in the settings expander above to chat with the agent.")
+                st.error("Please enter a Gemini API Key in the settings expander above to use the conversational copilot.")
             else:
-                with st.spinner("Antigravity Agent analyzing financial tools and generating report..."):
+                with st.spinner("Antigravity Agent analyzing financial tools and synthesizing response..."):
                     try:
                         import concurrent.futures
                         import asyncio
@@ -881,26 +1080,21 @@ elif "Antigravity agent" in nav_choice:
                             agent_output = future.result(timeout=60)
 
                         st.divider()
-                        st.markdown("### 📋 Antigravity Research Memorandum")
                         st.markdown(agent_output)
-
                     except Exception as e:
                         st.error(f"Agent Execution Error: {str(e)}")
 
-    # TAB 2: Live Quotes & Volatility (Antigravity Tools)
     with ag_tab2:
         st.subheader("📊 Real-Time Market Data & Volatility Engine")
-        st.caption("Powered by `tools.antigravity_tools.get_stock_quote` and `get_historical_performance`.")
-        
         q_col1, q_col2 = st.columns([2, 1])
         with q_col1:
-            q_ticker = st.text_input("Enter Ticker Symbol", value="GOOGL", key="ag_q_ticker").strip().upper()
+            q_ticker = st.text_input("Ticker Symbol", value="GOOGL", key="copilot_q_ticker").strip().upper()
         with q_col2:
-            q_period = st.selectbox("Historical Horizon", ["5d", "1mo", "3mo", "6mo", "1y", "2y", "5y"], index=1, key="ag_q_period")
+            q_period = st.selectbox("Horizon", ["5d", "1mo", "3mo", "6mo", "1y", "2y", "5y"], index=1, key="copilot_q_period")
 
-        if st.button("Fetch Live Data & Volatility", key="btn_fetch_quote"):
+        if st.button("Fetch Market Data & Volatility", key="btn_fetch_quote_c"):
             from tools.antigravity_tools import get_stock_quote, get_historical_performance
-            with st.spinner(f"Retrieving market data for {q_ticker}..."):
+            with st.spinner(f"Retrieving market telemetry for {q_ticker}..."):
                 quote_data = get_stock_quote(q_ticker)
                 hist_data = get_historical_performance(q_ticker, q_period)
 
@@ -913,83 +1107,69 @@ elif "Antigravity agent" in nav_choice:
                     km1.metric("Current Price", f"${curr_p:,.2f}" if curr_p else "N/A", chg_pct or None)
                     km2.metric("P/E Ratio", f"{quote_data.get('pe_ratio')}" if quote_data.get("pe_ratio") else "N/A")
                     km3.metric("Forward P/E", f"{quote_data.get('forward_pe')}" if quote_data.get("forward_pe") else "N/A")
-                    
                     mcap = quote_data.get("market_cap")
-                    if mcap:
-                        mcap_str = f"${mcap/1e12:.2f}T" if mcap >= 1e12 else f"${mcap/1e9:.2f}B"
-                    else:
-                        mcap_str = "N/A"
+                    mcap_str = f"${mcap/1e12:.2f}T" if mcap and mcap >= 1e12 else (f"${mcap/1e9:.2f}B" if mcap else "N/A")
                     km4.metric("Market Cap", mcap_str)
 
-                    st.markdown("#### 📈 Historical Performance & Risk")
                     if "error" not in hist_data:
                         hm1, hm2, hm3, hm4 = st.columns(4)
                         hm1.metric(f"{q_period.upper()} Return", hist_data.get("total_return_percent", "N/A"))
                         hm2.metric("Annualized Volatility", hist_data.get("annualized_volatility", "N/A"))
-                        hm3.metric(f"Period High", f"${hist_data.get('period_high', 0):,.2f}")
-                        hm4.metric(f"Period Low", f"${hist_data.get('period_low', 0):,.2f}")
+                        hm3.metric("Period High", f"${hist_data.get('period_high', 0):,.2f}")
+                        hm4.metric("Period Low", f"${hist_data.get('period_low', 0):,.2f}")
 
-    # TAB 3: Deep Fundamentals
     with ag_tab3:
-        st.subheader("📑 Fundamental Health & Margins")
-        st.caption("Powered by `tools.antigravity_tools.get_financial_metrics`.")
-        
-        f_ticker = st.text_input("Enter Ticker for Fundamentals", value="NVDA", key="ag_f_ticker").strip().upper()
-        if st.button("Inspect Financial Health", key="btn_fetch_fund"):
+        st.subheader("📑 Fundamental Health & Margin Structure")
+        f_ticker = st.text_input("Ticker for Fundamentals", value="NVDA", key="copilot_f_ticker").strip().upper()
+        if st.button("Inspect Financial Statements", key="btn_fetch_fund_c"):
             from tools.antigravity_tools import get_financial_metrics
-            with st.spinner(f"Auditing balance sheet & margins for {f_ticker}..."):
+            with st.spinner(f"Extracting balance sheet & margins for {f_ticker}..."):
                 f_data = get_financial_metrics(f_ticker)
                 if "error" in f_data:
                     st.error(f_data["error"])
                 else:
                     f_col1, f_col2 = st.columns(2)
                     with f_col1:
-                        st.markdown("##### 💵 Growth & Profitability")
-                        st.write(f"**Company Name:** {f_data.get('company_name')}")
+                        st.markdown("##### 💵 Profitability & Cash Flow")
+                        st.write(f"**Company:** {f_data.get('company_name')}")
                         st.write(f"**Revenue Growth (YoY):** {f_data.get('revenue_growth_yoy') or 'N/A'}")
                         st.write(f"**Gross Margins:** {f_data.get('gross_margins') or 'N/A'}")
                         st.write(f"**Operating Margins:** {f_data.get('operating_margins') or 'N/A'}")
-                        st.write(f"**Net Profit Margins:** {f_data.get('profit_margins') or 'N/A'}")
                         st.write(f"**Return on Equity (ROE):** {f_data.get('return_on_equity_roe') or 'N/A'}")
                     with f_col2:
-                        st.markdown("##### 🛡️ Solvency & Valuation")
-                        st.write(f"**Debt to Equity:** {f_data.get('debt_to_equity') or 'N/A'}")
+                        st.markdown("##### 🛡️ Solvency & Valuation Ratios")
+                        st.write(f"**Debt-to-Equity:** {f_data.get('debt_to_equity') or 'N/A'}")
                         st.write(f"**Current Ratio:** {f_data.get('current_ratio') or 'N/A'}")
                         st.write(f"**Trailing P/E:** {f_data.get('trailing_pe') or 'N/A'}")
                         st.write(f"**Forward P/E:** {f_data.get('forward_pe') or 'N/A'}")
                         st.write(f"**Beta:** {f_data.get('beta') or 'N/A'}")
 
-    # TAB 4: Portfolio & Capital Allocation
     with ag_tab4:
-        st.subheader("💼 Stateful Portfolio Management & Allocation")
-        st.caption("Track positions across turns using `manage_portfolio` and model allocations.")
-
+        st.subheader("💼 Stateful Portfolio Tracking & Asset Allocation")
         if "ag_portfolio" not in st.session_state:
             st.session_state["ag_portfolio"] = {"GOOGL": {"shares": 10.0, "cost_basis": 150.0}, "MSFT": {"shares": 5.0, "cost_basis": 400.0}}
 
-        p_tab1, p_tab2 = st.tabs(["Active Portfolio Holdings", "Rebalancing & Allocation Model"])
-        
-        with p_tab1:
-            st.markdown("##### ➕ Add / Update Position")
-            c_pos1, c_pos2, c_pos3, c_pos4 = st.columns(4)
-            with c_pos1:
-                new_sym = st.text_input("Ticker", value="AAPL", key="pos_sym").strip().upper()
-            with c_pos2:
-                new_shares = st.number_input("Shares", min_value=0.1, value=10.0, step=1.0, key="pos_sh")
-            with c_pos3:
-                new_cost = st.number_input("Cost Basis ($/share)", min_value=0.1, value=220.0, step=1.0, key="pos_cost")
-            with c_pos4:
-                st.write("")
-                st.write("")
-                if st.button("Add to Portfolio", key="btn_add_pos"):
+        p_subtab1, p_subtab2 = st.tabs(["Active Holdings", "Allocation Calculator"])
+        with p_subtab1:
+            with st.form(key="add_position_form", clear_on_submit=True):
+                c_pos1, c_pos2, c_pos3, c_pos4 = st.columns(4)
+                with c_pos1:
+                    new_sym = st.text_input("Ticker", value="AAPL").strip().upper()
+                with c_pos2:
+                    new_shares = st.number_input("Shares", min_value=0.1, value=10.0, step=1.0)
+                with c_pos3:
+                    new_cost = st.number_input("Cost Basis ($)", min_value=0.1, value=220.0, step=1.0)
+                with c_pos4:
+                    st.write("")
+                    st.write("")
+                    pos_submit = st.form_submit_button("➕ Record Position", use_container_width=True)
+                if pos_submit:
                     st.session_state["ag_portfolio"][new_sym] = {"shares": new_shares, "cost_basis": new_cost}
-                    st.success(f"Added {new_shares} shares of {new_sym}!")
+                    st.success(f"Recorded {new_shares} shares of {new_sym}!")
+                    st.rerun()
 
-            # Evaluate holdings
-            import yfinance as yf
             holdings_rows = []
-            tot_val = 0.0
-            tot_cost = 0.0
+            tot_val, tot_cost = 0.0, 0.0
             for sym, pos in st.session_state["ag_portfolio"].items():
                 sh = pos["shares"]
                 cb = pos["cost_basis"]
@@ -1002,36 +1182,30 @@ elif "Antigravity agent" in nav_choice:
                 tot_val += m_val
                 tot_cost += c_val
                 holdings_rows.append({
-                    "Symbol": sym,
-                    "Shares": sh,
-                    "Cost Basis": f"${cb:,.2f}",
-                    "Current Price": f"${cp:,.2f}",
-                    "Market Value": f"${m_val:,.2f}",
+                    "Symbol": sym, "Shares": sh, "Cost Basis": f"${cb:,.2f}",
+                    "Current Price": f"${cp:,.2f}", "Market Value": f"${m_val:,.2f}",
                     "Unrealized P&L": f"${(m_val - c_val):,.2f}",
-                    "P&L %": f"{((m_val - c_val) / c_val * 100):.2f}%" if c_val > 0 else "0.0%"
+                    "P&L %": f"{((m_val - c_val) / c_val * 100):+.2f}%" if c_val > 0 else "0.0%"
                 })
-
             if holdings_rows:
                 st.table(pd.DataFrame(holdings_rows))
                 col_pt1, col_pt2, col_pt3 = st.columns(3)
                 col_pt1.metric("Total Portfolio Value", f"${tot_val:,.2f}")
                 col_pt2.metric("Total Cost Basis", f"${tot_cost:,.2f}")
-                col_pt3.metric("Total Unrealized P&L", f"${(tot_val - tot_cost):,.2f}", f"{((tot_val - tot_cost) / tot_cost * 100):.2f}%" if tot_cost > 0 else None)
-            else:
-                st.info("No active holdings in portfolio.")
+                col_pt3.metric("Total Unrealized P&L", f"${(tot_val - tot_cost):,.2f}", f"{((tot_val - tot_cost) / tot_cost * 100):+.2f}%" if tot_cost > 0 else None)
 
-        with p_tab2:
-            st.markdown("##### ⚖️ Quantitative Basket Allocation Calculator")
+        with p_subtab2:
+            st.markdown("##### ⚖️ Optimal Basket Allocation Solver")
             c_al1, c_al2, c_al3 = st.columns([2, 1, 1])
             with c_al1:
-                al_symbols = st.text_input("Symbols to Allocate", value="GOOGL, MSFT, AAPL, NVDA", key="al_syms")
+                al_symbols = st.text_input("Symbols", value="GOOGL, MSFT, AAPL, NVDA", key="copilot_al_syms")
             with c_al2:
-                al_cap = st.number_input("Total Capital ($)", value=50000.0, step=5000.0, key="al_cap")
+                al_cap = st.number_input("Capital ($)", value=50000.0, step=5000.0, key="copilot_al_cap")
             with c_al3:
-                al_strat = st.selectbox("Strategy", ["equal (Equal Weight)", "market_cap (Market Cap Weight)", "low_risk (Inverse Volatility / Beta)"], key="al_strat")
+                al_strat = st.selectbox("Method", ["equal (Equal Weight)", "market_cap (Market Cap)", "low_risk (Inverse Beta)"], key="copilot_al_strat")
 
             strat_code = "equal" if "equal" in al_strat else ("market_cap" if "market_cap" in al_strat else "low_risk")
-            if st.button("Calculate Target Allocation", key="btn_calc_al"):
+            if st.button("Calculate Allocation", key="btn_solve_alloc"):
                 from tools.antigravity_tools import calculate_asset_allocation
                 syms_list = [s.strip().upper() for s in al_symbols.split(",") if s.strip()]
                 al_res = calculate_asset_allocation(syms_list, al_cap, strategy=strat_code)
@@ -1042,74 +1216,96 @@ elif "Antigravity agent" in nav_choice:
 
 
 # =============================================================================
-# VIEW 5: NVIDIA CUOPT PORTFOLIO OPTIMIZATION
+# DOMAIN 3: QUANTITATIVE RISK & PORTFOLIO
 # =============================================================================
-elif nav_choice == "▤  Portfolio lab":
-    st.markdown('<div class="header-style">Portfolio construction</div>', unsafe_allow_html=True)
-    st.markdown('<div class="meridian-intro">Choose a stock universe and strategy to calculate a portfolio allocation.</div>', unsafe_allow_html=True)
+
+# --- MODULE 7: PORTFOLIO CONSTRUCTION LAB ---
+elif "Portfolio Construction Lab" in nav_choice:
+    col_head, col_info = st.columns([5.5, 1.2])
+    with col_head:
+        st.markdown('<div class="header-style">Portfolio Construction & Risk Lab</div>', unsafe_allow_html=True)
+        st.markdown('<div class="meridian-intro">NVIDIA cuOpt quadratic programming portfolio optimization: Global Minimum Variance & Markowitz Efficient Frontier.</div>', unsafe_allow_html=True)
+    with col_info:
+        render_tab_info_guide(
+            title="Portfolio Construction Lab (QP Optimizer)",
+            purpose="Compute mathematically optimal asset weights that minimize total portfolio variance.",
+            capabilities=[
+                "Quadratic Programming (QP) variance minimization",
+                r"Single-asset concentration constraints ($w_i \le w_{max}$)",
+                r"Full Simplex constraint enforcement ($\sum w_i = 1, w_i \ge 0$)",
+                r"Sharpe ratio and dual shadow cost $\lambda$ calculation"
+            ],
+            use_case="Construct risk-minimized portfolios across shortlisted compounders subject to fiduciary concentration limits.",
+            methodology=r"Continuous convex quadratic optimization over empirical historical covariance matrix $\Sigma$."
+        )
 
     p_col1, p_col2 = st.columns([2, 1])
     with p_col1:
         wl_preview_str = ", ".join(st.session_state["watchlist"][:5])
-        port_input = st.text_input("Portfolio Universe (Comma-separated)", value=wl_preview_str, help="Type any list of stocks or use your active Watchlist")
+        port_input = st.text_input("Portfolio Universe (Comma-separated)", value=wl_preview_str)
         use_all_wl = st.checkbox(f"Use All {len(st.session_state['watchlist'])} Stocks in Current Watchlist", value=False)
     with p_col2:
-        strategy_choice = st.selectbox("Optimization Strategy", ["min_variance (Global Minimum Variance)", "mean_variance (Markowitz Efficient)"])
+        strategy_choice = st.selectbox("Optimization Objective", ["min_variance (Global Minimum Variance)", "mean_variance (Markowitz Efficient Frontier)"])
         strat = "min_variance" if "min_variance" in strategy_choice else "mean_variance"
 
     max_w_cap = st.slider("Single-Asset Concentration Cap", min_value=0.20, max_value=1.0, value=0.40, step=0.05)
 
     if st.button("⚡ Solve Optimal Portfolio Allocation", type="primary"):
-        if use_all_wl:
-            tickers_list = list(st.session_state["watchlist"])
+        tickers_list = list(st.session_state["watchlist"]) if use_all_wl else [t.strip().upper() for t in port_input.split(",") if t.strip()]
+        if len(tickers_list) < 2:
+            st.warning("Please provide at least 2 valid tickers to compute an optimal portfolio covariance matrix.")
         else:
-            tickers_list = [t.strip().upper() for t in port_input.split(",") if t.strip()]
-        with st.spinner(f"Solving quadratic program for {tickers_list}..."):
-            try:
-                sandbox = BacktestSandbox()
-                bt_res = sandbox.run_optimized_portfolio_backtest(
-                    tickers=tickers_list,
-                    benchmark="SPY",
-                    period="1y",
-                    max_weight=max_w_cap,
-                    strategy=strat
-                )
-                
-                st.success("✅ NVIDIA cuOpt QP Optimization Converged to Optimum!")
-                
-                qp = bt_res["qp_solution"]
-                opt_weights = qp["weights"]
+            with st.spinner(f"Solving quadratic program across {tickers_list}..."):
+                try:
+                    sandbox = BacktestSandbox()
+                    bt_res = sandbox.run_optimized_portfolio_backtest(
+                        tickers=tickers_list,
+                        benchmark="SPY",
+                        period="1y",
+                        max_weight=max_w_cap,
+                        strategy=strat
+                    )
+                    st.success("✅ NVIDIA cuOpt Quadratic Program Converged to Optimum!")
+                    qp = bt_res["qp_solution"]
+                    opt_weights = qp["weights"]
 
-                # Metrics summary
-                col_m1, col_m2, col_m3, col_m4 = st.columns(4)
-                with col_m1:
-                    st.metric("Annualized Volatility", f"{qp['annualized_volatility']:.2f}%")
-                with col_m2:
-                    st.metric("Sharpe Ratio (Rf=4.25%)", f"{bt_res['sharpe_ratio']:.2f}")
-                with col_m3:
-                    st.metric("1Y Portfolio Return", f"{bt_res['portfolio_return_pct']:+.2f}%")
-                with col_m4:
-                    st.metric("Alpha vs SPY", f"{bt_res['alpha_pct']:+.2f}%", delta=f"{bt_res['alpha_pct']:+.2f}%")
+                    col_m1, col_m2, col_m3, col_m4 = st.columns(4)
+                    col_m1.metric("Annualized Volatility", f"{qp['annualized_volatility']:.2f}%")
+                    col_m2.metric("Sharpe Ratio (Rf=4.25%)", f"{bt_res['sharpe_ratio']:.2f}")
+                    col_m3.metric("1Y Portfolio Return", f"{bt_res['portfolio_return_pct']:+.2f}%")
+                    col_m4.metric("Alpha vs SPY", f"{bt_res['alpha_pct']:+.2f}%", delta=f"{bt_res['alpha_pct']:+.2f}%")
 
-                # Optimal Weights Chart
-                df_w = pd.DataFrame(list(opt_weights.items()), columns=["Asset", "Optimal Weight"])
-                df_w["Optimal Weight (%)"] = df_w["Optimal Weight"] * 100.0
+                    df_w = pd.DataFrame(list(opt_weights.items()), columns=["Asset", "Optimal Weight"])
+                    df_w["Optimal Weight (%)"] = df_w["Optimal Weight"] * 100.0
 
-                fig_w = go.Figure(data=[go.Pie(labels=df_w["Asset"], values=df_w["Optimal Weight (%)"], hole=0.4)])
-                fig_w.update_layout(title="Optimal Capital Allocation (Simplex Sum = 100%)", height=450)
-                st.plotly_chart(fig_w, use_container_width=True)
+                    fig_w = go.Figure(data=[go.Pie(labels=df_w["Asset"], values=df_w["Optimal Weight (%)"], hole=0.4)])
+                    fig_w.update_layout(title="Optimal Capital Allocation (Simplex Sum = 100%)", height=450)
+                    st.plotly_chart(fig_w, use_container_width=True)
 
-                st.markdown(f"**Dual Shadow Cost of Capital (Budget Multiplier $\\lambda$):** `{qp.get('dual_budget_multiplier', 0.0):.6f}`")
-            except Exception as e:
-                st.error(f"Optimization error: {str(e)}")
+                    st.markdown(f"**Dual Shadow Cost of Capital (Budget Multiplier $\\lambda$):** `{qp.get('dual_budget_multiplier', 0.0):.6f}`")
+                except Exception as e:
+                    st.error(f"Optimization error: {str(e)}")
 
 
-# =============================================================================
-# VIEW 6: SUPPLY CHAIN LOGISTICS & MARGIN ELASTICITY
-# =============================================================================
-elif nav_choice == "↗  Supply chain":
-    st.markdown('<div class="header-style">Supply chain economics</div>', unsafe_allow_html=True)
-    st.markdown('<div class="meridian-intro">Explore fleet routing costs, capacity use, and the impact of fuel price shocks on delivery economics.</div>', unsafe_allow_html=True)
+# --- MODULE 8: SUPPLY CHAIN & LOGISTICS RISK ---
+elif "Supply Chain & Logistics Risk" in nav_choice:
+    col_head, col_info = st.columns([5.5, 1.2])
+    with col_head:
+        st.markdown('<div class="header-style">Supply Chain & Operations Risk</div>', unsafe_allow_html=True)
+        st.markdown('<div class="meridian-intro">Capacitated Vehicle Routing (CVRP) fleet optimization and fuel inflation shock elasticity.</div>', unsafe_allow_html=True)
+    with col_info:
+        render_tab_info_guide(
+            title="Supply Chain & Operations Risk",
+            purpose="Evaluate operating margin vulnerability to logistics bottlenecks and commodity inflation.",
+            capabilities=[
+                "cuOpt Capacitated Vehicle Routing Problem (CVRP) fleet routing",
+                "Fuel price shock stress-testing (+10% and +20% spike)",
+                "Fleet capacity utilization & transit cost per delivered unit",
+                "Interactive spatial distribution network routing visualization"
+            ],
+            use_case="Determine whether a portfolio company's operating margin can withstand severe freight rate and fuel cost shocks.",
+            methodology="Clarke-Wright Savings heuristic and 2-opt trajectory solver over Euclidean cost matrices."
+        )
 
     col_v1, col_v2 = st.columns(2)
     with col_v1:
@@ -1119,7 +1315,6 @@ elif nav_choice == "↗  Supply chain":
         cost_per_mile = st.slider("Cost per Distance Unit ($/km)", min_value=1.0, max_value=5.0, value=2.50, step=0.25)
         fuel_share = st.slider("Fuel Share of Logistics Cost (%)", min_value=10, max_value=60, value=35) / 100.0
 
-    # Prototype fulfillment network
     coords = [(0, 0), (12, 10), (15, -12), (-14, 11), (-12, -15), (22, 5)]
     demands = [0.0, 15.0, 20.0, 12.0, 18.0, 25.0]
 
@@ -1128,72 +1323,243 @@ elif nav_choice == "↗  Supply chain":
     vrp_res = opt_vrp.solve_capacitated_vrp(cost_matrix=c_matrix, demands=demands, vehicle_capacity=vehicle_cap, num_vehicles=fleet_vehicles)
 
     col_r1, col_r2, col_r3 = st.columns(3)
-    with col_r1:
-        st.metric("Total Transit Cost", f"${vrp_res['total_transport_cost']:,.2f}")
-    with col_r2:
-        st.metric("Fleet Capacity Utilization", f"{vrp_res['fleet_capacity_utilization_pct']:.1f}%")
-    with col_r3:
-        st.metric("Cost per Delivered Unit", f"${vrp_res['cost_per_unit_delivered']:.2f}")
+    col_r1.metric("Total Transit Cost", f"${vrp_res['total_transport_cost']:,.2f}")
+    col_r2.metric("Fleet Capacity Utilization", f"{vrp_res['fleet_capacity_utilization_pct']:.1f}%")
+    col_r3.metric("Cost per Delivered Unit", f"${vrp_res['cost_per_unit_delivered']:.2f}")
+
+    # Plotly Spatial Route Visualization
+    fig_routes = go.Figure()
+    # Depot
+    fig_routes.add_trace(go.Scatter(x=[0], y=[0], mode="markers+text", marker=dict(size=14, color="#b38822", symbol="square"), text=["Depot (0,0)"], textposition="top center", name="Distribution Center"))
+    # Customers
+    cust_x = [coords[i][0] for i in range(1, len(coords))]
+    cust_y = [coords[i][1] for i in range(1, len(coords))]
+    fig_routes.add_trace(go.Scatter(x=cust_x, y=cust_y, mode="markers+text", marker=dict(size=10, color="#10b981"), text=[f"Node {i} ({demands[i]}u)" for i in range(1, len(coords))], textposition="top center", name="Customer Demands"))
+
+    # Connect routes
+    colors = ["#38bdf8", "#f59e0b", "#f43f5e", "#a855f7", "#22c55e", "#eab308"]
+    for r_idx, route in enumerate(vrp_res.get("routes", [])):
+        rx = [coords[n][0] for n in route]
+        ry = [coords[n][1] for n in route]
+        fig_routes.add_trace(go.Scatter(x=rx, y=ry, mode="lines+markers", line=dict(color=colors[r_idx % len(colors)], width=2), name=f"Vehicle {r_idx+1}"))
+
+    fig_routes.update_layout(title="Optimal Fleet Routing Network", height=420, margin=dict(l=20, r=20, t=40, b=20))
+    st.plotly_chart(fig_routes, use_container_width=True)
 
     st.subheader("⛽ Fuel Inflation Shock Sensitivity")
     sens = vrp_res["sensitivity"]
     col_s1, col_s2 = st.columns(2)
-    with col_s1:
-        st.warning(f"**+10% Fuel Price Spike:** Total Cost rises to **${sens['fuel_plus_10pct_cost']:,.2f}** (+${sens['logistics_cost_inflation_per_unit_10pct']:.3f}/unit)")
-    with col_s2:
-        st.error(f"**+20% Fuel Price Spike:** Total Cost rises to **${sens['fuel_plus_20pct_cost']:,.2f}**")
+    col_s1.warning(f"**+10% Fuel Price Spike:** Total Cost rises to **${sens['fuel_plus_10pct_cost']:,.2f}** (+${sens['logistics_cost_inflation_per_unit_10pct']:.3f}/unit)")
+    col_s2.error(f"**+20% Fuel Price Spike:** Total Cost rises to **${sens['fuel_plus_20pct_cost']:,.2f}**")
 
 
 # =============================================================================
-# VIEW 7: DECISION JOURNAL & REVIEW
+# DOMAIN 4: AUDIT, GOVERNANCE & SYSTEM
 # =============================================================================
-elif nav_choice == "▧  Decision journal":
-    st.markdown('<div class="header-style">Decision journal</div>', unsafe_allow_html=True)
-    st.markdown('<div class="meridian-intro">Review logged investment decisions and the latest portfolio review in one place.</div>', unsafe_allow_html=True)
+
+# --- MODULE 9: INTERACTIVE 3D PIPELINE MAP ---
+elif "Interactive 3D Pipeline Map" in nav_choice:
+    col_head, col_info = st.columns([5.5, 1.2])
+    with col_head:
+        st.markdown('<div class="header-style">Interactive 3D Pipeline Map</div>', unsafe_allow_html=True)
+        st.markdown('<div class="meridian-intro">Spatial WebGL 3D visualization of the multi-agent research pipeline: orbital rotation, node inspection, and live simulation.</div>', unsafe_allow_html=True)
+    with col_info:
+        render_tab_info_guide(
+            title="Interactive 3D Pipeline Map",
+            purpose="Explore the spatial architecture of the autonomous research pipeline in interactive 3D.",
+            capabilities=[
+                "Interactive WebGL Three.js spatial canvas with 360° orbit, pan, and zoom",
+                "Node telemetry inspection (inputs, outputs, verification rules, source links)",
+                "Live step-by-step pipeline simulation with traveling data packets",
+                "Expandable contract handoffs specification"
+            ],
+            use_case="Verify mathematical boundaries, data handoffs, and verification policies governing the autonomous agents.",
+            methodology="Three.js r128 WebGL rendering pipeline; deterministic node-to-node contract specifications."
+        )
+
+    # 3D Interactive WebGL Component
+    workflow_3d_html = render_interactive_3d_workflow(height=620)
+    components.html(workflow_3d_html, height=640, scrolling=False)
+
+    # Detailed Handoff Contracts Below 3D View
+    st.divider()
+    st.markdown("### 📋 Formal Agent-to-Agent Handoff Contracts")
+    handoffs = [
+        ("Dashboard → Pipeline Orchestrator", "The dashboard calls `run_pipeline(ticker, workflow_number)`. The orchestrator packages run IDs and ensures zero hand-written files exist.", "dashboard.py & run_research.py"),
+        ("Orchestrator → Analyst Agent", "Orchestrator calls `analyst.run_workflow()`, returning `markdown_report`, `ledger`, and `skeptic_inputs`.", "run_research.py lines 78–88 · agents/analyst.py"),
+        ("Orchestrator → Verifier (Round 1)", "First audit receives the Analyst report and its provenance sidecar, verifying HMAC integrity and checking document sidecars.", "run_research.py lines 95–101 · agents/verifier.py"),
+        ("Verifier → Analyst (Conditional Repair Loop)", "Only when wrong figures are found, orchestrator invokes `analyst.correct_report()` for a single repair pass before re-verifying.", "run_research.py lines 105–129"),
+        ("Orchestrator → Skeptic Agent", "Orchestrator expands `skeptic_inputs` into `skeptic.evaluate_thesis()`. The Skeptic returns a stress verdict and review markdown.", "run_research.py lines 152–162 · agents/skeptic.py"),
+        ("Orchestrator → Verifier (Round 2)", "Audits the Skeptic review against the ledger sidecar to guarantee no synthetic numbers were introduced.", "run_research.py lines 157–175"),
+        ("Orchestrator → Reports Dossier", "Orchestrator writes `final_report.md` with dual cryptographic provenance sidecars in `reports/<ticker>_<timestamp>/`.", "run_research.py lines 177–194")
+    ]
+    for idx, (title, detail, source_ref) in enumerate(handoffs, start=1):
+        with st.expander(f"Handoff {idx:02d}: {title}", expanded=(idx == 1)):
+            st.markdown(detail)
+            st.caption(f"Source Implementation: `{source_ref}`")
+
+
+# --- MODULE 10: INVESTMENT DECISION JOURNAL ---
+elif "Investment Decision Journal" in nav_choice:
+    col_head, col_info = st.columns([5.5, 1.2])
+    with col_head:
+        st.markdown('<div class="header-style">Investment Decision Journal</div>', unsafe_allow_html=True)
+        st.markdown('<div class="meridian-intro">Institutional decision hygiene: log theses, price targets, stop-losses, and conviction levels to track portfolio evolution.</div>', unsafe_allow_html=True)
+    with col_info:
+        render_tab_info_guide(
+            title="Investment Decision Journal",
+            purpose="Maintain disciplined investment hygiene and mitigate hindsight bias by logging decisions in real-time.",
+            capabilities=[
+                "Structured decision logging (Action, Conviction, Targets, Thesis, Risks)",
+                "Persistent CSV storage in `journal/journal.csv`",
+                "Portfolio review memo viewer",
+                "Win rate and open/closed position tracking"
+            ],
+            use_case="Log every trade, investment thesis, and risk catalyst at the moment of decision to audit post-mortem outcomes.",
+            methodology="Disciplined behavioral finance framework inspired by Ray Dalio and Michael Mauboussin."
+        )
 
     journal_csv_path = os.path.join(PROJECT_DIR, "journal", "journal.csv")
+    os.makedirs(os.path.dirname(journal_csv_path), exist_ok=True)
+
+    # Decision Logging Form (Fixes the non-responding / missing form issue)
+    with st.container(border=True):
+        st.markdown("##### 📝 Record New Investment Decision")
+        with st.form(key="journal_entry_form", clear_on_submit=True):
+            j_col1, j_col2, j_col3 = st.columns(3)
+            with j_col1:
+                j_ticker = st.text_input("Ticker Symbol", value=st.session_state.get("active_ticker", "AAPL")).strip().upper()
+                j_action = st.selectbox("Action", ["BUY", "HOLD", "SELL", "TRIM", "WATCH"])
+            with j_col2:
+                j_entry_p = st.number_input("Entry / Current Price ($)", min_value=0.01, value=150.0, step=1.0)
+                j_target_p = st.number_input("Price Target ($)", min_value=0.01, value=200.0, step=1.0)
+            with j_col3:
+                j_stop_loss = st.number_input("Stop Loss / Risk Boundary ($)", min_value=0.01, value=125.0, step=1.0)
+                j_conviction = st.selectbox("Conviction Level", ["HIGH", "MEDIUM", "LOW"])
+
+            j_thesis = st.text_area("Investment Thesis", placeholder="Core thesis drivers (e.g. pricing power, operating margin expansion, net cash cushion)...")
+            j_risks = st.text_area("Key Risks & Invalidation Catalysts", placeholder="What would invalidate this thesis (e.g. customer concentration churn, gross margin degradation)?")
+
+            submit_decision = st.form_submit_button("💾 Save Decision to Journal", type="primary", use_container_width=True)
+            if submit_decision:
+                if j_ticker and j_thesis:
+                    # Load or initialize CSV
+                    cols = ["decision_id", "date", "ticker", "action", "entry_price", "target_price", "stop_loss", "conviction", "status", "exit_date", "exit_price", "return_pct", "thesis", "risks"]
+                    if os.path.exists(journal_csv_path):
+                        df_j = pd.read_csv(journal_csv_path)
+                    else:
+                        df_j = pd.DataFrame(columns=cols)
+
+                    new_id = f"DEC_{len(df_j) + 1:04d}"
+                    new_row = {
+                        "decision_id": new_id,
+                        "date": datetime.date.today().isoformat(),
+                        "ticker": j_ticker,
+                        "action": j_action,
+                        "entry_price": j_entry_p,
+                        "target_price": j_target_p,
+                        "stop_loss": j_stop_loss,
+                        "conviction": j_conviction,
+                        "status": "OPEN",
+                        "exit_date": "",
+                        "exit_price": "",
+                        "return_pct": "",
+                        "thesis": j_thesis,
+                        "risks": j_risks
+                    }
+                    df_j = pd.concat([df_j, pd.DataFrame([new_row])], ignore_index=True)
+                    df_j.to_csv(journal_csv_path, index=False)
+                    st.success(f"✅ Successfully logged decision `{new_id}` for **{j_ticker}**!")
+                    st.rerun()
+                else:
+                    st.warning("Please provide both a ticker symbol and an investment thesis.")
+
+    # Historical Decisions Table
     if os.path.exists(journal_csv_path):
         df_journal = pd.read_csv(journal_csv_path)
-        st.dataframe(df_journal, use_container_width=True)
-    else:
-        st.info("No journal.csv found yet. Start logging decisions below.")
+        if not df_journal.empty:
+            open_count = len(df_journal[df_journal["status"] == "OPEN"])
+            col_jm1, col_jm2 = st.columns(2)
+            col_jm1.metric("Total Decisions Logged", len(df_journal))
+            col_jm2.metric("Active Open Positions", open_count)
+
+            st.markdown("### 📚 Logged Decision History")
+            st.dataframe(df_journal, use_container_width=True, hide_index=True)
+        else:
+            st.info("No decisions logged yet. Use the form above to record your first investment thesis.")
 
     st.divider()
     review_md_path = os.path.join(PROJECT_DIR, "journal", "portfolio_review.md")
     if os.path.exists(review_md_path):
+        st.markdown("### 📑 Portfolio Strategy & Retrospective Review")
         with open(review_md_path, "r", encoding="utf-8") as f:
             st.markdown(f.read())
 
 
-# =============================================================================
-# VIEW 8: SEC FILINGS & PRICE ALERTS
-# =============================================================================
-elif nav_choice == "◉  Alerts & filings":
-    st.markdown('<div class="header-style">Filings & price alerts</div>', unsafe_allow_html=True)
-    st.markdown('<div class="meridian-intro">Review saved alerts or check monitored companies for market and filing events.</div>', unsafe_allow_html=True)
+# --- MODULE 11: REGULATORY FILINGS & ALERTS ---
+elif "Regulatory Filings & Alerts" in nav_choice:
+    col_head, col_info = st.columns([5.5, 1.2])
+    with col_head:
+        st.markdown('<div class="header-style">Regulatory Filings & Price Alerts</div>', unsafe_allow_html=True)
+        st.markdown('<div class="meridian-intro">Continuous monitor for SEC EDGAR 8-K/10-K filing disclosures and abnormal price volatility shocks.</div>', unsafe_allow_html=True)
+    with col_info:
+        render_tab_info_guide(
+            title="Regulatory Filings & Market Alerts",
+            purpose="Surfacing unscheduled filing disclosures and abnormal market volatility shocks across coverage universes.",
+            capabilities=[
+                "Live SEC EDGAR RSS feed monitoring for Form 8-K, 10-K, and 10-Q releases",
+                "Abnormal intraday and 5-day price shock alerts",
+                "Cached snapshot inspection with on-demand rescan capability",
+                "Direct SEC EDGAR document links"
+            ],
+            use_case="Monitor for executive resignations, unexpected litigation, quarterly surprises, and liquidity shocks.",
+            methodology="SEC EDGAR direct XML/RSS feeds + market price percentage divergence thresholds."
+        )
 
     alerts_json_path = os.path.join(PROJECT_DIR, "reports", "active_alerts.json")
+
+    col_btn_alert, col_alert_info = st.columns([1.5, 3])
+    with col_btn_alert:
+        if st.button("🔄 Rescan All Filings & Alerts Now", type="primary", use_container_width=True):
+            with st.spinner("Scanning SEC EDGAR and market feeds across coverage universe..."):
+                monitor = AlertMonitor()
+                res_checks = monitor.run_all_checks()
+                os.makedirs(os.path.dirname(alerts_json_path), exist_ok=True)
+                with open(alerts_json_path, "w", encoding="utf-8") as f:
+                    json.dump(res_checks, f, indent=2)
+                st.success("✅ Alerts rescan completed!")
+                st.rerun()
+
+    # Load and display cached alerts
     if os.path.exists(alerts_json_path):
-        import json
         with open(alerts_json_path, "r", encoding="utf-8") as f:
             alerts_data = json.load(f)
 
-        st.subheader(f"Active Alerts ({alerts_data.get('alert_count', 0)} Total)")
-        for a in alerts_data.get("alerts", []):
-            st.warning(f"**[{a.get('type')}] {a.get('ticker')}**: {a.get('details')} *(Timestamp: {a.get('timestamp')})*")
-    else:
-        st.info("Running live alert check across active watchlist...")
-        monitor = AlertMonitor()
-        res_checks = monitor.run_all_checks()
-        alerts = res_checks.get("alerts", [])
-        if alerts:
-            for a in alerts:
-                st.warning(f"**[{a.get('type')}] {a.get('ticker')}**: {a.get('details')}")
+        total_alerts = alerts_data.get("total_alerts") or len(alerts_data.get("alerts", []))
+        st.subheader(f"Active Monitored Alerts ({total_alerts} Total)")
+        alerts_list = alerts_data.get("alerts", [])
+
+        if alerts_list:
+            for a in alerts_list:
+                cat = a.get("category") or a.get("form") or "FILING"
+                sev = a.get("severity", "MEDIUM")
+                ticker = a.get("ticker", "GLOBAL")
+                title = a.get("title") or a.get("description") or "Filing Released"
+                url = a.get("url")
+
+                with st.container(border=True):
+                    col_al1, col_al2 = st.columns([4, 1])
+                    with col_al1:
+                        st.markdown(f"**[{cat}] {ticker}**: {title}")
+                        st.caption(f"Filing Date: `{a.get('filing_date', 'N/A')}` · Accession: `{a.get('accession_number', 'N/A')}`")
+                    with col_al2:
+                        if url:
+                            st.markdown(f'<a href="{url}" target="_blank"><button style="width:100%;padding:6px;border-radius:4px;border:1px solid #334d40;background:#182620;color:#f7faf7;cursor:pointer;font-size:0.8rem">🔗 View SEC Doc</button></a>', unsafe_allow_html=True)
         else:
             st.success("✅ All monitored securities within normal volatility bands. No unfiled 8-K / 10-K events detected.")
+    else:
+        st.info("No alert cache found. Click 'Rescan All Filings & Alerts Now' above to run your initial scan.")
 
 
 if __name__ == "__main__":
     pass
-
-

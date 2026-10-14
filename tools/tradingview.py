@@ -14,11 +14,39 @@ from typing import Optional
 
 def launch_tradingview_desktop() -> bool:
     """Launch installed TradingView Desktop application on Windows."""
+    # 1. Check known executable locations on Drive D and C
+    candidate_paths = [
+        r"D:\TradingView.exe",
+        r"D:\TradingView\TradingView.exe",
+        r"D:\Program Files\TradingView\TradingView.exe",
+        r"D:\Apps\TradingView\TradingView.exe",
+        os.path.expandvars(r"%LOCALAPPDATA%\Programs\TradingView\TradingView.exe"),
+        os.path.expandvars(r"%PROGRAMFILES%\TradingView\TradingView.exe"),
+        os.path.expandvars(r"%PROGRAMFILES(X86)%\TradingView\TradingView.exe"),
+    ]
+    for p in candidate_paths:
+        if os.path.isfile(p):
+            try:
+                subprocess.Popen([p])
+                return True
+            except Exception:
+                pass
+
+    # 2. Try Windows Store AppX URI
     try:
         subprocess.Popen(["explorer.exe", "shell:AppsFolder\\TradingView.Desktop_n534cwy3pjxzj!TradingView.Desktop"])
         return True
     except Exception:
-        return False
+        pass
+
+    # 3. Try custom URI protocol
+    try:
+        os.startfile("tradingview://")
+        return True
+    except Exception:
+        pass
+
+    return False
 
 
 def get_tradingview_web_url(symbol: str) -> str:

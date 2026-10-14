@@ -32,11 +32,14 @@ def build_config(api_key: str | None = None, interactive: bool = True) -> LocalA
     key = api_key or os.environ.get("GEMINI_API_KEY")
     behavior = AgentBehavior.INTERACTIVE if interactive else AgentBehavior.AUTONOMOUS
     
+    app_dir = os.environ.get("ANTIGRAVITY_DATA_DIR", os.path.join(PROJECT_ROOT, ".antigravity_data"))
+    os.makedirs(app_dir, exist_ok=True)
+
     kwargs = {
         "tools": ANTIGRAVITY_FINANCE_TOOLS,
         "system_instructions": SYSTEM_INSTRUCTIONS,
         "capabilities": types.CapabilitiesConfig(agent_behavior=behavior),
-        "app_data_dir": "D:\\AI-Workspace\\Antigravity\\data",
+        "app_data_dir": app_dir,
     }
     if key:
         kwargs["api_key"] = key
