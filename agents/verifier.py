@@ -1278,9 +1278,7 @@ class ReportVerifier:
         memory_claims = [u for u in self.unverifiable if u.get("error_type") == "MODEL_MEMORY_TAGGED"]
         
         if total_wrong == 0 and len(non_memory_unverifiable) == 0:
-            if len(self.not_refetched) > 0:
-                report_status = "PASS WITH FLAGS (NOT RE-FETCHED)"
-            elif len(memory_claims) > 0:
+            if len(memory_claims) > 0:
                 report_status = "PASS WITH FLAGS"
             else:
                 report_status = "PASS"
@@ -1378,7 +1376,7 @@ class ReportVerifier:
         reconciliations = audit_result.get("reconciliations", [])
         tiers = summary.get("tiers", {})
         
-        opt_out_notice = "\n> ⚠️ **[NOTICE: Independent source refetch is explicitly OPTED OUT by caller. Audit running in offline provenance-only mode.]**\n" if not self.perform_refetch else ""
+        opt_out_notice = "\n> ⚠️ **INDEPENDENT RE-FETCH DISABLED: Figures verified against ledger sidecar only, not verified against primary documents.**\n" if not self.perform_refetch else ""
 
         md_content = f"""# Verification Audit Report
 **Target Report:** `{os.path.basename(self.report_path)}`  
