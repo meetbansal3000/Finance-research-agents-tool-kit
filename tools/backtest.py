@@ -243,6 +243,29 @@ class BacktestSandbox:
         drawdown = (cum_series - peak) / peak
         max_drawdown = float(drawdown.min()) * 100.0
 
+        # Extract per-asset price breakdown and dates
+        start_date = str(data.index[0].date()) if hasattr(data.index[0], 'date') else str(data.index[0])[:10]
+        end_date = str(data.index[-1].date()) if hasattr(data.index[-1], 'date') else str(data.index[-1])[:10]
+        trading_days = len(data)
+
+        asset_breakdown = []
+        for t in portfolio_tickers:
+            start_p = float(data[t].iloc[0])
+            end_p = float(data[t].iloc[-1])
+            ret_pct = ((end_p - start_p) / start_p) * 100.0 if start_p > 0 else 0.0
+            w = float(qp_sol["weights"].get(t, 0.0))
+            asset_breakdown.append({
+                "ticker": t,
+                "weight_pct": round(w * 100.0, 2),
+                "start_price": round(start_p, 2),
+                "end_price": round(end_p, 2),
+                "asset_return_pct": round(ret_pct, 2),
+                "weighted_return_pct": round(w * ret_pct, 2)
+            })
+
+        bench_start_p = float(data[benchmark].iloc[0])
+        bench_end_p = float(data[benchmark].iloc[-1])
+
         summary = {
             "period": period,
             "tickers": portfolio_tickers,
@@ -259,7 +282,14 @@ class BacktestSandbox:
             "max_drawdown_pct": round(max_drawdown, 2),
             "dates": [str(d.date()) if hasattr(d, 'date') else str(d)[:10] for d in port_cum.index],
             "portfolio_cum_trajectory": [round(float(v), 4) for v in (1 + port_cum).values],
-            "benchmark_cum_trajectory": [round(float(v), 4) for v in (1 + bench_cum).values]
+            "benchmark_cum_trajectory": [round(float(v), 4) for v in (1 + bench_cum).values],
+            "start_date": start_date,
+            "end_date": end_date,
+            "trading_days": trading_days,
+            "asset_breakdown": asset_breakdown,
+            "benchmark_start_price": round(bench_start_p, 2),
+            "benchmark_end_price": round(bench_end_p, 2),
+            "data_source": "Yahoo Finance (Live Market Feed)"
         }
 
         # Save markdown report
@@ -267,6 +297,113 @@ class BacktestSandbox:
         report_path = os.path.join(self.output_dir, f"backtest_optimized_{date_str}.md")
         self._save_backtest_report(report_path, summary)
 
+        return summary
+
+    def run_custom_portfolio_backtest(
+        self,
+        tickers: List[str],
+        weights: Dict[str, float],
+        benchmark: str = "SPY",
+        period: str = "1y"
+    ) -> Dict[str, Any]:
+        """
+        Runs portfolio backtest with custom weights provided by the user.
+        Normalizes weights to ensure sum = 1.0.
+        """
+        all_symbols = list(set(tickers + [benchmark]))
+        data = yf.download(all_symbols, period=period, progress=False)["Close"]
+
+        if data.empty or benchmark not in data.columns:
+            raise ValueError(f"Could not retrieve historical price series for {all_symbols}")
+
+        returns = data.pct_change().dropna()
+        portfolio_tickers = [t for t in tickers if t in returns.columns]
+        if not portfolio_tickers:
+            raise ValueError("No portfolio tickers found in downloaded price data.")
+
+        # Normalize provided weights across available tickers
+        raw_w = np.array([float(weights.get(t, 1.0 / len(portfolio_tickers))) for t in portfolio_tickers])
+        total_w = float(np.sum(raw_w))
+        if total_w <= 0:
+            norm_w = np.full(len(portfolio_tickers), 1.0 / len(portfolio_tickers))
+        else:
+            norm_w = raw_w / total_w
+
+        weights_dict = {portfolio_tickers[i]: round(float(norm_w[i]), 4) for i in range(len(portfolio_tickers))}
+
+        port_asset_returns = returns[portfolio_tickers]
+        port_returns = port_asset_returns.dot(norm_w)
+        bench_returns = returns[benchmark]
+
+        # Cumulative returns
+        port_cum = (1 + port_returns).cumprod() - 1
+        bench_cum = (1 + bench_returns).cumprod() - 1
+
+        total_port_ret = float(port_cum.iloc[-1]) * 100.0
+        total_bench_ret = float(bench_cum.iloc[-1]) * 100.0
+        alpha = total_port_ret - total_bench_ret
+
+        # Annualized volatility
+        port_vol = float(port_returns.std() * np.sqrt(252)) * 100.0
+        bench_vol = float(bench_returns.std() * np.sqrt(252)) * 100.0
+
+        # Sharpe ratio
+        rf_daily = 0.0425 / 252
+        excess_daily = port_returns - rf_daily
+        sharpe = float((excess_daily.mean() / port_returns.std()) * np.sqrt(252)) if port_returns.std() > 0 else 0.0
+
+        # Max drawdown
+        cum_series = (1 + port_returns).cumprod()
+        peak = cum_series.cummax()
+        drawdown = (cum_series - peak) / peak
+        max_drawdown = float(drawdown.min()) * 100.0
+
+        start_date = str(data.index[0].date()) if hasattr(data.index[0], 'date') else str(data.index[0])[:10]
+        end_date = str(data.index[-1].date()) if hasattr(data.index[-1], 'date') else str(data.index[-1])[:10]
+        trading_days = len(data)
+
+        asset_breakdown = []
+        for i, t in enumerate(portfolio_tickers):
+            start_p = float(data[t].iloc[0])
+            end_p = float(data[t].iloc[-1])
+            ret_pct = ((end_p - start_p) / start_p) * 100.0 if start_p > 0 else 0.0
+            w = float(norm_w[i])
+            asset_breakdown.append({
+                "ticker": t,
+                "weight_pct": round(w * 100.0, 2),
+                "start_price": round(start_p, 2),
+                "end_price": round(end_p, 2),
+                "asset_return_pct": round(ret_pct, 2),
+                "weighted_return_pct": round(w * ret_pct, 2)
+            })
+
+        bench_start_p = float(data[benchmark].iloc[0])
+        bench_end_p = float(data[benchmark].iloc[-1])
+
+        summary = {
+            "period": period,
+            "tickers": portfolio_tickers,
+            "benchmark": benchmark,
+            "strategy": "custom_user_allocation",
+            "optimal_weights": weights_dict,
+            "portfolio_return_pct": round(total_port_ret, 2),
+            "benchmark_return_pct": round(total_bench_ret, 2),
+            "alpha_pct": round(alpha, 2),
+            "annualized_volatility_pct": round(port_vol, 2),
+            "benchmark_volatility_pct": round(bench_vol, 2),
+            "sharpe_ratio": round(sharpe, 2),
+            "max_drawdown_pct": round(max_drawdown, 2),
+            "dates": [str(d.date()) if hasattr(d, 'date') else str(d)[:10] for d in port_cum.index],
+            "portfolio_cum_trajectory": [round(float(v), 4) for v in (1 + port_cum).values],
+            "benchmark_cum_trajectory": [round(float(v), 4) for v in (1 + bench_cum).values],
+            "start_date": start_date,
+            "end_date": end_date,
+            "trading_days": trading_days,
+            "asset_breakdown": asset_breakdown,
+            "benchmark_start_price": round(bench_start_p, 2),
+            "benchmark_end_price": round(bench_end_p, 2),
+            "data_source": "Yahoo Finance (Live Market Feed)"
+        }
         return summary
 
 
