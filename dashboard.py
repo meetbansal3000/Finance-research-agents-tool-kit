@@ -2363,66 +2363,316 @@ elif "Portfolio Construction Lab" in nav_choice:
 elif "Supply Chain & Logistics Risk" in nav_choice:
     col_head, col_info = st.columns([4.2, 1.3])
     with col_head:
-        st.markdown('<div class="header-style">Supply Chain & Operations Risk</div>', unsafe_allow_html=True)
-        st.markdown('<div class="meridian-intro">Capacitated Vehicle Routing (CVRP) fleet optimization and fuel inflation shock elasticity.</div>', unsafe_allow_html=True)
+        st.markdown('<div class="header-style">Supply Chain & Operations Risk Workstation</div>', unsafe_allow_html=True)
+        st.markdown('<div class="meridian-intro">Evaluate operating margin & EPS vulnerability to logistics bottlenecks, fleet capacity utilization, and commodity fuel price shocks.</div>', unsafe_allow_html=True)
     with col_info:
         render_tab_info_guide(
             title="Supply Chain & Operations Risk",
-            purpose="Evaluate operating margin vulnerability to logistics bottlenecks and commodity inflation.",
+            purpose="Quantify corporate logistics efficiency, optimize fleet dispatch, and stress-test corporate operating margin resilience against freight inflation.",
             capabilities=[
-                "cuOpt Capacitated Vehicle Routing Problem (CVRP) fleet routing",
-                "Fuel price shock stress-testing (+10% and +20% spike)",
-                "Fleet capacity utilization & transit cost per delivered unit",
-                "Interactive spatial distribution network routing visualization"
+                "NVIDIA cuOpt-inspired Capacitated Vehicle Routing Problem (CVRP) fleet solver",
+                "Corporate archetype profiling (E-Commerce, Automotive Assembly, Tech Hardware, Consumer Staples)",
+                "Operating margin compression (bps) and annualized EPS drag sensitivity modeling",
+                "Fuel & shipping rate inflation shock stress-testing (+10%, +20%, +40%)",
+                "Interactive spatial distribution network routing map with vehicle load telemetry"
             ],
-            use_case="Determine whether a portfolio company's operating margin can withstand severe freight rate and fuel cost shocks.",
-            methodology="Clarke-Wright Savings heuristic and 2-opt trajectory solver over Euclidean cost matrices."
+            use_case="Determine whether a portfolio company's operating margin can withstand severe freight rate and diesel cost shocks before an earnings contraction occurs.",
+            methodology="Clarke-Wright Savings algorithm + 2-opt trajectory optimization; calibrated to logistics share of corporate Cost of Goods Sold (COGS)."
         )
 
+    # Corporate Industry Archetypes
+    archetypes = {
+        "🚚 E-Commerce & Retail (e.g. Amazon, Target)": {
+            "vehicles": 4, "cap": 45.0, "cost_dist": 2.80, "fuel_share": 0.40,
+            "logistics_pct_cogs": 0.12, "base_margin": 6.5,
+            "desc": "Dense urban last-mile delivery network. High fuel exposure paired with thin operating margins creates acute earnings vulnerability to diesel spikes."
+        },
+        "⚡ Automotive Assembly & EV (e.g. Tesla, GM)": {
+            "vehicles": 3, "cap": 60.0, "cost_dist": 2.50, "fuel_share": 0.35,
+            "logistics_pct_cogs": 0.08, "base_margin": 11.0,
+            "desc": "Just-In-Time (JIT) tier-1 component & battery transit between regional supplier clusters and assembly gigafactories."
+        },
+        "📱 Global Tech & Electronics (e.g. Apple, Nvidia)": {
+            "vehicles": 2, "cap": 70.0, "cost_dist": 3.50, "fuel_share": 0.20,
+            "logistics_pct_cogs": 0.04, "base_margin": 28.0,
+            "desc": "High value-to-weight ratio. Premium air/land secure logistics with low freight share of COGS provides strong gross margin resilience."
+        },
+        "🛒 Consumer Staples & Grocery (e.g. Walmart, P&G)": {
+            "vehicles": 5, "cap": 40.0, "cost_dist": 2.20, "fuel_share": 0.45,
+            "logistics_pct_cogs": 0.15, "base_margin": 4.5,
+            "desc": "High-frequency regional distribution network. Ultra-thin grocery/staples margins are heavily exposed to persistent freight inflation."
+        },
+        "🛠️ Custom Quant Model": {
+            "vehicles": 3, "cap": 50.0, "cost_dist": 2.50, "fuel_share": 0.35,
+            "logistics_pct_cogs": 0.08, "base_margin": 10.0,
+            "desc": "User-defined fleet parameters and financial sensitivity baseline for customized quantitative stress testing."
+        }
+    }
+
+    selected_archetype_name = st.selectbox(
+        "🏢 Select Corporate Supply Chain Archetype",
+        options=list(archetypes.keys()),
+        index=1,
+        key="sc_archetype_selector"
+    )
+    arch_cfg = archetypes[selected_archetype_name]
+
+    st.markdown(f"""
+    <div style="background: rgba(14, 18, 26, 0.85); border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); padding: 10px 16px; margin: 4px 0 16px 0; font-size: 0.88rem; color: var(--text-secondary);">
+        <b>Archetype Profile:</b> {arch_cfg['desc']}
+    </div>
+    """, unsafe_allow_html=True)
+
+    # Interactive Sliders
     col_v1, col_v2 = st.columns(2)
     with col_v1:
-        fleet_vehicles = st.slider("Fleet Size (Vehicles)", min_value=1, max_value=8, value=3)
-        vehicle_cap = st.slider("Vehicle Capacity (Units)", min_value=20.0, max_value=100.0, value=50.0, step=5.0)
+        fleet_vehicles = st.slider(
+            "Fleet Size (Vehicles)",
+            min_value=1, max_value=8,
+            value=int(arch_cfg["vehicles"]),
+            key=f"sc_fleet_veh_{selected_archetype_name}"
+        )
+        vehicle_cap = st.slider(
+            "Vehicle Capacity (Units)",
+            min_value=20.0, max_value=120.0,
+            value=float(arch_cfg["cap"]),
+            step=5.0,
+            key=f"sc_veh_cap_{selected_archetype_name}"
+        )
     with col_v2:
-        cost_per_mile = st.slider("Cost per Distance Unit ($/km)", min_value=1.0, max_value=5.0, value=2.50, step=0.25)
-        fuel_share = st.slider("Fuel Share of Logistics Cost (%)", min_value=10, max_value=60, value=35) / 100.0
+        cost_per_mile = st.slider(
+            "Cost per Distance Unit ($/km)",
+            min_value=1.0, max_value=6.0,
+            value=float(arch_cfg["cost_dist"]),
+            step=0.25,
+            key=f"sc_cost_dist_{selected_archetype_name}"
+        )
+        fuel_share = st.slider(
+            "Fuel Share of Logistics Cost (%)",
+            min_value=10, max_value=60,
+            value=int(arch_cfg["fuel_share"] * 100),
+            key=f"sc_fuel_share_{selected_archetype_name}"
+        ) / 100.0
 
+    # Expandable Financial Baseline
+    with st.expander("💼 Corporate Operating Margins & COGS Exposure", expanded=False):
+        c_m1, c_m2 = st.columns(2)
+        with c_m1:
+            base_margin = st.number_input(
+                "Baseline Operating Margin (%)",
+                min_value=1.0, max_value=60.0,
+                value=float(arch_cfg["base_margin"]),
+                step=0.5,
+                key=f"sc_base_margin_{selected_archetype_name}"
+            )
+        with c_m2:
+            logistics_pct_cogs = st.number_input(
+                "Freight & Logistics Share of COGS (%)",
+                min_value=1.0, max_value=30.0,
+                value=float(arch_cfg["logistics_pct_cogs"] * 100),
+                step=0.5,
+                key=f"sc_log_cogs_{selected_archetype_name}"
+            ) / 100.0
+
+    # Supply Chain Coordinates & Demands
     coords = [(0, 0), (12, 10), (15, -12), (-14, 11), (-12, -15), (22, 5)]
     demands = [0.0, 15.0, 20.0, 12.0, 18.0, 25.0]
+    total_demand = sum(demands)
 
-    opt_vrp = SupplyChainLogisticsOptimizer(cost_per_distance_unit=cost_per_mile, fuel_cost_share=fuel_share)
-    c_matrix = SupplyChainLogisticsOptimizer.build_euclidean_cost_matrix(coords)
-    vrp_res = opt_vrp.solve_capacitated_vrp(cost_matrix=c_matrix, demands=demands, vehicle_capacity=vehicle_cap, num_vehicles=fleet_vehicles)
+    # Check Feasibility
+    total_fleet_cap = fleet_vehicles * vehicle_cap
+    if total_demand > total_fleet_cap:
+        st.error(f"⚠️ Fleet Capacity Overload: Total demand ({total_demand:.0f} units) exceeds total fleet capacity ({total_fleet_cap:.0f} units). Please increase Fleet Size or Vehicle Capacity.")
+        vehicle_cap = (total_demand / fleet_vehicles) + 5.0
 
-    col_r1, col_r2, col_r3 = st.columns(3)
-    col_r1.metric("Total Transit Cost", f"${vrp_res['total_transport_cost']:,.2f}")
-    col_r2.metric("Fleet Capacity Utilization", f"{vrp_res['fleet_capacity_utilization_pct']:.1f}%")
-    col_r3.metric("Cost per Delivered Unit", f"${vrp_res['cost_per_unit_delivered']:.2f}")
+    # Solve CVRP
+    try:
+        opt_vrp = SupplyChainLogisticsOptimizer(cost_per_distance_unit=cost_per_mile, fuel_cost_share=fuel_share)
+        c_matrix = SupplyChainLogisticsOptimizer.build_euclidean_cost_matrix(coords)
+        vrp_res = opt_vrp.solve_capacitated_vrp(cost_matrix=c_matrix, demands=demands, vehicle_capacity=vehicle_cap, num_vehicles=fleet_vehicles)
+    except Exception as e:
+        st.error(f"Optimization Solver Error: {str(e)}")
+        vrp_res = {
+            "total_transport_cost": 350.0,
+            "fleet_capacity_utilization_pct": 80.0,
+            "cost_per_unit_delivered": 3.88,
+            "routes": [],
+            "sensitivity": {"fuel_plus_10pct_cost": 362.0, "fuel_plus_20pct_cost": 374.0, "logistics_cost_inflation_per_unit_10pct": 0.14}
+        }
 
-    # Plotly Spatial Route Visualization
-    fig_routes = go.Figure()
-    # Depot
-    fig_routes.add_trace(go.Scatter(x=[0], y=[0], mode="markers+text", marker=dict(size=14, color="#b38822", symbol="square"), text=["Depot (0,0)"], textposition="top center", name="Distribution Center"))
-    # Customers
-    cust_x = [coords[i][0] for i in range(1, len(coords))]
-    cust_y = [coords[i][1] for i in range(1, len(coords))]
-    fig_routes.add_trace(go.Scatter(x=cust_x, y=cust_y, mode="markers+text", marker=dict(size=10, color="#10b981"), text=[f"Node {i} ({demands[i]}u)" for i in range(1, len(coords))], textposition="top center", name="Customer Demands"))
+    # Financial Margin Drag Calculation (+20% fuel shock)
+    margin_drag_bps = (logistics_pct_cogs * fuel_share * 0.20) * 10000.0
+    shocked_margin = max(base_margin - (margin_drag_bps / 100.0), 0.0)
 
-    # Connect routes
-    colors = ["#38bdf8", "#f59e0b", "#f43f5e", "#a855f7", "#22c55e", "#eab308"]
-    for r_idx, route in enumerate(vrp_res.get("routes", [])):
-        rx = [coords[n][0] for n in route]
-        ry = [coords[n][1] for n in route]
-        fig_routes.add_trace(go.Scatter(x=rx, y=ry, mode="lines+markers", line=dict(color=colors[r_idx % len(colors)], width=2), name=f"Vehicle {r_idx+1}"))
+    # Executive KPI Row
+    st.divider()
+    col_r1, col_r2, col_r3, col_r4 = st.columns(4)
+    with col_r1:
+        col_r1.metric("Total Transit Cost", f"${vrp_res['total_transport_cost']:,.2f}", help="Total cost to service all delivery nodes in optimal sequence.")
+    with col_r2:
+        col_r2.metric("Fleet Capacity Utilization", f"{vrp_res['fleet_capacity_utilization_pct']:.1f}%", help="Percentage of total deployed vehicle cargo space occupied.")
+    with col_r3:
+        col_r3.metric("Cost per Delivered Unit", f"${vrp_res['cost_per_unit_delivered']:.2f}", help="Average transportation expenditure per unit delivered.")
+    with col_r4:
+        col_r4.metric("Margin at Risk (+20% Fuel)", f"-{margin_drag_bps:.0f} bps", delta=f"-{margin_drag_bps:.0f} bps", help=f"Operating margin contraction under a +20% diesel/freight spike: {base_margin:.1f}% → {shocked_margin:.1f}%.")
 
-    fig_routes.update_layout(title="Optimal Fleet Routing Network", height=420, margin=dict(l=20, r=20, t=40, b=20))
-    st.plotly_chart(fig_routes, use_container_width=True)
+    # Resilience Status Badge
+    if margin_drag_bps >= 80.0:
+        badge_color = "#EF4444"
+        badge_bg = "rgba(239, 68, 68, 0.12)"
+        badge_title = "🔴 HIGH OPERATIONAL FRAGILITY"
+        badge_text = f"Severe margin compression risk ({margin_drag_bps:.0f} bps drag). Persistent fuel inflation can significantly erode quarterly EPS unless passing costs via surcharges."
+    elif margin_drag_bps >= 40.0:
+        badge_color = "#F59E0B"
+        badge_bg = "rgba(245, 158, 11, 0.12)"
+        badge_title = "🟡 MODERATE MARGIN SENSITIVITY"
+        badge_text = f"Moderate margin drag ({margin_drag_bps:.0f} bps). Operating profits contract from {base_margin:.1f}% to {shocked_margin:.1f}% under a +20% freight cost spike."
+    else:
+        badge_color = "#10B981"
+        badge_bg = "rgba(16, 185, 129, 0.12)"
+        badge_title = "🟢 RESILIENT SUPPLY CHAIN MOAT"
+        badge_text = f"Low margin erosion ({margin_drag_bps:.0f} bps drag). High value-to-weight profile or low freight exposure buffers corporate income from commodity shocks."
 
-    st.subheader("⛽ Fuel Inflation Shock Sensitivity")
-    sens = vrp_res["sensitivity"]
-    col_s1, col_s2 = st.columns(2)
-    col_s1.warning(f"**+10% Fuel Price Spike:** Total Cost rises to **${sens['fuel_plus_10pct_cost']:,.2f}** (+${sens['logistics_cost_inflation_per_unit_10pct']:.3f}/unit)")
-    col_s2.error(f"**+20% Fuel Price Spike:** Total Cost rises to **${sens['fuel_plus_20pct_cost']:,.2f}**")
+    st.markdown(f"""
+    <div style="background: {badge_bg}; border: 1px solid {badge_color}; border-radius: var(--radius-sm); padding: 12px 18px; margin: 10px 0 20px 0; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px;">
+        <div style="font-weight: 700; color: {badge_color}; font-size: 0.95rem;">{badge_title}</div>
+        <div style="font-size: 0.86rem; color: var(--text-primary);">{badge_text}</div>
+    </div>
+    """, unsafe_allow_html=True)
+
+    # 2 Interactive Tabs
+    sc_tab1, sc_tab2 = st.tabs([
+        "🗺️ Optimal Fleet Routing & Network Topology",
+        "⛽ Fuel & Freight Inflation Shock Stress-Testing"
+    ])
+
+    # --- TAB 1: ROUTING MAP ---
+    with sc_tab1:
+        st.markdown("##### 🗺️ Optimal Fleet Routing & Distribution Topology")
+        st.caption("Central fulfillment center (Depot) and optimized multi-vehicle customer delivery loops solving the Capacitated Vehicle Routing Problem (CVRP).")
+
+        fig_routes = go.Figure()
+        # Central Hub
+        fig_routes.add_trace(go.Scatter(
+            x=[0], y=[0],
+            mode="markers+text",
+            marker=dict(size=16, color="#F59E0B", symbol="square"),
+            text=["<b>Central Hub (0,0)</b>"],
+            textposition="top center",
+            name="Central Hub"
+        ))
+        # Customer Demands
+        cust_x = [coords[i][0] for i in range(1, len(coords))]
+        cust_y = [coords[i][1] for i in range(1, len(coords))]
+        fig_routes.add_trace(go.Scatter(
+            x=cust_x, y=cust_y,
+            mode="markers+text",
+            marker=dict(size=12, color="#10B981"),
+            text=[f"Node {i} ({demands[i]:.0f}u)" for i in range(1, len(coords))],
+            textposition="top center",
+            name="Delivery Nodes"
+        ))
+
+        # Vehicle Routes
+        colors = ["#38BDF8", "#F59E0B", "#F43F5E", "#A855F7", "#22C55E", "#EAB308"]
+        for r_idx, route in enumerate(vrp_res.get("routes", [])):
+            stops = route.get("stops", [])
+            rx = [coords[n][0] for n in stops]
+            ry = [coords[n][1] for n in stops]
+            vid = route.get("vehicle_id", r_idx + 1)
+            util = route.get("capacity_utilization_pct", 0)
+            load = route.get("load", 0)
+            fig_routes.add_trace(go.Scatter(
+                x=rx, y=ry,
+                mode="lines+markers",
+                line=dict(color=colors[r_idx % len(colors)], width=2.8),
+                name=f"Vehicle {vid} ({load:.0f}u / {vehicle_cap:.0f}u • {util:.0f}%)"
+            ))
+
+        fig_routes.update_layout(
+            template="plotly_dark",
+            paper_bgcolor="#0B0E14",
+            plot_bgcolor="#0E121A",
+            title="Optimal Multi-Vehicle Distribution Paths",
+            height=460,
+            margin=dict(l=20, r=20, t=40, b=20),
+            legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1)
+        )
+        fig_routes.update_xaxes(gridcolor="rgba(255, 255, 255, 0.07)")
+        fig_routes.update_yaxes(gridcolor="rgba(255, 255, 255, 0.07)")
+        st.plotly_chart(fig_routes, use_container_width=True)
+
+        # Vehicle Fleet Load Progress Bars
+        st.markdown("##### 🚛 Vehicle Fleet Telemetry & Capacity Utilization")
+        v_cols = st.columns(max(len(vrp_res.get("routes", [])), 1))
+        for r_idx, route in enumerate(vrp_res.get("routes", [])):
+            with v_cols[r_idx]:
+                vid = route.get("vehicle_id", r_idx + 1)
+                load = route.get("load", 0)
+                dist = route.get("route_distance", 0)
+                util = route.get("capacity_utilization_pct", 0)
+                st.markdown(f"""
+                <div style="background: rgba(14, 18, 26, 0.7); border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); padding: 10px 14px; margin-bottom: 8px;">
+                    <div style="font-weight: 700; color: {colors[r_idx % len(colors)]}; font-size: 0.9rem;">Vehicle {vid}</div>
+                    <div style="font-size: 0.8rem; color: var(--text-secondary); margin: 4px 0;">Load: <b>{load:.0f} / {vehicle_cap:.0f} units</b> ({util:.1f}%)</div>
+                    <div style="font-size: 0.8rem; color: var(--text-secondary);">Route Distance: <b>{dist:.1f} km</b></div>
+                </div>
+                """, unsafe_allow_html=True)
+                st.progress(min(util / 100.0, 1.0))
+
+    # --- TAB 2: INFLATION STRESS-TESTING ---
+    with sc_tab2:
+        st.markdown("##### ⛽ Fuel & Freight Inflation Shock Sensitivity")
+        st.caption("Stress-test how commodity energy price surges and shipping rate spikes impact total transportation costs and corporate margins.")
+
+        sens = vrp_res.get("sensitivity", {})
+        base_cost = vrp_res["total_transport_cost"]
+        cost_plus_10 = sens.get("fuel_plus_10pct_cost", base_cost * 1.035)
+        cost_plus_20 = sens.get("fuel_plus_20pct_cost", base_cost * 1.07)
+        cost_plus_40 = base_cost * (1.0 + fuel_share * 0.40)
+
+        # Plotly Bar Chart Comparison
+        fig_sens = go.Figure()
+        fig_sens.add_trace(go.Bar(
+            x=["Baseline", "+10% Diesel Spike", "+20% Freight Shock", "+40% Geopolitical Crisis"],
+            y=[base_cost, cost_plus_10, cost_plus_20, cost_plus_40],
+            marker_color=["#38BDF8", "#F59E0B", "#F97316", "#EF4444"],
+            text=[f"${base_cost:,.2f}", f"${cost_plus_10:,.2f}", f"${cost_plus_20:,.2f}", f"${cost_plus_40:,.2f}"],
+            textposition="auto"
+        ))
+        fig_sens.update_layout(
+            template="plotly_dark",
+            paper_bgcolor="#0B0E14",
+            plot_bgcolor="#0E121A",
+            title="Network Transportation Cost Under Inflationary Shocks ($)",
+            height=320,
+            margin=dict(l=20, r=20, t=40, b=20)
+        )
+        st.plotly_chart(fig_sens, use_container_width=True)
+
+        # Sensitivity Matrix Table
+        shock_scenarios = [
+            {"Scenario": "Baseline Conditions", "Fuel Shock": "0.0%", "Network Transit Cost": f"${base_cost:,.2f}", "Cost / Unit": f"${vrp_res['cost_per_unit_delivered']:.2f}", "Margin Drag (bps)": "0 bps", "Operating Margin": f"{base_margin:.2f}%"},
+            {"Scenario": "+10% Diesel Price Rise", "Fuel Shock": "+10.0%", "Network Transit Cost": f"${cost_plus_10:,.2f}", "Cost / Unit": f"${cost_plus_10/total_demand:.2f}", "Margin Drag (bps)": f"-{margin_drag_bps*0.5:.0f} bps", "Operating Margin": f"{max(base_margin - (margin_drag_bps*0.5/100), 0):.2f}%"},
+            {"Scenario": "+20% Shipping Shock", "Fuel Shock": "+20.0%", "Network Transit Cost": f"${cost_plus_20:,.2f}", "Cost / Unit": f"${cost_plus_20/total_demand:.2f}", "Margin Drag (bps)": f"-{margin_drag_bps:.0f} bps", "Operating Margin": f"{shocked_margin:.2f}%"},
+            {"Scenario": "+40% Severe Geopolitical Crisis", "Fuel Shock": "+40.0%", "Network Transit Cost": f"${cost_plus_40:,.2f}", "Cost / Unit": f"${cost_plus_40/total_demand:.2f}", "Margin Drag (bps)": f"-{margin_drag_bps*2.0:.0f} bps", "Operating Margin": f"{max(base_margin - (margin_drag_bps*2.0/100), 0):.2f}%"}
+        ]
+        st.dataframe(pd.DataFrame(shock_scenarios), use_container_width=True, hide_index=True)
+
+    # Institutional Playbook
+    st.divider()
+    st.markdown("#### 💡 Fundamental Equity Analyst Playbook: How to Use this Data")
+    st.markdown(f"""
+    <div style="background: rgba(14, 18, 26, 0.7); border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); padding: 14px 18px; font-size: 0.88rem; line-height: 1.6; color: var(--text-secondary);">
+        <b>1. Margin Pass-Through & Contractual Protection:</b>
+        When researching retail, automotive, or industrial companies, check SEC Form 10-K (Item 7: MD&A) for <b>Fuel Surcharge Mechanisms</b>. 
+        Companies with strong pricing power (e.g. FedEx, Apple) pass freight spikes to customers with minimal margin dilution. Low-pricing-power retailers (e.g. Target, Dollar Tree) must absorb cost increases, compressing quarterly EBITDA.<br><br>
+        <b>2. DCF Terminal Margin Adjustments:</b>
+        If crude oil or freight indices (e.g. Baltic Dry Index, Cass Freight Index) indicate persistent supply bottlenecks, adjust your DCF Operating Margins downward by <b>{margin_drag_bps:.0f} bps</b> to avoid overly optimistic terminal value estimates.<br><br>
+        <b>3. Fleet Efficiency as an Alpha Indicator:</b>
+        A Fleet Capacity Utilization rate below <b>75%</b> indicates unoptimized routing, idle capital, and working capital drag. Companies undergoing route optimization (e.g., via AI routing or regional consolidation) often unlock <b>30–80 bps of operational margin expansion</b>.
+    </div>
+    """, unsafe_allow_html=True)
 
 
 # =============================================================================
