@@ -98,198 +98,315 @@ st.set_page_config(
 # Meridian Institutional Design Tokens (FactSet / Bloomberg aesthetic: high density, crisp lines, zero cartoon AI styling)
 st.markdown("""
 <style>
+    /* -------------------------------------------------------------
+       INSTITUTIONAL DESIGN SYSTEM (Dark Obsidian Terminal Standard)
+       Linear / Bloomberg / Koyfin aesthetic: high density, crisp lines,
+       tabular numerals, zero serif or unstyled HTML radio widgets.
+       ------------------------------------------------------------- */
     :root {
-        color-scheme: light;
-        --ink: #111915;
-        --muted: #5a6b63;
-        --pine: #182620;
-        --pine-soft: #273b32;
-        --paper: #f4f3ec;
-        --surface: #faf9f5;
-        --white: #ffffff;
-        --line: #d3dbd4;
-        --line-dark: #2c3f35;
-        --accent: #2e694d;
-        --accent-light: #e6f2eb;
-        --gold: #b38822;
-        --gold-light: #fdf8e6;
-        --positive: #26744d;
-        --negative: #b34e43;
-        --control-radius: 6px;
-        --panel-radius: 8px;
+        color-scheme: dark;
+        --bg-base: #0B0E14;
+        --bg-sidebar: #0E121A;
+        --bg-card: #121824;
+        --bg-elevated: #182030;
+        --border-subtle: #1E2638;
+        --border-strong: #2A364F;
+        --text-primary: #F8FAFC;
+        --text-secondary: #94A3B8;
+        --text-muted: #64748B;
+        --accent-emerald: #10B981;
+        --accent-emerald-subtle: rgba(16, 185, 129, 0.12);
+        --accent-cyan: #38BDF8;
+        --accent-cyan-subtle: rgba(56, 189, 248, 0.12);
+        --accent-amber: #F59E0B;
+        --accent-amber-subtle: rgba(245, 158, 11, 0.12);
+        --accent-rose: #F43F5E;
+        --accent-rose-subtle: rgba(244, 63, 94, 0.12);
+        --radius-sm: 6px;
+        --radius-md: 8px;
+        --font-sans: -apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        --font-mono: "JetBrains Mono", "SF Mono", Menlo, Consolas, monospace;
     }
-    html, body, [class*="css"] {
-        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Aptos", Arial, sans-serif;
+
+    /* Global Typography & Canvas */
+    html, body, [class*="css"], .stApp {
+        font-family: var(--font-sans) !important;
+        background-color: var(--bg-base) !important;
+        color: var(--text-primary) !important;
+        -webkit-font-smoothing: antialiased;
     }
-    .stApp, [data-testid="stAppViewContainer"], [data-testid="stMain"] {
-        color: var(--ink);
-        background: var(--paper);
+
+    [data-testid="stAppViewContainer"], [data-testid="stMain"] {
+        background-color: var(--bg-base) !important;
+        color: var(--text-primary) !important;
     }
+
     [data-testid="stHeader"] {
-        background: rgba(244, 243, 236, 0.96);
-        border-bottom: 1px solid rgba(17, 25, 21, 0.08);
+        background: rgba(11, 14, 20, 0.85) !important;
+        backdrop-filter: blur(12px) !important;
+        border-bottom: 1px solid var(--border-subtle) !important;
     }
+
     .main .block-container {
-        max-width: 1520px;
-        padding: 1.4rem clamp(1rem, 2.8vw, 2.8rem) 3.5rem;
+        max-width: 1560px !important;
+        padding: 1.5rem 2.2rem 4rem !important;
     }
-    h1, h2, h3, h4 {
-        color: var(--ink);
-        letter-spacing: -0.025em;
+
+    /* Headings */
+    h1, h2, h3, h4, h5, h6 {
+        font-family: var(--font-sans) !important;
+        color: var(--text-primary) !important;
+        font-weight: 700 !important;
+        letter-spacing: -0.02em !important;
     }
-    h1, .header-style {
-        font-family: Georgia, "Times New Roman", serif;
-        font-weight: 600;
-        line-height: 1.1;
-        letter-spacing: -0.035em;
-        margin: 0 0 0.25rem;
-    }
+
     .header-style {
-        font-size: clamp(1.8rem, 2.8vw, 2.5rem);
+        font-size: 1.75rem !important;
+        font-weight: 700 !important;
+        color: var(--text-primary) !important;
+        letter-spacing: -0.025em !important;
+        margin: 0 0 0.35rem 0 !important;
+        line-height: 1.2 !important;
     }
+
     .meridian-intro {
-        color: var(--muted);
-        font-size: 0.96rem;
-        line-height: 1.5;
-        max-width: 900px;
-        margin-bottom: 1.25rem;
+        color: var(--text-secondary) !important;
+        font-size: 0.92rem !important;
+        line-height: 1.55 !important;
+        max-width: 980px !important;
+        margin-bottom: 1.25rem !important;
     }
 
-    /* Sidebar Hierarchy */
+    /* Sidebar Hierarchy & Navigation Overhaul */
     section[data-testid="stSidebar"] {
-        background: var(--pine);
-        border-right: 1px solid #23372d;
-    }
-    section[data-testid="stSidebar"] > div {
-        padding: 1.15rem 0.85rem 1.4rem;
-    }
-    section[data-testid="stSidebar"] [data-testid="stMarkdownContainer"] p,
-    section[data-testid="stSidebar"] label,
-    section[data-testid="stSidebar"] small,
-    section[data-testid="stSidebar"] [data-testid="stCaptionContainer"] {
-        color: #cad6ce;
-    }
-    section[data-testid="stSidebar"] h1, section[data-testid="stSidebar"] h2,
-    section[data-testid="stSidebar"] h3, section[data-testid="stSidebar"] h4 {
-        color: #f7faf7;
-        letter-spacing: -0.01em;
-    }
-    .sidebar-domain-header {
-        font-size: 0.68rem;
-        font-weight: 800;
-        letter-spacing: 0.12em;
-        text-transform: uppercase;
-        color: #8da396;
-        margin: 1.1rem 0 0.35rem 0.4rem;
-    }
-    section[data-testid="stSidebar"] [role="radiogroup"] {
-        gap: 0.15rem;
-    }
-    section[data-testid="stSidebar"] [role="radiogroup"] label {
-        min-height: 2.35rem;
-        border: 1px solid transparent;
-        border-radius: var(--control-radius);
-        padding: 0.42rem 0.65rem;
-        color: #c0cec4;
-        font-size: 0.88rem;
-        transition: background 0.14s ease, color 0.14s ease;
-    }
-    section[data-testid="stSidebar"] [role="radiogroup"] label:hover {
-        background: rgba(255, 255, 255, 0.05);
-        color: #ffffff;
-    }
-    section[data-testid="stSidebar"] [role="radiogroup"] label:has(input:checked) {
-        background: #273b32;
-        border-color: #3f594d;
-        color: #ffffff;
-        font-weight: 650;
-    }
-    section[data-testid="stSidebar"] hr {
-        border-color: var(--line-dark);
-        margin: 0.9rem 0;
+        background: var(--bg-sidebar) !important;
+        border-right: 1px solid var(--border-subtle) !important;
     }
 
-    /* Metric & Panel Cards */
-    .meridian-card {
-        background: var(--white);
-        border: 1px solid var(--line);
-        border-radius: var(--panel-radius);
-        padding: 1.1rem 1.25rem;
-        height: 100%;
-        box-shadow: none;
+    section[data-testid="stSidebar"] > div {
+        padding: 1.2rem 0.9rem 1.6rem !important;
     }
+
+    /* HIDE NATIVE STREAMLIT RADIO BUTTON CIRCLES */
+    section[data-testid="stSidebar"] [role="radiogroup"] label div[data-testid="stWidgetSelection"],
+    section[data-testid="stSidebar"] [role="radiogroup"] label > div:first-child {
+        display: none !important;
+    }
+
+    section[data-testid="stSidebar"] [role="radiogroup"] {
+        gap: 2px !important;
+    }
+
+    /* Modern Navigation Pill Styling */
+    section[data-testid="stSidebar"] [role="radiogroup"] label {
+        display: flex !important;
+        align-items: center !important;
+        width: 100% !important;
+        min-height: 2.35rem !important;
+        padding: 0.45rem 0.85rem !important;
+        border-radius: var(--radius-sm) !important;
+        background: transparent !important;
+        color: var(--text-secondary) !important;
+        font-size: 0.86rem !important;
+        font-weight: 500 !important;
+        border: 1px solid transparent !important;
+        cursor: pointer !important;
+        transition: all 0.15s ease !important;
+    }
+
+    section[data-testid="stSidebar"] [role="radiogroup"] label:hover {
+        background: rgba(255, 255, 255, 0.04) !important;
+        color: var(--text-primary) !important;
+    }
+
+    section[data-testid="stSidebar"] [role="radiogroup"] label:has(input:checked) {
+        background: var(--bg-elevated) !important;
+        color: #FFFFFF !important;
+        font-weight: 600 !important;
+        border: 1px solid var(--border-strong) !important;
+        border-left: 3px solid var(--accent-emerald) !important;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3) !important;
+    }
+
+    section[data-testid="stSidebar"] hr {
+        border-color: var(--border-subtle) !important;
+        margin: 1rem 0 !important;
+    }
+
+    /* Cards & Metric Panels */
+    .meridian-card {
+        background: var(--bg-card);
+        border: 1px solid var(--border-subtle);
+        border-radius: var(--radius-md);
+        padding: 1.15rem 1.35rem;
+        height: 100%;
+        transition: border-color 0.15s ease, box-shadow 0.15s ease;
+    }
+
+    .meridian-card:hover {
+        border-color: var(--border-strong);
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+    }
+
     .meridian-card-label {
-        color: var(--muted);
+        color: var(--text-secondary);
         font-size: 0.72rem;
-        font-weight: 750;
+        font-weight: 600;
         letter-spacing: 0.08em;
         text-transform: uppercase;
     }
+
     .meridian-card-value {
-        color: var(--ink);
-        font: 600 1.85rem Georgia, "Times New Roman", serif;
-        letter-spacing: -0.035em;
-        margin: 0.3rem 0 0.15rem;
+        color: var(--text-primary);
+        font-size: 1.85rem;
+        font-weight: 700;
+        letter-spacing: -0.025em;
+        margin: 0.35rem 0 0.15rem;
+        font-variant-numeric: tabular-nums;
     }
+
     .meridian-card-note {
-        color: var(--muted);
-        font-size: 0.82rem;
+        color: var(--text-muted);
+        font-size: 0.80rem;
         line-height: 1.45;
     }
 
     /* Badge Tags */
     .badge {
         display: inline-block;
-        font-size: 0.70rem;
-        font-weight: 750;
+        font-size: 0.68rem;
+        font-weight: 700;
         letter-spacing: 0.06em;
         text-transform: uppercase;
-        padding: 0.18rem 0.5rem;
+        padding: 0.2rem 0.55rem;
         border-radius: 4px;
         margin-right: 0.4rem;
     }
-    .badge-audited { background: var(--accent-light); color: var(--accent); border: 1px solid #b7dcbf; }
-    .badge-assumption { background: var(--gold-light); color: var(--gold); border: 1px solid #ecdca0; }
-    .badge-estimated { background: #eef2f6; color: #3b5a75; border: 1px solid #c8d8e6; }
 
-    /* Tables & Inputs */
-    [data-testid="stDataFrame"], [data-testid="stTable"] {
-        border: 1px solid var(--line);
-        border-radius: var(--control-radius);
-        overflow: hidden;
-        background: var(--white);
+    .badge-audited {
+        background: var(--accent-emerald-subtle);
+        color: var(--accent-emerald);
+        border: 1px solid rgba(16, 185, 129, 0.3);
     }
+
+    .badge-assumption {
+        background: var(--accent-amber-subtle);
+        color: var(--accent-amber);
+        border: 1px solid rgba(245, 158, 11, 0.3);
+    }
+
+    .badge-estimated {
+        background: var(--accent-cyan-subtle);
+        color: var(--accent-cyan);
+        border: 1px solid rgba(56, 189, 248, 0.3);
+    }
+
+    /* Streamlit Native Bordered Containers */
+    [data-testid="stVerticalBlockBorderWrapper"] > div {
+        background: var(--bg-card) !important;
+        border: 1px solid var(--border-subtle) !important;
+        border-radius: var(--radius-md) !important;
+    }
+
+    /* Modern Tabs */
+    .stTabs [data-baseweb="tab-list"] {
+        border-bottom: 1px solid var(--border-subtle) !important;
+        background: transparent !important;
+        gap: 6px !important;
+    }
+
+    .stTabs [data-baseweb="tab"] {
+        height: 38px !important;
+        background: transparent !important;
+        border-radius: 6px 6px 0 0 !important;
+        color: var(--text-secondary) !important;
+        font-weight: 500 !important;
+        font-size: 0.86rem !important;
+        padding: 0 16px !important;
+        border-bottom: 2px solid transparent !important;
+    }
+
+    .stTabs [aria-selected="true"] {
+        background: transparent !important;
+        color: var(--accent-emerald) !important;
+        border-bottom: 2px solid var(--accent-emerald) !important;
+        font-weight: 600 !important;
+    }
+
+    /* Form Inputs */
+    [data-testid="stTextInput"] input,
+    [data-testid="stNumberInput"] input,
+    [data-testid="stTextArea"] textarea,
+    [data-baseweb="select"] > div {
+        background-color: #0A0D14 !important;
+        border: 1px solid var(--border-subtle) !important;
+        color: var(--text-primary) !important;
+        border-radius: var(--radius-sm) !important;
+        font-size: 0.88rem !important;
+    }
+
+    [data-testid="stTextInput"] input:focus,
+    [data-testid="stNumberInput"] input:focus,
+    [data-testid="stTextArea"] textarea:focus,
+    [data-baseweb="select"] > div:focus-within {
+        border-color: var(--accent-emerald) !important;
+        box-shadow: 0 0 0 1px var(--accent-emerald) !important;
+    }
+
+    /* Buttons */
     div.stButton > button, [data-testid="stDownloadButton"] button {
-        min-height: 2.55rem;
-        border: 1px solid #a8b8aa;
-        border-radius: var(--control-radius);
-        color: var(--ink);
-        font-weight: 650;
-        background: var(--white);
-        transition: all 0.14s ease;
-    }
-    div.stButton > button:hover, [data-testid="stDownloadButton"] button:hover {
-        border-color: var(--pine);
-        background: #f1f4eb;
-    }
-    div.stButton > button[kind="primary"] {
-        background: #182620;
-        border-color: #182620;
-        color: #f7faf7;
-    }
-    div.stButton > button[kind="primary"]:hover {
-        background: #273b32;
-        border-color: #273b32;
+        min-height: 2.35rem !important;
+        border-radius: var(--radius-sm) !important;
+        font-weight: 600 !important;
+        font-size: 0.85rem !important;
+        background: var(--bg-elevated) !important;
+        border: 1px solid var(--border-strong) !important;
+        color: var(--text-primary) !important;
+        transition: all 0.15s ease !important;
     }
 
-    /* Top Info Popover Guide */
+    div.stButton > button:hover, [data-testid="stDownloadButton"] button:hover {
+        background: #232D3F !important;
+        border-color: #435472 !important;
+        color: #FFFFFF !important;
+    }
+
+    div.stButton > button[kind="primary"], [data-testid="stFormSubmitButton"] > button {
+        background: var(--accent-emerald) !important;
+        border: 1px solid var(--accent-emerald) !important;
+        color: #064E3B !important;
+        font-weight: 700 !important;
+    }
+
+    div.stButton > button[kind="primary"]:hover, [data-testid="stFormSubmitButton"] > button:hover {
+        background: #34D399 !important;
+        border-color: #34D399 !important;
+        color: #064E3B !important;
+    }
+
+    /* Popover */
+    [data-testid="stPopoverBody"] {
+        background-color: var(--bg-card) !important;
+        border: 1px solid var(--border-strong) !important;
+        color: var(--text-primary) !important;
+        box-shadow: 0 12px 30px rgba(0, 0, 0, 0.6) !important;
+        border-radius: var(--radius-md) !important;
+    }
+
+    /* Dataframe & Tables */
+    [data-testid="stDataFrame"], [data-testid="stTable"] {
+        border: 1px solid var(--border-subtle) !important;
+        border-radius: var(--radius-sm) !important;
+        background: var(--bg-card) !important;
+    }
+
     .info-header {
         display: flex;
         align-items: center;
         gap: 6px;
         font-size: 0.98rem;
         font-weight: 700;
-        color: var(--pine);
+        color: var(--accent-emerald);
         margin-bottom: 0.4rem;
     }
 </style>
@@ -486,7 +603,7 @@ def render_tab_info_guide(
     provenance_tag: str = "AUDITED DATA · HMAC CHECKED"
 ):
     """Renders the top-right institutional ℹ️ Info popover modal on every tab."""
-    with st.popover("ℹ️ Tab Guide", use_container_width=True):
+    with st.popover("ℹ️ Guide", use_container_width=True):
         st.markdown(f"<div class='info-header'>◈ {title}</div>", unsafe_allow_html=True)
         st.markdown(f"**Primary Purpose:** {purpose}")
         st.markdown("**Key Capabilities:**")
@@ -501,16 +618,21 @@ def render_tab_info_guide(
 # SIDEBAR NAVIGATION (Properly Grouped by Investor Jobs-to-be-Done)
 # =============================================================================
 st.sidebar.markdown(
-    "<div style='font:600 1.45rem Georgia,serif;color:#f7faf7;letter-spacing:-.03em'>◈ Meridian</div>"
-    "<div style='color:#9bb0a3;font-size:0.78rem;margin:0.15rem 0 0.85rem'>Institutional Equity Terminal</div>",
-    unsafe_allow_html=True
-)
-
-st.sidebar.markdown(
-    "<div style='background:rgba(255,255,255,0.06);border:1px solid #283e33;border-radius:6px;padding:6px 9px;margin-bottom:0.9rem'>"
-    "<span style='color:#d6ed75;font-weight:700;font-size:0.75rem'>● SYSTEM STATUS: ONLINE</span><br>"
-    "<span style='color:#a6b9ad;font-size:0.72rem'>HMAC Provenance · Fail-Closed Audit</span>"
-    "</div>",
+    """
+    <div style="padding: 2px 2px 10px 2px;">
+        <div style="display:flex; align-items:center; gap:8px;">
+            <div style="width:26px; height:26px; border-radius:6px; background:#10B981; display:flex; align-items:center; justify-content:center; color:#0B0E14; font-weight:900; font-size:14px;">◈</div>
+            <div>
+                <div style="font-weight:700; font-size:1.15rem; color:#F8FAFC; letter-spacing:-0.02em; line-height:1.1;">MERIDIAN</div>
+                <div style="font-size:0.70rem; color:#64748B; letter-spacing:0.06em; text-transform:uppercase; font-weight:600;">Research Terminal</div>
+            </div>
+        </div>
+        <div style="display:inline-flex; align-items:center; gap:6px; padding:3px 10px; border-radius:9999px; background:rgba(16,185,129,0.12); border:1px solid rgba(16,185,129,0.3); color:#34D399; font-size:0.72rem; font-weight:600; margin-top:10px;">
+            <span style="display:inline-block; width:6px; height:6px; border-radius:50%; background:#10B981;"></span>
+            SYSTEM ONLINE · AUDITED
+        </div>
+    </div>
+    """,
     unsafe_allow_html=True
 )
 
@@ -589,10 +711,10 @@ with col_tv_web:
 
 # --- MODULE 1: EXECUTIVE SUMMARY ---
 if nav_choice == "⌂  Executive Summary":
-    col_head, col_info = st.columns([5.5, 1.2])
+    col_head, col_info = st.columns([4.2, 1.3])
     with col_head:
-        st.markdown('<div class="header-style">Research, in one place.</div>', unsafe_allow_html=True)
-        st.markdown('<div class="meridian-intro">Executive portal for coverage universes, recent audit dossiers, and quantitative risk workflows.</div>', unsafe_allow_html=True)
+        st.markdown('<div class="header-style">Executive Summary & Terminal Home</div>', unsafe_allow_html=True)
+        st.markdown('<div class="meridian-intro">Institutional equity research command center · Real-time coverage tracking, audited investment dossiers, and quantitative risk modeling.</div>', unsafe_allow_html=True)
     with col_info:
         render_tab_info_guide(
             title="Executive Summary & Home",
@@ -676,7 +798,7 @@ if nav_choice == "⌂  Executive Summary":
 
 # --- MODULE 2: COVERAGE & SCREENING ---
 elif nav_choice == "◎  Coverage & Screening":
-    col_head, col_info = st.columns([5.5, 1.2])
+    col_head, col_info = st.columns([4.2, 1.3])
     with col_head:
         st.markdown('<div class="header-style">Coverage Universe & Scorecard</div>', unsafe_allow_html=True)
         st.markdown('<div class="meridian-intro">Multi-factor fundamental screening across operating margins, debt solvency, and FCF conversion.</div>', unsafe_allow_html=True)
@@ -792,7 +914,7 @@ elif nav_choice == "◎  Coverage & Screening":
 
 # --- MODULE 3: MARKET TERMINAL & CHARTS ---
 elif "Market Terminal & Charts" in nav_choice:
-    col_head, col_info = st.columns([5.5, 1.2])
+    col_head, col_info = st.columns([4.2, 1.3])
     with col_head:
         st.markdown('<div class="header-style">Market Terminal & Technical Charts</div>', unsafe_allow_html=True)
         st.markdown('<div class="meridian-intro">Real-time TradingView streaming charts, technical analysis speedometer, financials, and quantitative moving averages.</div>', unsafe_allow_html=True)
@@ -934,7 +1056,7 @@ elif "Market Terminal & Charts" in nav_choice:
 
 # --- MODULE 4: INTRINSIC VALUATION (DCF) ---
 elif "Intrinsic Valuation" in nav_choice:
-    col_head, col_info = st.columns([5.5, 1.2])
+    col_head, col_info = st.columns([4.2, 1.3])
     with col_head:
         st.markdown('<div class="header-style">Intrinsic Valuation Model (DCF)</div>', unsafe_allow_html=True)
         st.markdown('<div class="meridian-intro">Discounted Cash Flow model with dynamic growth projections, WACC sensitivity grid, and reverse DCF implied growth.</div>', unsafe_allow_html=True)
@@ -1078,7 +1200,7 @@ elif "Intrinsic Valuation" in nav_choice:
 
 # --- MODULE 5: AUTONOMOUS RESEARCH STUDIO ---
 elif "Autonomous Research Studio" in nav_choice:
-    col_head, col_info = st.columns([5.5, 1.2])
+    col_head, col_info = st.columns([4.2, 1.3])
     with col_head:
         st.markdown('<div class="header-style">Autonomous Research Committee</div>', unsafe_allow_html=True)
         st.markdown('<div class="meridian-intro">Multi-agent committee execution: Analyst drafts thesis, Verifier audits provenance, Skeptic stress-tests assumptions.</div>', unsafe_allow_html=True)
@@ -1141,7 +1263,7 @@ elif "Autonomous Research Studio" in nav_choice:
 
 # --- MODULE 6: ANTIGRAVITY FINANCIAL COPILOT ---
 elif "Antigravity Financial Copilot" in nav_choice:
-    col_head, col_info = st.columns([5.5, 1.2])
+    col_head, col_info = st.columns([4.2, 1.3])
     with col_head:
         st.markdown('<div class="header-style">Antigravity Financial Copilot</div>', unsafe_allow_html=True)
         st.markdown('<div class="meridian-intro">Multi-turn research assistant and quantitative analytics engine powered by the Google Antigravity SDK.</div>', unsafe_allow_html=True)
@@ -1366,7 +1488,7 @@ elif "Antigravity Financial Copilot" in nav_choice:
 
 # --- MODULE 7: PORTFOLIO CONSTRUCTION LAB ---
 elif "Portfolio Construction Lab" in nav_choice:
-    col_head, col_info = st.columns([5.5, 1.2])
+    col_head, col_info = st.columns([4.2, 1.3])
     with col_head:
         st.markdown('<div class="header-style">Portfolio Construction & Risk Lab</div>', unsafe_allow_html=True)
         st.markdown('<div class="meridian-intro">NVIDIA cuOpt quadratic programming portfolio optimization: Global Minimum Variance & Markowitz Efficient Frontier.</div>', unsafe_allow_html=True)
@@ -1434,7 +1556,7 @@ elif "Portfolio Construction Lab" in nav_choice:
 
 # --- MODULE 8: SUPPLY CHAIN & LOGISTICS RISK ---
 elif "Supply Chain & Logistics Risk" in nav_choice:
-    col_head, col_info = st.columns([5.5, 1.2])
+    col_head, col_info = st.columns([4.2, 1.3])
     with col_head:
         st.markdown('<div class="header-style">Supply Chain & Operations Risk</div>', unsafe_allow_html=True)
         st.markdown('<div class="meridian-intro">Capacitated Vehicle Routing (CVRP) fleet optimization and fuel inflation shock elasticity.</div>', unsafe_allow_html=True)
@@ -1504,7 +1626,7 @@ elif "Supply Chain & Logistics Risk" in nav_choice:
 
 # --- MODULE 9: INTERACTIVE 3D PIPELINE MAP ---
 elif "Interactive 3D Pipeline Map" in nav_choice:
-    col_head, col_info = st.columns([5.5, 1.2])
+    col_head, col_info = st.columns([4.2, 1.3])
     with col_head:
         st.markdown('<div class="header-style">Interactive 3D Pipeline Map</div>', unsafe_allow_html=True)
         st.markdown('<div class="meridian-intro">Spatial WebGL 3D visualization of the multi-agent research pipeline: orbital rotation, node inspection, and live simulation.</div>', unsafe_allow_html=True)
@@ -1546,7 +1668,7 @@ elif "Interactive 3D Pipeline Map" in nav_choice:
 
 # --- MODULE 10: INVESTMENT DECISION JOURNAL ---
 elif "Investment Decision Journal" in nav_choice:
-    col_head, col_info = st.columns([5.5, 1.2])
+    col_head, col_info = st.columns([4.2, 1.3])
     with col_head:
         st.markdown('<div class="header-style">Investment Decision Journal & Intelligence</div>', unsafe_allow_html=True)
         st.markdown('<div class="meridian-intro">Institutional decision hygiene: compare autonomous agent predictions & market consensus side-by-side with your independent thoughts.</div>', unsafe_allow_html=True)
@@ -1780,7 +1902,7 @@ elif "Investment Decision Journal" in nav_choice:
 
 # --- MODULE 11: REGULATORY FILINGS & ALERTS ---
 elif "Regulatory Filings & Alerts" in nav_choice:
-    col_head, col_info = st.columns([5.5, 1.2])
+    col_head, col_info = st.columns([4.2, 1.3])
     with col_head:
         st.markdown('<div class="header-style">Regulatory Filings & Price Alerts</div>', unsafe_allow_html=True)
         st.markdown('<div class="meridian-intro">Continuous monitor for SEC EDGAR 8-K/10-K filing disclosures and abnormal price volatility shocks.</div>', unsafe_allow_html=True)
