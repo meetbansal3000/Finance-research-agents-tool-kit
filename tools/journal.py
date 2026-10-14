@@ -19,7 +19,9 @@ ENTRIES_DIR = os.path.join(JOURNAL_DIR, "entries")
 CSV_HEADERS = [
     "decision_id", "date", "ticker", "action", "entry_price",
     "target_price", "stop_loss", "conviction", "status",
-    "exit_date", "exit_price", "return_pct", "thesis", "risks"
+    "exit_date", "exit_price", "return_pct",
+    "agent_prediction", "market_consensus", "user_thoughts",
+    "thesis", "risks"
 ]
 
 
@@ -48,9 +50,12 @@ class DecisionJournal:
         thesis: str,
         risks: str,
         conviction: str = "HIGH",
-        date: Optional[str] = None
+        date: Optional[str] = None,
+        agent_prediction: Optional[str] = "",
+        market_consensus: Optional[str] = "",
+        user_thoughts: Optional[str] = ""
     ) -> str:
-        """Record an investment decision into the journal."""
+        """Record an investment decision into the journal with agent and market intelligence plus separate personal thoughts."""
         date_str = date or datetime.datetime.now().strftime("%Y-%m-%d")
         existing = self.list_decisions()
         decision_id = f"DEC_{len(existing) + 1:04d}"
@@ -59,6 +64,9 @@ class DecisionJournal:
             decision_id, date_str, ticker.upper().strip(), action.upper().strip(),
             f"{entry_price:.2f}", f"{target_price:.2f}", f"{stop_loss:.2f}",
             conviction.upper().strip(), "OPEN", "", "", "",
+            (agent_prediction or "").strip(),
+            (market_consensus or "").strip(),
+            (user_thoughts or "").strip(),
             thesis.strip(), risks.strip()
         ]
 
@@ -84,6 +92,21 @@ class DecisionJournal:
 
 ---
 
+### 🤖 What Autonomous Agents Predicted & Recommended
+{agent_prediction or "No agent prediction recorded at entry."}
+
+---
+
+### 📈 What Market Consensus Predicted
+{market_consensus or "No market consensus recorded at entry."}
+
+---
+
+### ✍️ Your Personal Perspective & Thoughts (Independent)
+{user_thoughts or "No separate personal thoughts recorded."}
+
+---
+
 ### Core Investment Thesis
 {thesis}
 
@@ -105,6 +128,9 @@ class DecisionJournal:
         with open(self.csv_path, "r", encoding="utf-8") as f:
             reader = csv.DictReader(f)
             for row in reader:
+                for h in CSV_HEADERS:
+                    if h not in row:
+                        row[h] = ""
                 items.append(row)
         return items
 

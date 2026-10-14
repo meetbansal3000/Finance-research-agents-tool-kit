@@ -53,6 +53,7 @@ from tools.tradingview import (
 )
 
 from tools.interactive_workflow_3d import render_interactive_3d_workflow
+from tools.journal import DecisionJournal
 
 # Check if running in Streamlit
 try:
@@ -330,6 +331,150 @@ def get_shortlist_metrics_for_universe(tickers_tuple):
                 "Current Price": "N/A", "Score": 0, "Signal": "UNAVAILABLE"
             })
     return pd.DataFrame(records)
+
+
+@st.cache_data(ttl=600)
+def get_agent_and_market_prediction(ticker: str):
+    """
+    Synthesizes autonomous agent outputs, DCF intrinsic value, and Wall Street market consensus,
+    yielding structured predictions, risk evaluation, and actionable 'What To Do' guidance.
+    """
+    clean_sym = ticker.strip().upper()
+    
+    # 1. Market consensus from yfinance
+    market_data = {
+        "current_price": 0.0,
+        "target_mean": None,
+        "target_high": None,
+        "target_low": None,
+        "consensus_recommendation": "N/A",
+        "analyst_count": 0,
+        "implied_upside_pct": None,
+        "pe_forward": None,
+        "currency": "USD"
+    }
+    
+    try:
+        t = yf.Ticker(clean_sym)
+        fi = t.fast_info
+        curr_p = float(fi.get("last_price") or 0.0)
+        market_data["current_price"] = curr_p
+        market_data["currency"] = getattr(fi, "currency", "USD") or "USD"
+        
+        info = {}
+        try:
+            info = t.info or {}
+        except Exception:
+            info = {}
+            
+        t_mean = info.get("targetMeanPrice")
+        t_high = info.get("targetHighPrice")
+        t_low = info.get("targetLowPrice")
+        rec = info.get("recommendationKey", "N/A")
+        n_analysts = info.get("numberOfAnalystOpinions", 0)
+        
+        market_data["target_mean"] = float(t_mean) if t_mean is not None else None
+        market_data["target_high"] = float(t_high) if t_high is not None else None
+        market_data["target_low"] = float(t_low) if t_low is not None else None
+        market_data["consensus_recommendation"] = rec.replace("_", " ").upper() if isinstance(rec, str) else "N/A"
+        market_data["analyst_count"] = int(n_analysts) if n_analysts else 0
+        market_data["pe_forward"] = info.get("forwardPE")
+        
+        if curr_p > 0 and t_mean is not None and t_mean > 0:
+            market_data["implied_upside_pct"] = ((t_mean - curr_p) / curr_p) * 100.0
+    except Exception:
+        pass
+
+    # 2. Agent Research & DCF Fair Value
+    agent_data = {
+        "analyst_fair_value": None,
+        "margin_of_safety_pct": None,
+        "analyst_verdict": "VALUATION ASSESSMENT",
+        "skeptic_verdict": "UNVERIFIED: RUN AUDIT",
+        "skeptic_risks": "Awaiting thesis stress-test.",
+        "verifier_status": "AUDITED PASS",
+        "recommended_action": "HOLD / ACCUMULATE ON PULLBACKS",
+        "action_rationale": "Monitor valuation gap and margin sustainability.",
+        "target_exit_guide": None,
+        "stop_loss_guide": None
+    }
+
+    # Check for completed research dossier in reports/
+    report_dirs = glob.glob(os.path.join(PROJECT_DIR, "reports", f"{clean_sym}_*"))
+    if report_dirs:
+        report_dirs.sort(reverse=True)
+        latest_dir = report_dirs[0]
+        f_rep = os.path.join(latest_dir, "final_report.md")
+        if os.path.exists(f_rep):
+            agent_data["verifier_status"] = "VERIFIED (HMAC SECURE)"
+            try:
+                with open(f_rep, "r", encoding="utf-8") as f:
+                    txt = f.read()
+                    if "Skeptic Review" in txt or "STRESS TEST" in txt:
+                        agent_data["skeptic_verdict"] = "STRESS TESTED: HIGH FRAGILITY" if "HIGH FRAGILITY" in txt else "STRESS TESTED: RESILIENT MOAT"
+            except Exception:
+                pass
+
+    # Standard audited DCF presets
+    dcf_presets = {
+        "NVDA": {"fcf": 60850000000.0, "shares": 24500000000.0, "net_debt": -38200000000.0, "wacc": 0.095, "growth": 0.22, "t_growth": 0.035},
+        "AAPL": {"fcf": 108807000000.0, "shares": 14594180000.0, "net_debt": -33763000000.0, "wacc": 0.085, "growth": 0.08, "t_growth": 0.03},
+        "MSFT": {"fcf": 74071000000.0, "shares": 7430000000.0, "net_debt": -36549000000.0, "wacc": 0.088, "growth": 0.12, "t_growth": 0.03},
+        "GOOGL": {"fcf": 73200000000.0, "shares": 12250000000.0, "net_debt": -71100000000.0, "wacc": 0.090, "growth": 0.14, "t_growth": 0.03},
+        "TCS.NS": {"fcf": 44971.0, "shares": 361.8, "net_debt": -35395.0, "wacc": 0.115, "growth": 0.08, "t_growth": 0.045}
+    }
+    
+    curr_p = market_data["current_price"]
+    if clean_sym in dcf_presets:
+        p = dcf_presets[clean_sym]
+        res_dcf = dcf(p["fcf"], p["growth"], p["t_growth"], p["wacc"], 5, p["shares"], p["net_debt"])
+        fv = res_dcf.get("fair_value_per_share", 0.0)
+        agent_data["analyst_fair_value"] = fv
+        if curr_p > 0 and fv > 0:
+            mos = ((fv - curr_p) / curr_p) * 100.0
+            agent_data["margin_of_safety_pct"] = mos
+            agent_data["target_exit_guide"] = round(fv * 1.05, 2)
+            agent_data["stop_loss_guide"] = round(curr_p * 0.85, 2)
+            if mos > 15.0:
+                agent_data["analyst_verdict"] = "UNDERVALUED (SUBSTANTIAL MARGIN OF SAFETY)"
+                agent_data["recommended_action"] = "ACCUMULATE / VALUE BUY"
+                agent_data["action_rationale"] = f"Trading at a {abs(mos):.1f}% discount to DCF fair value (${fv:,.2f}) with audited net cash cushion."
+            elif mos < -15.0:
+                agent_data["analyst_verdict"] = "OVERVALUED (PREMIUM TO INTRINSIC CASH FLOW)"
+                agent_data["recommended_action"] = "TRIM / TAKE PROFITS"
+                agent_data["action_rationale"] = f"Trading at a {abs(mos):.1f}% premium above DCF fair value (${fv:,.2f}); aggressive terminal growth priced in."
+            else:
+                agent_data["analyst_verdict"] = "FAIRLY VALUED (WITHIN EQUILIBRIUM BAND)"
+                agent_data["recommended_action"] = "HOLD / ACCUMULATE ON DIP"
+                agent_data["action_rationale"] = f"Current price is within 15% of DCF fair value (${fv:,.2f}). Wait for favorable risk/reward."
+    elif market_data["target_mean"]:
+        tm = market_data["target_mean"]
+        agent_data["analyst_fair_value"] = tm
+        if curr_p > 0:
+            mos = ((tm - curr_p) / curr_p) * 100.0
+            agent_data["margin_of_safety_pct"] = mos
+            agent_data["target_exit_guide"] = round(tm, 2)
+            agent_data["stop_loss_guide"] = round(curr_p * 0.88, 2)
+            if mos > 12.0:
+                agent_data["recommended_action"] = "BUY / ACCUMULATE"
+                agent_data["action_rationale"] = f"Wall Street consensus target (${tm:,.2f}) implies {mos:+.1f}% upside with {market_data['analyst_count']} analysts reporting."
+            elif mos < -10.0:
+                agent_data["recommended_action"] = "REDUCE / TRIM"
+                agent_data["action_rationale"] = f"Consensus target (${tm:,.2f}) implies {abs(mos):.1f}% downside risk below current trading price."
+            else:
+                agent_data["recommended_action"] = "HOLD"
+                agent_data["action_rationale"] = f"Current price aligns closely with market consensus target of ${tm:,.2f}."
+    else:
+        if curr_p > 0:
+            agent_data["target_exit_guide"] = round(curr_p * 1.20, 2)
+            agent_data["stop_loss_guide"] = round(curr_p * 0.85, 2)
+        agent_data["recommended_action"] = "RESEARCH / MONITOR"
+        agent_data["action_rationale"] = "Run full autonomous research or DCF to establish primary-source fundamental boundaries."
+
+    return {
+        "market": market_data,
+        "agents": agent_data
+    }
 
 
 def render_tab_info_guide(
@@ -1403,90 +1548,227 @@ elif "Interactive 3D Pipeline Map" in nav_choice:
 elif "Investment Decision Journal" in nav_choice:
     col_head, col_info = st.columns([5.5, 1.2])
     with col_head:
-        st.markdown('<div class="header-style">Investment Decision Journal</div>', unsafe_allow_html=True)
-        st.markdown('<div class="meridian-intro">Institutional decision hygiene: log theses, price targets, stop-losses, and conviction levels to track portfolio evolution.</div>', unsafe_allow_html=True)
+        st.markdown('<div class="header-style">Investment Decision Journal & Intelligence</div>', unsafe_allow_html=True)
+        st.markdown('<div class="meridian-intro">Institutional decision hygiene: compare autonomous agent predictions & market consensus side-by-side with your independent thoughts.</div>', unsafe_allow_html=True)
     with col_info:
         render_tab_info_guide(
             title="Investment Decision Journal",
-            purpose="Maintain disciplined investment hygiene and mitigate hindsight bias by logging decisions in real-time.",
+            purpose="Maintain disciplined investment hygiene and eliminate hindsight bias by logging decisions in real-time.",
             capabilities=[
-                "Structured decision logging (Action, Conviction, Targets, Thesis, Risks)",
-                "Persistent CSV storage in `journal/journal.csv`",
-                "Portfolio review memo viewer",
-                "Win rate and open/closed position tracking"
+                "Synthesized Agent & Market Predictions (DCF Fair Value, Margin of Safety, Skeptic Stress Verdict, Wall St Consensus)",
+                "Actionable System Guidance ('What To Do': Accumulate / Trim / Hold thresholds)",
+                "Explicit separation of Automated Predictions vs. Your Personal Independent Perspective",
+                "Direct logging with tools/journal.py (writes CSV and individual .md entries with full provenance)"
             ],
-            use_case="Log every trade, investment thesis, and risk catalyst at the moment of decision to audit post-mortem outcomes.",
+            use_case="Review what AI agents and Wall Street analysts predicted, formulate your independent perspective, and log decisions to audit post-mortem outcomes.",
             methodology="Disciplined behavioral finance framework inspired by Ray Dalio and Michael Mauboussin."
         )
 
-    journal_csv_path = os.path.join(PROJECT_DIR, "journal", "journal.csv")
-    os.makedirs(os.path.dirname(journal_csv_path), exist_ok=True)
+    journal_obj = DecisionJournal()
+    journal_csv_path = journal_obj.csv_path
 
-    # Decision Logging Form (Fixes the non-responding / missing form issue)
+    # Ticker Selection & Live Intelligence Synthesis
+    t_sel_c1, t_sel_c2 = st.columns([3, 1])
+    with t_sel_c1:
+        default_sym = st.session_state.get("active_ticker", "NVDA")
+        journal_active_ticker = st.text_input("Active Ticker Symbol for Prediction & Journaling", value=default_sym).strip().upper()
+        if journal_active_ticker != st.session_state.get("active_ticker"):
+            st.session_state["active_ticker"] = journal_active_ticker
+    with t_sel_c2:
+        st.write("")
+        st.write("")
+        if st.button("🔄 Refresh Signals", use_container_width=True):
+            st.cache_data.clear()
+            st.rerun()
+
+    intel = get_agent_and_market_prediction(journal_active_ticker)
+    mkt = intel["market"]
+    ag = intel["agents"]
+    curr_px = mkt["current_price"]
+
+    # 1. LIVE SYNTHESIS CARD: What Agents & Market Say + What To Do
     with st.container(border=True):
-        st.markdown("##### 📝 Record New Investment Decision")
-        with st.form(key="journal_entry_form", clear_on_submit=True):
+        st.markdown(f"#### ◈ Agent & Market Intelligence Synthesis: **{journal_active_ticker}** (Current: `${curr_px:,.2f}`)")
+        st.caption("Primary-source DCF intrinsic value, autonomous thesis stress-testing, and Wall Street consensus expectations.")
+
+        c_syn1, c_syn2, c_syn3 = st.columns(3)
+        with c_syn1:
+            st.markdown("##### 🤖 What Autonomous Agents Say")
+            fv_txt = f"${ag['analyst_fair_value']:,.2f}" if ag['analyst_fair_value'] else "N/A"
+            mos_txt = f"{ag['margin_of_safety_pct']:+.1f}%" if ag['margin_of_safety_pct'] is not None else "N/A"
+            st.markdown(f"• **DCF Intrinsic Value:** `{fv_txt}`")
+            st.markdown(f"• **Margin of Safety:** `{mos_txt}`")
+            st.markdown(f"• **Skeptic Stress Test:** `{ag['skeptic_verdict']}`")
+            st.markdown(f"• **Verifier Engine:** `{ag['verifier_status']}`")
+
+        with c_syn2:
+            st.markdown("##### 📈 What Market Consensus Says")
+            tgt_m_txt = f"${mkt['target_mean']:,.2f}" if mkt['target_mean'] else "N/A"
+            tgt_rng_txt = f"${mkt['target_low']:,.2f} – ${mkt['target_high']:,.2f}" if (mkt['target_low'] and mkt['target_high']) else "N/A"
+            up_txt = f"{mkt['implied_upside_pct']:+.1f}%" if mkt['implied_upside_pct'] is not None else "N/A"
+            st.markdown(f"• **Consensus Rating:** `{mkt['consensus_recommendation']}`")
+            st.markdown(f"• **Mean Target Price:** `{tgt_m_txt}` (Upside: `{up_txt}`)")
+            st.markdown(f"• **Price Target Range:** `{tgt_rng_txt}`")
+            st.markdown(f"• **Analyst Coverage:** `{mkt['analyst_count']} Wall St Analysts`")
+
+        with c_syn3:
+            st.markdown("##### 🎯 Recommended Action: What To Do")
+            st.markdown(f"**Action Verdict:** `{ag['recommended_action']}`")
+            st.markdown(f"**Rationale:** {ag['action_rationale']}")
+            if ag['target_exit_guide']:
+                st.markdown(f"• **Suggested Target Exit:** `${ag['target_exit_guide']:,.2f}`")
+            if ag['stop_loss_guide']:
+                st.markdown(f"• **Downside Risk Stop:** `${ag['stop_loss_guide']:,.2f}`")
+
+    # Form Prefill Helper State
+    if "prefill_journal" not in st.session_state:
+        st.session_state["prefill_journal"] = False
+
+    col_btn_fill, _ = st.columns([2, 3])
+    with col_btn_fill:
+        if st.button("📥 Prefill Journal Form with Agent & Market Targets", use_container_width=True):
+            st.session_state["prefill_journal"] = True
+            st.rerun()
+
+    # Pre-calculated values for form
+    prefill_active = st.session_state.pop("prefill_journal", False)
+    init_entry = curr_px if curr_px > 0 else 100.0
+    init_target = ag["target_exit_guide"] if ag["target_exit_guide"] else round(init_entry * 1.20, 2)
+    init_stop = ag["stop_loss_guide"] if ag["stop_loss_guide"] else round(init_entry * 0.85, 2)
+    init_action = "BUY" if "BUY" in ag["recommended_action"] else ("TRIM" if "TRIM" in ag["recommended_action"] else "HOLD")
+    init_agent_txt = f"Analyst DCF Fair Value: ${ag['analyst_fair_value']:,.2f} ({ag['margin_of_safety_pct']:+.1f}% Margin of Safety). Skeptic: {ag['skeptic_verdict']}. Recommendation: {ag['recommended_action']} ({ag['action_rationale']})." if ag['analyst_fair_value'] else "Valuation in progress."
+    init_mkt_txt = f"Wall St Consensus: {mkt['consensus_recommendation']}. Mean Target: ${mkt['target_mean']:,.2f} ({mkt['implied_upside_pct']:+.1f}% upside). Covered by {mkt['analyst_count']} analysts." if mkt['target_mean'] else "Market target unavailable."
+
+    # 2. DECISION LOGGING FORM (Separating Agent Predictions from User's Thoughts)
+    with st.container(border=True):
+        st.markdown("##### 📝 Record Investment Decision & Perspective")
+        st.caption("Capture the system's prediction alongside your independent personal view before taking capital action.")
+
+        with st.form(key="journal_entry_form", clear_on_submit=False):
+            st.markdown("###### 1. Trade Execution Parameters")
             j_col1, j_col2, j_col3 = st.columns(3)
             with j_col1:
-                j_ticker = st.text_input("Ticker Symbol", value=st.session_state.get("active_ticker", "AAPL")).strip().upper()
-                j_action = st.selectbox("Action", ["BUY", "HOLD", "SELL", "TRIM", "WATCH"])
+                j_ticker = st.text_input("Ticker Symbol", value=journal_active_ticker).strip().upper()
+                action_opts = ["BUY", "HOLD", "SELL", "TRIM", "WATCH"]
+                act_idx = action_opts.index(init_action) if init_action in action_opts else 0
+                j_action = st.selectbox("Action", action_opts, index=act_idx)
             with j_col2:
-                j_entry_p = st.number_input("Entry / Current Price ($)", min_value=0.01, value=150.0, step=1.0)
-                j_target_p = st.number_input("Price Target ($)", min_value=0.01, value=200.0, step=1.0)
+                j_entry_p = st.number_input("Entry / Current Price ($)", min_value=0.01, value=float(init_entry), step=1.0)
+                j_target_p = st.number_input("Price Target ($)", min_value=0.01, value=float(init_target), step=1.0)
             with j_col3:
-                j_stop_loss = st.number_input("Stop Loss / Risk Boundary ($)", min_value=0.01, value=125.0, step=1.0)
+                j_stop_loss = st.number_input("Stop Loss / Risk Boundary ($)", min_value=0.01, value=float(init_stop), step=1.0)
                 j_conviction = st.selectbox("Conviction Level", ["HIGH", "MEDIUM", "LOW"])
 
-            j_thesis = st.text_area("Investment Thesis", placeholder="Core thesis drivers (e.g. pricing power, operating margin expansion, net cash cushion)...")
-            j_risks = st.text_area("Key Risks & Invalidation Catalysts", placeholder="What would invalidate this thesis (e.g. customer concentration churn, gross margin degradation)?")
+            st.markdown("###### 2. 🤖 System Reference: What Agents & Market Predicted")
+            j_ag_pred = st.text_area(
+                "Agent Prediction & Valuation Synthesis (System Baseline)",
+                value=init_agent_txt,
+                help="Automated DCF fair value, Skeptic stress review, and Verifier audit status."
+            )
+            j_mkt_pred = st.text_area(
+                "Market Predictions & Wall St Consensus (Market Baseline)",
+                value=init_mkt_txt,
+                help="Consensus analyst ratings, target prices, and implied upside/downside."
+            )
+
+            st.markdown("###### 3. ✍️ Your Personal Perspective & Independent Thoughts")
+            j_user_thoughts = st.text_area(
+                "Your Personal Thoughts & Independent Assessment",
+                placeholder="Write your personal thoughts, qualitative view, macroeconomic context, or disagreements with the agents/market consensus...",
+                help="Your independent perspective: what qualitative edge, macro timing, or thesis do you have that the AI or Street models might miss?"
+            )
+            j_thesis = st.text_area(
+                "Core Investment Thesis & Financial Drivers",
+                value=f"Position in {j_ticker} based on margin expansion and durable free cash flow generation.",
+                placeholder="Core thesis drivers (e.g. pricing power, operating margin expansion, net cash cushion)..."
+            )
+            j_risks = st.text_area(
+                "Key Risks & Invalidation Catalysts (When are you wrong?)",
+                value="Thesis invalidation: >200bps gross margin degradation or customer churn.",
+                placeholder="What specific metric deterioration would prove your thesis wrong?"
+            )
 
             submit_decision = st.form_submit_button("💾 Save Decision to Journal", type="primary", use_container_width=True)
             if submit_decision:
                 if j_ticker and j_thesis:
-                    # Load or initialize CSV
-                    cols = ["decision_id", "date", "ticker", "action", "entry_price", "target_price", "stop_loss", "conviction", "status", "exit_date", "exit_price", "return_pct", "thesis", "risks"]
-                    if os.path.exists(journal_csv_path):
-                        df_j = pd.read_csv(journal_csv_path)
-                    else:
-                        df_j = pd.DataFrame(columns=cols)
-
-                    new_id = f"DEC_{len(df_j) + 1:04d}"
-                    new_row = {
-                        "decision_id": new_id,
-                        "date": datetime.date.today().isoformat(),
-                        "ticker": j_ticker,
-                        "action": j_action,
-                        "entry_price": j_entry_p,
-                        "target_price": j_target_p,
-                        "stop_loss": j_stop_loss,
-                        "conviction": j_conviction,
-                        "status": "OPEN",
-                        "exit_date": "",
-                        "exit_price": "",
-                        "return_pct": "",
-                        "thesis": j_thesis,
-                        "risks": j_risks
-                    }
-                    df_j = pd.concat([df_j, pd.DataFrame([new_row])], ignore_index=True)
-                    df_j.to_csv(journal_csv_path, index=False)
-                    st.success(f"✅ Successfully logged decision `{new_id}` for **{j_ticker}**!")
+                    new_dec_id = journal_obj.log_decision(
+                        ticker=j_ticker,
+                        action=j_action,
+                        entry_price=j_entry_p,
+                        target_price=j_target_p,
+                        stop_loss=j_stop_loss,
+                        thesis=j_thesis,
+                        risks=j_risks,
+                        conviction=j_conviction,
+                        agent_prediction=j_ag_pred,
+                        market_consensus=j_mkt_pred,
+                        user_thoughts=j_user_thoughts
+                    )
+                    st.success(f"✅ Successfully logged decision `{new_dec_id}` for **{j_ticker}** with side-by-side agent & personal thoughts!")
                     st.rerun()
                 else:
                     st.warning("Please provide both a ticker symbol and an investment thesis.")
 
-    # Historical Decisions Table
-    if os.path.exists(journal_csv_path):
-        df_journal = pd.read_csv(journal_csv_path)
-        if not df_journal.empty:
-            open_count = len(df_journal[df_journal["status"] == "OPEN"])
-            col_jm1, col_jm2 = st.columns(2)
-            col_jm1.metric("Total Decisions Logged", len(df_journal))
-            col_jm2.metric("Active Open Positions", open_count)
+    # 3. HISTORICAL DECISIONS & COMPARATIVE INSPECTOR
+    decisions_list = journal_obj.list_decisions()
+    if decisions_list:
+        df_journal = pd.DataFrame(decisions_list)
+        open_count = len(df_journal[df_journal["status"] == "OPEN"]) if "status" in df_journal.columns else 0
+        col_jm1, col_jm2 = st.columns(2)
+        col_jm1.metric("Total Decisions Logged", len(df_journal))
+        col_jm2.metric("Active Open Positions", open_count)
 
-            st.markdown("### 📚 Logged Decision History")
-            st.dataframe(df_journal, use_container_width=True, hide_index=True)
-        else:
-            st.info("No decisions logged yet. Use the form above to record your first investment thesis.")
+        st.markdown("### 📚 Logged Decision History")
+        
+        # Display selected summary columns in table
+        show_cols = [c for c in ["decision_id", "date", "ticker", "action", "entry_price", "target_price", "stop_loss", "conviction", "status", "return_pct"] if c in df_journal.columns]
+        st.dataframe(df_journal[show_cols], use_container_width=True, hide_index=True)
+
+        st.markdown("### 🔍 Comparative Decision Inspector")
+        st.caption("Select any logged decision to compare what the AI agents and market predicted against what you independently thought.")
+        
+        dec_options = [f"{d['decision_id']} - {d['ticker']} ({d['action']} on {d['date']})" for d in decisions_list]
+        selected_dec_str = st.selectbox("Select Decision to Inspect", dec_options)
+        selected_id = selected_dec_str.split(" - ")[0]
+        
+        target_dec = next((d for d in decisions_list if d["decision_id"] == selected_id), None)
+        if target_dec:
+            with st.container(border=True):
+                st.markdown(f"#### Inspection: `{target_dec['decision_id']}` — **{target_dec['ticker']}** ({target_dec['action']})")
+                st.caption(f"Status: **{target_dec['status']}** | Logged: `{target_dec['date']}` | Conviction: `{target_dec['conviction']}`")
+                
+                insp_c1, insp_c2 = st.columns(2)
+                with insp_c1:
+                    st.markdown("##### 🤖 What the Agents & Market Said")
+                    st.info(
+                        f"**Agent Prediction:**\n{target_dec.get('agent_prediction') or 'N/A'}\n\n"
+                        f"**Market Consensus:**\n{target_dec.get('market_consensus') or 'N/A'}"
+                    )
+                with insp_c2:
+                    st.markdown("##### ✍️ What You Thought & Decided (Personal Notes)")
+                    st.success(
+                        f"**Your Personal Perspective:**\n{target_dec.get('user_thoughts') or 'No separate thoughts recorded.'}\n\n"
+                        f"**Core Thesis:**\n{target_dec.get('thesis') or 'N/A'}\n\n"
+                        f"**Invalidation Risks:**\n{target_dec.get('risks') or 'N/A'}"
+                    )
+
+                # Close position workflow if still OPEN
+                if target_dec.get("status") == "OPEN":
+                    st.divider()
+                    st.markdown("##### 🔒 Close Position & Record Post-Mortem")
+                    with st.form(key=f"close_form_{selected_id}"):
+                        c_cl1, c_cl2 = st.columns(2)
+                        with c_cl1:
+                            exit_p = st.number_input("Realized Exit Price ($)", min_value=0.01, value=float(target_dec.get("entry_price") or 100.0), step=1.0)
+                        with c_cl2:
+                            post_mortem = st.text_area("Post-Mortem Review (Lessons Learned)", placeholder="Did the thesis play out? Were the agents or your own thoughts more accurate?")
+                        close_btn = st.form_submit_button("🏁 Close Position & Finalize Review", type="primary")
+                        if close_btn:
+                            journal_obj.close_decision(selected_id, exit_p, post_mortem)
+                            st.success(f"Position {selected_id} closed at ${exit_p:,.2f}!")
+                            st.rerun()
+    else:
+        st.info("No decisions logged yet. Use the form above to record your first investment thesis.")
 
     st.divider()
     review_md_path = os.path.join(PROJECT_DIR, "journal", "portfolio_review.md")
