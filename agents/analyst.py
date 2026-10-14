@@ -9,6 +9,7 @@ and supports automated single-round error correction when audited by ReportVerif
 import os
 import re
 import json
+import math
 import urllib.request
 import datetime
 from typing import Dict, Any, List, Optional, Tuple
@@ -212,10 +213,12 @@ class AnalystAgent:
                 "capex_fact": capex_fact,
             },
             "historical_fcf_series": {
-                "FY2022": 111443000000.0,
-                "FY2023": 99584000000.0,
-                "FY2024": 108807000000.0,
-                "FY2025": 98767000000.0
+                f"FY{u.get('fy') or (u.get('end')[:4] if u.get('end') else '')}": float(u["val"]) - (
+                    float([cu for cu in us_gaap.get("PaymentsToAcquirePropertyPlantAndEquipment", {}).get("units", {}).get("USD", []) if cu.get("form") == "10-K" and cu.get("end") == u.get("end") and "val" in cu][-1]["val"])
+                    if [cu for cu in us_gaap.get("PaymentsToAcquirePropertyPlantAndEquipment", {}).get("units", {}).get("USD", []) if cu.get("form") == "10-K" and cu.get("end") == u.get("end") and "val" in cu] else 0.0
+                )
+                for u in us_gaap.get("NetCashProvidedByUsedInOperatingActivities", {}).get("units", {}).get("USD", [])
+                if u.get("form") == "10-K" and u.get("fp") == "FY" and "val" in u
             }
         }
 
@@ -386,10 +389,12 @@ class AnalystAgent:
                 "capex_fact": capex_fact,
             },
             "historical_fcf_series": {
-                "FY2023": 59475000000.0,
-                "FY2024": 74071000000.0,
-                "FY2025": 71611000000.0,
-                "FY2026": 66987000000.0
+                f"FY{u.get('fy') or (u.get('end')[:4] if u.get('end') else '')}": float(u["val"]) - (
+                    float([cu for cu in us_gaap.get("PaymentsToAcquirePropertyPlantAndEquipment", {}).get("units", {}).get("USD", []) if cu.get("form") in ("10-K", "10-Q") and cu.get("end") == u.get("end") and "val" in cu][-1]["val"])
+                    if [cu for cu in us_gaap.get("PaymentsToAcquirePropertyPlantAndEquipment", {}).get("units", {}).get("USD", []) if cu.get("form") in ("10-K", "10-Q") and cu.get("end") == u.get("end") and "val" in cu] else 0.0
+                )
+                for u in us_gaap.get("NetCashProvidedByUsedInOperatingActivities", {}).get("units", {}).get("USD", [])
+                if u.get("form") in ("10-K", "10-Q") and "val" in u
             }
         }
 
@@ -435,13 +440,21 @@ class AnalystAgent:
             "market_cap": market_cap,
             "revenue": m["Revenue"]["val_raw"],
             "prior_revenue": m["PriorRevenue"]["val_raw"],
+            "pbt": m["PBT_Before_Exceptional"]["val_raw"],
+            "prior_pbt": m["PriorPBT_Before_Exceptional"]["val_raw"],
             "operating_income": m["OperatingIncome"]["val_raw"],
             "net_income": m["AttributableNetProfit"]["val_raw"],
+            "prior_net_income": m["PriorAttributableNetProfit"]["val_raw"],
             "operating_cash_flow": m["OperatingCashFlow"]["val_raw"],
             "capex": m["Capex"]["val_raw"],
             "headline_op_margin": m["HeadlineOperatingMargin"]["val_raw"],
             "headline_fcf": m["HeadlineFreeCashFlow"]["val_raw"],
             "derived_fcf": m["DerivedFreeCashFlow"]["val_raw"],
+            "cce": m["CashAndCashEquivalents"]["val_raw"],
+            "bank": m["OtherBankBalances"]["val_raw"],
+            "investments": m["CurrentInvestments"]["val_raw"],
+            "lease_nc": m["LeaseLiabilities_NonCurrent"]["val_raw"],
+            "lease_cur": m["LeaseLiabilities_Current"]["val_raw"],
             "balance_sheet": {
                 "TotalCashAndMarketableSecurities": m["CashAndInvestments"],
                 "TotalDebt": m["TotalDebt"],
@@ -453,6 +466,8 @@ class AnalystAgent:
             "ledger_ids": {
                 "revenue": m["Revenue"]["ledger_id"],
                 "prior_revenue": m["PriorRevenue"]["ledger_id"],
+                "pbt": m["PBT_Before_Exceptional"]["ledger_id"],
+                "prior_pbt": m["PriorPBT_Before_Exceptional"]["ledger_id"],
                 "operating_income": m["OperatingIncome"]["ledger_id"],
                 "headline_op_margin": m["HeadlineOperatingMargin"]["ledger_id"],
                 "net_income": m["AttributableNetProfit"]["ledger_id"],
@@ -461,7 +476,12 @@ class AnalystAgent:
                 "capex": m["Capex"]["ledger_id"],
                 "derived_fcf": m["DerivedFreeCashFlow"]["ledger_id"],
                 "headline_fcf": m["HeadlineFreeCashFlow"]["ledger_id"],
+                "cce": m["CashAndCashEquivalents"]["ledger_id"],
+                "bank": m["OtherBankBalances"]["ledger_id"],
+                "investments": m["CurrentInvestments"]["ledger_id"],
                 "total_cash": m["CashAndInvestments"]["ledger_id"],
+                "lease_nc": m["LeaseLiabilities_NonCurrent"]["ledger_id"],
+                "lease_cur": m["LeaseLiabilities_Current"]["ledger_id"],
                 "total_debt": m["TotalDebt"]["ledger_id"],
                 "short_term_debt": m["ShortTermDebt"]["ledger_id"],
                 "net_debt": m["NetDebt"]["ledger_id"],
@@ -470,11 +490,8 @@ class AnalystAgent:
                 "price": l_price
             },
             "historical_fcf_series": {
-                "FY2022": 391810000000.0,
-                "FY2023": 419610000000.0,
-                "FY2024": 443400000000.0,
-                "FY2025": 449710000000.0
-            }
+                "FY2026": m["DerivedFreeCashFlow"]["val_raw"]
+            } if m.get("DerivedFreeCashFlow", {}).get("val_raw") is not None else {}
         }
 
     def _fetch_sec_us_company_data(self, ticker: str, cik: str) -> Dict[str, Any]:
@@ -1054,17 +1071,37 @@ class AnalystAgent:
             notes=f"{ticker} YoY Revenue Growth Rate (%)"
         )
 
-        op_margin_res = margin(numerator=data["operating_income"], revenue=data["revenue"])
-        op_margin_pct = op_margin_res["result"]
-        l_op_margin = self.ledger.record(
-            tool="tools.calc.margin",
-            ticker=ticker,
-            inputs={"numerator": data["operating_income"], "revenue": data["revenue"]},
-            output=op_margin_pct,
-            raw_value=op_margin_pct,
-            source="tools.calc.metrics.margin",
-            notes=f"{ticker} Operating Margin (%)"
-        )
+        if data.get("operating_income") is not None:
+            op_margin_res = margin(numerator=data["operating_income"], revenue=data["revenue"])
+            op_margin_pct = op_margin_res["result"]
+            l_op_margin = self.ledger.record(
+                tool="tools.calc.margin",
+                ticker=ticker,
+                inputs={"numerator": data["operating_income"], "revenue": data["revenue"]},
+                output=op_margin_pct,
+                raw_value=op_margin_pct,
+                source="tools.calc.metrics.margin",
+                notes=f"{ticker} Operating Margin (%)"
+            )
+        else:
+            op_margin_pct = None
+            l_op_margin = None
+
+        if data.get("pbt") is not None:
+            pbt_margin_res = margin(numerator=data["pbt"], revenue=data["revenue"], margin_type="pbt")
+            pbt_margin_pct = pbt_margin_res["result"]
+            l_pbt_margin = self.ledger.record(
+                tool="tools.calc.margin",
+                ticker=ticker,
+                inputs={"numerator": data["pbt"], "revenue": data["revenue"], "margin_type": "pbt"},
+                output=pbt_margin_pct,
+                raw_value=pbt_margin_pct,
+                source="tools.calc.metrics.margin",
+                notes=f"{ticker} Profit Before Tax (PBT) Margin (%)"
+            )
+        else:
+            pbt_margin_pct = None
+            l_pbt_margin = None
 
         net_margin_res = margin(numerator=data["net_income"], revenue=data["revenue"])
         net_margin_pct = net_margin_res["result"]
@@ -1154,16 +1191,48 @@ class AnalystAgent:
         if is_inr:
             # Display in Crore
             rev_disp = data["revenue"] / 1e7
-            op_disp = data["operating_income"] / 1e7
+            op_disp = (data["operating_income"] / 1e7) if data.get("operating_income") is not None else None
+            pbt_disp = (data["pbt"] / 1e7) if data.get("pbt") is not None else None
             net_disp = data["net_income"] / 1e7
             ocf_disp = data["operating_cash_flow"] / 1e7
             capex_disp = data["capex"] / 1e7
             fcf_disp = fcf_val / 1e7
             cash_disp = data["balance_sheet"]["TotalCashAndMarketableSecurities"]["val_raw"] / 1e7
+            cce_disp = (data["cce"] / 1e7) if data.get("cce") is not None else None
+            bank_disp = (data["bank"] / 1e7) if data.get("bank") is not None else None
+            inv_disp = (data["investments"] / 1e7) if data.get("investments") is not None else None
             debt_disp = data["balance_sheet"]["TotalDebt"]["val_raw"] / 1e7
+            lease_nc_disp = (data["lease_nc"] / 1e7) if data.get("lease_nc") is not None else None
+            lease_cur_disp = (data["lease_cur"] / 1e7) if data.get("lease_cur") is not None else None
             net_debt_disp = net_debt_val / 1e7
             unit_str = "Crore"
             net_debt_str = f"-{sym}{abs(net_debt_disp):,.0f}" if net_debt_disp < 0 else f"{sym}{net_debt_disp:,.0f}"
+
+            if op_disp is not None and l_ids.get("operating_income"):
+                op_summary_line = f"- Operating profit was {sym}{op_disp:,.0f} {unit_str} [{l_ids['operating_income']}], yielding an operating margin of {op_margin_pct:.2f}% [{l_op_margin}]."
+                op_table_row = f"| Operating Income | {sym}{op_disp:,.0f} {unit_str} | [{l_ids['operating_income']}] | Audited Financial Results Release |"
+            elif pbt_disp is not None and l_ids.get("pbt"):
+                op_summary_line = f"- Profit before exceptional items and tax (PBT) was {sym}{pbt_disp:,.0f} {unit_str} [{l_ids['pbt']}], yielding a PBT margin of {pbt_margin_pct:.2f}% [{l_pbt_margin}]. (Operating profit is not reported separately on the face of the audited consolidated financial statements)."
+                op_table_row = f"| Profit Before Exceptional Items and Tax (PBT) | {sym}{pbt_disp:,.0f} {unit_str} | [{l_ids['pbt']}] | Audited Consolidated Statement (Page 9) |\n| Operating Profit | Not reported separately | N/A | Statutory Ind AS Results |"
+            else:
+                op_summary_line = "- Operating profit: Data unavailable."
+                op_table_row = "| Operating Income | Data unavailable | N/A | Statutory Results |"
+
+            if cce_disp is not None and bank_disp is not None and inv_disp is not None and lease_nc_disp is not None and lease_cur_disp is not None:
+                cash_debt_bullet = f"- Liquid cash and current investments totaled {sym}{cash_disp:,.0f} {unit_str} [{l_ids['total_cash']}] (comprising Cash & cash equivalents {sym}{cce_disp:,.0f} Cr [{l_ids['cce']}], Other bank balances {sym}{bank_disp:,.0f} Cr [{l_ids['bank']}], and Current investments {sym}{inv_disp:,.0f} Cr [{l_ids['investments']}]) against total lease liabilities of {sym}{debt_disp:,.0f} {unit_str} [{l_ids['total_debt']}] (Non-current {sym}{lease_nc_disp:,.0f} Cr [{l_ids['lease_nc']}], Current {sym}{lease_cur_disp:,.0f} Cr [{l_ids['lease_cur']}]), maintaining a net cash buffer of {net_debt_str} {unit_str} [{l_ids['net_debt']}]."
+                detailed_bs_rows = f"""| Cash and Cash Equivalents | {sym}{cce_disp:,.0f} {unit_str} | [{l_ids['cce']}] | Audited Balance Sheet (Page 11) |
+| Other Balances with Banks | {sym}{bank_disp:,.0f} {unit_str} | [{l_ids['bank']}] | Audited Balance Sheet (Page 11) |
+| Current Investments | {sym}{inv_disp:,.0f} {unit_str} | [{l_ids['investments']}] | Audited Balance Sheet (Page 11) |
+| Total Liquid Cash & Current Investments | {sym}{cash_disp:,.0f} {unit_str} | [{l_ids['total_cash']}] | Audited Balance Sheet Sum (Page 11) |
+| Non-Current Lease Liabilities | {sym}{lease_nc_disp:,.0f} {unit_str} | [{l_ids['lease_nc']}] | Audited Balance Sheet (Page 11) |
+| Current Lease Liabilities | {sym}{lease_cur_disp:,.0f} {unit_str} | [{l_ids['lease_cur']}] | Audited Balance Sheet (Page 11) |
+| Total Lease Liabilities (Debt) | {sym}{debt_disp:,.0f} {unit_str} | [{l_ids['total_debt']}] | Audited Balance Sheet Sum (Page 11) |
+| Net Debt Buffer | -{sym}{abs(net_debt_disp):,.0f} {unit_str} | [{l_ids['net_debt']}] | Calculated: Total Debt - Liquid Cash |"""
+            else:
+                cash_debt_bullet = f"- Liquid cash and investment assets totaled {sym}{cash_disp:,.0f} {unit_str} [{l_ids['total_cash']}] against total debt obligations of {sym}{debt_disp:,.0f} {unit_str} [{l_ids['total_debt']}], maintaining a net debt position of {net_debt_str} {unit_str} [{l_ids['net_debt']}]."
+                detailed_bs_rows = f"""| Cash and Current Investments | {sym}{cash_disp:,.0f} {unit_str} | [{l_ids['total_cash']}] | Audited Balance Sheet |
+| Total Debt Obligations | {sym}{debt_disp:,.0f} {unit_str} | [{l_ids['total_debt']}] | Audited Balance Sheet |
+| Net Debt Buffer | -{sym}{abs(net_debt_disp):,.0f} {unit_str} | [{l_ids['net_debt']}] | Calculated: Total Debt - Liquid Cash |"""
 
             rep_text = f"""# Equity Research Report: {data['company_name']} ({ticker})
 **Listing Details:** {data['exchange']} | Accounting Standard: {data['accounting_standard']} | Fiscal Year-End: {data['fiscal_year_end']}  
@@ -1177,11 +1246,11 @@ class AnalystAgent:
 ### Executive Summary
 
 - {data['company_name']} reported {data['period']} total revenue of {sym}{rev_disp:,.0f} {unit_str} [{l_ids['revenue']}], reflecting YoY revenue growth of {rev_growth_pct:.2f}% [{l_growth}].
-- Operating profit was {sym}{op_disp:,.0f} {unit_str} [{l_ids['operating_income']}], yielding an operating margin of {op_margin_pct:.2f}% [{l_op_margin}].
+{op_summary_line}
 - Attributable net profit reached {sym}{net_disp:,.0f} {unit_str} [{l_ids['net_income']}], delivering a net margin of {net_margin_pct:.2f}% [{l_net_margin}].
 - Cash flow from operations was {sym}{ocf_disp:,.0f} {unit_str} [{l_ids['operating_cash_flow']}] against capital expenditures of {sym}{capex_disp:,.0f} {unit_str} [{l_ids['capex']}].
 - Free cash flow derived on a statutory basis was {sym}{fcf_disp:,.0f} {unit_str} [{l_fcf}], yielding an FCF yield of {fcf_yield_pct:.2f}% [{l_fcf_yield}].
-- Liquid cash and investment assets totaled {sym}{cash_disp:,.0f} {unit_str} [{l_ids['total_cash']}] against total debt obligations of {sym}{debt_disp:,.0f} {unit_str} [{l_ids['total_debt']}], maintaining a net debt position of {net_debt_str} {unit_str} [{l_ids['net_debt']}].
+{cash_debt_bullet}
 - Current market price trades at {sym}{data['current_price']:.2f} {curr} [{l_ids['price']}].
 - Baseline DCF fair value estimate is {sym}{dcf_fair_value:.2f} [{l_dcf}].
 - Reverse DCF model indicates current market valuation implies a 5-year FCF CAGR of {implied_growth:.2f}% [{l_implied}].
@@ -1193,14 +1262,12 @@ class AnalystAgent:
 | Financial Line Item | Audited Period Figure | Ledger Citation | Primary Source Disclosure |
 | :--- | :--- | :--- | :--- |
 | Revenue from Operations | {sym}{rev_disp:,.0f} {unit_str} | [{l_ids['revenue']}] | Audited Financial Results Release |
-| Operating Income | {sym}{op_disp:,.0f} {unit_str} | [{l_ids['operating_income']}] | Audited Financial Results Release |
+{op_table_row}
 | Attributable Net Profit | {sym}{net_disp:,.0f} {unit_str} | [{l_ids['net_income']}] | Audited Consolidated Statement |
 | Operating Cash Flow | {sym}{ocf_disp:,.0f} {unit_str} | [{l_ids['operating_cash_flow']}] | Audited Cash Flow Statement |
 | Capital Expenditures | {sym}{capex_disp:,.0f} {unit_str} | [{l_ids['capex']}] | Audited Cash Flow Statement |
 | Derived Free Cash Flow | {sym}{fcf_disp:,.0f} {unit_str} | [{l_fcf}] | Calculated: OCF - Capex |
-| Cash and Current Investments | {sym}{cash_disp:,.0f} {unit_str} | [{l_ids['total_cash']}] | Audited Balance Sheet |
-| Total Debt Obligations | {sym}{debt_disp:,.0f} {unit_str} | [{l_ids['total_debt']}] | Audited Balance Sheet |
-| Net Debt Buffer | -{sym}{abs(net_debt_disp):,.0f} {unit_str} | [{l_ids['net_debt']}] | Calculated: Total Debt - Liquid Cash |
+{detailed_bs_rows}
 
 ---
 
@@ -1227,17 +1294,17 @@ class AnalystAgent:
             unit_str = "M"
             net_debt_str = f"-{sym}{abs(net_debt_disp):,.0f}" if net_debt_disp < 0 else f"{sym}{net_debt_disp:,.0f}"
 
-        if ticker == "MSFT":
-            qual_1 = "- [UNVERIFIED: model memory] Microsoft commands global enterprise leadership across cloud computing, productivity suites, and developer platforms."
-            qual_2 = "- [UNVERIFIED: model memory] Expanding enterprise cloud migrations and AI workload adoption support recurring enterprise software margins."
-        elif ticker == "AAPL":
-            qual_1 = "- [UNVERIFIED: model memory] Apple maintains strong ecosystem retention across hardware devices and subscription services."
-            qual_2 = "- [UNVERIFIED: model memory] Installed base expansion supports recurring high-margin services revenue."
-        else:
-            qual_1 = f"- [UNVERIFIED: model memory] {data['company_name']} maintains competitive market positioning across its core operating business lines."
-            qual_2 = f"- [UNVERIFIED: model memory] Multi-year customer relationships and global distribution support continuous operations."
+            if ticker == "MSFT":
+                qual_1 = "- [UNVERIFIED: model memory] Microsoft commands global enterprise leadership across cloud computing, productivity suites, and developer platforms."
+                qual_2 = "- [UNVERIFIED: model memory] Expanding enterprise cloud migrations and AI workload adoption support recurring enterprise software margins."
+            elif ticker == "AAPL":
+                qual_1 = "- [UNVERIFIED: model memory] Apple maintains strong ecosystem retention across hardware devices and subscription services."
+                qual_2 = "- [UNVERIFIED: model memory] Installed base expansion supports recurring high-margin services revenue."
+            else:
+                qual_1 = f"- [UNVERIFIED: model memory] {data['company_name']} maintains competitive market positioning across its core operating business lines."
+                qual_2 = f"- [UNVERIFIED: model memory] Multi-year customer relationships and global distribution support continuous operations."
 
-        rep_text = f"""# Equity Research Report: {data['company_name']} ({ticker})
+            rep_text = f"""# Equity Research Report: {data['company_name']} ({ticker})
 **Listing Details:** {data['exchange']} | Accounting Standard: {data['accounting_standard']} | Fiscal Year-End: {data['fiscal_year_end']}  
 **Reporting Period:** {data['period']} | Primary Currency: {curr}  
 **Workflow Reference:** Workflow {workflow_number}  
@@ -1314,7 +1381,7 @@ class AnalystAgent:
             "current_price": data["current_price"],
             "shares_outstanding": data["shares_outstanding"],
             "base_fcf": fcf_val,
-            "base_operating_margin": op_margin_pct / 100.0,
+            "base_operating_margin": (op_margin_pct / 100.0) if op_margin_pct is not None else ((pbt_margin_pct / 100.0) if pbt_margin_pct is not None else 0.20),
             "stated_growth_rate": growth_assumption[0],
             "historical_fcf_series": data.get("historical_fcf_series"),
             "receivables_growth_yoy": rec_growth_yoy,

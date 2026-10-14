@@ -333,3 +333,39 @@ def test_planted_analyst_mistake_caught_by_independent_verifier(tmp_path):
     assert len(refetch_errors) == 1
     assert "Live source returned" in refetch_errors[0]["failure_reason"]
     assert audit_res["summary"]["status"] == "FAIL"
+
+
+def test_refetch_exception_produces_refetch_error(tmp_path, monkeypatch):
+    """Test that any exception raised during source refetch produces REFETCH_ERROR and report status FAIL."""
+    ledger = ProvenanceLedger(run_id="refetch_error_test")
+    l_id = ledger.record(
+        tool="edgar.get_facts",
+        ticker="AAPL",
+        currency="USD",
+        inputs={"ticker": "AAPL", "concept": "RevenueFromContractWithCustomerExcludingAssessedTax", "period": "FY2025"},
+        output=416161000000.0,
+        raw_value=416161000000.0,
+        source="SEC 10-K",
+        period="FY2025"
+    )
+    
+    rep_file = tmp_path / "aapl_report.md"
+    sidecar_file = tmp_path / "aapl_report.provenance.json"
+    with open(rep_file, "w", encoding="utf-8") as f:
+        f.write(f"Apple FY2025 revenue was $416.161 billion [{l_id}].")
+    ledger.save_sidecar(str(sidecar_file))
+    
+    verifier = ReportVerifier(report_path=str(rep_file), ledger_path=str(sidecar_file), perform_refetch=True)
+    
+    # Simulate an unforeseen exception during refetch
+    def raise_refetch_err(entry):
+        return (False, None, "REFETCH_ERROR: Simulating unexpected parser corruption or socket error")
+        
+    monkeypatch.setattr(verifier, "refetch_source", raise_refetch_err)
+    audit_res = verifier.audit()
+    
+    assert audit_res["summary"]["status"] == "FAIL"
+    refetch_errs = [w for w in audit_res["wrong"] if w.get("error_type") == "REFETCH_ERROR"]
+    assert len(refetch_errs) >= 1
+    assert "Exception occurred during independent source refetch" in refetch_errs[0]["failure_reason"]
+

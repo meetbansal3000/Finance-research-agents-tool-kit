@@ -192,3 +192,62 @@ def test_unauthorized_domain_fails(tmp_path):
     assert len(domain_errors) >= 1
     assert "not on an allowlisted domain" in domain_errors[0]["failure_reason"]
 
+
+def test_source_naming_missing_file_fails(tmp_path):
+    """A ledger entry whose source names a nonexistent filing document must fail with MISSING_DOCUMENT_FILE."""
+    ledger = ProvenanceLedger(run_id="test_missing_doc_source")
+    l_id = ledger.record(
+        tool="tools.filing.extract_metric",
+        inputs={"ticker": "TEST", "metric": "Revenue"},
+        output=500.0,
+        source="library/filings/NONEXISTENT_10K.htm (Page 1)",
+        ticker="TEST",
+        currency="USD",
+        raw_value=500.0,
+        period="FY2025"
+    )
+    
+    report_file = tmp_path / "test_report.md"
+    report_file.write_text(f"# Test Report\nRevenue was $500 [{l_id}].", encoding="utf-8")
+    sidecar_file = tmp_path / "test_report.provenance.json"
+    ledger.save_sidecar(str(sidecar_file))
+    
+    verifier = ReportVerifier(report_path=str(report_file), ledger_path=str(sidecar_file), perform_refetch=False)
+    audit_res = verifier.audit()
+    
+    assert audit_res["summary"]["status"] == "FAIL"
+    missing_errors = [w for w in audit_res["wrong"] if w.get("error_type") == "MISSING_DOCUMENT_FILE"]
+    assert len(missing_errors) >= 1
+    assert "does not exist on disk" in missing_errors[0]["failure_reason"]
+
+
+def test_doc_path_naming_missing_file_fails(tmp_path):
+    """A ledger entry whose doc_path points to a missing file must fail with MISSING_DOCUMENT_FILE."""
+    missing_path = tmp_path / "library" / "filings" / "MISSING_REPORT.pdf"
+    ledger = ProvenanceLedger(run_id="test_missing_doc_path")
+    l_id = ledger.record(
+        tool="tools.filing.extract_metric",
+        inputs={"ticker": "TEST", "metric": "Revenue", "doc_path": str(missing_path)},
+        output=500.0,
+        source="Annual Report filing",
+        ticker="TEST",
+        currency="USD",
+        raw_value=500.0,
+        period="FY2025",
+        doc_path=str(missing_path)
+    )
+    
+    report_file = tmp_path / "test_report.md"
+    report_file.write_text(f"# Test Report\nRevenue was $500 [{l_id}].", encoding="utf-8")
+    sidecar_file = tmp_path / "test_report.provenance.json"
+    ledger.save_sidecar(str(sidecar_file))
+    
+    verifier = ReportVerifier(report_path=str(report_file), ledger_path=str(sidecar_file), perform_refetch=False)
+    audit_res = verifier.audit()
+    
+    assert audit_res["summary"]["status"] == "FAIL"
+    missing_errors = [w for w in audit_res["wrong"] if w.get("error_type") == "MISSING_DOCUMENT_FILE"]
+    assert len(missing_errors) >= 1
+    assert "does not exist on disk" in missing_errors[0]["failure_reason"]
+
+

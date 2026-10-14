@@ -210,7 +210,15 @@ class SkepticAgent:
         l_implied = self.ledger.record(
             tool="tools.calc.reverse_dcf",
             ticker=ticker,
-            inputs={"current_price": current_price, "base_fcf": base_fcf, "WACC": wacc, "net_debt": net_debt},
+            inputs={
+                "current_price": current_price,
+                "base_fcf": base_fcf,
+                "shares_outstanding": shares_outstanding,
+                "discount_rate": wacc,
+                "terminal_growth_rate": terminal_g,
+                "projection_years": 5,
+                "net_debt": net_debt
+            },
             output=implied_cagr,
             raw_value=implied_cagr,
             source="tools.calc.dcf.reverse_dcf",
@@ -232,7 +240,14 @@ class SkepticAgent:
             tool="tools.calc.dcf",
             ticker=ticker,
             currency=currency,
-            inputs={"growth": stated_growth_rate, "wacc": wacc, "term_g": terminal_g, "net_debt": net_debt},
+            inputs={
+                "base_fcf": base_fcf,
+                "growth_rates": base_growth_rates,
+                "discount_rate": wacc,
+                "terminal_growth_rate": terminal_g,
+                "shares_outstanding": shares_outstanding,
+                "net_debt": net_debt
+            },
             output=base_fair_val,
             raw_value=base_fair_val,
             source="tools.calc.dcf.dcf",
@@ -257,7 +272,14 @@ class SkepticAgent:
             tool="tools.calc.dcf",
             ticker=ticker,
             currency=currency,
-            inputs={"stressed_fcf": stressed_fcf_margin, "margin_delta_bps": -200, "net_debt": net_debt},
+            inputs={
+                "base_fcf": stressed_fcf_margin,
+                "growth_rates": base_growth_rates,
+                "discount_rate": wacc,
+                "terminal_growth_rate": terminal_g,
+                "shares_outstanding": shares_outstanding,
+                "net_debt": net_debt
+            },
             output=margin_stressed_val,
             raw_value=margin_stressed_val,
             source="tools.calc.dcf.dcf",
@@ -289,7 +311,14 @@ class SkepticAgent:
             tool="tools.calc.dcf",
             ticker=ticker,
             currency=currency,
-            inputs={"wacc_stressed": wacc + 0.01, "net_debt": net_debt},
+            inputs={
+                "base_fcf": base_fcf,
+                "growth_rates": base_growth_rates,
+                "discount_rate": wacc + 0.01,
+                "terminal_growth_rate": terminal_g,
+                "shares_outstanding": shares_outstanding,
+                "net_debt": net_debt
+            },
             output=wacc_stressed_val,
             raw_value=wacc_stressed_val,
             source="tools.calc.dcf.dcf",
@@ -322,7 +351,14 @@ class SkepticAgent:
             tool="tools.calc.dcf",
             ticker=ticker,
             currency=currency,
-            inputs={"half_growth": stated_growth_rate * 0.5, "net_debt": net_debt},
+            inputs={
+                "base_fcf": base_fcf,
+                "growth_rates": half_growth_rates,
+                "discount_rate": wacc,
+                "terminal_growth_rate": terminal_g,
+                "shares_outstanding": shares_outstanding,
+                "net_debt": net_debt
+            },
             output=half_growth_val,
             raw_value=half_growth_val,
             source="tools.calc.dcf.dcf",
@@ -377,7 +413,14 @@ class SkepticAgent:
                     tool="tools.calc.dcf",
                     ticker=ticker,
                     currency=currency,
-                    inputs={"growth": g_val, "wacc": w_val, "net_debt": net_debt},
+                    inputs={
+                        "base_fcf": base_fcf,
+                        "growth_rates": [g_val] * 5,
+                        "discount_rate": w_val,
+                        "terminal_growth_rate": terminal_g,
+                        "shares_outstanding": shares_outstanding,
+                        "net_debt": net_debt
+                    },
                     output=cell_fv,
                     raw_value=cell_fv,
                     source="tools.calc.dcf.dcf",

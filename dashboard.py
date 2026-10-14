@@ -156,6 +156,7 @@ nav_choice = st.sidebar.radio(
         "📈 TradingView & Market Charts",
         "🎛️ Interactive DCF Valuation",
         "🤖 Autonomous Research Committee",
+        "🧠 Google Antigravity Agent",
         "⚡ NVIDIA cuOpt Portfolio Optimizer",
         "🚚 Supply Chain & Margins (cuOpt)",
         "📓 Decision Journal & Review",
@@ -599,6 +600,244 @@ elif nav_choice == "🤖 Autonomous Research Committee":
                     st.info("Research complete. Status: " + str(res_pipeline.get("status", "COMPLETE")))
             except Exception as e:
                 st.error(f"Error during autonomous research: {str(e)}")
+
+
+# =============================================================================
+# VIEW: GOOGLE ANTIGRAVITY RESEARCH AGENT
+# =============================================================================
+elif nav_choice == "🧠 Google Antigravity Agent":
+    st.markdown('<div class="header-style">🧠 Google Antigravity Financial Research Agent</div>', unsafe_allow_html=True)
+    st.markdown("Stateful, multi-turn AI research agent powered by the **Google Antigravity Python SDK (`google-antigravity`)** and **Google Gemini**.")
+
+    # Status & API Configuration Check
+    env_api_key = os.environ.get("GEMINI_API_KEY", "")
+    has_api_key = bool(env_api_key.strip())
+
+    c_stat1, c_stat2 = st.columns([2, 1])
+    with c_stat1:
+        if has_api_key:
+            st.success("🟢 Google Gemini API Connected (GEMINI_API_KEY configured)")
+        else:
+            st.warning("🟡 GEMINI_API_KEY is not set in `.env`. Required for conversational intelligence.")
+    with c_stat2:
+        st.info("⚡ Framework: `google-antigravity v0.1.22`")
+
+    with st.expander("⚙️ Gemini API Key Settings & Setup", expanded=not has_api_key):
+        custom_key = st.text_input("Enter Gemini API Key (or configure in `.env`)", value=env_api_key, type="password", help="Get a free key from Google AI Studio: https://aistudio.google.com/app/api-keys")
+        if custom_key and custom_key != env_api_key:
+            os.environ["GEMINI_API_KEY"] = custom_key
+            st.success("API key updated for current session!")
+
+    # Top Tabs
+    ag_tab1, ag_tab2, ag_tab3, ag_tab4 = st.tabs([
+        "💬 Conversational Agent",
+        "📊 Live Quotes & Volatility",
+        "📑 Fundamental Health & Margins",
+        "💼 Portfolio & Allocation"
+    ])
+
+    # TAB 1: Conversational Agent
+    with ag_tab1:
+        st.subheader("💬 Ask the Antigravity Finance Agent")
+        st.caption("Ask questions, request multi-stock fundamental comparisons, or manage your portfolio through natural language.")
+
+        col_q1, col_q2, col_q3, col_q4 = st.columns(4)
+        sample_query = None
+        if col_q1.button("🔍 Snapshot: NVDA", use_container_width=True):
+            sample_query = "Give me a full financial snapshot, P/E ratio, and 1-month volatility for NVDA."
+        if col_q2.button("⚖️ Compare: GOOGL vs MSFT", use_container_width=True):
+            sample_query = "Compare revenue growth, gross margins, and debt-to-equity between GOOGL and MSFT."
+        if col_q3.button("📈 1Y Volatility: AAPL", use_container_width=True):
+            sample_query = "Analyze 1-year historical return, price high/low, and annualized volatility for AAPL."
+        if col_q4.button("💼 Allocate: $50k Low-Risk", use_container_width=True):
+            sample_query = "Calculate a low-risk $50,000 allocation across GOOGL, MSFT, and AAPL using inverse volatility."
+
+        user_query = st.text_area("Your Financial Research Prompt:", value=sample_query or "", height=100, placeholder="e.g., Provide a valuation summary for GOOGL including trailing P/E, 52-week bounds, and profit margins.")
+
+        if st.button("🚀 Ask Antigravity Agent", type="primary"):
+            if not user_query.strip():
+                st.warning("Please enter a research query.")
+            elif not os.environ.get("GEMINI_API_KEY"):
+                st.error("Please provide a Gemini API Key in the settings expander above to chat with the agent.")
+            else:
+                with st.spinner("Antigravity Agent analyzing financial tools and generating report..."):
+                    try:
+                        import concurrent.futures
+                        import asyncio
+                        from agents.antigravity_agent import build_config
+                        from google.antigravity import Agent
+
+                        def _call_agent():
+                            async def _async_chat():
+                                config = build_config(interactive=False)
+                                async with Agent(config) as ag:
+                                    resp = await ag.chat(user_query)
+                                    return await resp.text()
+                            return asyncio.run(_async_chat())
+
+                        with concurrent.futures.ThreadPoolExecutor(max_workers=1) as executor:
+                            future = executor.submit(_call_agent)
+                            agent_output = future.result(timeout=60)
+
+                        st.divider()
+                        st.markdown("### 📋 Antigravity Research Memorandum")
+                        st.markdown(agent_output)
+
+                    except Exception as e:
+                        st.error(f"Agent Execution Error: {str(e)}")
+
+    # TAB 2: Live Quotes & Volatility (Antigravity Tools)
+    with ag_tab2:
+        st.subheader("📊 Real-Time Market Data & Volatility Engine")
+        st.caption("Powered by `tools.antigravity_tools.get_stock_quote` and `get_historical_performance`.")
+        
+        q_col1, q_col2 = st.columns([2, 1])
+        with q_col1:
+            q_ticker = st.text_input("Enter Ticker Symbol", value="GOOGL", key="ag_q_ticker").strip().upper()
+        with q_col2:
+            q_period = st.selectbox("Historical Horizon", ["5d", "1mo", "3mo", "6mo", "1y", "2y", "5y"], index=1, key="ag_q_period")
+
+        if st.button("Fetch Live Data & Volatility", key="btn_fetch_quote"):
+            from tools.antigravity_tools import get_stock_quote, get_historical_performance
+            with st.spinner(f"Retrieving market data for {q_ticker}..."):
+                quote_data = get_stock_quote(q_ticker)
+                hist_data = get_historical_performance(q_ticker, q_period)
+
+                if "error" in quote_data:
+                    st.error(quote_data["error"])
+                else:
+                    km1, km2, km3, km4 = st.columns(4)
+                    curr_p = quote_data.get("current_price")
+                    chg_pct = quote_data.get("change_percent")
+                    km1.metric("Current Price", f"${curr_p:,.2f}" if curr_p else "N/A", chg_pct or None)
+                    km2.metric("P/E Ratio", f"{quote_data.get('pe_ratio')}" if quote_data.get("pe_ratio") else "N/A")
+                    km3.metric("Forward P/E", f"{quote_data.get('forward_pe')}" if quote_data.get("forward_pe") else "N/A")
+                    
+                    mcap = quote_data.get("market_cap")
+                    if mcap:
+                        mcap_str = f"${mcap/1e12:.2f}T" if mcap >= 1e12 else f"${mcap/1e9:.2f}B"
+                    else:
+                        mcap_str = "N/A"
+                    km4.metric("Market Cap", mcap_str)
+
+                    st.markdown("#### 📈 Historical Performance & Risk")
+                    if "error" not in hist_data:
+                        hm1, hm2, hm3, hm4 = st.columns(4)
+                        hm1.metric(f"{q_period.upper()} Return", hist_data.get("total_return_percent", "N/A"))
+                        hm2.metric("Annualized Volatility", hist_data.get("annualized_volatility", "N/A"))
+                        hm3.metric(f"Period High", f"${hist_data.get('period_high', 0):,.2f}")
+                        hm4.metric(f"Period Low", f"${hist_data.get('period_low', 0):,.2f}")
+
+    # TAB 3: Deep Fundamentals
+    with ag_tab3:
+        st.subheader("📑 Fundamental Health & Margins")
+        st.caption("Powered by `tools.antigravity_tools.get_financial_metrics`.")
+        
+        f_ticker = st.text_input("Enter Ticker for Fundamentals", value="NVDA", key="ag_f_ticker").strip().upper()
+        if st.button("Inspect Financial Health", key="btn_fetch_fund"):
+            from tools.antigravity_tools import get_financial_metrics
+            with st.spinner(f"Auditing balance sheet & margins for {f_ticker}..."):
+                f_data = get_financial_metrics(f_ticker)
+                if "error" in f_data:
+                    st.error(f_data["error"])
+                else:
+                    f_col1, f_col2 = st.columns(2)
+                    with f_col1:
+                        st.markdown("##### 💵 Growth & Profitability")
+                        st.write(f"**Company Name:** {f_data.get('company_name')}")
+                        st.write(f"**Revenue Growth (YoY):** {f_data.get('revenue_growth_yoy') or 'N/A'}")
+                        st.write(f"**Gross Margins:** {f_data.get('gross_margins') or 'N/A'}")
+                        st.write(f"**Operating Margins:** {f_data.get('operating_margins') or 'N/A'}")
+                        st.write(f"**Net Profit Margins:** {f_data.get('profit_margins') or 'N/A'}")
+                        st.write(f"**Return on Equity (ROE):** {f_data.get('return_on_equity_roe') or 'N/A'}")
+                    with f_col2:
+                        st.markdown("##### 🛡️ Solvency & Valuation")
+                        st.write(f"**Debt to Equity:** {f_data.get('debt_to_equity') or 'N/A'}")
+                        st.write(f"**Current Ratio:** {f_data.get('current_ratio') or 'N/A'}")
+                        st.write(f"**Trailing P/E:** {f_data.get('trailing_pe') or 'N/A'}")
+                        st.write(f"**Forward P/E:** {f_data.get('forward_pe') or 'N/A'}")
+                        st.write(f"**Beta:** {f_data.get('beta') or 'N/A'}")
+
+    # TAB 4: Portfolio & Capital Allocation
+    with ag_tab4:
+        st.subheader("💼 Stateful Portfolio Management & Allocation")
+        st.caption("Track positions across turns using `manage_portfolio` and model allocations.")
+
+        if "ag_portfolio" not in st.session_state:
+            st.session_state["ag_portfolio"] = {"GOOGL": {"shares": 10.0, "cost_basis": 150.0}, "MSFT": {"shares": 5.0, "cost_basis": 400.0}}
+
+        p_tab1, p_tab2 = st.tabs(["Active Portfolio Holdings", "Rebalancing & Allocation Model"])
+        
+        with p_tab1:
+            st.markdown("##### ➕ Add / Update Position")
+            c_pos1, c_pos2, c_pos3, c_pos4 = st.columns(4)
+            with c_pos1:
+                new_sym = st.text_input("Ticker", value="AAPL", key="pos_sym").strip().upper()
+            with c_pos2:
+                new_shares = st.number_input("Shares", min_value=0.1, value=10.0, step=1.0, key="pos_sh")
+            with c_pos3:
+                new_cost = st.number_input("Cost Basis ($/share)", min_value=0.1, value=220.0, step=1.0, key="pos_cost")
+            with c_pos4:
+                st.write("")
+                st.write("")
+                if st.button("Add to Portfolio", key="btn_add_pos"):
+                    st.session_state["ag_portfolio"][new_sym] = {"shares": new_shares, "cost_basis": new_cost}
+                    st.success(f"Added {new_shares} shares of {new_sym}!")
+
+            # Evaluate holdings
+            import yfinance as yf
+            holdings_rows = []
+            tot_val = 0.0
+            tot_cost = 0.0
+            for sym, pos in st.session_state["ag_portfolio"].items():
+                sh = pos["shares"]
+                cb = pos["cost_basis"]
+                try:
+                    cp = yf.Ticker(sym).fast_info.get("last_price") or cb
+                except Exception:
+                    cp = cb
+                m_val = sh * cp
+                c_val = sh * cb
+                tot_val += m_val
+                tot_cost += c_val
+                holdings_rows.append({
+                    "Symbol": sym,
+                    "Shares": sh,
+                    "Cost Basis": f"${cb:,.2f}",
+                    "Current Price": f"${cp:,.2f}",
+                    "Market Value": f"${m_val:,.2f}",
+                    "Unrealized P&L": f"${(m_val - c_val):,.2f}",
+                    "P&L %": f"{((m_val - c_val) / c_val * 100):.2f}%" if c_val > 0 else "0.0%"
+                })
+
+            if holdings_rows:
+                st.table(pd.DataFrame(holdings_rows))
+                col_pt1, col_pt2, col_pt3 = st.columns(3)
+                col_pt1.metric("Total Portfolio Value", f"${tot_val:,.2f}")
+                col_pt2.metric("Total Cost Basis", f"${tot_cost:,.2f}")
+                col_pt3.metric("Total Unrealized P&L", f"${(tot_val - tot_cost):,.2f}", f"{((tot_val - tot_cost) / tot_cost * 100):.2f}%" if tot_cost > 0 else None)
+            else:
+                st.info("No active holdings in portfolio.")
+
+        with p_tab2:
+            st.markdown("##### ⚖️ Quantitative Basket Allocation Calculator")
+            c_al1, c_al2, c_al3 = st.columns([2, 1, 1])
+            with c_al1:
+                al_symbols = st.text_input("Symbols to Allocate", value="GOOGL, MSFT, AAPL, NVDA", key="al_syms")
+            with c_al2:
+                al_cap = st.number_input("Total Capital ($)", value=50000.0, step=5000.0, key="al_cap")
+            with c_al3:
+                al_strat = st.selectbox("Strategy", ["equal (Equal Weight)", "market_cap (Market Cap Weight)", "low_risk (Inverse Volatility / Beta)"], key="al_strat")
+
+            strat_code = "equal" if "equal" in al_strat else ("market_cap" if "market_cap" in al_strat else "low_risk")
+            if st.button("Calculate Target Allocation", key="btn_calc_al"):
+                from tools.antigravity_tools import calculate_asset_allocation
+                syms_list = [s.strip().upper() for s in al_symbols.split(",") if s.strip()]
+                al_res = calculate_asset_allocation(syms_list, al_cap, strategy=strat_code)
+                if "error" in al_res:
+                    st.error(al_res["error"])
+                else:
+                    st.dataframe(pd.DataFrame(al_res["allocations"]), use_container_width=True)
 
 
 # =============================================================================

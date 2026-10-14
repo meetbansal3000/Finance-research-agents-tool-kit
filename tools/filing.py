@@ -135,164 +135,312 @@ class FilingExtractor:
 
         doc_path = ext_data["doc_path"]
         meta = ext_data["meta"]
-        pages = {p["page_number"]: p["text"] for p in ext_data["pages"]}
 
-        # Page 9: Audited Consolidated Statement of Financial Results (P&L)
-        p9_text = pages.get(9, "")
-        # Page 11: Audited Consolidated Balance Sheet
-        p11_text = pages.get(11, "")
-        # Page 14: Audited Consolidated Statement of Cash Flows
-        p14_text = pages.get(14, "")
+        # Locate statement pages dynamically by searching the extracted text for statement titles
+        p_results_text, p_results_num = "", None
+        p_bs_text, p_bs_num = "", None
+        p_cf_text, p_cf_num = "", None
 
-        if not p9_text or not p14_text:
+        for p_info in ext_data["pages"]:
+            t = p_info["text"]
+            p_num = p_info["page_number"]
+            if not p_results_num and re.search(r'audited consolidated statement of financial results', t, re.IGNORECASE):
+                p_results_text = t
+                p_results_num = p_num
+            if not p_bs_num and re.search(r'audited consolidated balance sheet', t, re.IGNORECASE):
+                p_bs_text = t
+                p_bs_num = p_num
+            if not p_cf_num and re.search(r'audited consolidated statement of cash flows', t, re.IGNORECASE):
+                p_cf_text = t
+                p_cf_num = p_num
+
+        if not p_results_text or not p_bs_text or not p_cf_text:
             return {
                 "ticker": "TCS.NS",
                 "status": "data unavailable",
-                "error": "Required financial statements not located in PDF",
+                "error": "Required financial statements (P&L, Balance Sheet, Cash Flows) not located dynamically in PDF",
                 "metrics": {}
             }
 
-        # 1. P&L Items from Page 9
-        # Revenue from operations 70,698 (Q4) 67,087 (Q3) 64,479 (Q4FY25) 267,021 (FY26) 2,55,324 (FY25)
-        m_rev = re.search(r'Revenue from operations\s+([0-9,]+)\s+([0-9,]+)\s+([0-9,]+)\s+([0-9,]+)\s+([0-9,]+)', p9_text)
-        if not m_rev:
-            return {"ticker": "TCS.NS", "status": "data unavailable", "error": "Revenue pattern not matched", "metrics": {}}
+        # 1. P&L Items
+        # Revenue from operations
+        m_rev = re.search(r'Revenue from operations\s+([0-9,]+)\s+([0-9,]+)\s+([0-9,]+)\s+([0-9,]+)\s+([0-9,]+)', p_results_text)
+        rev_fy26 = float(m_rev.group(4).replace(",", "")) if m_rev else None
+        rev_fy25 = float(m_rev.group(5).replace(",", "")) if m_rev else None
 
-        rev_fy26 = float(m_rev.group(4).replace(",", ""))
-        rev_fy25 = float(m_rev.group(5).replace(",", ""))
+        # Profit before exceptional items and tax: PBT (not operating income)
+        m_pbt = re.search(r'PROFIT BEFORE EXCEPTIONAL ITEMS AND TAX\s+([0-9,]+)\s+([0-9,]+)\s+([0-9,]+)\s+([0-9,]+)\s+([0-9,]+)', p_results_text)
+        pbt_fy26 = float(m_pbt.group(4).replace(",", "")) if m_pbt else None
+        pbt_fy25 = float(m_pbt.group(5).replace(",", "")) if m_pbt else None
 
-        # Profit before exceptional items and tax: 18,362 17,469 16,402 70,013 65,331
-        m_ebit = re.search(r'PROFIT BEFORE EXCEPTIONAL ITEMS AND TAX\s+([0-9,]+)\s+([0-9,]+)\s+([0-9,]+)\s+([0-9,]+)\s+([0-9,]+)', p9_text)
-        pbit_fy26 = float(m_ebit.group(4).replace(",", "")) if m_ebit else 70013.0
+        # Profit for the year attributable to Shareholders of the Company
+        m_np_att = re.search(r'Shareholders of the Company\s+([0-9,]+)\s+([0-9,]+)\s+([0-9,]+)\s+([0-9,]+)\s+([0-9,]+)', p_results_text)
+        np_att_fy26 = float(m_np_att.group(4).replace(",", "")) if m_np_att else None
+        np_att_fy25 = float(m_np_att.group(5).replace(",", "")) if m_np_att else None
 
-        # Profit for the year: 13,784 10,720 12,293 49,454 48,797
-        m_np = re.search(r'PROFIT FOR THE YEAR\s+([0-9,]+)\s+([0-9,]+)\s+([0-9,]+)\s+([0-9,]+)\s+([0-9,]+)', p9_text)
-        np_fy26 = float(m_np.group(4).replace(",", "")) if m_np else 49454.0
-        np_fy25 = float(m_np.group(5).replace(",", "")) if m_np else 48797.0
+        # Total consolidated profit for the year (for reconciliation against attributable profit)
+        m_np_tot = re.search(r'PROFIT FOR THE YEAR\s+([0-9,]+)\s+([0-9,]+)\s+([0-9,]+)\s+([0-9,]+)\s+([0-9,]+)', p_results_text)
+        np_tot_fy26 = float(m_np_tot.group(4).replace(",", "")) if m_np_tot else None
+        np_tot_fy25 = float(m_np_tot.group(5).replace(",", "")) if m_np_tot else None
 
-        # 2. Cash Flow Items from Page 14
-        m_ocf = re.search(r'Net cash flows generated from operating activities\s+([0-9,]+)\s+([0-9,]+)', p14_text)
-        ocf_fy26 = float(m_ocf.group(1).replace(",", "")) if m_ocf else 52094.0
+        # 2. Cash Flow Items
+        m_ocf = re.search(r'Net cash flows generated from operating activities\s+([0-9,]+)\s+([0-9,]+)', p_cf_text)
+        ocf_fy26 = float(m_ocf.group(1).replace(",", "")) if m_ocf else None
+        ocf_fy25 = float(m_ocf.group(2).replace(",", "")) if m_ocf else None
 
-        m_ppe = re.search(r'Payment for purchase of property, plant and equipment\s+\(([0-9,]+)\)\s+\(([0-9,]+)\)', p14_text)
-        ppe_capex = float(m_ppe.group(1).replace(",", "")) if m_ppe else 3670.0
+        m_ppe = re.search(r'Payment for purchase of property, plant and equipment\s+\(([0-9,]+)\)\s+\(([0-9,]+)\)', p_cf_text)
+        ppe_capex = float(m_ppe.group(1).replace(",", "")) if m_ppe else None
 
-        m_int = re.search(r'Payment for purchase of intangible assets\s+\(([0-9,]+)\)\s+\(([0-9,]+)\)', p14_text)
-        int_capex = float(m_int.group(1).replace(",", "")) if m_int else 408.0
+        m_int = re.search(r'Payment for purchase of intangible assets\s+\(([0-9,]+)\)\s+\(([0-9,]+)\)', p_cf_text)
+        int_capex = float(m_int.group(1).replace(",", "")) if m_int else None
 
-        total_capex = ppe_capex + int_capex
-        derived_fcf = ocf_fy26 - total_capex
+        if ppe_capex is not None and int_capex is not None:
+            total_capex = ppe_capex + int_capex
+        else:
+            total_capex = None
 
-        # 3. Balance Sheet Items from Page 11
-        m_cash = re.search(r'Cash and cash equivalents\s+([0-9,]+)\s+([0-9,]+)', p11_text)
-        cash_fy26 = float(m_cash.group(1).replace(",", "")) if m_cash else 6417.0
+        if ocf_fy26 is not None and total_capex is not None:
+            derived_fcf = ocf_fy26 - total_capex
+        else:
+            derived_fcf = None
 
-        # Lease liabilities: non-current 9,453 + current 1,830 = 11,283
-        lease_nc = 9453.0
-        lease_cur = 1830.0
-        total_debt = lease_nc + lease_cur
-        net_debt = total_debt - cash_fy26
+        # 3. Balance Sheet Items
+        # Cash and cash equivalents
+        m_cce = re.search(r'Cash and cash equivalents\s+([0-9,]+)\s+([0-9,]+)', p_bs_text)
+        cce_fy26 = float(m_cce.group(1).replace(",", "")) if m_cce else None
+        cce_fy25 = float(m_cce.group(2).replace(",", "")) if m_cce else None
 
-        margin_pct = round((pbit_fy26 / rev_fy26) * 100, 2)
+        # Other balances with banks
+        m_bank = re.search(r'Other balances with banks\s+([0-9,]+)\s+([0-9,]+)', p_bs_text)
+        bank_fy26 = float(m_bank.group(1).replace(",", "")) if m_bank else None
+        bank_fy25 = float(m_bank.group(2).replace(",", "")) if m_bank else None
+
+        # Current Investments
+        inv_matches = list(re.finditer(r'Investments\s+([0-9,]+)\s+([0-9,]+)', p_bs_text))
+        if len(inv_matches) >= 2:
+            m_cur_inv = inv_matches[1]
+            cur_inv_fy26 = float(m_cur_inv.group(1).replace(",", ""))
+            cur_inv_fy25 = float(m_cur_inv.group(2).replace(",", ""))
+        else:
+            m_cur_inv = None
+            cur_inv_fy26 = None
+            cur_inv_fy25 = None
+
+        # Total liquid assets (Cash + Bank balances + Current investments)
+        if cce_fy26 is not None and bank_fy26 is not None and cur_inv_fy26 is not None:
+            total_cash_inv = cce_fy26 + bank_fy26 + cur_inv_fy26
+        else:
+            total_cash_inv = None
+
+        # Lease liabilities (dynamically extracted via regex from non-current and current liabilities)
+        lease_matches = list(re.finditer(r'Lease liabilities\s+([0-9,]+)\s+([0-9,]+)', p_bs_text))
+        if len(lease_matches) >= 2:
+            m_lease_nc = lease_matches[0]
+            m_lease_cur = lease_matches[1]
+            lease_nc = float(m_lease_nc.group(1).replace(",", ""))
+            lease_cur = float(m_lease_cur.group(1).replace(",", ""))
+            total_debt = lease_nc + lease_cur
+        else:
+            m_lease_nc = None
+            m_lease_cur = None
+            lease_nc = None
+            lease_cur = None
+            total_debt = None
+
+        # Net Debt: Total Debt - Total Liquid Cash & Investments
+        if total_debt is not None and total_cash_inv is not None:
+            net_debt = total_debt - total_cash_inv
+        else:
+            net_debt = None
+
+        # Trade Receivables (Billed non-current + Billed current)
+        billed_matches = list(re.finditer(r'Billed\s+([0-9,]+)\s+([0-9,]+)', p_bs_text))
+        if len(billed_matches) >= 2:
+            m_billed_nc = billed_matches[0]
+            m_billed_cur = billed_matches[1]
+            tr_nc_fy26 = float(m_billed_nc.group(1).replace(",", ""))
+            tr_cur_fy26 = float(m_billed_cur.group(1).replace(",", ""))
+            tr_total_fy26 = tr_nc_fy26 + tr_cur_fy26
+
+            tr_nc_fy25 = float(m_billed_nc.group(2).replace(",", ""))
+            tr_cur_fy25 = float(m_billed_cur.group(2).replace(",", ""))
+            tr_total_fy25 = tr_nc_fy25 + tr_cur_fy25
+        else:
+            m_billed_nc = None
+            m_billed_cur = None
+            tr_total_fy26 = None
+            tr_total_fy25 = None
+
+        p_res_label = f"Page {p_results_num} (Audited Consolidated Statement of Financial Results)"
+        p_bs_label = f"Page {p_bs_num} (Audited Consolidated Balance Sheet)"
+        p_cf_label = f"Page {p_cf_num} (Audited Consolidated Statement of Cash Flows)"
 
         metrics = {
             "Revenue": {
                 "val_crore": rev_fy26,
-                "val_raw": rev_fy26 * 1e7,
-                "page": "Page 9 (Audited Consolidated Statement of Financial Results)",
-                "quote": f"Revenue from operations {m_rev.group(0)}"
+                "val_raw": rev_fy26 * 1e7 if rev_fy26 is not None else None,
+                "page": p_res_label,
+                "quote": m_rev.group(0) if m_rev else "data unavailable"
             },
             "PriorRevenue": {
                 "val_crore": rev_fy25,
-                "val_raw": rev_fy25 * 1e7,
-                "page": "Page 9 (Audited Consolidated Statement of Financial Results)",
-                "quote": f"Revenue from operations (FY25 column) ₹{rev_fy25:,.0f} crore"
+                "val_raw": rev_fy25 * 1e7 if rev_fy25 is not None else None,
+                "page": p_res_label,
+                "quote": m_rev.group(0) if m_rev else "data unavailable"
+            },
+            "PBT_Before_Exceptional": {
+                "val_crore": pbt_fy26,
+                "val_raw": pbt_fy26 * 1e7 if pbt_fy26 is not None else None,
+                "page": p_res_label,
+                "quote": m_pbt.group(0) if m_pbt else "data unavailable"
+            },
+            "PriorPBT_Before_Exceptional": {
+                "val_crore": pbt_fy25,
+                "val_raw": pbt_fy25 * 1e7 if pbt_fy25 is not None else None,
+                "page": p_res_label,
+                "quote": m_pbt.group(0) if m_pbt else "data unavailable"
             },
             "OperatingIncome": {
-                "val_crore": pbit_fy26,
-                "val_raw": pbit_fy26 * 1e7,
-                "page": "Page 9 (Audited Consolidated Statement of Financial Results)",
-                "quote": f"PROFIT BEFORE EXCEPTIONAL ITEMS AND TAX {m_ebit.group(0) if m_ebit else '70,013'}"
+                "val_crore": None,
+                "val_raw": None,
+                "page": p_res_label,
+                "quote": "Operating profit is not reported separately on the face of the audited consolidated statement of financial results."
             },
             "HeadlineOperatingMargin": {
-                "val_pct": margin_pct,
-                "val_raw": margin_pct,
-                "page": "Page 9 (Derived: PBIT / Revenue)",
-                "quote": f"Operating margin computed from audited figures: ₹{pbit_fy26:,.0f} Cr / ₹{rev_fy26:,.0f} Cr = {margin_pct}%"
+                "val_pct": None,
+                "val_raw": None,
+                "page": p_res_label,
+                "quote": "Operating profit is not reported separately on the face of the audited consolidated statement of financial results."
             },
             "AttributableNetProfit": {
-                "val_crore": np_fy26,
-                "val_raw": np_fy26 * 1e7,
-                "page": "Page 9 (Audited Consolidated Statement of Financial Results)",
-                "quote": f"PROFIT FOR THE YEAR {m_np.group(0) if m_np else '49,454'}"
+                "val_crore": np_att_fy26,
+                "val_raw": np_att_fy26 * 1e7 if np_att_fy26 is not None else None,
+                "page": p_res_label,
+                "quote": m_np_att.group(0) if m_np_att else "data unavailable"
             },
             "PriorAttributableNetProfit": {
-                "val_crore": np_fy25,
-                "val_raw": np_fy25 * 1e7,
-                "page": "Page 9 (Audited Consolidated Statement of Financial Results)",
-                "quote": f"PROFIT FOR THE YEAR (FY25 column) ₹{np_fy25:,.0f} crore"
+                "val_crore": np_att_fy25,
+                "val_raw": np_att_fy25 * 1e7 if np_att_fy25 is not None else None,
+                "page": p_res_label,
+                "quote": m_np_att.group(0) if m_np_att else "data unavailable"
+            },
+            "TotalConsolidatedProfit": {
+                "val_crore": np_tot_fy26,
+                "val_raw": np_tot_fy26 * 1e7 if np_tot_fy26 is not None else None,
+                "page": p_res_label,
+                "quote": m_np_tot.group(0) if m_np_tot else "data unavailable"
+            },
+            "PriorTotalConsolidatedProfit": {
+                "val_crore": np_tot_fy25,
+                "val_raw": np_tot_fy25 * 1e7 if np_tot_fy25 is not None else None,
+                "page": p_res_label,
+                "quote": m_np_tot.group(0) if m_np_tot else "data unavailable"
             },
             "OperatingCashFlow": {
                 "val_crore": ocf_fy26,
-                "val_raw": ocf_fy26 * 1e7,
-                "page": "Page 14 (Audited Consolidated Statement of Cash Flows)",
-                "quote": f"Net cash flows generated from operating activities {m_ocf.group(0) if m_ocf else '52,094'}"
+                "val_raw": ocf_fy26 * 1e7 if ocf_fy26 is not None else None,
+                "page": p_cf_label,
+                "quote": m_ocf.group(0) if m_ocf else "data unavailable"
+            },
+            "PPE_Capex": {
+                "val_crore": ppe_capex,
+                "val_raw": ppe_capex * 1e7 if ppe_capex is not None else None,
+                "page": p_cf_label,
+                "quote": m_ppe.group(0) if m_ppe else "data unavailable"
+            },
+            "Intangibles_Capex": {
+                "val_crore": int_capex,
+                "val_raw": int_capex * 1e7 if int_capex is not None else None,
+                "page": p_cf_label,
+                "quote": m_int.group(0) if m_int else "data unavailable"
             },
             "Capex": {
                 "val_crore": total_capex,
-                "val_raw": total_capex * 1e7,
-                "page": "Page 14 (Audited Consolidated Statement of Cash Flows)",
-                "quote": f"Payment for purchase of PPE (₹{ppe_capex:,.0f} Cr) + Intangible assets (₹{int_capex:,.0f} Cr) = ₹{total_capex:,.0f} crore"
+                "val_raw": total_capex * 1e7 if total_capex is not None else None,
+                "page": p_cf_label,
+                "quote": f"{m_ppe.group(0)} | {m_int.group(0)}" if (m_ppe and m_int) else "data unavailable"
             },
             "DerivedFreeCashFlow": {
                 "val_crore": derived_fcf,
-                "val_raw": derived_fcf * 1e7,
-                "page": "Page 14 (Derived: Operating Cash Flow - Capex)",
-                "quote": f"Derived Free Cash Flow = Operating Cash Flow (₹{ocf_fy26:,.0f} Cr) - Capex (₹{total_capex:,.0f} Cr) = ₹{derived_fcf:,.0f} crore"
+                "val_raw": derived_fcf * 1e7 if derived_fcf is not None else None,
+                "page": p_cf_label,
+                "quote": f"{m_ocf.group(0)} | {m_ppe.group(0)} | {m_int.group(0)}" if (m_ocf and m_ppe and m_int) else "data unavailable"
             },
             "HeadlineFreeCashFlow": {
                 "val_crore": None,
                 "val_raw": None,
-                "page": "Page 14 (Not reported as single line item in statutory cash flow statement)",
-                "quote": "UNRECONCILED: Statutory Ind AS cash flow statement does not disclose a separate headline 'Free Cash Flow' line item. FCF is derived from OCF (₹52,094 Cr) minus PPE/Intangible Capex (₹4,078 Cr)."
+                "page": p_cf_label,
+                "quote": "Statutory Ind AS cash flow statement does not disclose a separate headline 'Free Cash Flow' line item."
             },
-            "CashAndInvestments": {
-                "val_crore": cash_fy26,
-                "val_raw": cash_fy26 * 1e7,
-                "page": "Page 11 (Audited Consolidated Balance Sheet)",
-                "quote": f"Cash and cash equivalents ₹{cash_fy26:,.0f} crore"
+            "CashAndCashEquivalents": {
+                "val_crore": cce_fy26,
+                "val_raw": cce_fy26 * 1e7 if cce_fy26 is not None else None,
+                "page": p_bs_label,
+                "quote": m_cce.group(0) if m_cce else "data unavailable"
+            },
+            "OtherBankBalances": {
+                "val_crore": bank_fy26,
+                "val_raw": bank_fy26 * 1e7 if bank_fy26 is not None else None,
+                "page": p_bs_label,
+                "quote": m_bank.group(0) if m_bank else "data unavailable"
+            },
+            "CurrentInvestments": {
+                "val_crore": cur_inv_fy26,
+                "val_raw": cur_inv_fy26 * 1e7 if cur_inv_fy26 is not None else None,
+                "page": p_bs_label,
+                "quote": m_cur_inv.group(0) if m_cur_inv else "data unavailable"
+            },
+            "TotalLiquidAssets": {
+                "val_crore": total_cash_inv,
+                "val_raw": total_cash_inv * 1e7 if total_cash_inv is not None else None,
+                "page": p_bs_label,
+                "quote": f"{m_cce.group(0)} | {m_bank.group(0)} | {m_cur_inv.group(0)}" if (m_cce and m_bank and m_cur_inv) else "data unavailable"
+            },
+            "LeaseLiabilities_NonCurrent": {
+                "val_crore": lease_nc,
+                "val_raw": lease_nc * 1e7 if lease_nc is not None else None,
+                "page": p_bs_label,
+                "quote": m_lease_nc.group(0) if m_lease_nc else "data unavailable"
+            },
+            "LeaseLiabilities_Current": {
+                "val_crore": lease_cur,
+                "val_raw": lease_cur * 1e7 if lease_cur is not None else None,
+                "page": p_bs_label,
+                "quote": m_lease_cur.group(0) if m_lease_cur else "data unavailable"
             },
             "TotalDebt": {
                 "val_crore": total_debt,
-                "val_raw": total_debt * 1e7,
-                "page": "Page 11 (Audited Consolidated Balance Sheet)",
-                "quote": f"Total lease liabilities: Non-current (₹{lease_nc:,.0f} Cr) + Current (₹{lease_cur:,.0f} Cr) = ₹{total_debt:,.0f} crore"
+                "val_raw": total_debt * 1e7 if total_debt is not None else None,
+                "page": p_bs_label,
+                "quote": f"{m_lease_nc.group(0)} | {m_lease_cur.group(0)}" if (m_lease_nc and m_lease_cur) else "data unavailable"
             },
             "ShortTermDebt": {
                 "val_crore": lease_cur,
-                "val_raw": lease_cur * 1e7,
-                "page": "Page 11 (Audited Consolidated Balance Sheet)",
-                "quote": f"Current lease liabilities ₹{lease_cur:,.0f} crore"
+                "val_raw": lease_cur * 1e7 if lease_cur is not None else None,
+                "page": p_bs_label,
+                "quote": m_lease_cur.group(0) if m_lease_cur else "data unavailable"
             },
             "NetDebt": {
                 "val_crore": net_debt,
-                "val_raw": net_debt * 1e7,
-                "page": "Page 11 (Audited Consolidated Balance Sheet)",
-                "quote": f"Net Debt = Total Lease Debt (₹{total_debt:,.0f} Cr) - Cash & Cash Equivalents (₹{cash_fy26:,.0f} Cr) = ₹{net_debt:,.0f} crore"
+                "val_raw": net_debt * 1e7 if net_debt is not None else None,
+                "page": p_bs_label,
+                "quote": f"{m_lease_nc.group(0)} | {m_lease_cur.group(0)} | {m_cce.group(0)} | {m_bank.group(0)} | {m_cur_inv.group(0)}" if (m_lease_nc and m_lease_cur and m_cce and m_bank and m_cur_inv) else "data unavailable"
             },
             "TradeReceivables": {
-                "val_crore": 57729.0,
-                "val_raw": 57729.0 * 1e7,
-                "page": "Page 11 (Audited Consolidated Balance Sheet)",
-                "quote": "Trade receivables: Non-current Billed (₹99 Cr) + Current Billed (₹57,630 Cr) = ₹57,729 crore"
+                "val_crore": tr_total_fy26,
+                "val_raw": tr_total_fy26 * 1e7 if tr_total_fy26 is not None else None,
+                "page": p_bs_label,
+                "quote": f"{m_billed_nc.group(0)} | {m_billed_cur.group(0)}" if (m_billed_nc and m_billed_cur) else "data unavailable"
             },
             "PriorTradeReceivables": {
-                "val_crore": 50233.0,
-                "val_raw": 50233.0 * 1e7,
-                "page": "Page 11 (Audited Consolidated Balance Sheet)",
-                "quote": "Trade receivables prior year: Non-current (₹91 Cr) + Current (₹50,142 Cr) = ₹50,233 crore"
+                "val_crore": tr_total_fy25,
+                "val_raw": tr_total_fy25 * 1e7 if tr_total_fy25 is not None else None,
+                "page": p_bs_label,
+                "quote": f"{m_billed_nc.group(0)} | {m_billed_cur.group(0)}" if (m_billed_nc and m_billed_cur) else "data unavailable"
             }
         }
+        # Alias for callers looking for CashAndInvestments
+        metrics["CashAndInvestments"] = metrics["TotalLiquidAssets"]
 
         extracted_data = {
             "ticker": "TCS.NS",

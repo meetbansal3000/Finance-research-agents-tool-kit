@@ -30,7 +30,7 @@ WORD_TO_NUM = {
 }
 
 class ReportVerifier:
-    def __init__(self, report_path: str, ledger_path: str = None, perform_refetch: bool = False):
+    def __init__(self, report_path: str, ledger_path: str = None, perform_refetch: bool = True):
         self.report_path = report_path
         self.ledger_path = ledger_path or f"{os.path.splitext(report_path)[0]}.provenance.json"
         self.perform_refetch = perform_refetch
@@ -156,7 +156,7 @@ class ReportVerifier:
                 import json as json_lib
                 
                 ticker = inputs.get("ticker", "AAPL").upper()
-                concept = inputs.get("concept", "")
+                concept = inputs.get("concept") or inputs.get("metric") or ""
                 period = inputs.get("period", "")
                 period_end = inputs.get("period_end") or inputs.get("end_date")
                 form_type = inputs.get("form", "10-K")
@@ -188,6 +188,7 @@ class ReportVerifier:
                         elif "NetIncome" in concept_clean:
                             c_candidates.extend(["NetIncomeLoss", "NetIncome"])
 
+                        matched_facts = []
                         for cc in c_candidates:
                             pattern = re.compile(r'name=["\']us-gaap:' + cc + r'["\'][^>]*scale=["\']?(\d+)?["\']?[^>]*>([0-9,]+)<', re.IGNORECASE)
                             matches = pattern.findall(doc_content)
@@ -197,16 +198,21 @@ class ReportVerifier:
                                 if m2:
                                     matches = [('', v) for v in m2]
 
-                            if matches:
-                                scale_str, raw_num_str = matches[0]
+                            for scale_str, raw_num_str in matches:
                                 base_val = float(raw_num_str.replace(',', ''))
-                                scale_mul = 10 ** int(scale_str) if scale_str else (1e6 if base_val < 1e9 else 1.0)
+                                scale_mul = 10 ** int(scale_str) if scale_str else 1.0
+                                doc_val = base_val * scale_mul
                                 diff = abs(doc_val - float(expected_val))
-                                tolerance = max(1.0, abs(float(expected_val)) * 0.005)
-                                is_match = diff <= tolerance
-                                return (is_match, doc_val, f"Primary Filing Document ({os.path.basename(local_filing_path)}) iXBRL Tag us-gaap:{cc}")
-                    except Exception:
-                        pass
+                                if diff <= 1.0:
+                                    return (True, doc_val, f"Primary Filing Document ({os.path.basename(local_filing_path)}) iXBRL Tag us-gaap:{cc}")
+                                matched_facts.append((doc_val, cc))
+
+                        if matched_facts:
+                            # Tags were found in the document, but none matched the expected value exactly
+                            last_doc_val, last_cc = matched_facts[-1]
+                            return (False, last_doc_val, f"Primary Filing Document ({os.path.basename(local_filing_path)}) iXBRL Tag us-gaap:{last_cc}")
+                    except Exception as e:
+                        return (False, None, f"REFETCH_ERROR: {e}")
 
                 # Independent Code Path 2: SEC companyconcept API (distinct endpoint & schema from analyst companyfacts)
                 from tools.sec_cik import resolve_cik
@@ -244,8 +250,7 @@ class ReportVerifier:
                             selected_fact = sorted_facts[-1]
                             live_val = float(selected_fact["val"])
                             diff = abs(live_val - float(expected_val))
-                            tolerance = max(1.0, abs(float(expected_val)) * 0.005)
-                            passes = (diff <= tolerance)
+                            passes = (diff <= 1.0)
                             source_info = f"SEC companyconcept API (CIK{cik}/us-gaap/{cc}, Accn: {selected_fact.get('accn')})"
                             return (passes, live_val, source_info)
                     except Exception:
@@ -265,7 +270,12 @@ class ReportVerifier:
                 }
                 if fn_name in calc_tools:
                     calc_fn = calc_tools[fn_name]
-                    res = calc_fn(**inputs)
+                    try:
+                        res = calc_fn(**inputs)
+                    except TypeError as te:
+                        return (False, None, f"Inputs not compatible with calc tool signature: {te}")
+                    except Exception as e:
+                        return (False, None, f"REFETCH_ERROR in calc tool {fn_name}: {e}")
                     recomputed_val = res.get("result")
                     if isinstance(recomputed_val, dict):
                         # Compare target scalar metric against recorded value
@@ -373,7 +383,7 @@ class ReportVerifier:
                 return (fund_val is not None, fund_val, "Data Layer Fundamentals Re-fetch")
                 
         except Exception as e:
-            return (False, None, f"Re-fetch exception: {e}")
+            return (False, None, f"REFETCH_ERROR: {e}")
             
         return (False, None, f"Independent live re-fetch endpoint not configured for tool '{tool}'")
 
@@ -580,10 +590,19 @@ class ReportVerifier:
                     doc_candidates.append(entry_inputs.get("doc_path"))
 
                 src_str = str(entry.get("source") or "")
-                # Extract filename or path mentioned in source
-                m_f = re.search(r'([a-zA-Z0-9_\.-]+\.(?:htm|html|md|pdf|json|txt))', src_str, re.IGNORECASE)
-                if m_f:
-                    extracted_fname = m_f.group(1)
+                is_url = src_str.startswith("http://") or src_str.startswith("https://")
+                # Extract filename or path mentioned in source (for local files, not external web URLs)
+                if "library/filings" in src_str or not is_url:
+                    m_f = re.search(r'([a-zA-Z0-9_\.-]+\.(?:htm|html|md|pdf|json|txt))', src_str, re.IGNORECASE)
+                    if m_f:
+                        extracted_fname = m_f.group(1)
+                        if not extracted_fname.endswith(".meta.json"):
+                            doc_candidates.append(extracted_fname)
+                            doc_candidates.append(os.path.join(filings_dir, extracted_fname))
+
+                m_lib = re.search(r'library/filings/([^\s\),]+)', src_str, re.IGNORECASE)
+                if m_lib:
+                    extracted_fname = m_lib.group(1)
                     if not extracted_fname.endswith(".meta.json"):
                         doc_candidates.append(extracted_fname)
                         doc_candidates.append(os.path.join(filings_dir, extracted_fname))
@@ -609,26 +628,52 @@ class ReportVerifier:
                 # Deduplicate candidates
                 resolved_cands = list(dict.fromkeys(resolved_cands))
 
+                if doc_candidates and not resolved_cands:
+                    missing_doc_name = doc_candidates[0]
+                    self.wrong.append({
+                        "line": 0,
+                        "ledger_id": l_id,
+                        "claim": f"Document {os.path.basename(str(missing_doc_name))} backing {l_id}",
+                        "error_type": "MISSING_DOCUMENT_FILE",
+                        "stated_in_report": "N/A",
+                        "actual_ledger_value": entry.get("raw_value"),
+                        "correct_value": "DOCUMENT_FILE_REQUIRED",
+                        "source": entry.get("source"),
+                        "failure_reason": f"Filing document '{missing_doc_name}' backing ledger entry {l_id} does not exist on disk!"
+                    })
+
                 for cand in resolved_cands:
                     norm_cand = os.path.normpath(cand)
-                    if os.path.exists(norm_cand) and os.path.isfile(norm_cand):
-                        meta_file = f"{norm_cand}.meta.json"
-                        if not os.path.exists(meta_file):
-                            self.wrong.append({
-                                "line": 0,
-                                "ledger_id": l_id,
-                                "claim": f"Document {os.path.basename(norm_cand)} backing {l_id}",
-                                "error_type": "MISSING_DOCUMENT_SIDECAR",
-                                "stated_in_report": "N/A",
-                                "actual_ledger_value": entry.get("raw_value"),
-                                "correct_value": "SIDECAR_METADATA_REQUIRED",
-                                "source": entry.get("source"),
-                                "failure_reason": f"Filing document '{os.path.basename(norm_cand)}' has no .meta.json sidecar written by downloader. Hand-written files are strictly prohibited!"
-                            })
-                        else:
-                            try:
-                                with open(meta_file, "r", encoding="utf-8") as f_meta:
-                                    meta_data = json.load(f_meta)
+                    if not (os.path.exists(norm_cand) and os.path.isfile(norm_cand)):
+                        self.wrong.append({
+                            "line": 0,
+                            "ledger_id": l_id,
+                            "claim": f"Document {os.path.basename(norm_cand)} backing {l_id}",
+                            "error_type": "MISSING_DOCUMENT_FILE",
+                            "stated_in_report": "N/A",
+                            "actual_ledger_value": entry.get("raw_value"),
+                            "correct_value": "DOCUMENT_FILE_REQUIRED",
+                            "source": entry.get("source"),
+                            "failure_reason": f"Filing document '{norm_cand}' backing ledger entry {l_id} does not exist on disk!"
+                        })
+                        continue
+                    meta_file = f"{norm_cand}.meta.json"
+                    if not os.path.exists(meta_file):
+                        self.wrong.append({
+                            "line": 0,
+                            "ledger_id": l_id,
+                            "claim": f"Document {os.path.basename(norm_cand)} backing {l_id}",
+                            "error_type": "MISSING_DOCUMENT_SIDECAR",
+                            "stated_in_report": "N/A",
+                            "actual_ledger_value": entry.get("raw_value"),
+                            "correct_value": "SIDECAR_METADATA_REQUIRED",
+                            "source": entry.get("source"),
+                            "failure_reason": f"Filing document '{os.path.basename(norm_cand)}' has no .meta.json sidecar written by downloader. Hand-written files are strictly prohibited!"
+                        })
+                    else:
+                        try:
+                            with open(meta_file, "r", encoding="utf-8") as f_meta:
+                                meta_data = json.load(f_meta)
                                 with open(norm_cand, "rb") as f_doc:
                                     actual_hash = hashlib.sha256(f_doc.read()).hexdigest()
                                 expected_hash = meta_data.get("sha256")
@@ -678,18 +723,18 @@ class ReportVerifier:
                                         "source": entry.get("source"),
                                         "failure_reason": f"Filing document '{os.path.basename(norm_cand)}' download URL '{doc_url}' is not on an allowlisted domain ({ALLOWED_DOMAINS})!"
                                     })
-                            except Exception as e:
-                                self.wrong.append({
-                                    "line": 0,
-                                    "ledger_id": l_id,
-                                    "claim": f"Document {os.path.basename(norm_cand)} backing {l_id}",
-                                    "error_type": "DOCUMENT_METADATA_ERROR",
-                                    "stated_in_report": "N/A",
-                                    "actual_ledger_value": entry.get("raw_value"),
-                                    "correct_value": "CORRUPTED_METADATA",
-                                    "source": entry.get("source"),
-                                    "failure_reason": f"Failed reading sidecar metadata for '{os.path.basename(norm_cand)}': {e}"
-                                })
+                        except Exception as e:
+                            self.wrong.append({
+                                "line": 0,
+                                "ledger_id": l_id,
+                                "claim": f"Document {os.path.basename(norm_cand)} backing {l_id}",
+                                "error_type": "DOCUMENT_METADATA_ERROR",
+                                "stated_in_report": "N/A",
+                                "actual_ledger_value": entry.get("raw_value"),
+                                "correct_value": "CORRUPTED_METADATA",
+                                "source": entry.get("source"),
+                                "failure_reason": f"Failed reading sidecar metadata for '{os.path.basename(norm_cand)}': {e}"
+                            })
 
         units = self._split_into_units(self.report_text)
         self.not_refetched = []
@@ -746,7 +791,7 @@ class ReportVerifier:
             
             # --- DEFAULT-DENY ENFORCEMENT ---
             if not ledger_matches and not has_memory_tag and not has_analysis_tag:
-                if ("not checked" in unit_str.lower() or "data unavailable" in unit_str.lower() or "not applicable" in unit_str.lower()) and not numbers_found:
+                if ("not checked" in unit_str.lower() or "data unavailable" in unit_str.lower() or "not applicable" in unit_str.lower() or "not reported" in unit_str.lower()) and not numbers_found:
                     continue
 
                 narrative_triggers = [
@@ -1112,7 +1157,26 @@ class ReportVerifier:
                 if self.perform_refetch:
                     refetch_ok, live_val, refetch_source = self.refetch_source(entry)
                     if not refetch_ok:
-                        if "not found" in str(refetch_source).lower() or "not configured" in str(refetch_source).lower():
+                        if "refetch_error" in str(refetch_source).lower():
+                            unit_wrong.append({
+                                "line": line_idx,
+                                "ledger_id": l_id,
+                                "claim": unit_str,
+                                "stated_in_report": unit_str,
+                                "actual_ledger_value": expected_raw,
+                                "correct_value": "REFETCH_ERROR",
+                                "source": f"{source_url} (Refetch Error: {refetch_source})",
+                                "error_type": "REFETCH_ERROR",
+                                "failure_reason": f"Exception occurred during independent source refetch: {refetch_source}"
+                            })
+                            continue
+                        elif (
+                            "not found" in str(refetch_source).lower()
+                            or "not configured" in str(refetch_source).lower()
+                            or "unavailable" in str(refetch_source).lower()
+                            or "not compatible" in str(refetch_source).lower()
+                            or "no independent re-fetch" in str(refetch_source).lower()
+                        ):
                             self.not_refetched.append({
                                 "line": line_idx,
                                 "ledger_id": l_id,
@@ -1170,47 +1234,20 @@ class ReportVerifier:
                     )
                     if self.perform_refetch and refetch_ok:
                         tier = "INDEPENDENT_REFETCH_CONFIRMED"
-                        unit_confirmed.append({
-                            "line": line_idx,
-                            "ledger_id": l_id,
-                            "claim": unit_str,
-                            "verified_value": expected_raw,
-                            "tool": tool_name,
-                            "source": source_url,
-                            "tier": tier
-                        })
                     elif is_calc:
                         tier = "DERIVED_ANALYSIS"
-                        unit_confirmed.append({
-                            "line": line_idx,
-                            "ledger_id": l_id,
-                            "claim": unit_str,
-                            "verified_value": expected_raw,
-                            "tool": tool_name,
-                            "source": source_url,
-                            "tier": tier
-                        })
-                    elif not self.perform_refetch:
-                        tier = "PRIMARY_LEDGER_CONSISTENT"
-                        unit_confirmed.append({
-                            "line": line_idx,
-                            "ledger_id": l_id,
-                            "claim": unit_str,
-                            "verified_value": expected_raw,
-                            "tool": tool_name,
-                            "source": source_url,
-                            "tier": tier
-                        })
                     else:
-                        # perform_refetch was requested, but independent refetch failed or was unavailable
-                        unit_unverifiable.append({
-                            "line": line_idx,
-                            "ledger_id": l_id,
-                            "claim": unit_str,
-                            "reason": f"Independent re-fetch was requested but failed or endpoint unavailable ({refetch_source}).",
-                            "error_type": "INDEPENDENT_REFETCH_UNVERIFIED",
-                            "tier": "UNVERIFIABLE_OR_UNCHECKED"
-                        })
+                        tier = "PRIMARY_LEDGER_CONSISTENT"
+
+                    unit_confirmed.append({
+                        "line": line_idx,
+                        "ledger_id": l_id,
+                        "claim": unit_str,
+                        "verified_value": expected_raw,
+                        "tool": tool_name,
+                        "source": source_url,
+                        "tier": tier
+                    })
                 else:
                     unit_wrong.append({
                         "line": line_idx,
@@ -1338,10 +1375,12 @@ class ReportVerifier:
         reconciliations = audit_result.get("reconciliations", [])
         tiers = summary.get("tiers", {})
         
+        opt_out_notice = "\n> ⚠️ **[NOTICE: Independent source refetch is explicitly OPTED OUT by caller. Audit running in offline provenance-only mode.]**\n" if not self.perform_refetch else ""
+
         md_content = f"""# Verification Audit Report
 **Target Report:** `{os.path.basename(self.report_path)}`  
 **Audit Timestamp:** {audit_result['audited_at']}  
-**Overall Status:** **{summary['status']}** ({summary['total_confirmed']} Confirmed, {summary['total_wrong']} Wrong, {summary['total_unverifiable']} Unverifiable)  
+**Overall Status:** **{summary['status']}** ({summary['total_confirmed']} Confirmed, {summary['total_wrong']} Wrong, {summary['total_unverifiable']} Unverifiable)  {opt_out_notice}
 
 ### 📊 Four-Tier Provenance Classification
 - **Tier 1 (Independent Re-fetch Confirmed):** {tiers.get('INDEPENDENT_REFETCH_CONFIRMED', 0)}
