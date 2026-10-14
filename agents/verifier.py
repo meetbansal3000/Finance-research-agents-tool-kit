@@ -665,7 +665,7 @@ class ReportVerifier:
                                 from urllib.parse import urlparse
                                 parsed_url = urlparse(doc_url)
                                 domain = parsed_url.netloc.lower()
-                                ALLOWED_DOMAINS = ("sec.gov", "data.sec.gov", "www.sec.gov")
+                                ALLOWED_DOMAINS = ("sec.gov", "data.sec.gov", "www.sec.gov", "nseindia.com", "nsearchives.nseindia.com", "www.nseindia.com", "bseindia.com", "www.bseindia.com")
                                 if not any(domain == d or domain.endswith("." + d) for d in ALLOWED_DOMAINS):
                                     self.wrong.append({
                                         "line": 0,

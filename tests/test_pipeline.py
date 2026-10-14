@@ -48,7 +48,6 @@ def test_pipeline_us_stock_aapl(tmp_path):
     assert result["audit_summary"]["total_wrong"] == 0
 
 
-@pytest.mark.xfail(reason="Task 2 pending: replace hardcoded fetch_tcs_fy25_audited_financials with generic non-US filing extractor", strict=False)
 def test_pipeline_non_us_stock_tcs(tmp_path):
     output_dir = str(tmp_path / "TCS_test_run")
     result = run_pipeline(

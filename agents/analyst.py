@@ -429,7 +429,7 @@ class AnalystAgent:
             "currency_symbol": "₹",
             "accounting_standard": "Ind AS (IFRS-converged)",
             "fiscal_year_end": "March 31",
-            "period": "FY2025",
+            "period": "FY2026",
             "current_price": current_price,
             "shares_outstanding": shares_out,
             "market_cap": market_cap,
@@ -1163,6 +1163,7 @@ class AnalystAgent:
             debt_disp = data["balance_sheet"]["TotalDebt"]["val_raw"] / 1e7
             net_debt_disp = net_debt_val / 1e7
             unit_str = "Crore"
+            net_debt_str = f"-{sym}{abs(net_debt_disp):,.0f}" if net_debt_disp < 0 else f"{sym}{net_debt_disp:,.0f}"
 
             rep_text = f"""# Equity Research Report: {data['company_name']} ({ticker})
 **Listing Details:** {data['exchange']} | Accounting Standard: {data['accounting_standard']} | Fiscal Year-End: {data['fiscal_year_end']}  
@@ -1180,7 +1181,7 @@ class AnalystAgent:
 - Attributable net profit reached {sym}{net_disp:,.0f} {unit_str} [{l_ids['net_income']}], delivering a net margin of {net_margin_pct:.2f}% [{l_net_margin}].
 - Cash flow from operations was {sym}{ocf_disp:,.0f} {unit_str} [{l_ids['operating_cash_flow']}] against capital expenditures of {sym}{capex_disp:,.0f} {unit_str} [{l_ids['capex']}].
 - Free cash flow derived on a statutory basis was {sym}{fcf_disp:,.0f} {unit_str} [{l_fcf}], yielding an FCF yield of {fcf_yield_pct:.2f}% [{l_fcf_yield}].
-- Liquid cash and investment assets totaled {sym}{cash_disp:,.0f} {unit_str} [{l_ids['total_cash']}] against total debt obligations of {sym}{debt_disp:,.0f} {unit_str} [{l_ids['total_debt']}], maintaining a net debt position of -{sym}{abs(net_debt_disp):,.0f} {unit_str} [{l_ids['net_debt']}].
+- Liquid cash and investment assets totaled {sym}{cash_disp:,.0f} {unit_str} [{l_ids['total_cash']}] against total debt obligations of {sym}{debt_disp:,.0f} {unit_str} [{l_ids['total_debt']}], maintaining a net debt position of {net_debt_str} {unit_str} [{l_ids['net_debt']}].
 - Current market price trades at {sym}{data['current_price']:.2f} {curr} [{l_ids['price']}].
 - Baseline DCF fair value estimate is {sym}{dcf_fair_value:.2f} [{l_dcf}].
 - Reverse DCF model indicates current market valuation implies a 5-year FCF CAGR of {implied_growth:.2f}% [{l_implied}].
@@ -1224,6 +1225,7 @@ class AnalystAgent:
             debt_disp = data["balance_sheet"]["TotalDebt"]["val_raw"] / 1e6
             net_debt_disp = net_debt_val / 1e6
             unit_str = "M"
+            net_debt_str = f"-{sym}{abs(net_debt_disp):,.0f}" if net_debt_disp < 0 else f"{sym}{net_debt_disp:,.0f}"
 
         if ticker == "MSFT":
             qual_1 = "- [UNVERIFIED: model memory] Microsoft commands global enterprise leadership across cloud computing, productivity suites, and developer platforms."
@@ -1270,7 +1272,7 @@ class AnalystAgent:
 | Free Cash Flow | {sym}{fcf_disp:,.0f}{unit_str} | [{l_fcf}] | Calculated: OCF - Capex |
 | Total Cash & Marketable Securities | {sym}{cash_disp:,.0f}{unit_str} | [{l_ids['total_cash']}] | Audited Balance Sheet |
 | Total Debt Obligations | {sym}{debt_disp:,.0f}{unit_str} | [{l_ids['total_debt']}] | Audited Balance Sheet |
-| Net Debt Position | -{sym}{abs(net_debt_disp):,.0f}{unit_str} | [{l_ids['net_debt']}] | Calculated: Total Debt - Liquid Assets |
+| Net Debt Position | {net_debt_str}{unit_str} | [{l_ids['net_debt']}] | Calculated: Total Debt - Liquid Assets |
 
 ---
 
@@ -1393,23 +1395,28 @@ class AnalystAgent:
 
             original_line = match.group(1)
             
+            try:
+                numeric_val = float(target_val)
+            except (ValueError, TypeError):
+                continue
+
             # Format correct value cleanly
             formatted_val = None
             if unit == "crore" or "Crore" in original_line:
                 # Scaled in crore
-                val_cr = target_val / 1e7 if target_val > 1e6 else target_val
+                val_cr = numeric_val / 1e7 if numeric_val > 1e6 else numeric_val
                 formatted_val = f"₹{val_cr:,.0f} Crore"
-            elif "M" in original_line or (abs(target_val) > 1e6 and "%" not in original_line):
-                val_m = target_val / 1e6 if abs(target_val) > 1e5 else target_val
+            elif "M" in original_line or (abs(numeric_val) > 1e6 and "%" not in original_line):
+                val_m = numeric_val / 1e6 if abs(numeric_val) > 1e5 else numeric_val
                 sym = "$" if curr == "USD" else ("₹" if curr == "INR" else "")
                 if val_m < 0:
                     formatted_val = f"-{sym}{abs(val_m):,.0f}M"
                 else:
                     formatted_val = f"{sym}{val_m:,.0f}M"
             elif "%" in original_line:
-                formatted_val = f"{target_val:.2f}%"
+                formatted_val = f"{numeric_val:.2f}%"
             else:
-                formatted_val = f"{target_val:,.2f}"
+                formatted_val = f"{numeric_val:,.2f}"
 
             # Replace the wrong figure preceding [LEDGER_XXXX] in the text
             num_pattern = re.compile(rf'(-)?\s*(\$|₹|£|€)?\s*(-?[0-9,]+(?:\.[0-9]+)?)\s*(M|B|Crore|Cr|%)?\s*(?=\[{re.escape(ledger_id)}\])')
