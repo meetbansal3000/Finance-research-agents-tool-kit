@@ -593,22 +593,23 @@ class ReportVerifier:
                     doc_candidates.append(entry_inputs.get("doc_path"))
 
                 src_str = str(entry.get("source") or "")
-                is_url = src_str.startswith("http://") or src_str.startswith("https://")
+                src_without_urls = re.sub(r'https?://[^\s\)]+', '', src_str)
+
                 # Extract filename or path mentioned in source (for local files, not external web URLs)
-                if "library/filings" in src_str or not is_url:
-                    m_f = re.search(r'([a-zA-Z0-9_\.-]+\.(?:htm|html|md|pdf|json|txt))', src_str, re.IGNORECASE)
+                if "library/filings" in src_str:
+                    m_lib = re.search(r'library/filings/([^\s\),]+)', src_str, re.IGNORECASE)
+                    if m_lib:
+                        extracted_fname = m_lib.group(1)
+                        if not extracted_fname.endswith(".meta.json"):
+                            doc_candidates.append(extracted_fname)
+                            doc_candidates.append(os.path.join(filings_dir, extracted_fname))
+                elif not ("http://" in src_str or "https://" in src_str):
+                    m_f = re.search(r'([a-zA-Z0-9_\.-]+\.(?:htm|html|md|pdf|json|txt))', src_without_urls, re.IGNORECASE)
                     if m_f:
                         extracted_fname = m_f.group(1)
                         if not extracted_fname.endswith(".meta.json"):
                             doc_candidates.append(extracted_fname)
                             doc_candidates.append(os.path.join(filings_dir, extracted_fname))
-
-                m_lib = re.search(r'library/filings/([^\s\),]+)', src_str, re.IGNORECASE)
-                if m_lib:
-                    extracted_fname = m_lib.group(1)
-                    if not extracted_fname.endswith(".meta.json"):
-                        doc_candidates.append(extracted_fname)
-                        doc_candidates.append(os.path.join(filings_dir, extracted_fname))
 
                 # Resolve each candidate path
                 resolved_cands = []
