@@ -41,11 +41,20 @@ def run_pipeline(
     perform_refetch: bool = True,
     strict_audit: bool = False,
     enable_nvidia: bool = False,
+    progress_callback: Optional[Any] = None,
     **kwargs
 ) -> Dict[str, Any]:
     """
     Execute full autonomous research pipeline for a given ticker and workflow.
     """
+    def _notify(msg: str):
+        print(msg)
+        if progress_callback:
+            try:
+                progress_callback(msg)
+            except Exception:
+                pass
+
     # Support argument aliases
     if "workflow" in kwargs:
         workflow_number = int(kwargs["workflow"])
@@ -74,7 +83,7 @@ def run_pipeline(
     # -------------------------------------------------------------------------
     # STAGE 1: Analyst Agent
     # -------------------------------------------------------------------------
-    print(f"\n[Stage 1/4] 👨‍💼 Analyst Agent: Executing Workflow {workflow_number}...")
+    _notify(f"[Stage 1/4] 👨‍💼 Analyst Agent: Executing Workflow {workflow_number}...")
     analyst_ledger = ProvenanceLedger(run_id=f"{ticker}_analyst_{date_str}")
     analyst = AnalystAgent(ledger=analyst_ledger)
     analyst_res = analyst.run_workflow(ticker=ticker, workflow_number=workflow_number)
@@ -85,13 +94,12 @@ def run_pipeline(
     with open(analyst_report_path, "w", encoding="utf-8") as f:
         f.write(analyst_res["markdown_report"])
     analyst_res["ledger"].save_sidecar(analyst_sidecar_path)
-    print(f"  ✓ Analyst report written to: {analyst_report_path}")
-    print(f"  ✓ Provenance ledger saved: {len(analyst_res['ledger'].entries)} entries")
+    _notify(f"  ✓ Analyst report written to {os.path.basename(analyst_report_path)} ({len(analyst_res['ledger'].entries)} ledger entries)")
 
     # -------------------------------------------------------------------------
     # STAGE 2: Verifier Agent & Single-Round Error Correction
     # -------------------------------------------------------------------------
-    print(f"\n[Stage 2/4] 🛡️ Verifier Agent: Auditing analyst report against ledger...")
+    _notify(f"[Stage 2/4] 🛡️ Verifier Agent: Auditing analyst report against ledger...")
     verifier = ReportVerifier(
         report_path=analyst_report_path,
         ledger_path=analyst_sidecar_path,
@@ -99,12 +107,11 @@ def run_pipeline(
     )
     audit_res = verifier.audit()
     summary = audit_res["summary"]
-    print(f"  Initial Audit Result: {summary['status']} ({summary['total_confirmed']} Confirmed, {summary['total_wrong']} Wrong, {summary['total_unverifiable']} Unverifiable)")
+    _notify(f"  ✓ Audit Result: {summary['status']} ({summary['total_confirmed']} Confirmed, {summary['total_wrong']} Wrong, {summary['total_unverifiable']} Unverifiable)")
 
     correction_performed = False
     if summary["total_wrong"] > 0:
-        print(f"\n  ⚠️ Discrepancy detected: {summary['total_wrong']} wrong figure(s) identified.")
-        print(f"  🔄 Sending feedback back to Analyst Agent for Correction Round 1...")
+        _notify(f"  ⚠️ Discrepancy detected: {summary['total_wrong']} wrong figure(s) identified. Triggering Analyst Correction Round 1...")
 
         corrected_report_text, updated_ledger = analyst.correct_report(
             wrong_items=audit_res["wrong"],
@@ -119,7 +126,7 @@ def run_pipeline(
         analyst_res["ledger"] = updated_ledger
         correction_performed = True
 
-        print(f"  ✓ Analyst completed correction round. Re-verifying...")
+        _notify(f"  ✓ Analyst completed correction round. Re-verifying...")
         verifier = ReportVerifier(
             report_path=analyst_report_path,
             ledger_path=analyst_sidecar_path,
@@ -127,7 +134,7 @@ def run_pipeline(
         )
         audit_res = verifier.audit()
         summary = audit_res["summary"]
-        print(f"  Post-Correction Audit Result: {summary['status']} ({summary['total_confirmed']} Confirmed, {summary['total_wrong']} Wrong, {summary['total_unverifiable']} Unverifiable)")
+        _notify(f"  ✓ Post-Correction Audit Result: {summary['status']} ({summary['total_confirmed']} Confirmed)")
         if summary.get("total_wrong", 0) > 0 or (strict_audit and (summary.get("total_unverifiable", 0) > 0 or summary.get("status") in ("FAIL", "FLAGGED"))):
             raise RuntimeError(
                 f"Institutional Hard Stop: Report audit status is {summary.get('status')} with {summary.get('total_wrong', 0)} uncorrected erroneous figure(s) and {summary.get('total_unverifiable', 0)} unverifiable items. Pipeline halted under default-deny policy."
@@ -149,7 +156,7 @@ def run_pipeline(
     # -------------------------------------------------------------------------
     # STAGE 3: Skeptic Agent
     # -------------------------------------------------------------------------
-    print(f"\n[Stage 3/4] 🐻 Skeptic Agent: Executing adversarial stress-testing...")
+    _notify(f"[Stage 3/4] 🐻 Skeptic Agent: Executing adversarial stress-testing...")
     skeptic_ledger = ProvenanceLedger(run_id=f"{ticker}_skeptic_{date_str}")
     skeptic = SkepticAgent(ledger=skeptic_ledger)
     skeptic_res = skeptic.evaluate_thesis(**analyst_res["skeptic_inputs"], enable_nvidia=enable_nvidia)
@@ -167,9 +174,7 @@ def run_pipeline(
         perform_refetch=perform_refetch
     )
     sk_audit = sk_verifier.audit()
-    print(f"  ✓ Skeptic review written to: {skeptic_report_path}")
-    print(f"  ✓ Skeptic Audit: {sk_audit['summary']['status']} ({sk_audit['summary']['total_confirmed']} Confirmed, {sk_audit['summary'].get('total_wrong', 0)} Discrepancies)")
-    print(f"  ✓ Adversarial Thesis Verdict: {skeptic_res['verdict']}")
+    _notify(f"  ✓ Skeptic review written: Audit = {sk_audit['summary']['status']}, Verdict = {skeptic_res['verdict']}")
     if strict_audit and (sk_audit["summary"].get("total_wrong", 0) > 0 or sk_audit["summary"].get("status") in ("FAIL", "FLAGGED")):
         raise RuntimeError(
             f"Institutional Hard Stop: Skeptic report failed strict audit with status {sk_audit['summary'].get('status')} ({sk_audit['summary'].get('total_wrong', 0)} wrong, {sk_audit['summary'].get('total_unverifiable', 0)} unverifiable). Pipeline halted under default-deny policy."
@@ -180,7 +185,7 @@ def run_pipeline(
     # -------------------------------------------------------------------------
     # STAGE 4: Final Synthesized Report
     # -------------------------------------------------------------------------
-    print(f"\n[Stage 4/4] 📑 Synthesizing Final Comprehensive Research Dossier...")
+    _notify(f"[Stage 4/4] 📑 Synthesizing Final Comprehensive Research Dossier...")
     final_report_path = os.path.join(target_dir, "final_report.md")
 
     final_content = _build_final_synthesized_report(
@@ -197,7 +202,7 @@ def run_pipeline(
     with open(final_report_path, "w", encoding="utf-8") as f:
         f.write(final_content)
 
-    print(f"  ✓ Final Report successfully synthesized: {final_report_path}")
+    _notify(f"  ✓ Final Boardroom Report synthesized: {os.path.basename(final_report_path)}")
     print(f"\n=======================================================")
     print(f"✅ PIPELINE COMPLETE FOR {ticker}!")
     print(f"Overall Status: {audit_res['summary']['status']} (Analyst) | {sk_audit['summary']['status']} (Skeptic)")

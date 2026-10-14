@@ -1103,8 +1103,8 @@ elif "Intrinsic Valuation" in nav_choice:
             try:
                 t_obj = yf.Ticker(custom_sym)
                 fi = t_obj.fast_info
-                curr_p = float(fi.get("last_price") or 100.0)
-                shs = float(fi.get("shares") or 1e9)
+                curr_p = float(getattr(fi, "last_price", None) or getattr(fi, "previous_close", None) or 100.0)
+                shs = float(getattr(fi, "shares", None) or 1e9)
                 fcf_val = float(curr_p * shs * 0.04) # 4% initial FCF yield baseline
                 preset = {
                     "fcf": max(fcf_val, 1e7),
@@ -1230,7 +1230,10 @@ elif "Autonomous Research Studio" in nav_choice:
     col_r1, col_r2 = st.columns([2, 1])
     with col_r1:
         wl_opts = ["(Custom Input)"] + st.session_state["watchlist"]
-        r_picked = st.selectbox("⭐ Quick Select from Coverage List", wl_opts)
+        default_wl_idx = 0
+        if st.session_state.get("active_ticker") in st.session_state["watchlist"]:
+            default_wl_idx = wl_opts.index(st.session_state["active_ticker"])
+        r_picked = st.selectbox("⭐ Quick Select from Coverage List", wl_opts, index=default_wl_idx)
         default_r = r_picked if r_picked != "(Custom Input)" else "AAPL"
         r_input = st.text_input("Enter Company Name or Ticker to Research", value=default_r, help="Type company name (e.g. 'Apple') or ticker (e.g. 'AAPL', 'TCS.NS')")
         research_ticker = lookup_primary_ticker(r_input) or r_input.strip().upper()
@@ -1240,34 +1243,150 @@ elif "Autonomous Research Studio" in nav_choice:
         workflow_type = st.selectbox("Research Workflow", ["Workflow 1: Comprehensive Valuation Deep Dive", "Workflow 2: Rapid Fundamental Screen"])
         workflow_num = 1 if "1" in workflow_type else 2
 
-    if st.button("🚀 Run Autonomous Committee Research", type="primary"):
-        with st.spinner(f"Agents assembling for {research_ticker}... Running Analyst -> Verifier -> Skeptic pipeline..."):
+    # Execution Button with Live Streaming Progress Box
+    if st.button("🚀 Run Autonomous Committee Research", type="primary", use_container_width=True):
+        with st.status(f"🚀 Multi-Agent Committee Assembling for {research_ticker}...", expanded=True) as status_box:
+            def on_progress(msg: str):
+                status_box.write(msg)
             try:
                 from run_research import run_pipeline
-                res_pipeline = run_pipeline(ticker=research_ticker, workflow_number=workflow_num, strict_audit=False)
-                st.success(f"✅ Research Committee successfully completed audit for {research_ticker}!")
-                
-                report_dir = res_pipeline.get("report_dir")
-                final_md = os.path.join(report_dir, "final_report.md") if report_dir else None
-                if final_md and os.path.exists(final_md):
-                    with open(final_md, "r", encoding="utf-8") as f:
-                        report_content = f.read()
-                    st.divider()
-                    st.markdown(report_content)
-                else:
-                    st.info("Research completed with status: " + str(res_pipeline.get("status", "COMPLETE")))
+                res_pipeline = run_pipeline(
+                    ticker=research_ticker,
+                    workflow_number=workflow_num,
+                    strict_audit=False,
+                    progress_callback=on_progress
+                )
+                status_box.update(label=f"✅ Research Committee Audit Complete for {research_ticker}!", state="complete", expanded=False)
+                st.session_state["active_committee_dir"] = res_pipeline.get("report_dir")
+                st.session_state["active_committee_dossier"] = res_pipeline
+                st.session_state["active_ticker"] = research_ticker
+                st.success(f"✅ Autonomous Research Dossier successfully generated and verified for {research_ticker}!")
             except Exception as e:
+                status_box.update(label=f"❌ Committee Execution Halted: {str(e)}", state="error")
                 st.error(f"Error during autonomous research: {str(e)}")
 
-    # Inspect previous reports if clicked from home
-    if "inspected_report_dir" in st.session_state:
-        insp_dir = st.session_state.pop("inspected_report_dir")
-        f_md = os.path.join(insp_dir, "final_report.md")
-        if os.path.exists(f_md):
-            st.divider()
-            st.subheader(f"📄 Saved Investment Memorandum: `{os.path.basename(insp_dir)}`")
-            with open(f_md, "r", encoding="utf-8") as f:
-                st.markdown(f.read())
+    # Check if a report was selected from Home dashboard via inspect button
+    if "inspected_report_dir" in st.session_state and st.session_state["inspected_report_dir"]:
+        st.session_state["active_committee_dir"] = st.session_state["inspected_report_dir"]
+        st.session_state["inspected_report_dir"] = None
+
+    # Discover all saved dossiers on disk
+    available_dossiers = sorted(glob.glob(os.path.join("reports", "*_*")), key=os.path.getmtime, reverse=True)
+    dossier_names = [os.path.basename(d) for d in available_dossiers if os.path.isdir(d)]
+
+    active_dir = st.session_state.get("active_committee_dir")
+    default_sel_idx = 0
+    if active_dir and os.path.basename(active_dir) in dossier_names:
+        default_sel_idx = dossier_names.index(os.path.basename(active_dir))
+
+    st.markdown("---")
+    st.markdown("### 📂 Research Dossier Explorer & Multi-Agent Audit Trail")
+
+    col_dos_sel, col_dos_badge = st.columns([3, 1])
+    with col_dos_sel:
+        if dossier_names:
+            chosen_dossier = st.selectbox(
+                "Select Saved Committee Dossier to Inspect",
+                dossier_names,
+                index=default_sel_idx,
+                help="Inspect any historical boardroom memorandum, raw analyst model, or cryptographic verification audit."
+            )
+            current_inspect_dir = os.path.join("reports", chosen_dossier)
+        else:
+            current_inspect_dir = active_dir
+            st.info("No historical dossiers found on disk yet. Run committee research above to create the first dossier.")
+    with col_dos_badge:
+        if current_inspect_dir and os.path.exists(current_inspect_dir):
+            st.caption("Active Inspection Target:")
+            st.code(os.path.basename(current_inspect_dir))
+
+    if current_inspect_dir and os.path.exists(current_inspect_dir):
+        final_md_path = os.path.join(current_inspect_dir, "final_report.md")
+        analyst_md_path = os.path.join(current_inspect_dir, "analyst_report.md")
+        skeptic_md_path = os.path.join(current_inspect_dir, "skeptic_review.md")
+        audit_md_path = os.path.join(current_inspect_dir, "verification_audit.md")
+        if not os.path.exists(audit_md_path):
+            audit_md_path = os.path.join(current_inspect_dir, "analyst_report.audit.md")
+        sidecar_path = os.path.join(current_inspect_dir, "analyst_report.provenance.json")
+
+        tab_final, tab_analyst, tab_skeptic, tab_audit = st.tabs([
+            "📑 Boardroom Memorandum",
+            "👨‍💼 Analyst Agent & Ledger",
+            "🐻 Skeptic Adversarial Review",
+            "🛡️ Cryptographic Audit Trail"
+        ])
+
+        with tab_final:
+            if os.path.exists(final_md_path):
+                with open(final_md_path, "r", encoding="utf-8") as f:
+                    final_txt = f.read()
+                st.download_button(
+                    label="📥 Download Memorandum (.md)",
+                    data=final_txt,
+                    file_name=f"{os.path.basename(current_inspect_dir)}_final_report.md",
+                    mime="text/markdown",
+                    key="dl_final_md"
+                )
+                st.markdown(final_txt)
+            else:
+                st.warning(f"Final synthesized report not found in `{os.path.basename(current_inspect_dir)}`.")
+
+        with tab_analyst:
+            if os.path.exists(analyst_md_path):
+                with open(analyst_md_path, "r", encoding="utf-8") as f:
+                    analyst_txt = f.read()
+                provenance_count = 0
+                if os.path.exists(sidecar_path):
+                    try:
+                        with open(sidecar_path, "r", encoding="utf-8") as f:
+                            sc_data = json.load(f)
+                            provenance_count = len(sc_data.get("entries", []))
+                    except Exception:
+                        pass
+                col_an_stat1, col_an_stat2 = st.columns([3, 1])
+                with col_an_stat1:
+                    st.info(f"Verified Primary-Source Provenance Citations: **{provenance_count} data points registered**")
+                with col_an_stat2:
+                    st.download_button(
+                        label="📥 Download Analyst Report",
+                        data=analyst_txt,
+                        file_name=f"{os.path.basename(current_inspect_dir)}_analyst.md",
+                        mime="text/markdown",
+                        key="dl_analyst_md"
+                    )
+                st.markdown(analyst_txt)
+            else:
+                st.warning("Analyst report markdown file not found.")
+
+        with tab_skeptic:
+            if os.path.exists(skeptic_md_path):
+                with open(skeptic_md_path, "r", encoding="utf-8") as f:
+                    skeptic_txt = f.read()
+                st.download_button(
+                    label="📥 Download Skeptic Review",
+                    data=skeptic_txt,
+                    file_name=f"{os.path.basename(current_inspect_dir)}_skeptic.md",
+                    mime="text/markdown",
+                    key="dl_skeptic_md"
+                )
+                st.markdown(skeptic_txt)
+            else:
+                st.warning("Skeptic review report not found.")
+
+        with tab_audit:
+            if os.path.exists(audit_md_path):
+                with open(audit_md_path, "r", encoding="utf-8") as f:
+                    audit_txt = f.read()
+                st.download_button(
+                    label="📥 Download Audit Certificate",
+                    data=audit_txt,
+                    file_name=f"{os.path.basename(current_inspect_dir)}_audit.md",
+                    mime="text/markdown",
+                    key="dl_audit_md"
+                )
+                st.markdown(audit_txt)
+            else:
+                st.info("Cryptographic audit markdown certificate not found for this dossier.")
 
 
 # --- MODULE 6: ANTIGRAVITY FINANCIAL COPILOT ---
@@ -1319,16 +1438,25 @@ elif "Antigravity Financial Copilot" in nav_choice:
         st.subheader("💬 Ask the Financial Copilot")
         st.caption("Ask natural-language questions, compare margins between competitors, or request portfolio allocations.")
 
-        col_q1, col_q2, col_q3 = st.columns(3)
-        sample_query = None
-        if col_q1.button("🔍 Snapshot: NVDA Valuation", use_container_width=True):
-            sample_query = "Give me a full financial snapshot, P/E ratio, and 1-month volatility for NVDA."
-        if col_q2.button("⚖️ Compare: GOOGL vs MSFT", use_container_width=True):
-            sample_query = "Compare revenue growth, gross margins, and debt-to-equity between GOOGL and MSFT."
-        if col_q3.button("💼 Allocate: $50k Low-Risk", use_container_width=True):
-            sample_query = "Calculate a low-risk $50,000 allocation across GOOGL, MSFT, and AAPL using inverse volatility."
+        if "copilot_query_input" not in st.session_state:
+            st.session_state["copilot_query_input"] = ""
 
-        user_query = st.text_area("Research Query:", value=sample_query or "", height=85, placeholder="e.g. Compare operating margins and debt levels between Apple and Microsoft.")
+        if col_q1.button("🔍 Snapshot: NVDA Valuation", use_container_width=True):
+            st.session_state["copilot_query_input"] = "Give me a full financial snapshot, P/E ratio, and 1-month volatility for NVDA."
+            st.rerun()
+        if col_q2.button("⚖️ Compare: GOOGL vs MSFT", use_container_width=True):
+            st.session_state["copilot_query_input"] = "Compare revenue growth, gross margins, and debt-to-equity between GOOGL and MSFT."
+            st.rerun()
+        if col_q3.button("💼 Allocate: $50k Low-Risk", use_container_width=True):
+            st.session_state["copilot_query_input"] = "Calculate a low-risk $50,000 allocation across GOOGL, MSFT, and AAPL using inverse volatility."
+            st.rerun()
+
+        user_query = st.text_area(
+            "Research Query:",
+            value=st.session_state["copilot_query_input"],
+            height=85,
+            placeholder="e.g. Compare operating margins and debt levels between Apple and Microsoft."
+        )
 
         if st.button("🚀 Submit Query", type="primary"):
             if not user_query.strip():
@@ -1355,10 +1483,13 @@ elif "Antigravity Financial Copilot" in nav_choice:
                             future = executor.submit(_call_agent)
                             agent_output = future.result(timeout=60)
 
-                        st.divider()
-                        st.markdown(agent_output)
+                        st.session_state["copilot_last_agent_output"] = agent_output
                     except Exception as e:
                         st.error(f"Agent Execution Error: {str(e)}")
+
+        if "copilot_last_agent_output" in st.session_state and st.session_state["copilot_last_agent_output"]:
+            st.divider()
+            st.markdown(st.session_state["copilot_last_agent_output"])
 
     with ag_tab2:
         st.subheader("📊 Real-Time Market Data & Volatility Engine")
@@ -1450,7 +1581,8 @@ elif "Antigravity Financial Copilot" in nav_choice:
                 sh = pos["shares"]
                 cb = pos["cost_basis"]
                 try:
-                    cp = yf.Ticker(sym).fast_info.get("last_price") or cb
+                    fast_p = yf.Ticker(sym).fast_info
+                    cp = getattr(fast_p, "last_price", None) or getattr(fast_p, "previous_close", None) or cb
                 except Exception:
                     cp = cb
                 m_val = sh * cp
