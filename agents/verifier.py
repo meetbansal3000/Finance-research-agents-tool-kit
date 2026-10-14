@@ -644,6 +644,40 @@ class ReportVerifier:
                                         "source": entry.get("source"),
                                         "failure_reason": f"Filing document '{os.path.basename(norm_cand)}' SHA-256 ({actual_hash}) does not match sidecar metadata ({expected_hash})!"
                                     })
+                                
+                                # Verify http_status == 200
+                                http_status = meta_data.get("http_status")
+                                if http_status != 200:
+                                    self.wrong.append({
+                                        "line": 0,
+                                        "ledger_id": l_id,
+                                        "claim": f"Document {os.path.basename(norm_cand)} backing {l_id}",
+                                        "error_type": "DOCUMENT_HTTP_STATUS_INVALID",
+                                        "stated_in_report": "N/A",
+                                        "actual_ledger_value": entry.get("raw_value"),
+                                        "correct_value": "HTTP_STATUS_200_REQUIRED",
+                                        "source": entry.get("source"),
+                                        "failure_reason": f"Filing document '{os.path.basename(norm_cand)}' has invalid HTTP status {http_status} (must be 200)!"
+                                    })
+
+                                # Verify URL is on allowlisted domain
+                                doc_url = meta_data.get("url", "")
+                                from urllib.parse import urlparse
+                                parsed_url = urlparse(doc_url)
+                                domain = parsed_url.netloc.lower()
+                                ALLOWED_DOMAINS = ("sec.gov", "data.sec.gov", "www.sec.gov")
+                                if not any(domain == d or domain.endswith("." + d) for d in ALLOWED_DOMAINS):
+                                    self.wrong.append({
+                                        "line": 0,
+                                        "ledger_id": l_id,
+                                        "claim": f"Document {os.path.basename(norm_cand)} backing {l_id}",
+                                        "error_type": "DOCUMENT_DOMAIN_UNAUTHORIZED",
+                                        "stated_in_report": "N/A",
+                                        "actual_ledger_value": entry.get("raw_value"),
+                                        "correct_value": "ALLOWLISTED_DOMAIN_REQUIRED",
+                                        "source": entry.get("source"),
+                                        "failure_reason": f"Filing document '{os.path.basename(norm_cand)}' download URL '{doc_url}' is not on an allowlisted domain ({ALLOWED_DOMAINS})!"
+                                    })
                             except Exception as e:
                                 self.wrong.append({
                                     "line": 0,
