@@ -114,7 +114,7 @@ class SkepticAgent:
 
         # 2. Shares Outstanding Record (MARKET DATA)
         l_shares = self.ledger.record(
-            tool="yfinance.quote",
+            tool="market.shares",
             ticker=ticker,
             inputs={"shares_outstanding": shares_outstanding},
             output=shares_outstanding,

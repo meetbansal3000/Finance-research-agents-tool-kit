@@ -293,10 +293,13 @@ class ReportVerifier:
             elif tool in ("yfinance.quote", "data_layer.get_quote"):
                 from tools.data_layer import get_data_layer
                 dl = get_data_layer()
-                ticker_sym = inputs.get("symbol") or inputs.get("ticker")
+                ticker_sym = inputs.get("symbol") or inputs.get("ticker") or entry.get("ticker")
                 if ticker_sym:
-                    q_data = dl.get_quote(ticker_sym)
-                    price = float(q_data.get("price", 0.0) or 0.0)
+                    try:
+                        q_data = dl.get_quote(ticker_sym)
+                        price = float(q_data.get("price", 0.0) or 0.0)
+                    except Exception as e:
+                        return (False, None, f"Live market quote unavailable: {e}")
                     if price <= 0:
                         return (False, None, "Live market quote <= 0 or unavailable")
                     expected_num = float(expected_val) if expected_val is not None else 0.0
