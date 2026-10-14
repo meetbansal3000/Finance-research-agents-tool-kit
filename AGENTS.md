@@ -33,6 +33,14 @@ The system operates as an autonomous committee of specialized agents:
 - **CodexBridge (`tools/codex_bridge.py`):** Connects Antigravity and OpenAI Codex CLI for cross-agent code reviews, dual verification, and automated audits.
 - **RStudioBridge (`tools/r_bridge.py`, `r_studio/agent_bridge.R`):** Connects Python agents to native R 4.6.1 for Monte Carlo DCF simulations, portfolio QP, and CVRP supply chain logistics.
 
+### 🌐 Meridian Multi-Asset Master Orchestrator Ecosystem
+- **Meridian Multi-Asset Master Orchestrator (`agents/meridian_orchestrator.py`, `agents/meridian_orchestrator.md`):** Coordinates cross-asset portfolios, synthesizes desk findings, manages capital allocations, and enforces institutional risk gatekeeping.
+- **Options Greek Strategist (`agents/options_greek_agent.py`, `agents/options_greek_agent.md`):** Black-Scholes-Merton 1st-order ($\Delta, \nu, \Theta, \rho$) and 2nd-order ($\Gamma, \text{Vanna}, \text{Volga}, \text{Charm}$) Greeks, IV skew, and multi-leg strategies (Straddles, Iron Condors, Collars).
+- **Futures & Commodity Desk Agent (`agents/futures_commodity_agent.py`, `agents/futures_commodity_agent.md`):** Cost-of-carry theoretical pricing, contango vs. backwardation term structures, annualized roll yields, and exchange margin/leverage stress testing.
+- **Fixed Income Macro Agent (`agents/fixed_income_macro_agent.py`, `agents/fixed_income_macro_agent.md`):** Sovereign yield curve inversion analysis (2Y-10Y, 3M-10Y), Macaulay/Modified duration, analytical Convexity, DV01 ($/bp), and rate shock scenarios.
+- **Crypto & 24/7 Derivatives Agent (`agents/crypto_derivatives_agent.py`, `agents/crypto_derivatives_agent.md`):** Perpetual funding rates (8h carry & compound APY), cash-and-carry basis arbitrage, 24/7 liquidation cascade modeling, and margin buffer distance.
+- **Cross-Asset Risk Officer (`agents/cross_asset_risk_officer.py`, `agents/cross_asset_risk_officer.md`):** Chief Risk Officer gatekeeper computing Parametric VaR (95%/99%), Expected Shortfall ($CVaR$), black-swan crisis stress simulations (2008 GFC, 2020 Covid, 2022 Fed Rate Spikes), and centralizing the master Red Flags Registry.
+
 ---
 
 ## 3. NVIDIA Optimization & Simulation Suite

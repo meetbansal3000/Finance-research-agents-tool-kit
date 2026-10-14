@@ -34,6 +34,13 @@ from tools.calc.supply_chain_opt import (
 from tools.calc.gpu_autotune_sim import (
     FinancialKernelAutotuner
 )
+from tools.calc.derivatives_math import (
+    BlackScholesEngine,
+    FuturesCommodityEngine,
+    FixedIncomeMacroEngine,
+    CryptoDerivativesEngine,
+    CrossAssetRiskEngine
+)
 
 __all__ = [
     "yoy_growth",
@@ -54,6 +61,11 @@ __all__ = [
     "convert_currency",
     "PortfolioQPOptimizer",
     "SupplyChainLogisticsOptimizer",
-    "FinancialKernelAutotuner"
+    "FinancialKernelAutotuner",
+    "BlackScholesEngine",
+    "FuturesCommodityEngine",
+    "FixedIncomeMacroEngine",
+    "CryptoDerivativesEngine",
+    "CrossAssetRiskEngine"
 ]
 

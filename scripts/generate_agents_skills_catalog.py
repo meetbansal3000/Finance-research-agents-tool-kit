@@ -49,12 +49,12 @@ def build_catalog():
     ws_summary["B3"].font = sub_title_font
 
     metrics = [
-        ("Autonomous Research Agents", 12, "Fundamental, adversarial, audit, and reporting agents"),
+        ("Autonomous Research Agents", 18, "Fundamental, derivatives, macro, risk, audit, and reporting agents"),
         ("NVIDIA GPU & Acceleration Skills", 4, "cuOpt QP, cuOpt Routing, TileGym autotuning, NIM reasoning"),
         ("Global Antigravity System Skills", 55, "Data engineering, Google Cloud, web scraping, architecture"),
         ("Built-in Platform Skills", 8, "Workflows, plugins, automations, generative UI"),
         ("Connected Tool Bridges", 3, "RStudio Econometrics, OpenAI Codex CLI, GitHub Toolkit Sync"),
-        ("Test Suite Verification Rate", "100% (89/89 Passing)", "Zero hallucinations, deterministic math, audited provenance")
+        ("Test Suite Verification Rate", "100% Passing", "Zero hallucinations, deterministic math, audited provenance")
     ]
 
     ws_summary["B5"] = "Ecosystem Metric"
@@ -181,6 +181,48 @@ def build_catalog():
             "Triggered in Python via bridge.run_monte_carlo_dcf() or inside RStudio via source('r_studio/agent_bridge.R')",
             "tools.r_bridge.RStudioBridge() / R scripts", "Financial parameters, vectors, covariance matrices",
             "R Quantiles (5%, 50%, 95%), Value-at-Risk, Volatility distributions", "Logs execution to ProvenanceLedger with source_tag='R_STUDIO_ECONOMETRICS'"
+        ],
+        [
+            "Meridian Multi-Asset Master Orchestrator", "MeridianMultiAssetOrchestrator (agents/meridian_orchestrator.py)", "Multi-Asset Orchestration",
+            "Coordinates 5 specialized desks (Options, Futures, Macro, Crypto, Risk), aggregates cross-asset portfolios, enforces risk gatekeeping",
+            "Triggered via MeridianMultiAssetOrchestrator.run_multi_asset_committee() or Dashboard Web Terminal",
+            "agents.meridian_orchestrator.MeridianMultiAssetOrchestrator()", "Multi-asset allocations, desk specs, capital budget",
+            "Institutional Multi-Asset Investment Dossier & Risk Gatekeeper Decision", "Registers full orchestration run to ProvenanceLedger"
+        ],
+        [
+            "Options Greek Strategist", "OptionsGreekStrategist (agents/options_greek_agent.py)", "Derivatives & Volatility",
+            "Computes Black-Scholes 1st/2nd-order Greeks, implied volatility smiles/skews, multi-leg strategy payoffs, and delta-hedging overlays",
+            "Triggered on options contract queries, strategy backtests, or multi-asset orchestration",
+            "agents.options_greek_agent.OptionsGreekStrategist()", "Spot price, strike, expiry, volatility, risk-free rate, legs",
+            "Options Greek Sensitivity Matrix & PnL Payoff Distributions", "Logs analytical Greeks and pricing to ProvenanceLedger"
+        ],
+        [
+            "Futures & Commodity Desk Agent", "FuturesCommodityAgent (agents/futures_commodity_agent.py)", "Commodities & Futures",
+            "Models cost-of-carry pricing, analyzes Contango vs. Backwardation term structures, computes roll yield carry, and stress-tests exchange margins",
+            "Triggered on commodity/futures evaluation or portfolio hedge structuring",
+            "agents.futures_commodity_agent.FuturesCommodityAgent()", "Futures curve, spot price, storage cost, convenience yield, margin specs",
+            "Term Structure Analysis, Annualized Roll Yield, Margin Call Buffer", "Registers curve metrics & leverage checks to ProvenanceLedger"
+        ],
+        [
+            "Fixed Income Macro Agent", "FixedIncomeMacroAgent (agents/fixed_income_macro_agent.py)", "Rates & Macro",
+            "Analyzes sovereign yield curves (3M to 30Y), detects 2Y-10Y inversions, computes Macaulay/Modified duration, Convexity, and DV01",
+            "Triggered on macro rate reviews, bond portfolio duration checks, or rate shock stress tests",
+            "agents.fixed_income_macro_agent.FixedIncomeMacroAgent()", "Bond cash flows, coupon rate, YTM, Treasury curve points",
+            "Bond Sensitivity Profile, DV01 per Million Par, Yield Curve Regime Report", "Logs duration and inversion metrics to ProvenanceLedger"
+        ],
+        [
+            "Crypto & 24/7 Derivatives Agent", "CryptoDerivativesAgent (agents/crypto_derivatives_agent.py)", "24/7 Digital Derivatives",
+            "Monitors perpetual swap 8h funding rates, compound APY, cash-and-carry basis arbitrage, and exchange liquidation cascade risks",
+            "Triggered on digital asset derivative surveillance or funding yield capture",
+            "agents.crypto_derivatives_agent.CryptoDerivativesAgent()", "Perp mark/spot prices, 8h funding rate, open interest, volume, leverage",
+            "Perpetual Funding APY, Basis Arbitrage Viability, Liquidation Buffer", "Records funding rates and liquidation distance to ProvenanceLedger"
+        ],
+        [
+            "Cross-Asset Risk Officer", "CrossAssetRiskOfficer (agents/cross_asset_risk_officer.py)", "Risk Oversight & Gatekeeper",
+            "Chief Risk Officer gatekeeper computing Parametric VaR (95%/99%), Expected Shortfall (CVaR), historical crisis stress tests, and Master Red Flags",
+            "Triggered automatically at the conclusion of multi-asset reviews or standalone portfolio risk audits",
+            "agents.cross_asset_risk_officer.CrossAssetRiskOfficer()", "Cross-asset allocations, volatility vector, correlation matrix, desk reports",
+            "Authoritative Risk Verdict (APPROVED / REJECTED) & Master Red Flags Register", "Tamper-evident audit signature in ProvenanceLedger"
         ]
     ]
 
