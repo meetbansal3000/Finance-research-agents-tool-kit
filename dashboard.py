@@ -2703,8 +2703,105 @@ elif "Interactive 3D Pipeline Map" in nav_choice:
     workflow_3d_html = render_interactive_3d_workflow(height=620)
     components.html(workflow_3d_html, height=640, scrolling=False)
 
-    # Detailed Handoff Contracts Below 3D View
+    # Detailed Multi-Agent Roster Below 3D View
     st.divider()
+    st.markdown("### 🤖 Multi-Agent Roster & System Roles")
+    st.caption("Each agent in the research committee operates with deterministic mathematical boundaries, strict tool policies, and zero tolerance for mental arithmetic or hallucinations.")
+
+    agent_roster = [
+        {
+            "name": "Pipeline Orchestrator",
+            "file": "run_research.py",
+            "role": "Central Workflow Conductor",
+            "badge": "CONTROLLER",
+            "color": "#38BDF8",
+            "desc": "Initializes workflow runs, generates immutable session hashes, handles multi-stage agent sequencing, manages the conditional error repair loop, and packages final cryptographic research dossiers.",
+            "rule": "Zero Hand-Written Output: Guarantees every generated report is 100% agent-authored and audits run lifecycle states."
+        },
+        {
+            "name": "Analyst Agent",
+            "file": "agents/analyst.py",
+            "role": "Primary Modeling & Thesis Engine",
+            "badge": "MODELER",
+            "color": "#10B981",
+            "desc": "Extracts raw financial line items from primary SEC EDGAR 10-K/10-Q filings, executes valuation models (DCF, multiples, operating margins) via audited calculation tools, and drafts institutional research theses.",
+            "rule": "Zero Mental Arithmetic: Banned from performing math internally; must record every calculation with a valid [LEDGER_XXXX] provenance tag."
+        },
+        {
+            "name": "Verifier Agent",
+            "file": "agents/verifier.py",
+            "role": "Adversarial Cryptographic Auditor",
+            "badge": "AUDITOR",
+            "color": "#F59E0B",
+            "desc": "Acts as an uncompromising factual compliance auditor. Intercepts the Analyst report, re-opens primary filing sidecars, recomputes every ratio from scratch, checks HMAC-SHA256 signatures, and triggers a single-pass repair loop if errors exist.",
+            "rule": "Zero Silent Pass: Every untagged figure or calculation discrepancy immediately fails verification with an audit flag in `<report>.audit.md`."
+        },
+        {
+            "name": "Skeptic Agent",
+            "file": "agents/skeptic.py",
+            "role": "Red-Team Devil's Advocate",
+            "badge": "RED-TEAM",
+            "color": "#F43F5E",
+            "desc": "Constructs the evidence-backed bear case. Stress-tests management assumptions by solving for Reverse DCF market-implied growth, shocking operating margins by -200 bps, and raising WACC by +100 bps to reveal downside fair value floors.",
+            "rule": "Evidence-Backed Skepticism: Must state 'No strong counter-evidence found' if valuation and balance sheet are pristine; prohibited from fabricating synthetic bear cases."
+        },
+        {
+            "name": "Antigravity Copilot Agent",
+            "file": "agents/antigravity_agent.py",
+            "role": "Interactive Conversational Assistant",
+            "badge": "COPILOT",
+            "color": "#818CF8",
+            "desc": "Powers the interactive research copilot (Module 6) using the Google Antigravity SDK and Gemini. Routes natural-language queries into audited tools (quotes, metrics, DCF, portfolio optimization) with multi-turn conversational memory.",
+            "rule": "Deterministic Tool Fallback: Automatically invokes audited local computation tools if external API quotas or networks are unavailable."
+        },
+        {
+            "name": "NVIDIA Research Agent",
+            "file": "agents/nvidia_agent.py",
+            "role": "GPU Reasoning & cuOpt Optimization Specialist",
+            "badge": "OPTIMIZER",
+            "color": "#76B900",
+            "desc": "Bridges research workflows with GPU-accelerated deep reasoning (Nemotron) and cuOpt algorithmic formulation (Capacitated Vehicle Routing & Quadratic Programming portfolio optimization).",
+            "rule": "Cryptographic Attribution: Registers GPU inferences and cuOpt solver solutions into ProvenanceLedger under `NVIDIA_NIM_INFERENCE`."
+        },
+        {
+            "name": "Note Extractor Agent",
+            "file": "agents/note_extractor.py",
+            "role": "SEC 10-K Footnote Specialist",
+            "badge": "DISCLOSURES",
+            "color": "#EC4899",
+            "desc": "Parses unstructured disclosures inside SEC Item 8 Financial Statement Footnotes to uncover hidden customer concentration risks (revenue > 10%) and geographic segment shifts.",
+            "rule": "Verifiable Quote Anchoring: Quotes verbatim SEC disclosures and registers exact filing accession coordinates into the provenance vault."
+        },
+        {
+            "name": "Evidence Vault & Provenance Ledger",
+            "file": "tools/data_layer.py & tools/ledger.py",
+            "role": "Cryptographic Data Foundation",
+            "badge": "VAULT",
+            "color": "#A855F7",
+            "desc": "Serves as the immutable single source of truth for the multi-agent committee. Pulls official SEC EDGAR filings, logs calculation provenance trees, and signs outputs with HMAC-SHA256 hashes.",
+            "rule": "Tamper-Evident History: Guarantees that no data point can be altered post-execution without invalidating the cryptographic checksum."
+        }
+    ]
+
+    r_cols = st.columns(2)
+    for idx, agent in enumerate(agent_roster):
+        with r_cols[idx % 2]:
+            st.markdown(f"""
+            <div style="background: rgba(14, 18, 26, 0.75); border: 1px solid var(--border-subtle); border-left: 3px solid {agent['color']}; border-radius: var(--radius-sm); padding: 14px 18px; margin-bottom: 12px; height: 210px; display: flex; flex-direction: column; justify-content: space-between;">
+                <div>
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+                        <span style="font-weight: 700; color: var(--text-primary); font-size: 1.0rem;">{agent['name']}</span>
+                        <span style="background: rgba(255, 255, 255, 0.08); color: {agent['color']}; font-size: 0.7rem; font-weight: 700; padding: 2px 7px; border-radius: 4px;">{agent['badge']}</span>
+                    </div>
+                    <div style="font-size: 0.78rem; color: {agent['color']}; margin-bottom: 8px; font-family: monospace;">{agent['file']} • {agent['role']}</div>
+                    <div style="font-size: 0.84rem; color: var(--text-secondary); line-height: 1.45;">{agent['desc']}</div>
+                </div>
+                <div style="font-size: 0.76rem; color: var(--text-muted); border-top: 1px solid rgba(255, 255, 255, 0.06); padding-top: 6px; margin-top: 6px;">
+                    <b>Guardrail:</b> {agent['rule']}
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
+
     st.markdown("### 📋 Formal Agent-to-Agent Handoff Contracts")
     handoffs = [
         ("Dashboard → Pipeline Orchestrator", "The dashboard calls `run_pipeline(ticker, workflow_number)`. The orchestrator packages run IDs and ensures zero hand-written files exist.", "dashboard.py & run_research.py"),
