@@ -436,6 +436,122 @@ def load_historical_prices(ticker: str, period: str = "1y"):
 
 
 @st.cache_data(ttl=600)
+def get_dcf_company_profile(ticker: str):
+    sym = (ticker or "NVDA").strip().upper()
+    is_inr = ".NS" in sym or ".BO" in sym
+    is_eur = ".DE" in sym or ".PA" in sym or ".AS" in sym
+    currency_code = "INR (₹ Cr)" if is_inr else ("EUR (€)" if is_eur else "USD ($)")
+    currency_sym = "₹" if is_inr else ("€" if is_eur else "$")
+
+    presets = {
+        "NVDA": {"fcf": 60850000000.0, "shares": 24500000000.0, "net_debt": -38200000000.0, "price": 239.24, "wacc": 0.095, "growth": 0.22, "t_growth": 0.035, "company_name": "NVIDIA Corporation", "sector": "Semiconductors"},
+        "AAPL": {"fcf": 108807000000.0, "shares": 14594180000.0, "net_debt": -33763000000.0, "price": 333.63, "wacc": 0.085, "growth": 0.08, "t_growth": 0.03, "company_name": "Apple Inc.", "sector": "Consumer Electronics"},
+        "MSFT": {"fcf": 74071000000.0, "shares": 7430000000.0, "net_debt": -36549000000.0, "price": 529.30, "wacc": 0.088, "growth": 0.12, "t_growth": 0.03, "company_name": "Microsoft Corporation", "sector": "Enterprise Software & Cloud"},
+        "GOOGL": {"fcf": 73200000000.0, "shares": 12250000000.0, "net_debt": -71100000000.0, "price": 347.68, "wacc": 0.090, "growth": 0.14, "t_growth": 0.03, "company_name": "Alphabet Inc.", "sector": "Interactive Media & Cloud"},
+        "TSLA": {"fcf": 4836000000.0, "shares": 3949547000.0, "net_debt": -27444000000.0, "price": 367.16, "wacc": 0.095, "growth": 0.18, "t_growth": 0.03, "company_name": "Tesla, Inc.", "sector": "Automotive & Energy Storage"},
+        "TCS.NS": {"fcf": 44971.0, "shares": 361.8, "net_debt": -35395.0, "price": 3450.0, "wacc": 0.115, "growth": 0.08, "t_growth": 0.045, "company_name": "Tata Consultancy Services Ltd.", "sector": "IT Consulting & Services"}
+    }
+
+    profile = {
+        "ticker": sym,
+        "company_name": sym,
+        "sector": "General Equities",
+        "price": 100.0,
+        "fcf": 1e9,
+        "shares": 1e8,
+        "net_debt": 0.0,
+        "wacc": 0.09,
+        "growth": 0.10,
+        "t_growth": 0.025,
+        "currency_code": currency_code,
+        "currency_sym": currency_sym,
+        "source": "Estimated Baseline"
+    }
+
+    if sym in presets:
+        profile.update(presets[sym])
+        profile["source"] = "Audited SEC / Annual Filing Baseline"
+
+    # Always fetch live price and updated balance sheet metrics
+    try:
+        t_obj = yf.Ticker(sym)
+        fi = getattr(t_obj, "fast_info", None)
+
+        live_price = None
+        if fi:
+            for attr in ("last_price", "previous_close", "lastPrice", "regularMarketPrice"):
+                val = getattr(fi, attr, None)
+                if val is not None and not np.isnan(val) and float(val) > 0:
+                    live_price = float(val)
+                    break
+
+        if live_price is None or live_price <= 0:
+            hist = t_obj.history(period="5d")
+            if not hist.empty and "Close" in hist.columns:
+                last_c = hist["Close"].dropna().iloc[-1]
+                if float(last_c) > 0:
+                    live_price = float(last_c)
+
+        if live_price and live_price > 0:
+            profile["price"] = float(live_price)
+
+        # Shares
+        shs = None
+        if fi:
+            val = getattr(fi, "shares", None)
+            if val is not None and not np.isnan(val) and float(val) > 0:
+                shs = float(val)
+
+        info = {}
+        try:
+            info = t_obj.info or {}
+        except Exception:
+            pass
+
+        if info:
+            if not shs:
+                shs = info.get("sharesOutstanding") or info.get("impliedSharesOutstanding")
+            if shs and float(shs) > 0:
+                profile["shares"] = float(shs)
+
+            c_name = info.get("shortName") or info.get("longName")
+            if c_name:
+                profile["company_name"] = str(c_name)
+            sec = info.get("sector") or info.get("industry")
+            if sec:
+                profile["sector"] = str(sec)
+
+            if sym not in presets:
+                raw_fcf = info.get("freeCashflow")
+                if raw_fcf is not None and not np.isnan(raw_fcf) and float(raw_fcf) > 0:
+                    profile["fcf"] = float(raw_fcf)
+                    profile["source"] = "SEC Filings (TTM FCF)"
+                else:
+                    ocf = info.get("operatingCashflow")
+                    capex = info.get("capitalExpenditures")
+                    if ocf is not None and float(ocf) > 0:
+                        est_f = float(ocf) - abs(float(capex or 0))
+                        if est_f > 0:
+                            profile["fcf"] = est_f
+                            profile["source"] = "SEC Filings (OCF - CapEx)"
+                        else:
+                            profile["fcf"] = max(profile["price"] * (shs or 1e8) * 0.035, 1e7)
+                            profile["source"] = "Estimated 3.5% FCF Yield"
+                    else:
+                        profile["fcf"] = max(profile["price"] * (shs or 1e8) * 0.035, 1e7)
+                        profile["source"] = "Estimated 3.5% FCF Yield"
+
+                tot_d = float(info.get("totalDebt") or 0.0)
+                tot_c = float(info.get("totalCash") or 0.0)
+                profile["net_debt"] = tot_d - tot_c
+
+    except Exception:
+        pass
+
+    return profile
+
+
+@st.cache_data(ttl=600)
 def get_shortlist_metrics_for_universe(tickers_tuple):
     records = []
     for sym in tickers_tuple:
@@ -1090,143 +1206,621 @@ elif "Intrinsic Valuation" in nav_choice:
     col_head, col_info = st.columns([4.2, 1.3])
     with col_head:
         st.markdown('<div class="header-style">Intrinsic Valuation Model (DCF)</div>', unsafe_allow_html=True)
-        st.markdown('<div class="meridian-intro">Discounted Cash Flow model with dynamic growth projections, WACC sensitivity grid, and reverse DCF implied growth.</div>', unsafe_allow_html=True)
+        st.markdown('<div class="meridian-intro">Institutional multi-stage Discounted Cash Flow workstation with interactive candlestick valuation corridors, cash flow waterfall, 2D sensitivity heatmaps, and reverse DCF expectations.</div>', unsafe_allow_html=True)
     with col_info:
         render_tab_info_guide(
             title="Discounted Cash Flow (DCF) Valuation",
-            purpose="Calculate intrinsic equity value per share and determine the required margin of safety.",
+            purpose="Calculate intrinsic equity value per share, visualize valuation corridors on live candlestick charts, and quantify the margin of safety.",
             capabilities=[
                 "Multi-stage Free Cash Flow (FCFF) enterprise valuation",
-                "Reverse DCF solving for market-implied 5-year FCF CAGR",
-                "5x5 WACC vs Growth sensitivity matrix",
-                "Bear, Base, and Bull scenario modeling"
+                "Live candlestick price action with overlaid DCF Fair Value and Margin of Safety bands",
+                "5-year projected cash flow waterfall & enterprise value decomposition",
+                "Interactive 2D Plotly heatmap sensitivity matrix (WACC vs Growth)",
+                "Reverse DCF solving for market-implied 5-year FCF CAGR"
             ],
-            use_case="Assess whether the current market trading price offers an adequate margin of safety given conservative cash flow projections.",
-            methodology="Closed-form Gordon Growth Terminal Value + mid-year discounting conventions; audited balance sheet net debt deduction."
+            use_case="Determine whether current market pricing offers an attractive margin of safety relative to fundamental intrinsic cash flows.",
+            methodology="Gordon Growth Terminal Value + mid-year discounting conventions; audited balance sheet net debt adjustment."
         )
 
-    dcf_presets = {
-        "NVDA": {"fcf": 60850000000.0, "shares": 24500000000.0, "net_debt": -38200000000.0, "price": 239.24, "wacc": 0.095, "growth": 0.22, "t_growth": 0.035},
-        "AAPL": {"fcf": 108807000000.0, "shares": 14594180000.0, "net_debt": -33763000000.0, "price": 333.63, "wacc": 0.085, "growth": 0.08, "t_growth": 0.03},
-        "MSFT": {"fcf": 74071000000.0, "shares": 7430000000.0, "net_debt": -36549000000.0, "price": 529.30, "wacc": 0.088, "growth": 0.12, "t_growth": 0.03},
-        "GOOGL": {"fcf": 73200000000.0, "shares": 12250000000.0, "net_debt": -71100000000.0, "price": 347.68, "wacc": 0.090, "growth": 0.14, "t_growth": 0.03},
-        "TCS.NS": {"fcf": 44971.0, "shares": 361.8, "net_debt": -35395.0, "price": 3450.0, "wacc": 0.115, "growth": 0.08, "t_growth": 0.045}
-    }
+    # Ticker Selection & Quick Chips
+    t_top1, t_top2 = st.columns([1.8, 3.2])
+    with t_top1:
+        custom_sym = st.text_input(
+            "Ticker Symbol",
+            value=st.session_state.get("active_ticker", "NVDA"),
+            key="dcf_active_sym_input"
+        ).strip().upper()
+    with t_top2:
+        st.markdown("<div style='font-size:0.8rem; color:var(--text-muted); margin-bottom:4px;'>Quick Coverage Presets:</div>", unsafe_allow_html=True)
+        chip_cols = st.columns(6)
+        preset_chips = ["NVDA", "AAPL", "MSFT", "GOOGL", "TSLA", "TCS.NS"]
+        for idx, chip in enumerate(preset_chips):
+            with chip_cols[idx]:
+                if st.button(chip, key=f"dcf_chip_{chip}", use_container_width=True):
+                    custom_sym = chip
+                    st.session_state["active_ticker"] = chip
+                    st.rerun()
 
-    t_col1, t_col2 = st.columns([1, 2])
-    with t_col1:
-        custom_sym = st.text_input("Enter Ticker for DCF", value=st.session_state.get("active_ticker", "NVDA")).strip().upper()
-        if custom_sym in dcf_presets:
-            preset = dcf_presets[custom_sym]
-            currency_code = "INR (₹ Cr)" if ".NS" in custom_sym else "USD ($)"
-        else:
-            # Safely fetch live metrics for custom ticker
-            currency_code = "USD ($)"
-            try:
-                t_obj = yf.Ticker(custom_sym)
-                fi = t_obj.fast_info
-                curr_p = float(getattr(fi, "last_price", None) or getattr(fi, "previous_close", None) or 100.0)
-                shs = float(getattr(fi, "shares", None) or 1e9)
-                fcf_val = float(curr_p * shs * 0.04) # 4% initial FCF yield baseline
-                preset = {
-                    "fcf": max(fcf_val, 1e7),
-                    "shares": max(shs, 1e6),
-                    "net_debt": 0.0,
-                    "price": curr_p,
-                    "wacc": 0.09,
-                    "growth": 0.10,
-                    "t_growth": 0.025
-                }
-            except Exception:
-                preset = {"fcf": 1000000000.0, "shares": 100000000.0, "net_debt": 0.0, "price": 50.0, "wacc": 0.09, "growth": 0.08, "t_growth": 0.025}
+    # Load audited/live company profile
+    profile = get_dcf_company_profile(custom_sym)
+    currency_code = profile["currency_code"]
+    currency_sym = profile["currency_sym"]
 
-    with t_col2:
-        with st.expander("🛠️ Custom Financial Inputs Override", expanded=(custom_sym not in dcf_presets)):
+    # Header Card with Company Metadata
+    st.markdown(f"""
+    <div style="background: rgba(14, 18, 26, 0.85); border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); padding: 12px 18px; margin: 8px 0 16px 0; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
+        <div>
+            <span style="font-size: 1.15rem; font-weight: 700; color: var(--text-primary);">{profile['company_name']} ({custom_sym})</span>
+            <span style="background: rgba(56, 189, 248, 0.12); color: #38BDF8; font-size: 0.75rem; font-weight: 600; padding: 2px 8px; border-radius: 4px; margin-left: 8px;">{profile['sector']}</span>
+        </div>
+        <div style="font-size: 0.82rem; color: var(--text-secondary);">
+            <span style="margin-right: 14px;">📡 <b>Source:</b> {profile['source']}</span>
+            <span>💱 <b>Reporting Currency:</b> {currency_code}</span>
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
+
+    # Scenario Selection & Custom Inputs
+    sec_col1, sec_col2 = st.columns([2.5, 3.5])
+    with sec_col1:
+        scenario_mode = st.radio(
+            "Scenario Preset",
+            ["⚖️ Base Consensus", "🐻 Conservative / Bear", "🐂 Aggressive / Bull"],
+            horizontal=True,
+            key=f"dcf_scenario_mode_{custom_sym}"
+        )
+    with sec_col2:
+        with st.expander("🛠️ Balance Sheet & Cash Flow Inputs Override", expanded=False):
             c_f1, c_f2, c_f3 = st.columns(3)
             with c_f1:
-                input_fcf = st.number_input("Base Free Cash Flow", value=float(preset["fcf"]), format="%.2f")
+                input_fcf = st.number_input(
+                    "Base Free Cash Flow",
+                    value=float(profile["fcf"]),
+                    format="%.2f",
+                    key=f"dcf_input_fcf_{custom_sym}"
+                )
             with c_f2:
-                input_shares = st.number_input("Diluted Shares Outstanding", value=float(preset["shares"]), format="%.2f")
+                input_shares = st.number_input(
+                    "Diluted Shares Outstanding",
+                    value=float(profile["shares"]),
+                    format="%.2f",
+                    key=f"dcf_input_shares_{custom_sym}"
+                )
             with c_f3:
-                input_net_debt = st.number_input("Balance Sheet Net Debt (Debt - Cash)", value=float(preset["net_debt"]), format="%.2f")
-            preset["fcf"] = input_fcf
-            preset["shares"] = input_shares
-            preset["net_debt"] = input_net_debt
+                input_net_debt = st.number_input(
+                    "Balance Sheet Net Debt (Debt - Cash)",
+                    value=float(profile["net_debt"]),
+                    format="%.2f",
+                    key=f"dcf_input_netdebt_{custom_sym}"
+                )
+            profile["fcf"] = input_fcf
+            profile["shares"] = input_shares
+            profile["net_debt"] = input_net_debt
+
+    # Adjust default slider values based on scenario mode
+    default_wacc = float(profile["wacc"] * 100)
+    default_growth = float(profile["growth"] * 100)
+    default_t_growth = float(profile["t_growth"] * 100)
+
+    if "Bear" in scenario_mode:
+        default_growth = max(default_growth - 4.0, -10.0)
+        default_wacc = min(default_wacc + 1.5, 18.0)
+        default_t_growth = 2.0
+    elif "Bull" in scenario_mode:
+        default_growth = min(default_growth + 4.0, 45.0)
+        default_wacc = max(default_wacc - 1.0, 5.5)
+        default_t_growth = 3.5
 
     col_s1, col_s2, col_s3 = st.columns(3)
     with col_s1:
-        slider_wacc = st.slider("Discount Rate / WACC (%)", min_value=5.0, max_value=18.0, value=float(preset["wacc"] * 100), step=0.25) / 100.0
+        slider_wacc = st.slider(
+            "Discount Rate / WACC (%)",
+            min_value=5.0,
+            max_value=18.0,
+            value=default_wacc,
+            step=0.25,
+            key=f"dcf_wacc_slider_{custom_sym}"
+        ) / 100.0
     with col_s2:
-        slider_growth = st.slider("5-Year FCF Growth Rate (%)", min_value=-15.0, max_value=50.0, value=float(preset["growth"] * 100), step=0.5) / 100.0
+        slider_growth = st.slider(
+            "5-Year FCF Annual Growth Rate (%)",
+            min_value=-15.0,
+            max_value=50.0,
+            value=default_growth,
+            step=0.5,
+            key=f"dcf_growth_slider_{custom_sym}"
+        ) / 100.0
     with col_s3:
-        slider_t_growth = st.slider("Perpetual Terminal Growth Rate (%)", min_value=1.5, max_value=5.0, value=float(preset["t_growth"] * 100), step=0.25) / 100.0
+        slider_t_growth = st.slider(
+            "Perpetual Terminal Growth Rate (%)",
+            min_value=1.5,
+            max_value=5.0,
+            value=default_t_growth,
+            step=0.25,
+            key=f"dcf_t_growth_slider_{custom_sym}"
+        ) / 100.0
 
+    # Ensure WACC > Terminal Growth
+    if slider_wacc <= slider_t_growth:
+        st.error("⚠️ Discount rate (WACC) must be strictly greater than the perpetual terminal growth rate for mathematical convergence.")
+        slider_wacc = slider_t_growth + 0.01
+
+    # Execute Multi-Scenario DCF Calculations
     growth_rates = [slider_growth] * 5
     dcf_calc = dcf(
-        base_fcf=preset["fcf"],
+        base_fcf=profile["fcf"],
         growth_rates=growth_rates,
         discount_rate=slider_wacc,
         terminal_growth_rate=slider_t_growth,
-        shares_outstanding=preset["shares"],
-        net_debt=preset["net_debt"]
+        shares_outstanding=profile["shares"],
+        net_debt=profile["net_debt"]
     )
     dcf_res = dcf_calc["result"]
-    fair_val = dcf_res["fair_value_per_share"]
-    curr_price = preset["price"]
+    fair_val = float(dcf_res["fair_value_per_share"])
+    curr_price = float(profile["price"])
     upside_pct = ((fair_val - curr_price) / curr_price) * 100.0 if curr_price > 0 else 0.0
 
+    # Calculate Bear and Bull cases for valuation corridor
+    try:
+        bear_calc = dcf(
+            base_fcf=profile["fcf"],
+            growth_rates=[max(slider_growth - 0.04, -0.10)] * 5,
+            discount_rate=min(slider_wacc + 0.015, 0.18),
+            terminal_growth_rate=max(slider_t_growth - 0.005, 0.015),
+            shares_outstanding=profile["shares"],
+            net_debt=profile["net_debt"]
+        )
+        bear_val = float(bear_calc["result"]["fair_value_per_share"])
+    except Exception:
+        bear_val = fair_val * 0.70
+
+    try:
+        bull_calc = dcf(
+            base_fcf=profile["fcf"],
+            growth_rates=[min(slider_growth + 0.04, 0.50)] * 5,
+            discount_rate=max(slider_wacc - 0.01, slider_t_growth + 0.01),
+            terminal_growth_rate=min(slider_t_growth + 0.005, 0.045),
+            shares_outstanding=profile["shares"],
+            net_debt=profile["net_debt"]
+        )
+        bull_val = float(bull_calc["result"]["fair_value_per_share"])
+    except Exception:
+        bull_val = fair_val * 1.35
+
+    mos_target = fair_val * 0.80
+    weighted_fv = (0.25 * bear_val) + (0.50 * fair_val) + (0.25 * bull_val)
+
+    # Executive Obsidian KPI Banner
     st.divider()
     m_col1, m_col2, m_col3, m_col4 = st.columns(4)
     with m_col1:
-        st.metric("Current Market Price", f"${curr_price:,.2f}")
+        st.metric("Current Market Price", f"{currency_sym}{curr_price:,.2f}")
     with m_col2:
-        st.metric("Model Fair Value", f"${fair_val:,.2f}")
+        st.metric("Model Fair Value", f"{currency_sym}{fair_val:,.2f}", help=f"Probability-Weighted Fair Value: {currency_sym}{weighted_fv:,.2f}")
     with m_col3:
         st.metric("Margin of Safety / Upside", f"{upside_pct:+.1f}%", delta=f"{upside_pct:+.1f}%")
     with m_col4:
-        st.metric("Enterprise Value", f"${dcf_res['enterprise_value'] / 1e9:,.1f}B")
+        st.metric("Enterprise Value", f"{currency_sym}{dcf_res['enterprise_value'] / 1e9:,.1f}B", help=f"Balance Sheet Net Debt: {currency_sym}{profile['net_debt']/1e9:,.1f}B")
 
-    # Reverse DCF solver
-    try:
-        rev_calc = reverse_dcf(
-            current_price=curr_price,
-            base_fcf=preset["fcf"],
-            shares_outstanding=preset["shares"],
-            discount_rate=slider_wacc,
-            terminal_growth_rate=slider_t_growth,
-            net_debt=preset["net_debt"]
-        )
-        implied_g = rev_calc["result"]["implied_growth_rate_pct"]
-        st.info(f"💡 **Reverse DCF Implied Growth Rate:** At current market price (${curr_price:.2f}), the market implies a **{implied_g:+.2f}%** annual FCF growth rate over the next 5 years (vs your assumed {slider_growth*100:.1f}%).")
-    except Exception:
-        pass
+    # Margin of Safety Verdict Badge
+    if upside_pct >= 25.0:
+        verdict_color = "#10B981"
+        verdict_bg = "rgba(16, 185, 129, 0.12)"
+        verdict_badge = "🟢 STRONG BUY / DEEP MARGIN OF SAFETY"
+        verdict_desc = f"Current trading price ({currency_sym}{curr_price:,.2f}) sits significantly below the 20% Margin of Safety threshold ({currency_sym}{mos_target:,.2f}), offering attractive asymmetric risk/reward."
+    elif upside_pct >= 10.0:
+        verdict_color = "#34D399"
+        verdict_bg = "rgba(52, 211, 153, 0.10)"
+        verdict_badge = "🟢 MODERATE UNDERVALUATION"
+        verdict_desc = f"Current price trades at an attractive discount to intrinsic fair value ({currency_sym}{fair_val:,.2f}), providing positive downside cushion."
+    elif upside_pct >= -10.0:
+        verdict_color = "#F59E0B"
+        verdict_bg = "rgba(245, 158, 11, 0.12)"
+        verdict_badge = "🟡 FAIR VALUE EQUILIBRIUM"
+        verdict_desc = f"Market price closely tracks projected fundamental cash flows (within +/-10% of par value). Neutral risk/reward."
+    elif upside_pct >= -25.0:
+        verdict_color = "#F97316"
+        verdict_bg = "rgba(249, 115, 22, 0.12)"
+        verdict_badge = "🔴 OVERVALUED / MULTIPLE COMPRESSION RISK"
+        verdict_desc = f"Market price trades at a notable premium above DCF fair value ({currency_sym}{fair_val:,.2f}). Requires higher-than-modeled growth to justify current multiples."
+    else:
+        verdict_color = "#EF4444"
+        verdict_bg = "rgba(239, 68, 68, 0.12)"
+        verdict_badge = "🔴 SEVERE OVERVALUATION ALERT"
+        verdict_desc = f"Market price implies aggressive growth expectations that exceed conservative fundamental cash flow trajectories."
 
-    st.subheader(f"📊 Valuation Sensitivity Matrix: {custom_sym} (WACC vs 5Y Growth)")
-    wacc_range = np.linspace(slider_wacc - 0.02, slider_wacc + 0.02, 5)
-    growth_range = np.linspace(slider_growth - 0.06, slider_growth + 0.06, 5)
+    st.markdown(f"""
+    <div style="background: {verdict_bg}; border: 1px solid {verdict_color}; border-radius: var(--radius-sm); padding: 12px 18px; margin: 10px 0 20px 0; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px;">
+        <div style="font-weight: 700; color: {verdict_color}; font-size: 0.95rem;">{verdict_badge}</div>
+        <div style="font-size: 0.86rem; color: var(--text-primary);">{verdict_desc}</div>
+    </div>
+    """, unsafe_allow_html=True)
 
-    matrix_data = []
-    for g in growth_range:
-        row = []
-        for w in wacc_range:
-            g_rates = [g] * 5
-            res_calc = dcf(
-                base_fcf=preset["fcf"],
-                growth_rates=g_rates,
-                discount_rate=w,
-                terminal_growth_rate=slider_t_growth,
-                shares_outstanding=preset["shares"],
-                net_debt=preset["net_debt"]
+    # 4 Dedicated Interactive Analysis Tabs
+    dcf_tab1, dcf_tab2, dcf_tab3, dcf_tab4 = st.tabs([
+        "🕯️ Price Action & Fair Value Corridor",
+        "🌊 5-Year Cash Flow Trajectory & Waterfall",
+        "🗺️ 2D Interactive Sensitivity Heatmap",
+        "⚖️ Reverse DCF & Market Expectations"
+    ])
+
+    # --- TAB 1: CANDLESTICK & FAIR VALUE BANDS ---
+    with dcf_tab1:
+        st.markdown("##### 🕯️ Price Action vs DCF Intrinsic Valuation Corridor")
+        st.caption("Live historical candlestick chart overlaid with DCF Model Fair Value, 20% Margin of Safety Entry Target, and Bull/Bear Corridor bands.")
+
+        c_ctl1, c_ctl2, c_ctl3, c_ctl4 = st.columns([1.2, 1, 1, 1])
+        with c_ctl1:
+            candle_period = st.selectbox(
+                "Time Horizon",
+                options=["1mo", "3mo", "6mo", "1y", "2y"],
+                index=2,
+                key=f"dcf_period_sel_{custom_sym}"
             )
-            row.append(f"${res_calc['result']['fair_value_per_share']:,.2f}")
-        matrix_data.append(row)
+        with c_ctl2:
+            show_sma = st.checkbox("50D / 200D SMAs", value=True, key=f"dcf_sma_cb_{custom_sym}")
+        with c_ctl3:
+            show_corridor = st.checkbox("Bull / Bear Corridor", value=True, key=f"dcf_corridor_cb_{custom_sym}")
+        with c_ctl4:
+            show_mos_band = st.checkbox("20% MoS Entry Band", value=True, key=f"dcf_mos_cb_{custom_sym}")
 
-    df_matrix = pd.DataFrame(
-        matrix_data,
-        index=[f"Growth {g*100:.1f}%" for g in growth_range],
-        columns=[f"WACC {w*100:.2f}%" for w in wacc_range]
-    )
-    st.table(df_matrix)
+        with st.spinner(f"Loading candlestick history for {custom_sym}..."):
+            df_hist = load_historical_prices(custom_sym, period=candle_period)
+
+        if df_hist is not None and not df_hist.empty and "Close" in df_hist.columns and len(df_hist) > 0:
+            fig_candle = make_subplots(
+                rows=2, cols=1,
+                shared_xaxes=True,
+                vertical_spacing=0.04,
+                subplot_titles=(f"{custom_sym} Candlestick Price Action & Valuation Bands", "Daily Trading Volume"),
+                row_heights=[0.75, 0.25]
+            )
+
+            # Candlestick
+            fig_candle.add_trace(
+                go.Candlestick(
+                    x=df_hist.index,
+                    open=df_hist["Open"],
+                    high=df_hist["High"],
+                    low=df_hist["Low"],
+                    close=df_hist["Close"],
+                    name="OHLC Price",
+                    increasing_line_color="#10B981",
+                    decreasing_line_color="#EF4444",
+                    increasing_fillcolor="#10B981",
+                    decreasing_fillcolor="#EF4444",
+                ),
+                row=1, col=1
+            )
+
+            # Moving Averages
+            if show_sma:
+                if len(df_hist) >= 50:
+                    sma50 = df_hist["Close"].rolling(50).mean()
+                    fig_candle.add_trace(go.Scatter(x=df_hist.index, y=sma50, mode="lines", name="50-Day SMA", line=dict(color="#F59E0B", width=1.5)), row=1, col=1)
+                if len(df_hist) >= 200:
+                    sma200 = df_hist["Close"].rolling(200).mean()
+                    fig_candle.add_trace(go.Scatter(x=df_hist.index, y=sma200, mode="lines", name="200-Day SMA", line=dict(color="#38BDF8", width=1.5)), row=1, col=1)
+
+            # Valuation Reference Lines
+            fig_candle.add_hline(
+                y=fair_val,
+                line_dash="dash",
+                line_color="#10B981",
+                line_width=2.2,
+                annotation_text=f"Base Fair Value: {currency_sym}{fair_val:,.2f}",
+                annotation_position="top right",
+                annotation_font=dict(color="#10B981", size=11),
+                row=1, col=1
+            )
+
+            if show_mos_band and mos_target > 0:
+                fig_candle.add_hline(
+                    y=mos_target,
+                    line_dash="dot",
+                    line_color="#F59E0B",
+                    line_width=2.0,
+                    annotation_text=f"20% MoS Entry Target: {currency_sym}{mos_target:,.2f}",
+                    annotation_position="bottom right",
+                    annotation_font=dict(color="#F59E0B", size=10),
+                    row=1, col=1
+                )
+                if fair_val > mos_target:
+                    fig_candle.add_hrect(
+                        y0=mos_target, y1=fair_val,
+                        fillcolor="rgba(16, 185, 129, 0.08)",
+                        line_width=0,
+                        layer="below",
+                        row=1, col=1
+                    )
+
+            if show_corridor:
+                if bull_val > 0:
+                    fig_candle.add_hline(
+                        y=bull_val,
+                        line_dash="dot",
+                        line_color="#38BDF8",
+                        line_width=1.5,
+                        annotation_text=f"Bull Target: {currency_sym}{bull_val:,.2f}",
+                        annotation_position="top left",
+                        annotation_font=dict(color="#38BDF8", size=10),
+                        row=1, col=1
+                    )
+                if bear_val > 0:
+                    fig_candle.add_hline(
+                        y=bear_val,
+                        line_dash="dot",
+                        line_color="#F43F5E",
+                        line_width=1.5,
+                        annotation_text=f"Bear Floor: {currency_sym}{bear_val:,.2f}",
+                        annotation_position="bottom left",
+                        annotation_font=dict(color="#F43F5E", size=10),
+                        row=1, col=1
+                    )
+
+            # Volume
+            vol_colors = ["#10B981" if c >= o else "#EF4444" for c, o in zip(df_hist["Close"], df_hist["Open"])]
+            fig_candle.add_trace(
+                go.Bar(
+                    x=df_hist.index,
+                    y=df_hist["Volume"],
+                    name="Volume",
+                    marker_color=vol_colors,
+                    opacity=0.65
+                ),
+                row=2, col=1
+            )
+
+            fig_candle.update_layout(
+                template="plotly_dark",
+                paper_bgcolor="#0B0E14",
+                plot_bgcolor="#0E121A",
+                height=580,
+                xaxis_rangeslider_visible=False,
+                hovermode="x unified",
+                margin=dict(l=25, r=25, t=40, b=25),
+                legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1)
+            )
+            fig_candle.update_yaxes(gridcolor="rgba(255, 255, 255, 0.07)", row=1, col=1)
+            fig_candle.update_yaxes(gridcolor="rgba(255, 255, 255, 0.07)", row=2, col=1)
+            fig_candle.update_xaxes(gridcolor="rgba(255, 255, 255, 0.07)")
+
+            st.plotly_chart(fig_candle, use_container_width=True)
+
+            last_close = float(df_hist["Close"].iloc[-1])
+            pct_to_fair = ((fair_val - last_close) / last_close) * 100
+            pct_to_mos = ((mos_target - last_close) / last_close) * 100
+
+            st.markdown(f"""
+            <div style="background: rgba(14, 18, 26, 0.7); border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); padding: 12px 16px; font-size: 0.88rem; line-height: 1.5; color: var(--text-secondary); margin-top: 6px;">
+                <b>Candlestick Valuation Context:</b> Latest market close is <b>{currency_sym}{last_close:,.2f}</b>. 
+                Base DCF Fair Value sits at <b>{currency_sym}{fair_val:,.2f}</b> ({pct_to_fair:+.1f}% distance). 
+                The 20% Margin of Safety accumulation target is <b>{currency_sym}{mos_target:,.2f}</b> ({pct_to_mos:+.1f}% distance).
+                {"🟢 <b>Current price is trading inside the attractive Margin of Safety accumulation zone.</b>" if last_close <= fair_val and last_close >= mos_target else ("🟢 <b>Current price is trading at a deep discount below the 20% MoS entry threshold!</b>" if last_close < mos_target else "🔴 <b>Current price is trading at a premium above DCF fair value.</b>")}
+            </div>
+            """, unsafe_allow_html=True)
+        else:
+            st.warning(f"Price history unavailable for '{custom_sym}'. Please verify the symbol.")
+
+    # --- TAB 2: CASH FLOW TRAJECTORY & WATERFALL ---
+    with dcf_tab2:
+        st.markdown("##### 🌊 5-Year Free Cash Flow Projections & Value Decomposition")
+        st.caption("Visual trajectory of nominal Free Cash Flows ($Y_1$ to $Y_5$) vs Discounted Present Value (PV), plus Enterprise Value decomposition.")
+
+        proj_years = [f"Year {i}" for i in range(1, 6)]
+        proj_fcf = dcf_res["projected_fcf"]
+        pv_fcf = [fcf / ((1.0 + slider_wacc) ** i) for i, fcf in enumerate(proj_fcf, start=1)]
+
+        col_w1, col_w2 = st.columns([1.6, 1.2])
+        with col_w1:
+            fig_fcf = go.Figure()
+            fig_fcf.add_trace(go.Bar(
+                x=proj_years,
+                y=[f / 1e9 for f in proj_fcf],
+                name="Nominal Projected FCF",
+                marker_color="#38BDF8",
+                text=[f"{currency_sym}{f/1e9:,.2f}B" for f in proj_fcf],
+                textposition="auto"
+            ))
+            fig_fcf.add_trace(go.Bar(
+                x=proj_years,
+                y=[p / 1e9 for p in pv_fcf],
+                name=f"Discounted PV (at {slider_wacc*100:.1f}% WACC)",
+                marker_color="#10B981",
+                text=[f"{currency_sym}{p/1e9:,.2f}B" for p in pv_fcf],
+                textposition="auto"
+            ))
+            fig_fcf.update_layout(
+                template="plotly_dark",
+                paper_bgcolor="#0B0E14",
+                plot_bgcolor="#0E121A",
+                title="Nominal vs Discounted Cash Flows ($ Billions)",
+                barmode="group",
+                height=380,
+                margin=dict(l=20, r=20, t=40, b=20),
+                legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1)
+            )
+            st.plotly_chart(fig_fcf, use_container_width=True)
+
+        with col_w2:
+            ev_total = dcf_res["enterprise_value"]
+            pv_explicit = dcf_res["pv_explicit_fcf"]
+            pv_tv = dcf_res["pv_terminal_value"]
+
+            fig_donut = go.Figure(data=[go.Pie(
+                labels=["5Y Explicit FCF PV", "Perpetual Terminal Value PV"],
+                values=[pv_explicit, pv_tv],
+                hole=0.62,
+                marker_colors=["#38BDF8", "#A855F7"],
+                textinfo="label+percent",
+                hoverinfo="label+value+percent"
+            )])
+            fig_donut.update_layout(
+                template="plotly_dark",
+                paper_bgcolor="#0B0E14",
+                plot_bgcolor="#0E121A",
+                title="Enterprise Value Decomposition",
+                height=380,
+                margin=dict(l=20, r=20, t=40, b=20),
+                showlegend=False,
+                annotations=[dict(text=f"Total EV<br><b>{currency_sym}{ev_total/1e9:,.1f}B</b>", x=0.5, y=0.5, font_size=13, showarrow=False)]
+            )
+            st.plotly_chart(fig_donut, use_container_width=True)
+
+        st.markdown("##### 📋 Audited Free Cash Flow Schedule")
+        schedule_rows = []
+        cum_pv = 0.0
+        for i in range(1, 6):
+            cf = proj_fcf[i-1]
+            df_factor = (1.0 + slider_wacc) ** i
+            pv = pv_fcf[i-1]
+            cum_pv += pv
+            schedule_rows.append({
+                "Period": f"Year {i} (FY+{i})",
+                "Nominal FCF": f"{currency_sym}{cf/1e9:,.2f}B",
+                "Growth Rate": f"{slider_growth*100:+.1f}%",
+                "Discount Factor": f"{1.0/df_factor:.4f} ({(1.0/df_factor)*100:.1f}%)",
+                "Present Value (PV)": f"{currency_sym}{pv/1e9:,.2f}B",
+                "Cumulative PV": f"{currency_sym}{cum_pv/1e9:,.2f}B"
+            })
+        schedule_rows.append({
+            "Period": f"Terminal Value (Gordon Growth at {slider_t_growth*100:.2f}%)",
+            "Nominal FCF": f"{currency_sym}{dcf_res['terminal_value']/1e9:,.2f}B (Nominal)",
+            "Growth Rate": f"{slider_t_growth*100:.2f}% Perpetual",
+            "Discount Factor": f"{1.0/((1.0+slider_wacc)**5):.4f}",
+            "Present Value (PV)": f"{currency_sym}{pv_tv/1e9:,.2f}B",
+            "Cumulative PV": f"{currency_sym}{ev_total/1e9:,.2f}B (Total EV)"
+        })
+        st.dataframe(pd.DataFrame(schedule_rows), use_container_width=True, hide_index=True)
+
+    # --- TAB 3: 2D SENSITIVITY HEATMAP ---
+    with dcf_tab3:
+        st.markdown(f"##### 🗺️ 2D Valuation Sensitivity Surface: {custom_sym}")
+        st.caption("Interactive sensitivity matrix mapping Fair Value per share and Margin of Safety across dynamic WACC and Growth combinations.")
+
+        wacc_steps = np.linspace(slider_wacc - 0.02, slider_wacc + 0.02, 5)
+        growth_steps = np.linspace(slider_growth - 0.06, slider_growth + 0.06, 5)
+
+        z_matrix = []
+        text_matrix = []
+        customdata_matrix = []
+
+        for g in growth_steps:
+            z_row = []
+            text_row = []
+            custom_row = []
+            for w in wacc_steps:
+                if w <= slider_t_growth:
+                    z_row.append(0.0)
+                    text_row.append("N/A")
+                    custom_row.append([0.0, 0.0, 0.0])
+                    continue
+                try:
+                    res_calc = dcf(
+                        base_fcf=profile["fcf"],
+                        growth_rates=[g] * 5,
+                        discount_rate=w,
+                        terminal_growth_rate=slider_t_growth,
+                        shares_outstanding=profile["shares"],
+                        net_debt=profile["net_debt"]
+                    )
+                    fv = res_calc["result"]["fair_value_per_share"]
+                    ev_val = res_calc["result"]["enterprise_value"]
+                    ups = ((fv - curr_price) / curr_price) * 100.0 if curr_price > 0 else 0.0
+                    z_row.append(ups)
+                    text_row.append(f"{currency_sym}{fv:,.2f}<br><b>{ups:+.1f}%</b>")
+                    custom_row.append([fv, ups, ev_val / 1e9])
+                except Exception:
+                    z_row.append(0.0)
+                    text_row.append("ERR")
+                    custom_row.append([0.0, 0.0, 0.0])
+            z_matrix.append(z_row)
+            text_matrix.append(text_row)
+            customdata_matrix.append(custom_row)
+
+        x_labels = [f"WACC {w*100:.2f}%" for w in wacc_steps]
+        y_labels = [f"Growth {g*100:.1f}%" for g in growth_steps]
+
+        fig_heat = go.Figure(data=go.Heatmap(
+            z=z_matrix,
+            x=x_labels,
+            y=y_labels,
+            text=text_matrix,
+            texttemplate="%{text}",
+            textfont=dict(size=11, family="monospace"),
+            colorscale="RdYlGn",
+            zmid=0.0,
+            customdata=customdata_matrix,
+            hovertemplate="<b>WACC:</b> %{x}<br><b>5Y FCF Growth:</b> %{y}<br><b>Fair Value:</b> " + currency_sym + "%{customdata[0]:,.2f}<br><b>Upside / MoS:</b> %{customdata[1]:+.1f}%<br><b>Enterprise Value:</b> " + currency_sym + "%{customdata[2]:,.1f}B<extra></extra>",
+            colorbar=dict(title=dict(text="Upside %", side="top"), ticksuffix="%")
+        ))
+        fig_heat.update_layout(
+            template="plotly_dark",
+            paper_bgcolor="#0B0E14",
+            plot_bgcolor="#0E121A",
+            height=460,
+            margin=dict(l=30, r=30, t=30, b=30),
+            xaxis=dict(side="bottom")
+        )
+        st.plotly_chart(fig_heat, use_container_width=True)
+        st.caption("🟢 Green cells indicate positive Margin of Safety. 🔴 Red cells indicate overvaluation under conservative parameters.")
+
+    # --- TAB 4: REVERSE DCF EXPECTATIONS ---
+    with dcf_tab4:
+        st.markdown("##### ⚖️ Reverse DCF & Market Expectations Analysis")
+        st.caption("Deconstruct what performance bar the public market has priced into the current stock price.")
+
+        try:
+            rev_calc = reverse_dcf(
+                current_price=curr_price,
+                base_fcf=profile["fcf"],
+                shares_outstanding=profile["shares"],
+                discount_rate=slider_wacc,
+                terminal_growth_rate=slider_t_growth,
+                net_debt=profile["net_debt"]
+            )
+            implied_g = rev_calc["result"]["implied_growth_rate_pct"]
+            growth_diff = (slider_growth * 100.0) - implied_g
+
+            rc_col1, rc_col2, rc_col3 = st.columns(3)
+            with rc_col1:
+                st.metric("Market Implied 5Y Growth", f"{implied_g:+.1f}%", help="Annual FCF growth needed over next 5 years to justify current price.")
+            with rc_col2:
+                st.metric("Your Assumed 5Y Growth", f"{slider_growth*100:+.1f}%", help="Analyst's baseline growth projection.")
+            with rc_col3:
+                st.metric("Expectation Gap (Assumed - Implied)", f"{growth_diff:+.1f}%", delta=f"{growth_diff:+.1f}%", help="Positive means you project faster growth than the market implies.")
+
+            fig_rev = go.Figure()
+            fig_rev.add_trace(go.Bar(
+                y=["Terminal GDP Anchor", "Market Implied", "Analyst Projection"],
+                x=[slider_t_growth * 100.0, implied_g, slider_growth * 100.0],
+                orientation="h",
+                marker_color=["#64748B", "#F59E0B" if implied_g > slider_growth*100 else "#38BDF8", "#10B981"],
+                text=[f"{slider_t_growth*100:.1f}%", f"{implied_g:+.1f}%", f"{slider_growth*100:+.1f}%"],
+                textposition="auto"
+            ))
+            fig_rev.update_layout(
+                template="plotly_dark",
+                paper_bgcolor="#0B0E14",
+                plot_bgcolor="#0E121A",
+                title="5-Year FCF Annual Growth Rate Comparison (%)",
+                height=280,
+                xaxis_title="Annual FCF Growth (%)",
+                margin=dict(l=20, r=20, t=40, b=20)
+            )
+            st.plotly_chart(fig_rev, use_container_width=True)
+
+            implied_y5_fcf = profile["fcf"] * ((1.0 + (implied_g / 100.0)) ** 5)
+            st.markdown(f"""
+            <div style="background: rgba(14, 18, 26, 0.7); border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); padding: 14px 18px; font-size: 0.9rem; line-height: 1.6; color: var(--text-primary);">
+                <b>Market Expectation Breakdown:</b><br>
+                • To justify the current market price of <b>{currency_sym}{curr_price:,.2f}</b> at a <b>{slider_wacc*100:.1f}% WACC</b>, {custom_sym} must expand Free Cash Flow from <b>{currency_sym}{profile['fcf']/1e9:,.2f}B</b> today to <b>{currency_sym}{implied_y5_fcf/1e9:,.2f}B</b> by Year 5.<br>
+                • That represents a <b>{implied_g:+.1f}% CAGR</b> over the next 5 years.<br>
+                • <b>Analyst Verdict:</b> {"🟢 Your assumed growth exceeds market expectations, suggesting the market is underestimating the company's cash flow potential." if growth_diff > 2.0 else ("🔴 The market is pricing in aggressive growth beyond your baseline projection. Multiple contraction risk is elevated if cash flows fall short." if growth_diff < -2.0 else "🟡 Your baseline assumptions closely align with market expectations (priced for fair value).")}
+            </div>
+            """, unsafe_allow_html=True)
+        except Exception as e:
+            st.warning(f"Reverse DCF solver could not converge: {str(e)}")
 
 
 # --- MODULE 5: AUTONOMOUS RESEARCH STUDIO ---
