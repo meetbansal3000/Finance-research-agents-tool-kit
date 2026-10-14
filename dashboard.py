@@ -89,28 +89,106 @@ if not HAS_STREAMLIT:
 # STREAMLIT UI CONFIGURATION
 # =============================================================================
 st.set_page_config(
-    page_title="Antigravity Research Terminal",
-    page_icon="📈",
+    page_title="Meridian | Equity Research",
+    page_icon="◈",
     layout="wide",
     initial_sidebar_state="expanded"
 )
 
-# Custom Styling
+# Meridian design system
 st.markdown("""
 <style>
-    .metric-card {
-        background-color: #f8f9fa;
-        border-radius: 8px;
-        padding: 15px;
-        border-left: 5px solid #1f77b4;
-        margin-bottom: 10px;
+    :root {
+        color-scheme: light;
+        --ink:#18211e; --muted:#65716b; --pine:#1c2a25; --pine-soft:#2c4137;
+        --paper:#f1efe6; --surface:#faf9f4; --white:#fffefa; --line:#d9ddd3;
+        --line-dark:#33453b; --acid:#d6ed75; --positive:#26744d; --negative:#b34e43;
+        --control-radius:7px; --panel-radius:10px;
     }
-    .header-style {
-        font-size: 26px;
-        font-weight: 700;
-        color: #111827;
-        margin-bottom: 8px;
+    html,body,[class*="css"] { font-family:"Segoe UI","Aptos",Arial,sans-serif; }
+    .stApp,[data-testid="stAppViewContainer"],[data-testid="stMain"] { color:var(--ink); background:var(--paper); }
+    [data-testid="stHeader"] { background:rgba(241,239,230,.96); border-bottom:1px solid rgba(24,33,30,.08); }
+    [data-testid="stToolbar"] { right:1.5rem; }
+    .main .block-container { max-width:1480px; padding:1.6rem clamp(1rem,3.2vw,3rem) 3.5rem; }
+    h1,h2,h3,h4 { color:var(--ink); letter-spacing:-.025em; }
+    h1,.header-style { font-family:Georgia,"Times New Roman",serif; }
+    h1 { font-size:clamp(1.8rem,3vw,2.8rem); font-weight:600; line-height:1.08; }
+    h2 { font-size:clamp(1.25rem,2vw,1.55rem); font-weight:650; line-height:1.22; }
+    h3 { font-size:1.08rem; font-weight:650; line-height:1.3; }
+    .header-style { color:var(--ink); font-size:clamp(1.85rem,3vw,2.75rem); font-weight:600; line-height:1.08; letter-spacing:-.04em; margin:.1rem 0 .35rem; }
+    .meridian-eyebrow { display:none; }
+    .meridian-intro { color:var(--muted); font-size:.97rem; line-height:1.55; max-width:820px; margin:.25rem 0 1.35rem; }
+    p,li { line-height:1.55; }
+    [data-testid="stCaptionContainer"] { color:var(--muted); }
+    [data-testid="stCaptionContainer"] p { line-height:1.45; }
+    [data-testid="stVerticalBlock"] { gap:.85rem; }
+    hr { border:0; border-top:1px solid var(--line); margin:1.2rem 0; }
+    section[data-testid="stSidebar"] { background:var(--pine); border-right:1px solid #273a31; }
+    section[data-testid="stSidebar"] > div { padding:1.25rem .9rem 1.35rem; }
+    section[data-testid="stSidebar"] [data-testid="stMarkdownContainer"] p,
+    section[data-testid="stSidebar"] label,section[data-testid="stSidebar"] small,
+    section[data-testid="stSidebar"] [data-testid="stCaptionContainer"] { color:#d0d9d2; }
+    section[data-testid="stSidebar"] h1,section[data-testid="stSidebar"] h2,
+    section[data-testid="stSidebar"] h3,section[data-testid="stSidebar"] h4 { color:#f4f3ec; letter-spacing:-.01em; }
+    section[data-testid="stSidebar"] [role="radiogroup"] { gap:.18rem; }
+    section[data-testid="stSidebar"] [role="radiogroup"] label {
+        min-height:2.55rem; border:1px solid transparent; border-radius:var(--control-radius);
+        padding:.48rem .65rem; color:#c7d1ca; transition:background .14s ease,color .14s ease,border-color .14s ease;
     }
+    section[data-testid="stSidebar"] [role="radiogroup"] label:hover { background:rgba(255,255,255,.055); color:#fff; }
+    section[data-testid="stSidebar"] [role="radiogroup"] label:has(input:checked) { background:var(--acid); border-color:var(--acid); color:var(--pine); font-weight:700; }
+    section[data-testid="stSidebar"] [role="radiogroup"] label:focus-within { outline:2px solid var(--acid); outline-offset:2px; }
+    section[data-testid="stSidebar"] [data-testid="stExpander"] { border:1px solid var(--line-dark); border-radius:var(--control-radius); background:rgba(255,255,255,.035); }
+    section[data-testid="stSidebar"] [data-testid="stExpander"] summary { color:#eef1e9; }
+    section[data-testid="stSidebar"] hr { border-color:var(--line-dark); }
+    [data-testid="stMetric"] { background:transparent; border:0; border-bottom:1px solid var(--line); border-radius:0; padding:.55rem .1rem .8rem; box-shadow:none; }
+    [data-testid="stMetricLabel"] { color:var(--muted); font-size:.78rem; font-weight:650; }
+    [data-testid="stMetricValue"] { color:var(--ink); font-weight:680; letter-spacing:-.035em; }
+    [data-testid="stMetricDelta"] { font-weight:650; }
+    div[data-testid="stVerticalBlockBorderWrapper"] { border-color:var(--line); border-radius:var(--panel-radius); background:var(--white); box-shadow:none; }
+    div.stButton > button,[data-testid="stDownloadButton"] button {
+        min-height:2.65rem; border:1px solid #aebbb0; border-radius:var(--control-radius);
+        color:var(--ink); font-weight:650; background:var(--white);
+        transition:background .14s ease,border-color .14s ease,transform .14s ease;
+    }
+    div.stButton > button:hover,[data-testid="stDownloadButton"] button:hover { border-color:var(--pine); background:#f2f3eb; transform:translateY(-1px); }
+    div.stButton > button[kind="primary"] { background:var(--acid); border-color:var(--acid); color:var(--pine); }
+    div.stButton > button[kind="primary"]:hover { background:#c8e45e; border-color:#c8e45e; }
+    button:focus-visible,a:focus-visible,input:focus-visible,textarea:focus-visible,[role="slider"]:focus-visible { outline:3px solid #a6c43f !important; outline-offset:2px; }
+    [data-baseweb="input"] > div,[data-baseweb="select"] > div,[data-baseweb="textarea"] > div { background:var(--white); border-color:#bfc8bd; border-radius:var(--control-radius); }
+    [data-baseweb="input"] > div:focus-within,[data-baseweb="select"] > div:focus-within,[data-baseweb="textarea"] > div:focus-within { border-color:var(--pine); box-shadow:0 0 0 2px rgba(40,80,61,.12); }
+    [data-testid="stSlider"] [role="slider"] { box-shadow:0 0 0 3px rgba(214,237,117,.45); }
+    [data-testid="stCheckbox"] label,[data-testid="stRadio"] label { color:var(--ink); }
+    [data-testid="stTabs"] [role="tablist"] { gap:.15rem; border-bottom:1px solid var(--line); }
+    [data-testid="stTabs"] button[role="tab"] { min-height:2.7rem; padding:.45rem .8rem; color:var(--muted); font-weight:650; border-bottom-width:2px; }
+    [data-testid="stTabs"] button[role="tab"][aria-selected="true"] { color:var(--pine); border-bottom-color:var(--pine); }
+    [data-testid="stExpander"] { border:1px solid var(--line); border-radius:var(--control-radius); background:rgba(255,254,250,.78); }
+    [data-testid="stExpander"] summary { color:var(--ink); font-weight:650; }
+    [data-testid="stDataFrame"],[data-testid="stTable"] { border:1px solid var(--line); border-radius:var(--control-radius); overflow:hidden; box-shadow:none; background:var(--white); }
+    [data-testid="stPlotlyChart"] { border:1px solid var(--line); border-radius:var(--panel-radius); background:var(--white); padding:.1rem; box-shadow:none; }
+    [data-testid="stAlert"] { border-radius:var(--control-radius); }
+    .meridian-card { background:var(--white); border:1px solid var(--line); border-radius:var(--panel-radius); padding:1.05rem 1.15rem; height:100%; box-shadow:none; }
+    .meridian-card:before { display:none; }
+    .meridian-card-label { color:var(--muted); font-size:.72rem; font-weight:700; letter-spacing:.08em; text-transform:uppercase; }
+    .meridian-card-value { color:var(--ink); font:600 1.8rem Georgia,"Times New Roman",serif; letter-spacing:-.035em; margin:.35rem 0 .15rem; }
+    .meridian-card-note { color:var(--muted); font-size:.82rem; line-height:1.45; }
+    .process-hierarchy { display:grid; gap:.7rem; margin:.8rem 0 1.4rem; }
+    .process-root { background:var(--pine); color:#f4f3ec; border:1px solid var(--pine); border-radius:var(--panel-radius); padding:.9rem 1rem; text-align:center; box-shadow:none; }
+    .process-root small { display:block; color:#c7d1ca; margin-top:.2rem; }
+    .process-arrow { color:#70867a; font-size:1.1rem; line-height:1; text-align:center; }
+    .process-row { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:.7rem; }
+    .process-node { background:var(--white); color:var(--ink); border:1px solid var(--line); border-radius:var(--control-radius); padding:.9rem 1rem; min-height:106px; box-shadow:none; }
+    .process-node strong { display:block; font-size:.96rem; margin-bottom:.32rem; }
+    .process-node span { display:block; color:var(--muted); font-size:.84rem; line-height:1.5; }
+    .process-node .process-tag { display:inline-block; margin-top:.58rem; color:var(--pine); background:#eef3d8; border-radius:4px; padding:.16rem .42rem; font-size:.7rem; font-weight:700; }
+    .process-support { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:.7rem; }
+    @media (max-width:800px) {
+        .process-row,.process-support { grid-template-columns:1fr; }
+        .main .block-container { padding:1.2rem .9rem 2.5rem; }
+        [data-testid="stMetric"] { padding:.4rem .05rem .65rem; }
+        .header-style { font-size:clamp(1.8rem,8vw,2.35rem); }
+    }
+    @media (prefers-reduced-motion:reduce) { *,*::before,*::after { scroll-behavior:auto !important; transition-duration:.01ms !important; animation-duration:.01ms !important; } }
 </style>
 """, unsafe_allow_html=True)
 
@@ -145,23 +223,28 @@ def get_shortlist_metrics_for_universe(tickers_tuple):
 # =============================================================================
 # SIDEBAR NAVIGATION & GLOBAL COMPANY SEARCH
 # =============================================================================
-st.sidebar.title("🦅 Antigravity Terminal")
-st.sidebar.markdown("**System:** Autonomous Multi-Agent Research")
-st.sidebar.markdown("**Data Integrity:** Audited Primary Filings & Provenance")
+st.sidebar.markdown("<div style='font:600 1.45rem Georgia,serif;color:#f7faf7;letter-spacing:-.03em'>◈ Meridian</div><div style='color:#aebdb2;font-size:.78rem;margin:.15rem 0 1rem'>Equity research workspace</div>", unsafe_allow_html=True)
+st.sidebar.caption("Primary-source research · verified analysis")
+
+if "pending_page" in st.session_state:
+    st.session_state["active_page"] = st.session_state.pop("pending_page")
 
 nav_choice = st.sidebar.radio(
-    "Navigation View",
+    "WORKSPACE",
     [
-        "🏆 Shortlisting Scorecard",
-        "📈 TradingView & Market Charts",
-        "🎛️ Interactive DCF Valuation",
-        "🤖 Autonomous Research Committee",
-        "🧠 Google Antigravity Agent",
-        "⚡ NVIDIA cuOpt Portfolio Optimizer",
-        "🚚 Supply Chain & Margins (cuOpt)",
-        "📓 Decision Journal & Review",
-        "🚨 SEC Filings & Price Alerts"
-    ]
+        "⌂  Overview",
+        "↘  Process map",
+        "◎  Watchlist",
+        "◒  Markets & charts",
+        "◇  Valuation",
+        "✦  Research studio",
+        "🧠  Antigravity agent",
+        "▤  Portfolio lab",
+        "↗  Supply chain",
+        "▧  Decision journal",
+        "◉  Alerts & filings"
+    ],
+    key="active_page"
 )
 
 st.sidebar.divider()
@@ -206,9 +289,127 @@ st.sidebar.info("💡 **Universal Ticker Support:** Works for any US equity (NYS
 # =============================================================================
 # VIEW 1: SHORTLISTING SCORECARD & WATCHLIST MANAGER
 # =============================================================================
-if nav_choice == "🏆 Shortlisting Scorecard":
-    st.markdown('<div class="header-style">🏆 Institutional Shortlist & Watchlist Scorecard</div>', unsafe_allow_html=True)
-    st.markdown("Multi-factor fundamental scorecard comparing primary coverage candidates. Add any global company to evaluate.")
+if nav_choice == "⌂  Overview":
+    st.markdown('<div class="header-style">Research, in one place.</div>', unsafe_allow_html=True)
+    st.markdown('<div class="meridian-intro">Follow your coverage, open recent dossiers, or start a research task.</div>', unsafe_allow_html=True)
+
+    reports_root = os.path.join(PROJECT_DIR, "reports")
+    report_dirs = []
+    if os.path.isdir(reports_root):
+        report_dirs = [
+            entry for entry in os.scandir(reports_root)
+            if entry.is_dir() and os.path.isfile(os.path.join(entry.path, "final_report.md"))
+        ]
+    report_dirs.sort(key=lambda entry: entry.stat().st_mtime, reverse=True)
+    latest_date = datetime.datetime.fromtimestamp(report_dirs[0].stat().st_mtime).strftime("%d %b %Y") if report_dirs else "No dossiers yet"
+
+    stat_cols = st.columns(3)
+    overview_stats = [
+        ("Coverage list", str(len(st.session_state["watchlist"])), "Companies on your active watchlist"),
+        ("Research dossiers", str(len(report_dirs)), "Completed reports saved in this workspace"),
+        ("Latest update", latest_date, "Based on the most recently saved dossier"),
+    ]
+    for col, (label, value, note) in zip(stat_cols, overview_stats):
+        with col:
+            st.markdown(
+                f'<div class="meridian-card"><div class="meridian-card-label">{label}</div>'
+                f'<div class="meridian-card-value">{value}</div><div class="meridian-card-note">{note}</div></div>',
+                unsafe_allow_html=True
+            )
+
+    st.markdown("### Start with a task")
+    action_cols = st.columns(3)
+    quick_actions = [
+        ("✦  Start a research review", "Run the analyst, verification, and skeptic workflow.", "✦  Research studio"),
+        ("◎  Review your watchlist", "Compare coverage and shortlist candidates.", "◎  Watchlist"),
+        ("◇  Explore a valuation", "Adjust DCF assumptions and view sensitivity.", "◇  Valuation"),
+    ]
+    for col, (title, detail, target_page) in zip(action_cols, quick_actions):
+        with col:
+            with st.container(border=True):
+                st.markdown(f"**{title}**")
+                st.caption(detail)
+                if st.button("Open", key=f"home_{target_page}", use_container_width=True):
+                    st.session_state["pending_page"] = target_page
+                    st.rerun()
+
+    left, right = st.columns([1.15, 1])
+    with left:
+        st.markdown("### Recent research")
+        if report_dirs:
+            for entry in report_dirs[:5]:
+                ticker_label = entry.name.rsplit("_", 1)[0] if len(entry.name) > 11 else entry.name
+                updated = datetime.datetime.fromtimestamp(entry.stat().st_mtime).strftime("%d %b %Y")
+                st.markdown(f"**{ticker_label}** · {updated}  \n`reports/{entry.name}/final_report.md`")
+        else:
+            st.info("Your completed dossiers will appear here after a research run.")
+    with right:
+        st.markdown("### Active coverage")
+        if st.session_state["watchlist"]:
+            st.write(" · ".join(f"`{ticker}`" for ticker in st.session_state["watchlist"]))
+        else:
+            st.info("Your watchlist is empty. Add a company to begin tracking it.")
+        st.caption("Financial figures in research reports retain their source and audit trail. Market feeds may be delayed.")
+
+elif nav_choice == "↘  Process map":
+    st.markdown('<div class="header-style">How research moves through Meridian</div>', unsafe_allow_html=True)
+    st.markdown('<div class="meridian-intro">Follow the handoffs, verification steps, and saved outputs from request to final report.</div>', unsafe_allow_html=True)
+
+    st.markdown("### Hierarchy")
+    st.markdown("""
+    <div class="process-hierarchy">
+      <div class="process-root"><strong>Researcher</strong><small>Chooses a company and a workflow</small></div>
+      <div class="process-arrow">↓</div>
+      <div class="process-root"><strong>Meridian dashboard</strong><small>Collects the ticker and starts the research run</small></div>
+      <div class="process-arrow">↓</div>
+      <div class="process-root"><strong>Pipeline orchestrator · <code>run_research.run_pipeline</code></strong><small>Controls the order, passes data between agents, and writes the final dossier</small></div>
+      <div class="process-arrow">↓ calls each stage</div>
+      <div class="process-row">
+        <div class="process-node"><strong>1 · Analyst</strong><span>Retrieves filing and market data, calculates metrics, records provenance, and drafts the report.</span><span class="process-tag">Returns report + skeptic_inputs</span></div>
+        <div class="process-node"><strong>2 · Verifier · both reports</strong><span>Audits the Analyst report before the Skeptic runs, then audits the Skeptic review before synthesis.</span><span class="process-tag">Returns audit + wrong_items</span></div>
+        <div class="process-node"><strong>3 · Skeptic</strong><span>Stress-tests assumptions using the structured inputs prepared by the Analyst.</span><span class="process-tag">Returns verdict + review</span></div>
+      </div>
+      <div class="process-arrow">↓ uses shared tools · saves outputs</div>
+      <div class="process-support">
+        <div class="process-node"><strong>Evidence tools</strong><span>FilingExtractor, DataLayer, calculation functions, and the provenance ledger.</span></div>
+        <div class="process-node"><strong>Reports and audit trail</strong><span>Analyst and skeptic markdown, verification results, and JSON provenance sidecars in <code>reports/</code>.</span></div>
+      </div>
+    </div>
+    """, unsafe_allow_html=True)
+
+    st.info("Agents communicate through direct Python method calls and returned dictionaries. There is no separate agent chat loop or message broker in this pipeline.")
+
+    st.markdown("### What each handoff carries")
+    handoffs = [
+        ("Dashboard → pipeline", "The dashboard calls `run_pipeline(ticker, workflow_number)`. The pipeline resolves the ticker and creates the report folder.", "dashboard.py lines 582–589 · run_research.py lines 37–75", "dashboard.py#L582-L589"),
+        ("Pipeline → Analyst → pipeline", "`run_workflow()` returns `markdown_report`, its `ledger`, `metrics`, and `skeptic_inputs` as a Python dictionary.", "run_research.py lines 78–88 · agents/analyst.py lines 1310–1344", "run_research.py#L78-L88"),
+        ("Pipeline → Verifier → pipeline", "The first audit receives the Analyst report and its provenance sidecar, then returns an audit summary and any wrong or unverifiable claims. Independent source refetch is enabled by the pipeline default.", "run_research.py lines 95–101 · agents/verifier.py line 533", "run_research.py#L95-L101"),
+        ("Verifier → Analyst · conditional", "Only when wrong figures are found, the orchestrator passes `wrong_items`, the report text, and the ledger to `correct_report()`, then audits once more.", "run_research.py lines 105–129 · agents/analyst.py lines 1356–1365", "run_research.py#L105-L129"),
+        ("Pipeline → Skeptic → pipeline", "The orchestrator expands `skeptic_inputs` into `evaluate_thesis(...)`. The Skeptic returns a verdict, review markdown, and its own ledger.", "run_research.py lines 152–162 · agents/analyst.py lines 1310–1344", "run_research.py#L152-L162"),
+        ("Pipeline → Verifier · Skeptic audit", "After saving the Skeptic review and its sidecar, the orchestrator creates a second Verifier and audits that review before synthesis.", "run_research.py lines 157–175", "run_research.py#L157-L175"),
+        ("Pipeline → reports → dashboard", "The orchestrator saves the final dossier and sidecars; the dashboard opens `final_report.md` and displays it.", "run_research.py lines 177–194 · dashboard.py lines 586–595", "run_research.py#L177-L194"),
+    ]
+    source_base = "https://github.com/meetbansal3000/Finance-research-agents-tool-kit/blob/5065a97a5685eed92abbfb0f0b9584145b4eb47e/"
+    for idx, (title, detail, source_label, source_path) in enumerate(handoffs, start=1):
+        with st.expander(f"{idx:02d}  {title}", expanded=(idx == 1)):
+            st.markdown(detail)
+            st.markdown(f"[{source_label}]({source_base + source_path})")
+
+    nvidia_col, correction_col = st.columns(2)
+    with nvidia_col:
+        with st.container(border=True):
+            st.markdown("**Optional · NVIDIA NIM**")
+            st.caption("The Skeptic can request an NVIDIA NIM critique when `enable_nvidia=True`. The dashboard call leaves this flag at its default `False`.")
+            st.markdown(f"[Skeptic condition · agents/skeptic.py lines 699–714]({source_base}agents/skeptic.py#L699-L714)")
+    with correction_col:
+        with st.container(border=True):
+            st.markdown("**Evidence stays attached**")
+            st.caption("Analyst and Skeptic each keep a ledger; the orchestrator saves those as JSON sidecars beside their reports.")
+            st.markdown(f"[Ledger sidecars · run_research.py lines 83–88]({source_base}run_research.py#L83-L88)")
+
+elif nav_choice == "◎  Watchlist":
+    st.markdown('<div class="header-style">Company coverage</div>', unsafe_allow_html=True)
+    st.markdown('<div class="meridian-intro">Compare fundamental signals and manage the companies in your watchlist.</div>', unsafe_allow_html=True)
 
     # Watchlist Addition & Management Box
     with st.container():
@@ -320,9 +521,9 @@ if nav_choice == "🏆 Shortlisting Scorecard":
 # =============================================================================
 # VIEW 2: TRADINGVIEW & LIVE MARKET CHARTS
 # =============================================================================
-elif "TradingView" in nav_choice or "Candlestick" in nav_choice:
-    st.markdown('<div class="header-style">📈 TradingView Interactive Pro Terminal</div>', unsafe_allow_html=True)
-    st.markdown("Real-time TradingView charting engine with institutional indicators, drawing tools, technical consensus gauges, and desktop app integration.")
+elif "Markets & charts" in nav_choice:
+    st.markdown('<div class="header-style">Markets & charts</div>', unsafe_allow_html=True)
+    st.markdown('<div class="meridian-intro">Explore price action, technical summaries, company financials, and historical market data.</div>', unsafe_allow_html=True)
 
     c_col1, c_col2 = st.columns([1, 3])
     with c_col1:
@@ -458,9 +659,9 @@ elif "TradingView" in nav_choice or "Candlestick" in nav_choice:
 # =============================================================================
 # VIEW 3: INTERACTIVE DCF VALUATION & SENSITIVITY
 # =============================================================================
-elif nav_choice == "🎛️ Interactive DCF Valuation":
-    st.markdown('<div class="header-style">🎛️ Interactive DCF Valuation & Sensitivity Analysis</div>', unsafe_allow_html=True)
-    st.markdown("Dynamic Discounted Cash Flow valuation engine powered by `tools/calc/dcf.py`.")
+elif nav_choice == "◇  Valuation":
+    st.markdown('<div class="header-style">Valuation model</div>', unsafe_allow_html=True)
+    st.markdown('<div class="meridian-intro">Adjust core assumptions and inspect how growth and discount rates shape the model output.</div>', unsafe_allow_html=True)
 
     dcf_presets = {
         "NVDA": {"fcf": 60850000000.0, "shares": 24500000000.0, "net_debt": -38200000000.0, "price": 239.24, "wacc": 0.095, "growth": 0.22, "t_growth": 0.035},
@@ -560,9 +761,9 @@ elif nav_choice == "🎛️ Interactive DCF Valuation":
 # =============================================================================
 # VIEW 4: AUTONOMOUS MULTI-AGENT COMMITTEE RESEARCH
 # =============================================================================
-elif nav_choice == "🤖 Autonomous Research Committee":
-    st.markdown('<div class="header-style">🤖 Autonomous Multi-Agent Research Committee</div>', unsafe_allow_html=True)
-    st.markdown("Triggers the full multi-agent pipeline: **Analyst** $\\to$ **Verifier** $\\to$ **Skeptic** $\\to$ **NVIDIA NIM** $\\to$ **Provenance Ledger**.")
+elif nav_choice == "✦  Research studio":
+    st.markdown('<div class="header-style">Research committee</div>', unsafe_allow_html=True)
+    st.markdown('<div class="meridian-intro">Run the Analyst, Verifier, and Skeptic workflow, then review the source-backed investment memorandum.</div>', unsafe_allow_html=True)
 
     col_r1, col_r2 = st.columns([2, 1])
     with col_r1:
@@ -605,9 +806,9 @@ elif nav_choice == "🤖 Autonomous Research Committee":
 # =============================================================================
 # VIEW: GOOGLE ANTIGRAVITY RESEARCH AGENT
 # =============================================================================
-elif nav_choice == "🧠 Google Antigravity Agent":
-    st.markdown('<div class="header-style">🧠 Google Antigravity Financial Research Agent</div>', unsafe_allow_html=True)
-    st.markdown("Stateful, multi-turn AI research agent powered by the **Google Antigravity Python SDK (`google-antigravity`)** and **Google Gemini**.")
+elif "Antigravity agent" in nav_choice:
+    st.markdown('<div class="header-style">Antigravity research agent</div>', unsafe_allow_html=True)
+    st.markdown('<div class="meridian-intro">Stateful, multi-turn AI research agent powered by the Google Antigravity Python SDK and Google Gemini.</div>', unsafe_allow_html=True)
 
     # Status & API Configuration Check
     env_api_key = os.environ.get("GEMINI_API_KEY", "")
@@ -843,9 +1044,9 @@ elif nav_choice == "🧠 Google Antigravity Agent":
 # =============================================================================
 # VIEW 5: NVIDIA CUOPT PORTFOLIO OPTIMIZATION
 # =============================================================================
-elif nav_choice == "⚡ NVIDIA cuOpt Portfolio Optimizer":
-    st.markdown('<div class="header-style">⚡ NVIDIA cuOpt Quadratic Programming (QP) Portfolio Optimizer</div>', unsafe_allow_html=True)
-    st.markdown("Implements the mathematical formulation principles from **NVIDIA cuOpt** (`min 0.5 * w^T Q w`) for Global Minimum Variance and Markowitz allocation.")
+elif nav_choice == "▤  Portfolio lab":
+    st.markdown('<div class="header-style">Portfolio construction</div>', unsafe_allow_html=True)
+    st.markdown('<div class="meridian-intro">Choose a stock universe and strategy to calculate a portfolio allocation.</div>', unsafe_allow_html=True)
 
     p_col1, p_col2 = st.columns([2, 1])
     with p_col1:
@@ -906,9 +1107,9 @@ elif nav_choice == "⚡ NVIDIA cuOpt Portfolio Optimizer":
 # =============================================================================
 # VIEW 6: SUPPLY CHAIN LOGISTICS & MARGIN ELASTICITY
 # =============================================================================
-elif nav_choice == "🚚 Supply Chain & Margins (cuOpt)":
-    st.markdown('<div class="header-style">🚚 Supply Chain Routing & Margin Elasticity (NVIDIA cuOpt)</div>', unsafe_allow_html=True)
-    st.markdown("Models Capacitated Vehicle Routing Problems (CVRP) to quantify corporate distribution costs and operating margin elasticity to fuel inflation.")
+elif nav_choice == "↗  Supply chain":
+    st.markdown('<div class="header-style">Supply chain economics</div>', unsafe_allow_html=True)
+    st.markdown('<div class="meridian-intro">Explore fleet routing costs, capacity use, and the impact of fuel price shocks on delivery economics.</div>', unsafe_allow_html=True)
 
     col_v1, col_v2 = st.columns(2)
     with col_v1:
@@ -946,9 +1147,9 @@ elif nav_choice == "🚚 Supply Chain & Margins (cuOpt)":
 # =============================================================================
 # VIEW 7: DECISION JOURNAL & REVIEW
 # =============================================================================
-elif nav_choice == "📓 Decision Journal & Review":
-    st.markdown('<div class="header-style">📓 Decision Journal & Portfolio Review</div>', unsafe_allow_html=True)
-    st.markdown("Immutable record of institutional investment decisions and exit rules.")
+elif nav_choice == "▧  Decision journal":
+    st.markdown('<div class="header-style">Decision journal</div>', unsafe_allow_html=True)
+    st.markdown('<div class="meridian-intro">Review logged investment decisions and the latest portfolio review in one place.</div>', unsafe_allow_html=True)
 
     journal_csv_path = os.path.join(PROJECT_DIR, "journal", "journal.csv")
     if os.path.exists(journal_csv_path):
@@ -967,9 +1168,9 @@ elif nav_choice == "📓 Decision Journal & Review":
 # =============================================================================
 # VIEW 8: SEC FILINGS & PRICE ALERTS
 # =============================================================================
-elif nav_choice == "🚨 SEC Filings & Price Alerts":
-    st.markdown('<div class="header-style">🚨 Regulatory Filings & Market Shock Alerts</div>', unsafe_allow_html=True)
-    st.markdown("Live monitoring of official SEC EDGAR submissions and intraday price shocks.")
+elif nav_choice == "◉  Alerts & filings":
+    st.markdown('<div class="header-style">Filings & price alerts</div>', unsafe_allow_html=True)
+    st.markdown('<div class="meridian-intro">Review saved alerts or check monitored companies for market and filing events.</div>', unsafe_allow_html=True)
 
     alerts_json_path = os.path.join(PROJECT_DIR, "reports", "active_alerts.json")
     if os.path.exists(alerts_json_path):
@@ -994,3 +1195,5 @@ elif nav_choice == "🚨 SEC Filings & Price Alerts":
 
 if __name__ == "__main__":
     pass
+
+
