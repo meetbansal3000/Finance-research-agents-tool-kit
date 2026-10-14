@@ -2419,39 +2419,73 @@ elif "Antigravity Financial Copilot" in nav_choice:
 elif "Portfolio Construction Lab" in nav_choice:
     col_head, col_info = st.columns([4.2, 1.3])
     with col_head:
-        st.markdown('<div class="header-style">Portfolio Construction & Risk Lab</div>', unsafe_allow_html=True)
-        st.markdown('<div class="meridian-intro">NVIDIA cuOpt quadratic programming portfolio optimization: Global Minimum Variance & Markowitz Efficient Frontier.</div>', unsafe_allow_html=True)
+        st.markdown('<div class="header-style">Portfolio Construction & $1M Simulation Lab</div>', unsafe_allow_html=True)
+        st.markdown('<div class="meridian-intro">NVIDIA cuOpt quadratic programming portfolio optimization: deploy simulated investment capital, solve optimal asset allocations, and track multi-asset equity curves.</div>', unsafe_allow_html=True)
     with col_info:
         render_tab_info_guide(
-            title="Portfolio Construction Lab (QP Optimizer)",
-            purpose="Compute mathematically optimal asset weights that minimize total portfolio variance.",
+            title="Portfolio Construction & $1M Simulation Lab",
+            purpose="Simulate institutional capital deployment ($1,000,000 baseline), solve mathematically optimal asset weights, and generate trade execution sheets.",
             capabilities=[
-                "Quadratic Programming (QP) variance minimization",
-                r"Single-asset concentration constraints ($w_i \le w_{max}$)",
-                r"Full Simplex constraint enforcement ($\sum w_i = 1, w_i \ge 0$)",
-                r"Sharpe ratio and dual shadow cost $\lambda$ calculation"
+                "NVIDIA cuOpt quadratic programming (QP) convex variance minimization",
+                "$1,000,000 simulated cash capital deployment & exact share quantity sizing",
+                "Daily cumulative equity growth curve simulation vs S&P 500 benchmark",
+                "Trade order execution ticket generation & one-click CSV export",
+                r"Dual shadow cost of capital ($\lambda$) & Sharpe ratio risk analytics"
             ],
-            use_case="Construct risk-minimized portfolios across shortlisted compounders subject to fiduciary concentration limits.",
-            methodology=r"Continuous convex quadratic optimization over empirical historical covariance matrix $\Sigma$."
+            use_case="Construct fiduciary-grade risk-minimized portfolios across shortlisted compounders with institutional cash budgeting.",
+            methodology=r"Continuous convex quadratic optimization over empirical historical covariance matrix $\Sigma$ with simplex sum = 100%."
         )
 
-    p_col1, p_col2 = st.columns([2, 1])
+    # Simulation Capital & Parameter Controls
+    p_col1, p_col2, p_col3 = st.columns([1.8, 1.4, 1.5])
     with p_col1:
         wl_preview_str = ", ".join(st.session_state["watchlist"][:5])
-        port_input = st.text_input("Portfolio Universe (Comma-separated)", value=wl_preview_str)
-        use_all_wl = st.checkbox(f"Use All {len(st.session_state['watchlist'])} Stocks in Current Watchlist", value=False)
+        port_input = st.text_input("Portfolio Universe (Comma-separated)", value=wl_preview_str, key="port_tickers_input")
+        use_all_wl = st.checkbox(f"Use All {len(st.session_state['watchlist'])} Stocks in Watchlist", value=False, key="port_use_all_wl")
     with p_col2:
-        strategy_choice = st.selectbox("Optimization Objective", ["min_variance (Global Minimum Variance)", "mean_variance (Markowitz Efficient Frontier)"])
+        strategy_choice = st.selectbox("Optimization Objective", ["min_variance (Global Minimum Variance)", "mean_variance (Markowitz Efficient Frontier)"], key="port_strat_sel")
         strat = "min_variance" if "min_variance" in strategy_choice else "mean_variance"
+        max_w_cap = st.slider("Single-Asset Concentration Cap", min_value=0.15, max_value=1.0, value=0.40, step=0.05, key="port_max_w_slider")
+    with p_col3:
+        sim_capital = st.number_input(
+            "💵 Simulated Cash Capital ($)",
+            min_value=10_000.0,
+            max_value=100_000_000.0,
+            value=st.session_state.get("sim_capital_val", 1_000_000.0),
+            step=50_000.0,
+            format="%.2f",
+            key="port_sim_capital_field",
+            help="Simulated investment capital deployed across optimal weights."
+        )
+        st.session_state["sim_capital_val"] = sim_capital
+        cap_c1, cap_c2, cap_c3, cap_c4 = st.columns(4)
+        with cap_c1:
+            if st.button("$250k", key="cap_btn_250k", use_container_width=True):
+                st.session_state["sim_capital_val"] = 250_000.0
+                st.rerun()
+        with cap_c2:
+            if st.button("$500k", key="cap_btn_500k", use_container_width=True):
+                st.session_state["sim_capital_val"] = 500_000.0
+                st.rerun()
+        with cap_c3:
+            if st.button("$1.0M", key="cap_btn_1m", use_container_width=True):
+                st.session_state["sim_capital_val"] = 1_000_000.0
+                st.rerun()
+        with cap_c4:
+            if st.button("$5.0M", key="cap_btn_5m", use_container_width=True):
+                st.session_state["sim_capital_val"] = 5_000_000.0
+                st.rerun()
 
-    max_w_cap = st.slider("Single-Asset Concentration Cap", min_value=0.20, max_value=1.0, value=0.40, step=0.05)
+    btn_solve = st.button("⚡ Solve & Deploy Simulated Portfolio Allocation", type="primary", use_container_width=True)
 
-    if st.button("⚡ Solve Optimal Portfolio Allocation", type="primary"):
-        tickers_list = list(st.session_state["watchlist"]) if use_all_wl else [t.strip().upper() for t in port_input.split(",") if t.strip()]
+    tickers_list = list(st.session_state["watchlist"]) if use_all_wl else [t.strip().upper() for t in port_input.split(",") if t.strip()]
+
+    # Trigger optimization solver or retrieve previous run from session_state
+    if btn_solve:
         if len(tickers_list) < 2:
             st.warning("Please provide at least 2 valid tickers to compute an optimal portfolio covariance matrix.")
         else:
-            with st.spinner(f"Solving quadratic program across {tickers_list}..."):
+            with st.spinner(f"Solving NVIDIA cuOpt quadratic program across {tickers_list}..."):
                 try:
                     sandbox = BacktestSandbox()
                     bt_res = sandbox.run_optimized_portfolio_backtest(
@@ -2461,26 +2495,203 @@ elif "Portfolio Construction Lab" in nav_choice:
                         max_weight=max_w_cap,
                         strategy=strat
                     )
-                    st.success("✅ NVIDIA cuOpt Quadratic Program Converged to Optimum!")
-                    qp = bt_res["qp_solution"]
-                    opt_weights = qp["weights"]
-
-                    col_m1, col_m2, col_m3, col_m4 = st.columns(4)
-                    col_m1.metric("Annualized Volatility", f"{qp['annualized_volatility']:.2f}%")
-                    col_m2.metric("Sharpe Ratio (Rf=4.25%)", f"{bt_res['sharpe_ratio']:.2f}")
-                    col_m3.metric("1Y Portfolio Return", f"{bt_res['portfolio_return_pct']:+.2f}%")
-                    col_m4.metric("Alpha vs SPY", f"{bt_res['alpha_pct']:+.2f}%", delta=f"{bt_res['alpha_pct']:+.2f}%")
-
-                    df_w = pd.DataFrame(list(opt_weights.items()), columns=["Asset", "Optimal Weight"])
-                    df_w["Optimal Weight (%)"] = df_w["Optimal Weight"] * 100.0
-
-                    fig_w = go.Figure(data=[go.Pie(labels=df_w["Asset"], values=df_w["Optimal Weight (%)"], hole=0.4)])
-                    fig_w.update_layout(title="Optimal Capital Allocation (Simplex Sum = 100%)", height=450)
-                    st.plotly_chart(fig_w, use_container_width=True)
-
-                    st.markdown(f"**Dual Shadow Cost of Capital (Budget Multiplier $\\lambda$):** `{qp.get('dual_budget_multiplier', 0.0):.6f}`")
+                    st.session_state["port_bt_res"] = bt_res
+                    st.session_state["port_opt_tickers"] = tickers_list
+                    st.success("✅ NVIDIA cuOpt Quadratic Program Converged to Mathematical Optimum!")
                 except Exception as e:
                     st.error(f"Optimization error: {str(e)}")
+
+    # Render Simulation Dashboard if results exist
+    if "port_bt_res" in st.session_state:
+        bt_res = st.session_state["port_bt_res"]
+        qp = bt_res["qp_solution"]
+        opt_weights = qp["weights"]
+
+        # Financial Calculations for the Simulated Capital Base ($1,000,000)
+        p_ret = float(bt_res["portfolio_return_pct"])
+        b_ret = float(bt_res["benchmark_return_pct"])
+        a_ret = float(bt_res["alpha_pct"])
+
+        port_ending_value = sim_capital * (1.0 + (p_ret / 100.0))
+        bench_ending_value = sim_capital * (1.0 + (b_ret / 100.0))
+        dollar_profit = port_ending_value - sim_capital
+        dollar_alpha = port_ending_value - bench_ending_value
+
+        # Executive Simulated Performance Banner
+        st.divider()
+        col_c1, col_c2, col_c3, col_c4 = st.columns(4)
+        with col_c1:
+            st.metric("Initial Cash Deployed", f"${sim_capital:,.2f}")
+        with col_c2:
+            st.metric("Simulated Ending Value (1Y)", f"${port_ending_value:,.2f}", delta=f"${dollar_profit:+,.2f}")
+        with col_c3:
+            st.metric("Net Simulated Return", f"{p_ret:+.2f}%", delta=f"{p_ret:+.2f}%")
+        with col_c4:
+            st.metric("Net Dollar Alpha vs SPY", f"${dollar_alpha:+,.2f}", delta=f"{a_ret:+.2f}%")
+
+        # Risk & Efficiency KPI Strip
+        col_m1, col_m2, col_m3, col_m4 = st.columns(4)
+        with col_m1:
+            col_m1.metric("Annualized Volatility", f"{qp['annualized_volatility']:.2f}%")
+        with col_m2:
+            col_m2.metric("Sharpe Ratio (Rf=4.25%)", f"{bt_res['sharpe_ratio']:.2f}")
+        with col_m3:
+            col_m3.metric("Max Drawdown", f"{bt_res['max_drawdown_pct']:.2f}%")
+        with col_m4:
+            col_m4.metric("Dual Shadow Cost (λ)", f"{qp.get('dual_budget_multiplier', 0.0):.6f}", help="Shadow cost of the budget constraint: marginal variance reduction per additional dollar invested.")
+
+        # Interactive Analysis Tabs
+        port_tab1, port_tab2 = st.tabs([
+            "📋 Trade Execution Order Ticket & Share Sizing",
+            "📈 1-Year Cumulative Equity Curve vs S&P 500"
+        ])
+
+        # --- TAB 1: ORDER TICKET & SHARE ALLOCATION ---
+        with port_tab1:
+            st.markdown(f"##### 📋 Trade Execution Ticket: Deploying ${sim_capital:,.2f} Portfolio")
+            st.caption("Exact share allocation sizing based on live market pricing and optimal quadratic weights.")
+
+            order_rows = []
+            total_cash_deployed = 0.0
+            for sym, w in opt_weights.items():
+                if w <= 0.0001:
+                    continue
+                target_cash = sim_capital * w
+                try:
+                    t_obj = yf.Ticker(sym)
+                    fi = getattr(t_obj, "fast_info", None)
+                    p = float(getattr(fi, "last_price", None) or getattr(fi, "previous_close", None) or 100.0)
+                except Exception:
+                    p = 100.0
+
+                shares = int(target_cash // p) if p > 0 else 0
+                actual_spent = shares * p
+                leftover = target_cash - actual_spent
+                total_cash_deployed += actual_spent
+                projected_end = actual_spent * (1.0 + (p_ret / 100.0))
+
+                order_rows.append({
+                    "Ticker": sym,
+                    "Optimal Weight": f"{w*100:.2f}%",
+                    "Target Capital ($)": f"${target_cash:,.2f}",
+                    "Live Price": f"${p:,.2f}",
+                    "Shares to Buy": f"{shares:,}",
+                    "Actual Capital Deployed": f"${actual_spent:,.2f}",
+                    "Cash Buffer": f"${leftover:,.2f}",
+                    "Projected 1Y Value": f"${projected_end:,.2f}"
+                })
+
+            cash_reserve = sim_capital - total_cash_deployed
+            df_orders = pd.DataFrame(order_rows)
+            st.dataframe(df_orders, use_container_width=True, hide_index=True)
+
+            # Cash Deployment Summary & Export Ticket
+            col_dep1, col_dep2 = st.columns([2, 1.2])
+            with col_dep1:
+                st.markdown(f"""
+                <div style="background: rgba(14, 18, 26, 0.75); border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); padding: 12px 16px; font-size: 0.88rem; color: var(--text-secondary);">
+                    <b>Execution Summary:</b> Total Capital Deployed: <b>${total_cash_deployed:,.2f}</b> ({(total_cash_deployed/sim_capital)*100:.1f}%) • 
+                    Unallocated Cash Reserve: <b>${cash_reserve:,.2f}</b> ({(cash_reserve/sim_capital)*100:.1f}%)
+                </div>
+                """, unsafe_allow_html=True)
+            with col_dep2:
+                csv_ticket = df_orders.to_csv(index=False).encode("utf-8")
+                st.download_button(
+                    label=f"📥 Export ${sim_capital/1e6:.1f}M Trade Ticket (CSV)",
+                    data=csv_ticket,
+                    file_name=f"meridian_trade_ticket_{datetime.date.today().isoformat()}.csv",
+                    mime="text/csv",
+                    use_container_width=True
+                )
+
+            # Asset Allocation Donut Chart
+            col_chart1, col_chart2 = st.columns([1.5, 1])
+            with col_chart1:
+                df_w = pd.DataFrame([
+                    {"Asset": sym, "Weight (%)": w * 100.0, "Dollar Allocation": f"${sim_capital * w:,.2f}"}
+                    for sym, w in opt_weights.items() if w > 0.001
+                ])
+                fig_w = go.Figure(data=[go.Pie(
+                    labels=df_w["Asset"],
+                    values=df_w["Weight (%)"],
+                    hole=0.45,
+                    textinfo="label+percent",
+                    hoverinfo="label+value"
+                )])
+                fig_w.update_layout(
+                    template="plotly_dark",
+                    paper_bgcolor="#0B0E14",
+                    plot_bgcolor="#0E121A",
+                    title="Optimal Simplex Capital Weights",
+                    height=380,
+                    margin=dict(l=20, r=20, t=40, b=20)
+                )
+                st.plotly_chart(fig_w, use_container_width=True)
+
+            with col_chart2:
+                st.markdown("##### 💡 Dual Budget Multiplier (λ)")
+                lambda_val = qp.get("dual_budget_multiplier", 0.0)
+                st.markdown(rf"""
+                <div style="background: rgba(14, 18, 26, 0.7); border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); padding: 14px 16px; font-size: 0.86rem; line-height: 1.55; color: var(--text-secondary); margin-top: 15px;">
+                    <b>Shadow Cost:</b> <code>λ = {lambda_val:.6f}</code><br><br>
+                    In convex optimization, the dual multiplier $\lambda$ represents the marginal change in objective variance resulting from relaxing the portfolio budget constraint.<br><br>
+                    A strictly positive $\lambda$ confirms the <b>Simplex Budget constraint ($\sum w_i = 1$) is tightly binding</b> and capital is fully and efficiently allocated.
+                </div>
+                """, unsafe_allow_html=True)
+
+        # --- TAB 2: $1,000,000 EQUITY GROWTH CURVE ---
+        with port_tab2:
+            st.markdown(f"##### 📈 1-Year Cumulative Growth: ${sim_capital:,.2f} Initial Capital")
+            st.caption("Historical backtested equity curve comparing the optimized multi-asset portfolio against the S&P 500 (SPY) benchmark.")
+
+            dates = bt_res.get("dates", [])
+            p_traj = [v * sim_capital for v in bt_res.get("portfolio_cum_trajectory", [])]
+            b_traj = [v * sim_capital for v in bt_res.get("benchmark_cum_trajectory", [])]
+
+            if dates and p_traj:
+                fig_equity = go.Figure()
+                fig_equity.add_trace(go.Scatter(
+                    x=dates, y=p_traj,
+                    mode="lines",
+                    line=dict(color="#10B981", width=2.6),
+                    name=f"Simulated Portfolio (${sim_capital/1e6:.1f}M Base)",
+                    hovertemplate="<b>Portfolio:</b> $%{y:,.2f}<extra></extra>"
+                ))
+                fig_equity.add_trace(go.Scatter(
+                    x=dates, y=b_traj,
+                    mode="lines",
+                    line=dict(color="#38BDF8", width=1.8, dash="dot"),
+                    name="S&P 500 / SPY Benchmark",
+                    hovertemplate="<b>S&P 500:</b> $%{y:,.2f}<extra></extra>"
+                ))
+                fig_equity.update_layout(
+                    template="plotly_dark",
+                    paper_bgcolor="#0B0E14",
+                    plot_bgcolor="#0E121A",
+                    title=f"${sim_capital:,.0f} Simulated Capital Growth Trajectory",
+                    height=440,
+                    xaxis_title="Trading Date",
+                    yaxis_title="Portfolio Market Value ($)",
+                    hovermode="x unified",
+                    margin=dict(l=25, r=25, t=40, b=25),
+                    legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1)
+                )
+                fig_equity.update_xaxes(gridcolor="rgba(255, 255, 255, 0.07)")
+                fig_equity.update_yaxes(gridcolor="rgba(255, 255, 255, 0.07)")
+                st.plotly_chart(fig_equity, use_container_width=True)
+
+                st.markdown(f"""
+                <div style="background: rgba(14, 18, 26, 0.7); border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); padding: 12px 18px; font-size: 0.88rem; line-height: 1.6; color: var(--text-primary); margin-top: 6px;">
+                    <b>Simulation Performance Context:</b><br>
+                    • Starting with <b>${sim_capital:,.2f}</b>, the optimized portfolio concluded the 1-year backtest window at <b>${port_ending_value:,.2f}</b> ({p_ret:+.2f}% total return).<br>
+                    • S&P 500 Benchmark ending value: <b>${bench_ending_value:,.2f}</b> ({b_ret:+.2f}% total return).<br>
+                    • <b>Total Dollar Alpha Generated:</b> {"🟢 <b>+" + f"${dollar_alpha:,.2f}</b> in pure dollar excess outperformance." if dollar_alpha >= 0 else "🔴 <b>" + f"${dollar_alpha:,.2f}</b> underperformance."}
+                </div>
+                """, unsafe_allow_html=True)
+            else:
+                st.info("Equity trajectory series compiling...")
+    else:
+        st.info("Configure your portfolio universe and simulated capital, then click **'⚡ Solve & Deploy Simulated Portfolio Allocation'** to run the simulation.")
 
 
 # --- MODULE 8: SUPPLY CHAIN & LOGISTICS RISK ---

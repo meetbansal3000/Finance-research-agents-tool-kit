@@ -256,7 +256,10 @@ class BacktestSandbox:
             "annualized_volatility_pct": round(port_vol, 2),
             "benchmark_volatility_pct": round(bench_vol, 2),
             "sharpe_ratio": round(sharpe, 2),
-            "max_drawdown_pct": round(max_drawdown, 2)
+            "max_drawdown_pct": round(max_drawdown, 2),
+            "dates": [str(d.date()) if hasattr(d, 'date') else str(d)[:10] for d in port_cum.index],
+            "portfolio_cum_trajectory": [round(float(v), 4) for v in (1 + port_cum).values],
+            "benchmark_cum_trajectory": [round(float(v), 4) for v in (1 + bench_cum).values]
         }
 
         # Save markdown report
