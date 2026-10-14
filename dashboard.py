@@ -833,6 +833,119 @@ with col_tv_web:
     tv_web_url = get_tradingview_web_url(st.session_state.get("active_ticker", "NVDA"))
     st.markdown(f'<a href="{tv_web_url}" target="_blank"><button style="width:100%;min-height:2.4rem;border-radius:6px;border:1px solid #334d40;background:#24362d;color:#e4ede7;cursor:pointer;font-weight:600;font-size:0.82rem">🌐 Web</button></a>', unsafe_allow_html=True)
 
+# Data Access & Developer Integrations (RStudio / Python SDK / CSV / CLI)
+st.sidebar.divider()
+st.sidebar.markdown("**📥 Data Ingestion & Developer Code**")
+with st.sidebar.popover("💻 Get Data (RStudio / Python / CSV)", use_container_width=True):
+    st.markdown("#### 📥 Ingest Data into RStudio or Python")
+    st.caption("Access your audited research data, models, and screening universe programmatically in RStudio, Python, or as direct CSV downloads.")
+    
+    dev_tab_r, dev_tab_py, dev_tab_dl, dev_tab_cli = st.tabs(["📊 R / RStudio", "🐍 Python SDK", "💾 Download CSV", "💻 CLI"])
+    
+    with dev_tab_r:
+        st.markdown("##### 📊 Integration for R & RStudio")
+        st.markdown("**Option 1: Ingest Exported CSV directly in RStudio**")
+        st.code("""# Load tidyverse in RStudio
+library(readr)
+library(dplyr)
+library(ggplot2)
+
+# Read active watchlist screening metrics
+coverage_data <- read_csv("meridian_watchlist_metrics.csv")
+glimpse(coverage_data)
+
+# Visualize Operating Margin vs Scorecard Ranking
+ggplot(coverage_data, aes(x = `Operating Margin`, y = Score, label = Ticker)) +
+  geom_point(color = "#10B981", size = 3) +
+  geom_text(vjust = -0.5, size = 3.5) +
+  theme_minimal() +
+  labs(title = "Meridian Research: Screening Scorecard in RStudio")""", language="r")
+
+        st.markdown("**Option 2: Run Audited DCF & Toolkit in RStudio via `reticulate`**")
+        st.code("""library(reticulate)
+# Bind to project Python virtual environment
+use_virtualenv(".venv", required = TRUE)
+
+# Import the audited calculation toolkit
+dcf_calc <- import("tools.calc.dcf")
+
+# Run DCF valuation directly in R
+res <- dcf_calc$dcf(
+  base_fcf = 60850000000,
+  growth_rates = list(0.20, 0.20, 0.18, 0.15, 0.12),
+  discount_rate = 0.095,
+  terminal_growth_rate = 0.035,
+  shares_outstanding = 24500000000,
+  net_debt = -38200000000
+)
+
+cat("Intrinsic Fair Value per Share:", res$result$fair_value_per_share, "\\n")""", language="r")
+
+    with dev_tab_py:
+        st.markdown("##### 🐍 Integration for Python & Google Antigravity SDK")
+        st.markdown("**Option 1: Programmatic Calculations & Screening**")
+        st.code("""import pandas as pd
+from tools.ticker_search import compute_ticker_scorecard_metrics, load_saved_watchlist
+from tools.calc.dcf import dcf, reverse_dcf
+
+# 1. Fetch active watchlist metrics
+watchlist = load_saved_watchlist()
+metrics_df = pd.DataFrame([compute_ticker_scorecard_metrics(s) for s in watchlist])
+print(metrics_df[['Ticker', 'Operating Margin', 'Debt/Equity', 'Score', 'Signal']])
+
+# 2. Run DCF valuation model
+dcf_res = dcf(
+    base_fcf=4.84e9,
+    growth_rates=[0.18]*5,
+    discount_rate=0.095,
+    terminal_growth_rate=0.03,
+    shares_outstanding=3.95e9,
+    net_debt=-27.44e9
+)
+print(f"DCF Fair Value: ${dcf_res['result']['fair_value_per_share']:.2f}")""", language="python")
+
+        st.markdown("**Option 2: Antigravity Autonomous Agent (Google Antigravity SDK)**")
+        st.code("""from agents.antigravity_agent import run_query
+import asyncio
+
+# Run stateful conversational agent with audited tool grounding
+asyncio.run(run_query("Analyze NVDA DCF fair value and fuel inflation sensitivity"))""", language="python")
+
+    with dev_tab_dl:
+        st.markdown("##### 💾 Instant Data Download")
+        try:
+            wl_tickers = tuple(st.session_state.get("watchlist", DEFAULT_WATCHLIST))
+            df_export = get_shortlist_metrics_for_universe(wl_tickers)
+            csv_data = df_export.to_csv(index=False).encode("utf-8")
+            st.download_button(
+                label="📥 Download Active Watchlist (CSV)",
+                data=csv_data,
+                file_name=f"meridian_watchlist_metrics_{datetime.date.today().isoformat()}.csv",
+                mime="text/csv",
+                use_container_width=True
+            )
+            json_data = json.dumps(st.session_state.get("watchlist", DEFAULT_WATCHLIST), indent=2)
+            st.download_button(
+                label="📥 Download Watchlist Config (JSON)",
+                data=json_data,
+                file_name="meridian_watchlist.json",
+                mime="application/json",
+                use_container_width=True
+            )
+        except Exception:
+            st.info("Watchlist metrics compiling...")
+
+    with dev_tab_cli:
+        st.markdown("##### 💻 Shell & Terminal CLI")
+        st.code("""# Run full autonomous 3-agent research committee for any ticker
+python run_research.py --ticker TSLA
+
+# Run interactive Antigravity copilot in terminal
+python agents/antigravity_agent.py
+
+# Query audited ticker search & metrics
+python -c "from tools.ticker_search import compute_ticker_scorecard_metrics; print(compute_ticker_scorecard_metrics('NVDA'))" """, language="bash")
+
 
 # =============================================================================
 # DOMAIN 1: MARKET INTELLIGENCE & SCREENING
@@ -1692,6 +1805,17 @@ elif "Intrinsic Valuation" in nav_choice:
             "Cumulative PV": f"{currency_sym}{ev_total/1e9:,.2f}B (Total EV)"
         })
         st.dataframe(pd.DataFrame(schedule_rows), use_container_width=True, hide_index=True)
+
+        col_dcf_dl1, _ = st.columns([1.5, 3])
+        with col_dcf_dl1:
+            dcf_csv = pd.DataFrame(schedule_rows).to_csv(index=False).encode("utf-8")
+            st.download_button(
+                label=f"📥 Export {custom_sym} Cash Flows (CSV)",
+                data=dcf_csv,
+                file_name=f"{custom_sym}_dcf_cash_flows_{datetime.date.today().isoformat()}.csv",
+                mime="text/csv",
+                use_container_width=True
+            )
 
     # --- TAB 3: 2D SENSITIVITY HEATMAP ---
     with dcf_tab3:
