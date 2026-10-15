@@ -43,6 +43,7 @@ from tools.data_layer import get_data_layer
 from tools.multi_asset_data import MultiAssetDataEngine
 from tools.paper_trading import get_paper_trading_engine, INITIAL_PORTFOLIO_CASH
 from tools.broker_client import ExecutionCostModel, MultiExchangeRouter, AlpacaBrokerClient, InteractiveBrokersClient
+from tools.alert_dispatcher import get_alert_dispatcher, WebhookAlertDispatcher
 
 
 @st.cache_data(ttl=60, show_spinner=False)
@@ -340,6 +341,62 @@ def render_meridian_multi_asset_desk():
                     sev = ra.get("severity", "WARNING")
                     b_col = "#EF4444" if sev == "CRITICAL" else "#F59E0B"
                     st.markdown(f"<div style='border-left:3px solid {b_col}; padding:4px 8px; margin:4px 0; font-size:0.82rem; color:#E2E8F0;'><b>[{sev}] {ra.get('type', 'ALERT')}</b> ({ra.get('timestamp', '')[:19]}): {ra.get('message', '')}</div>", unsafe_allow_html=True)
+
+        # Multi-Channel Webhook Alert Dispatcher Control Section
+        alert_dispatcher = get_alert_dispatcher()
+        channel_status = alert_dispatcher.get_channel_status()
+
+        with st.expander("📡 Real-Time Webhook Alert Dispatcher (Discord, Slack, Telegram, REST)", expanded=False):
+            st.markdown("##### 📢 Connected Notification Channels")
+            ch_col1, ch_col2, ch_col3, ch_col4 = st.columns(4)
+            with ch_col1:
+                d_conf = channel_status["discord"]["configured"]
+                d_color = "#10B981" if d_conf else "#94A3B8"
+                d_label = "ACTIVE" if d_conf else "SIMULATED"
+                st.markdown(f"**Discord**<br><span style='color:{d_color}; font-size:0.75rem; font-weight:700;'>● {d_label}</span>", unsafe_allow_html=True)
+            with ch_col2:
+                s_conf = channel_status["slack"]["configured"]
+                s_color = "#10B981" if s_conf else "#94A3B8"
+                s_label = "ACTIVE" if s_conf else "SIMULATED"
+                st.markdown(f"**Slack**<br><span style='color:{s_color}; font-size:0.75rem; font-weight:700;'>● {s_label}</span>", unsafe_allow_html=True)
+            with ch_col3:
+                t_conf = channel_status["telegram"]["configured"]
+                t_color = "#10B981" if t_conf else "#94A3B8"
+                t_label = "ACTIVE" if t_conf else "SIMULATED"
+                st.markdown(f"**Telegram**<br><span style='color:{t_color}; font-size:0.75rem; font-weight:700;'>● {t_label}</span>", unsafe_allow_html=True)
+            with ch_col4:
+                g_conf = channel_status["generic_rest"]["configured"]
+                g_color = "#10B981" if g_conf else "#94A3B8"
+                g_label = "ACTIVE" if g_conf else "SIMULATED"
+                st.markdown(f"**Generic REST**<br><span style='color:{g_color}; font-size:0.75rem; font-weight:700;'>● {g_label}</span>", unsafe_allow_html=True)
+
+            wh_b1, wh_b2 = st.columns([2.0, 3.0])
+            with wh_b1:
+                if st.button("🚀 Send Test Multi-Channel Webhook Alert", use_container_width=True, key="btn_test_webhook"):
+                    with st.spinner("Dispatching test alert across all channels..."):
+                        test_dispatch = alert_dispatcher.dispatch_risk_alert(
+                            alert_type="SIMULATED_TEST_BREACH",
+                            severity="CRITICAL",
+                            message="Institutional Risk Sentry Test: 1-Day 95% CF-VaR simulation verification.",
+                            symbol="SPY",
+                            metrics={"var_95_cf_pct": 5.40, "portfolio_equity_usd": tot_equity},
+                            force=True
+                        )
+                        st.success(f"✅ Alert Dispatched! Provenance ID: `{test_dispatch['provenance_ledger_id']}`")
+                        st.rerun()
+
+            recent_dispatches = alert_dispatcher.load_recent_dispatches(limit=5)
+            if recent_dispatches:
+                st.markdown("###### 📜 Recent Dispatched Webhook Payloads")
+                for d in reversed(recent_dispatches):
+                    sev_c = "#EF4444" if d.get("severity") == "CRITICAL" else ("#10B981" if d.get("severity") == "SUCCESS" else "#F59E0B")
+                    st.markdown(
+                        f"<div style='border-left:3px solid {sev_c}; background:#0B0E14; padding:6px 10px; margin:4px 0; font-size:0.78rem; font-family:monospace;'>"
+                        f"<b style='color:{sev_c};'>[{d.get('severity', 'INFO')}] {d.get('event_type', 'ALERT')}</b> ({d.get('symbol', 'PORTFOLIO')}) - {d.get('payload_summary', '')}<br>"
+                        f"<span style='color:#64748B;'>Timestamp: {d.get('timestamp', '')[:19]} | Ledger: <code>{d.get('provenance_ledger_id', 'N/A')}</code></span>"
+                        f"</div>",
+                        unsafe_allow_html=True
+                    )
 
         # ---------------------------------------------------------------------
         # BROKER GATEWAY & MULTI-EXCHANGE ORDER ROUTING CONTROL STRIP

@@ -234,6 +234,14 @@ class PaperTradingEngine:
             f"✅ ORDER FILLED [{ord_id} via {routing_venue}]: {clean_side} {qty:,.2f} {sym} @ ${px:,.2f} "
             f"(${cost:,.2f} Total | TCA Friction: ${tca['total_friction_usd']:,.2f}) | Ledger: {ledger_id}"
         )
+
+        # Dispatch Order Fill Webhook notification
+        try:
+            from tools.alert_dispatcher import get_alert_dispatcher
+            get_alert_dispatcher().dispatch_order_fill(order_record=position, tca=tca)
+        except Exception:
+            pass
+
         return True, msg, position
 
     def close_position(

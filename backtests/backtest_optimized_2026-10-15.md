@@ -1,5 +1,5 @@
 # Quantitative Backtest Simulation Report
-**Generated:** 2026-10-15 16:28:49  
+**Generated:** 2026-10-15 17:27:26  
 **Tested Portfolio:** AAPL, MSFT  
 **Benchmark:** SPY  
 **Simulation Window:** 1y  

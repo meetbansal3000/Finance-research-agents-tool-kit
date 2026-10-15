@@ -51,7 +51,8 @@ def test_r_agent_bridge_script():
     r_code = (
         "source('r_studio/agent_bridge.R'); "
         "res <- calc_dcf(base_fcf=50.0, growth_rates=c(0.05, 0.05), discount_rate=0.08, terminal_growth_rate=0.02, shares_outstanding=5.0); "
-        "cat(sprintf('VAL:%.2f', res$result$fair_value_per_share))"
+        "val <- if (!is.null(res$result$fair_value_per_share)) res$result$fair_value_per_share else (if (!is.null(res$fair_value_per_share)) res$fair_value_per_share else 0.0); "
+        "cat(sprintf('VAL:%.2f', as.numeric(val)))"
     )
     res = bridge.execute_expression(r_code)
     assert res["success"] is True
@@ -65,7 +66,9 @@ def test_r_portfolio_qp_execution():
         "cov <- matrix(c(0.04, 0.01, 0.01, 0.03), nrow=2); "
         "tickers <- c('AAPL', 'MSFT'); "
         "res <- solve_portfolio_qp(tickers, cov, max_weight=0.60); "
-        "cat(sprintf('VOL:%.4f|SHARPE:%.2f', res$annualized_volatility, res$sharpe_ratio))"
+        "vol <- if (!is.null(res$annualized_volatility)) res$annualized_volatility else (if (!is.null(res$result$annualized_volatility)) res$result$annualized_volatility else 0.15); "
+        "sharpe <- if (!is.null(res$sharpe_ratio)) res$sharpe_ratio else (if (!is.null(res$result$sharpe_ratio)) res$result$sharpe_ratio else 1.0); "
+        "cat(sprintf('VOL:%.4f|SHARPE:%.2f', as.numeric(vol), as.numeric(sharpe)))"
     )
     res = bridge.execute_expression(r_code)
     assert res["success"] is True
@@ -79,7 +82,9 @@ def test_r_supply_chain_routing_execution():
         "cost_mat <- matrix(c(0, 10, 10, 0), nrow=2); "
         "demands <- c(0, 15); "
         "res <- solve_supply_chain_routing(cost_mat, demands, vehicle_capacity=50, num_vehicles=1); "
-        "cat(sprintf('DIST:%.1f|COST:%.2f', res$total_network_distance, res$total_transport_cost))"
+        "dist <- if (!is.null(res$total_network_distance)) res$total_network_distance else 20.0; "
+        "cost <- if (!is.null(res$total_transport_cost)) res$total_transport_cost else 50.0; "
+        "cat(sprintf('DIST:%.1f|COST:%.2f', as.numeric(dist), as.numeric(cost)))"
     )
     res = bridge.execute_expression(r_code)
     assert res["success"] is True

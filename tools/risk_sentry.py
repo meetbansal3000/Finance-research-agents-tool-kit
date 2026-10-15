@@ -30,6 +30,7 @@ from tools.calc.probability_simulator import (
     cornish_fisher_quantile
 )
 from tools.calc.derivatives_math import CrossAssetRiskEngine
+from tools.alert_dispatcher import get_alert_dispatcher
 
 PROJECT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 ALERTS_DIR = os.path.join(PROJECT_DIR, "alerts")
@@ -293,6 +294,35 @@ class PortfolioRiskSentry:
                     ev_copy["timestamp"] = timestamp
                     ev_copy["portfolio_equity"] = audit["portfolio_metrics"]["total_equity_usd"]
                     f.write(json.dumps(ev_copy) + "\n")
+
+            # Dispatch multi-channel webhooks (Discord, Slack, Telegram, Generic)
+            try:
+                dispatcher = get_alert_dispatcher()
+                for b in audit.get("breaches", []):
+                    dispatcher.dispatch_risk_alert(
+                        alert_type=b.get("type", "RISK_BREACH"),
+                        severity="CRITICAL",
+                        message=b.get("message", ""),
+                        symbol=b.get("symbol", "PORTFOLIO"),
+                        metrics={
+                            "portfolio_equity_usd": audit["portfolio_metrics"]["total_equity_usd"],
+                            "var_95_cf_pct": audit["econometric_risk_metrics"]["var_95_cf_pct"],
+                            "margin_utilization_pct": audit["portfolio_metrics"]["margin_utilization_pct"]
+                        }
+                    )
+                for w in audit.get("warnings", []):
+                    dispatcher.dispatch_risk_alert(
+                        alert_type=w.get("type", "RISK_WARNING"),
+                        severity="WARNING",
+                        message=w.get("message", ""),
+                        symbol=w.get("symbol", "PORTFOLIO"),
+                        metrics={
+                            "portfolio_equity_usd": audit["portfolio_metrics"]["total_equity_usd"],
+                            "var_95_cf_pct": audit["econometric_risk_metrics"]["var_95_cf_pct"]
+                        }
+                    )
+            except Exception:
+                pass
 
         state_data = {
             "last_audited_at": timestamp,

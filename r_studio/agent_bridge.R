@@ -10,9 +10,14 @@ suppressPackageStartupMessages({
 })
 
 .get_python_path <- function() {
-  venv_py <- file.path(getwd(), ".venv", "Scripts", "python.exe")
-  if (file.exists(venv_py)) return(venv_py)
-  # Fallback to system python
+  candidates <- c(
+    file.path(getwd(), ".venv", "Scripts", "python.exe"),
+    file.path(getwd(), "..", ".venv", "Scripts", "python.exe"),
+    "D:/AI-Workspace/finance agents for research/.venv/Scripts/python.exe"
+  )
+  for (cand in candidates) {
+    if (file.exists(cand)) return(cand)
+  }
   "python"
 }
 
