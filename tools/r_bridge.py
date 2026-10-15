@@ -1,6 +1,6 @@
 """
-tools/r_bridge.py - Antigravity <-> RStudio / R Bridge
-Enables bidirectional communication between Antigravity Python Agents and RStudio:
+tools/r_bridge.py - RStudio / R Bridge
+Enables bidirectional communication between Python Agents and RStudio:
   1. Invokes R scripts and econometric routines via Rscript.exe (D:\\rstudio\\R-4.6.1)
   2. Runs Monte Carlo DCF simulations and econometric risk modeling using native R statistical libraries
   3. Records all R operations into ProvenanceLedger with source tag R_STUDIO_EXEC
@@ -166,7 +166,7 @@ class RStudioBridge:
 
 def main():
     import argparse
-    parser = argparse.ArgumentParser(description="Antigravity RStudio Bridge")
+    parser = argparse.ArgumentParser(description="RStudio Bridge")
     parser.add_argument("command", choices=["status", "monte-carlo", "launch"], help="Command to run")
     parser.add_argument("--base-fcf", type=float, default=100.0)
     parser.add_argument("--shares", type=float, default=10.0)
@@ -178,7 +178,7 @@ def main():
     if args.command == "status":
         avail = bridge.is_available()
         print("=" * 60)
-        print("📊 Antigravity <-> RStudio Bridge Status")
+        print("📊 RStudio Bridge Status")
         print("=" * 60)
         print(f"Rscript Path : {bridge.rscript_path} (Available: {avail})")
         print(f"RStudio IDE  : {bridge.rstudio_exe} (Exists: {os.path.exists(bridge.rstudio_exe)})")

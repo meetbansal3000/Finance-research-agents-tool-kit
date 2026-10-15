@@ -1239,7 +1239,7 @@ class AnalystAgent:
 **Reporting Period:** {data['period']} | Primary Currency: {curr}  
 **Workflow Reference:** Workflow {workflow_number}  
 **Report Date:** {datetime.datetime.now().strftime('%Y-%m-%d')}  
-**Analyst:** Antigravity Research System  
+**Analyst:** Autonomous Research System  
 
 ---
 
@@ -1278,7 +1278,7 @@ class AnalystAgent:
 - [ANALYSIS] The implied growth rate of {implied_growth:.2f}% [{l_implied}] reflects market valuation expectations relative to historical compounding.
 
 ---
-*Report generated under Antigravity Verified Research Playbook. All figures verified by Provenance Ledger.*
+*Report generated under Institutional Verified Research Playbook. All figures verified by Provenance Ledger.*
 """
         else:
             # Display in Millions (USD / generic)
@@ -1309,7 +1309,7 @@ class AnalystAgent:
 **Reporting Period:** {data['period']} | Primary Currency: {curr}  
 **Workflow Reference:** Workflow {workflow_number}  
 **Report Date:** {datetime.datetime.now().strftime('%Y-%m-%d')}  
-**Analyst:** Antigravity Research System  
+**Analyst:** Autonomous Research System  
 
 ---
 
@@ -1350,7 +1350,7 @@ class AnalystAgent:
 - [ANALYSIS] The implied growth rate of {implied_growth:.2f}% [{l_implied}] exceeds the baseline growth assumption and reflects a premium multiple.
 
 ---
-*Report generated under Antigravity Verified Research Playbook. All figures verified by Provenance Ledger.*
+*Report generated under Institutional Verified Research Playbook. All figures verified by Provenance Ledger.*
 """
 
         # Prepare skeptic inputs

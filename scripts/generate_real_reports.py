@@ -289,7 +289,7 @@ def generate_aapl():
     rep_text = f"""# Equity Research Report: Apple Inc. (AAPL)
 **Filing Reference:** SEC Form 10-K (Fiscal Year Ended September 27, 2025)  
 **Report Date:** {datetime.datetime.now().strftime('%Y-%m-%d')}  
-**Analyst:** Antigravity Research System  
+**Analyst:** Autonomous Research System  
 
 ---
 
@@ -330,7 +330,7 @@ def generate_aapl():
 - [ANALYSIS] The implied growth rate of {implied_growth:.2f}% [{l_implied}] exceeds the baseline growth assumption and reflects a premium multiple.
 
 ---
-*Report generated under Antigravity Verified Research Playbook. All figures verified by Provenance Ledger.*
+*Report generated under Institutional Verified Research Playbook. All figures verified by Provenance Ledger.*
 """
 
     rep_path = "reports/aapl_research_report.md"
@@ -568,7 +568,7 @@ def generate_tcs():
     rep_text = f"""# Equity Research Report: Tata Consultancy Services Ltd. (TCS.NS)
 **Filing Reference:** Audited Annual Consolidated Financial Statements (FY2025)  
 **Report Date:** {datetime.datetime.now().strftime('%Y-%m-%d')}  
-**Analyst:** Antigravity Research System  
+**Analyst:** Autonomous Research System  
 
 ---
 
@@ -618,7 +618,7 @@ def generate_tcs():
 - [ANALYSIS] The implied growth rate of {implied_growth:.2f}% [{l_implied}] aligns with compound annual growth rate calculations.
 
 ---
-*Report generated under Antigravity Verified Research Playbook. All figures verified by Provenance Ledger.*
+*Report generated under Institutional Verified Research Playbook. All figures verified by Provenance Ledger.*
 """
 
     rep_path = "reports/tcs_research_report.md"

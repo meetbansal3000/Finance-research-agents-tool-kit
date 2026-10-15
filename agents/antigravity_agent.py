@@ -1,4 +1,4 @@
-"""Antigravity-powered Financial Intelligence and Research Agent."""
+"""Autonomous Financial Intelligence and Research Agent."""
 
 import argparse
 import asyncio
@@ -18,7 +18,7 @@ from tools.antigravity_tools import ANTIGRAVITY_FINANCE_TOOLS
 
 load_dotenv()
 
-SYSTEM_INSTRUCTIONS = """You are the Antigravity Research Analyst in the Open-Source Stock and Market Research Toolkit.
+SYSTEM_INSTRUCTIONS = """You are the Financial Research Analyst in the Open-Source Stock and Market Research Toolkit.
 
 Your mission:
 1. Provide accurate, verifiable financial data and quantitative analysis using your integrated tools.
@@ -48,7 +48,7 @@ def build_config(api_key: str | None = None, interactive: bool = True) -> LocalA
 
 async def run_query(query: str, api_key: str | None = None):
     config = build_config(api_key=api_key, interactive=False)
-    print(f"\n[Antigravity Finance Agent] Query: {query}")
+    print(f"\n[Financial Intelligence Agent] Query: {query}")
     print("-" * 65)
     async with Agent(config) as agent:
         response = await agent.chat(query)
@@ -61,8 +61,8 @@ async def run_query(query: str, api_key: str | None = None):
 async def run_interactive(api_key: str | None = None):
     config = build_config(api_key=api_key, interactive=True)
     print("\n" + "=" * 65)
-    print("  Antigravity Finance Agent - Research Toolkit")
-    print("  Drive D: AI-Workspace | Powered by Google Antigravity SDK")
+    print("  Financial Intelligence Agent - Research Toolkit")
+    print("  Drive D: AI-Workspace | Autonomous Research System")
     print("=" * 65)
     print("  Type your queries or 'exit' to quit.")
     print("=" * 65 + "\n")
@@ -75,7 +75,7 @@ async def run_interactive(api_key: str | None = None):
                     continue
                 if user_msg.lower() in ("exit", "quit", "q"):
                     break
-                print("\n[Antigravity]: ", end="", flush=True)
+                print("\n[Assistant]: ", end="", flush=True)
                 response = await agent.chat(user_msg)
                 async for token in response:
                     sys.stdout.write(token)
@@ -86,7 +86,7 @@ async def run_interactive(api_key: str | None = None):
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Antigravity Finance Agent")
+    parser = argparse.ArgumentParser(description="Financial Intelligence Agent")
     parser.add_argument("--query", "-q", type=str, help="Single research query")
     parser.add_argument("--api-key", "-k", type=str, help="Optional Gemini API key")
     args = parser.parse_args()

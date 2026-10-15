@@ -1420,7 +1420,7 @@ class ReportVerifier:
             for rec in reconciliations:
                 md_content += f"- **{rec['metric']}**: Derived `{rec['derived_val']}` [{rec['derived_id']}] vs Headline `{rec['headline_val']}` [{rec['headline_id']}] (Delta: {rec['delta']:+.2f})\n  - *Status:* {rec['status']}\n  - *Explanation:* {rec['explanation']}\n"
 
-        md_content += "\n---\n*Audit conducted by Antigravity Verifier Agent under default-deny policy. Original report was not modified.*"
+        md_content += "\n---\n*Audit conducted by Independent Verifier Agent under default-deny policy. Original report was not modified.*"
 
         with open(audit_md_path, "w", encoding="utf-8") as f:
             f.write(md_content)

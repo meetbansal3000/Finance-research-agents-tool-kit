@@ -1,6 +1,6 @@
 ---
 title: "Autonomous Equity Research & Econometric Dossier"
-author: "Antigravity Research Agents Committee & RStudio"
+author: "Autonomous Research Agents Committee & RStudio"
 date: "`r Sys.Date()`"
 output:
   html_document:
@@ -17,7 +17,7 @@ source("agent_bridge.R")
 
 # Executive Summary
 
-This institutional research document combines **Google Antigravity Finance Agents** with **RStudio & R Econometric Modeling**.
+This institutional research document combines **Autonomous Multi-Agent Finance Intelligence** with **RStudio & R Econometric Modeling**.
 
 - **Primary Source Filing:** Audited SEC Form 10-K / 20-F filings anchored strictly by Accession Number (`accn`).
 - **Valuation Models:** Deterministic DCF, Elastic Reverse DCF Solver, and Vectorized Monte Carlo Simulations.
@@ -124,4 +124,4 @@ cat(dossier$final_report)
 ```
 
 ---
-*Report generated via Antigravity Finance Agents Committee & RStudio v4.6.1.*
+*Report generated via Research Agents Committee & RStudio v4.6.1.*

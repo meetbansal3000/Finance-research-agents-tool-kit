@@ -1,6 +1,6 @@
-# AGENTS.md - Antigravity & OpenAI Codex Shared Directives
+# AGENTS.md - Autonomous & OpenAI Codex Shared Directives
 
-This document defines the architecture, data integrity standards, execution guidelines, agent roles, and tool protocols for both **Google Antigravity** and **OpenAI Codex CLI** operating within the `Finance Research Agents Tool-Kit` repository.
+This document defines the architecture, data integrity standards, execution guidelines, agent roles, and tool protocols for both **Autonomous Research Agents** and **OpenAI Codex CLI** operating within the `Finance Research Agents Tool-Kit` repository.
 
 ---
 
@@ -30,7 +30,7 @@ The system operates as an autonomous committee of specialized agents:
 - **WeeklyBriefing (`tools/weekly_briefing.py`):** Compiles weekly institutional digests across watchlist assets and earnings updates.
 - **DecisionJournal (`tools/decision_journal.py`):** Records investment committee decisions with cryptographic HMAC hash and review dates.
 - **BacktestSandbox (`tools/backtest.py`):** Multi-factor screening and quantitative backtesting engine featuring cuOpt QP portfolio variance minimization vs SPY.
-- **CodexBridge (`tools/codex_bridge.py`):** Connects Antigravity and OpenAI Codex CLI for cross-agent code reviews, dual verification, and automated audits.
+- **CodexBridge (`tools/codex_bridge.py`):** Connects Autonomous Agents and OpenAI Codex CLI for cross-agent code reviews, dual verification, and automated audits.
 - **RStudioBridge (`tools/r_bridge.py`, `r_studio/agent_bridge.R`):** Connects Python agents to native R 4.6.1 for Monte Carlo DCF simulations, portfolio QP, and CVRP supply chain logistics.
 
 ### 🌐 Meridian Multi-Asset Master Orchestrator Ecosystem
@@ -57,12 +57,12 @@ Three specialized skills provide GPU-grade mathematical and algorithmic modeling
 
 ---
 
-## 4. Antigravity Skill Discovery Scopes
-Antigravity automatically discovers skills and agents across two layers:
+## 4. Skill Discovery Scopes
+The platform automatically discovers skills and agents across two layers:
 1. **Workspace Scope:** Looks for `.agents/skills/` and `AGENTS.md` inside the currently opened workspace directory:
    - Location: `D:\AI-Workspace\finance agents for research\.agents\skills\`
-   - To activate workspace scope in Antigravity IDE: **File > Open Folder** and select `D:\AI-Workspace\finance agents for research`.
-2. **Global Scope:** Located in the user's Antigravity configuration directory:
+   - To activate workspace scope: Open the workspace directory `D:\AI-Workspace\finance agents for research`.
+2. **Global Scope:** Located in the global configuration directory:
    - Location: `C:\Users\HP\.gemini\config\skills\`
    - All 3 NVIDIA skills (`cuopt-numerical-optimization-formulation`, `cuopt-routing-api-python`, `tilegym-cutile-autotuning`) are duplicated here, ensuring global availability regardless of active workspace.
 

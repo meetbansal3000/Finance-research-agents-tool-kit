@@ -1,4 +1,4 @@
-"""Antigravity financial analysis tools integrated into the research toolkit."""
+"""Financial analysis tools integrated into the research toolkit."""
 
 import yfinance as yf
 import numpy as np
@@ -125,7 +125,7 @@ def manage_portfolio(
         symbol: Stock ticker symbol.
         shares: Number of shares.
         cost_basis: Purchase price per share.
-        ctx: Antigravity ToolContext injected automatically.
+        ctx: ToolContext injected automatically.
     """
     action = action.lower().strip()
     portfolio = {}

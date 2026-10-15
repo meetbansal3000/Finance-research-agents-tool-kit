@@ -51,7 +51,7 @@ def build_catalog():
     metrics = [
         ("Autonomous Research Agents", 18, "Fundamental, derivatives, macro, risk, audit, and reporting agents"),
         ("NVIDIA GPU & Acceleration Skills", 4, "cuOpt QP, cuOpt Routing, TileGym autotuning, NIM reasoning"),
-        ("Global Antigravity System Skills", 55, "Data engineering, Google Cloud, web scraping, architecture"),
+        ("Global Platform & System Skills", 55, "Data engineering, Google Cloud, web scraping, architecture"),
         ("Built-in Platform Skills", 8, "Workflows, plugins, automations, generative UI"),
         ("Connected Tool Bridges", 3, "RStudio Econometrics, OpenAI Codex CLI, GitHub Toolkit Sync"),
         ("Test Suite Verification Rate", "100% Passing", "Zero hallucinations, deterministic math, audited provenance")
@@ -177,7 +177,7 @@ def build_catalog():
         ],
         [
             "RStudio Econometrics Bridge", "RStudioBridge (tools/r_bridge.py / agent_bridge.R)", "Statistical Computing",
-            "Connects Antigravity and Python agents to native R 4.6.1 for Monte Carlo DCF, portfolio QP, and CVRP routing",
+            "Connects Autonomous Python agents to native R 4.6.1 for Monte Carlo DCF, portfolio QP, and CVRP routing",
             "Triggered in Python via bridge.run_monte_carlo_dcf() or inside RStudio via source('r_studio/agent_bridge.R')",
             "tools.r_bridge.RStudioBridge() / R scripts", "Financial parameters, vectors, covariance matrices",
             "R Quantiles (5%, 50%, 95%), Value-at-Risk, Volatility distributions", "Logs execution to ProvenanceLedger with source_tag='R_STUDIO_ECONOMETRICS'"
@@ -340,7 +340,7 @@ def build_catalog():
             "AI agent meta-harness for multi-agent coordination, agent memory persistence, SPARC workflows, swarm execution",
             "Swarm orchestration, multi-agent coordination, agent memory, SPARC workflows",
             "C:/Users/HP/.gemini/config/skills/ruflo/SKILL.md",
-            "Provides swarm collaboration mechanisms between Antigravity, Codex, and NVIDIA agents"
+            "Provides swarm collaboration mechanisms between Autonomous, Codex, and NVIDIA agents"
         ],
         [
             "gemini-api-dev", "Plugin (gemini-api)", "Google Gemini SDK",
@@ -466,7 +466,7 @@ def build_catalog():
         cell.alignment = Alignment(horizontal="center", vertical="center", wrap_text=True)
 
     arch_data = [
-        ["Layer 1: User / CLI", "Antigravity Chat / agy CLI / run_research.py", "Initiates research requests, backtests, or watchlists", "ResearchCommittee, BacktestSandbox", "Terminal CLI flags / Antigravity natural language"],
+        ["Layer 1: User / CLI", "Interactive Chat / agy CLI / run_research.py", "Initiates research requests, backtests, or watchlists", "ResearchCommittee, BacktestSandbox", "Terminal CLI flags / natural language prompts"],
         ["Layer 2: Multi-Agent Committee", "ResearchCommittee (committee.py)", "Orchestrates Analyst -> Verifier -> Skeptic pipeline", "Analyst, Verifier, Skeptic, NoteExtractor", "In-memory structured dicts + Markdown reports"],
         ["Layer 3: Primary Intelligence", "AnalystAgent & NoteExtractorAgent", "Extracts facts from SEC EDGAR (10-K, 20-F, XBRL)", "SEC EDGAR, DataLayer, DCF Engine", "HTTPS SEC API, JSON XBRL, TokenBucket rate limiter"],
         ["Layer 4: Independent Verification", "IndependentVerifier", "Re-fetches primary filings independently to audit facts", "SEC EDGAR, ProvenanceLedger", "Cryptographic HMAC check + 0.5 unit tolerance audit"],

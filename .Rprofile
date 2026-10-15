@@ -1,7 +1,7 @@
 # .Rprofile - Auto-initialization for Finance Research Agents in RStudio
 local({
   message("=================================================================")
-  message("  🚀 Finance Research Agents & Antigravity - RStudio Workspace")
+  message("  🚀 Finance Research Agents - RStudio Workspace")
   message("=================================================================")
   
   proj_dir <- getwd()

@@ -1,5 +1,5 @@
 # r_studio/agent_bridge.R - RStudio Interface for Finance Research Agents
-# Provides native R functions to interact with Antigravity multi-agent research tools
+# Provides native R functions to interact with autonomous multi-agent research tools
 
 suppressPackageStartupMessages({
   if (!requireNamespace("jsonlite", quietly = TRUE)) {

@@ -39,25 +39,25 @@ $WeeklyScript = "{weekly_script}"
 $AlertsScript = "{alerts_script}"
 
 Write-Host "==========================================================" -ForegroundColor Cyan
-Write-Host "Registering Antigravity Automated Research Schedulers..." -ForegroundColor Cyan
+Write-Host "Registering Automated Research Schedulers..." -ForegroundColor Cyan
 Write-Host "==========================================================" -ForegroundColor Cyan
 
 # 1. Weekly Briefing (Every Monday at 07:00)
-$WeeklyTaskName = "Antigravity_WeeklyBriefing"
+$WeeklyTaskName = "Automated_WeeklyBriefing"
 $WeeklyAction = New-ScheduledTaskAction -Execute $PythonExe -Argument "`"$WeeklyScript`"" -WorkingDirectory $WorkingDir
 $WeeklyTrigger = New-ScheduledTaskTrigger -Weekly -DaysOfWeek Monday -At 07:00am
-Register-ScheduledTask -TaskName $WeeklyTaskName -Action $WeeklyAction -Trigger $WeeklyTrigger -Description "Antigravity Weekly Watchlist & Macro Briefing Generator" -Force
+Register-ScheduledTask -TaskName $WeeklyTaskName -Action $WeeklyAction -Trigger $WeeklyTrigger -Description "Automated Weekly Watchlist & Macro Briefing Generator" -Force
 
 Write-Host "[+] Task '$WeeklyTaskName' registered: Every Monday at 07:00 AM" -ForegroundColor Green
 
 # 2. Daily Market & Filing Alerts (Every Mon-Fri at 09:00 PM)
-$AlertsTaskName = "Antigravity_DailyAlerts"
+$AlertsTaskName = "Automated_DailyAlerts"
 $AlertsAction = New-ScheduledTaskAction -Execute $PythonExe -Argument "`"$AlertsScript`" check" -WorkingDirectory $WorkingDir
 $DailyTrigger = New-ScheduledTaskTrigger -Weekly -DaysOfWeek Monday,Tuesday,Wednesday,Thursday,Friday -At 09:00pm
-Register-ScheduledTask -TaskName $AlertsTaskName -Action $AlertsAction -Trigger $DailyTrigger -Description "Antigravity Daily Filing & Price Shock Monitor" -Force
+Register-ScheduledTask -TaskName $AlertsTaskName -Action $AlertsAction -Trigger $DailyTrigger -Description "Automated Daily Filing & Price Shock Monitor" -Force
 
 Write-Host "[+] Task '$AlertsTaskName' registered: Mon-Fri at 09:00 PM" -ForegroundColor Green
-Write-Host "`nAll Antigravity automated tasks successfully scheduled." -ForegroundColor Cyan
+Write-Host "`nAll automated tasks successfully scheduled." -ForegroundColor Cyan
 """
     with open(ps1_path, "w", encoding="utf-8") as f:
         f.write(ps1_content)
@@ -69,7 +69,7 @@ def generate_cron_snippet() -> str:
     alerts_script = os.path.join(PROJECT_DIR, "tools", "alerts.py")
     log_dir = os.path.join(PROJECT_DIR, "reports")
 
-    cron_text = f"""# --- Antigravity Automated Financial Research Cron Jobs ---
+    cron_text = f"""# --- Automated Financial Research Cron Jobs ---
 # 1. Weekly Watchlist Briefing (Every Monday at 07:00 UTC)
 0 7 * * 1 cd {PROJECT_DIR} && {VENV_PYTHON} {weekly_script} >> {log_dir}/cron_briefing.log 2>&1
 
@@ -84,21 +84,21 @@ def generate_cron_snippet() -> str:
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Antigravity Automated Task Scheduler Setup")
+    parser = argparse.ArgumentParser(description="Automated Task Scheduler Setup")
     parser.add_argument("--install", action="store_true", help="Automatically register tasks with the operating system")
     args = parser.parse_args()
 
     os_type = platform.system()
     print("=" * 60)
-    print(f"⏰ ANTIGRAVITY TASK SCHEDULER SETUP (OS: {os_type})")
+    print(f"⏰ AUTOMATED TASK SCHEDULER SETUP (OS: {os_type})")
     print("=" * 60)
 
     if os_type == "Windows":
         ps1_file = generate_windows_script()
         print(f"✅ Generated Windows PowerShell task registration script: {ps1_file}")
         print("\nRegistered Tasks:")
-        print("  1. 'Antigravity_WeeklyBriefing' -> Every Monday at 07:00 AM")
-        print("  2. 'Antigravity_DailyAlerts'    -> Mon-Fri at 09:00 PM")
+        print("  1. 'Automated_WeeklyBriefing' -> Every Monday at 07:00 AM")
+        print("  2. 'Automated_DailyAlerts'    -> Mon-Fri at 09:00 PM")
 
         if args.install:
             print("\nExecuting registration via PowerShell...")

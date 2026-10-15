@@ -409,7 +409,7 @@ class LocalKnowledgeBase:
 
 def main():
     import argparse
-    parser = argparse.ArgumentParser(description="Antigravity Local Knowledge Base (ChromaDB)")
+    parser = argparse.ArgumentParser(description="Local Knowledge Base (ChromaDB)")
     subparsers = parser.add_subparsers(dest="command", help="Sub-commands")
 
     # Ingest subcommand

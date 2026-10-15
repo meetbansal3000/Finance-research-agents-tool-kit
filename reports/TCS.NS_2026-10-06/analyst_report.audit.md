@@ -109,4 +109,4 @@ _None. No value discrepancies found._
   - *Explanation:* Derived EBIT margin (24.40%) includes all operating other income line items, whereas headline operating margin (24.3%) reflects core segment EBIT.
 
 ---
-*Audit conducted by Antigravity Verifier Agent under default-deny policy. Original report was not modified.*
+*Audit conducted by Independent Verifier Agent under default-deny policy. Original report was not modified.*

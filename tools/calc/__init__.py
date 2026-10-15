@@ -1,6 +1,6 @@
 """
 Financial Calculation Toolkit Module
-Tested, deterministic financial calculation functions for Antigravity research agents.
+Tested, deterministic financial calculation functions for institutional research agents.
 """
 
 from tools.calc.metrics import (

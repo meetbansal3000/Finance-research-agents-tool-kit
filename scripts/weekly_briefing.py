@@ -18,7 +18,7 @@ os.makedirs(REPORTS_DIR, exist_ok=True)
 
 def main():
     print("=" * 60)
-    print("🗓️ GENERATING ANTIGRAVITY WEEKLY WATCHLIST BRIEFING")
+    print("🗓️ GENERATING WEEKLY WATCHLIST BRIEFING")
     print("=" * 60)
     generator = WeeklyBriefingGenerator()
     report_file = generator.generate_briefing()

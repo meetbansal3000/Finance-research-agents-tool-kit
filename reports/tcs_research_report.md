@@ -1,7 +1,7 @@
 # Equity Research Report: Tata Consultancy Services Ltd. (TCS.NS)
 **Filing Reference:** Audited Annual Consolidated Financial Statements (FY2025)  
 **Report Date:** 2026-10-06  
-**Analyst:** Antigravity Research System  
+**Analyst:** Autonomous Research System  
 
 ---
 
@@ -51,4 +51,4 @@
 - [ANALYSIS] The implied growth rate of 6.08% [LEDGER_0022] aligns with compound annual growth rate calculations.
 
 ---
-*Report generated under Antigravity Verified Research Playbook. All figures verified by Provenance Ledger.*
+*Report generated under Institutional Verified Research Playbook. All figures verified by Provenance Ledger.*

@@ -347,7 +347,7 @@ class NvidiaNimClient:
         headers = {
             "Content-Type": "application/json",
             "Authorization": f"Bearer {api_key}",
-            "User-Agent": "Antigravity-Finance-Agents/1.2.0 (PairProgramming; ProvenanceAudited)",
+            "User-Agent": "Autonomous-Finance-Agents/1.2.0 (PairProgramming; ProvenanceAudited)",
         }
 
         req = urllib.request.Request(endpoint, data=data_bytes, headers=headers, method="POST")

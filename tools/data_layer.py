@@ -937,7 +937,7 @@ def get_data_layer() -> DataLayer:
 
 def main():
     import argparse
-    parser = argparse.ArgumentParser(description="Antigravity Multi-Source Data Layer (Upgrade 6)")
+    parser = argparse.ArgumentParser(description="Multi-Source Data Layer (Upgrade 6)")
     subparsers = parser.add_subparsers(dest="command", help="Sub-commands")
 
     # Quote command

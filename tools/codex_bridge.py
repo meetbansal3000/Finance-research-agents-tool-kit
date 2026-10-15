@@ -1,6 +1,6 @@
 """
-tools/codex_bridge.py - Antigravity <-> OpenAI Codex CLI Bridge
-Enables bidirectional communication between Google Antigravity and OpenAI Codex CLI:
+tools/codex_bridge.py - Autonomous <-> OpenAI Codex CLI Bridge
+Enables bidirectional communication between Autonomous Agents and OpenAI Codex CLI:
   1. Non-interactive prompt execution via 'codex exec'
   2. Automated code review via 'codex exec review'
   3. Structured output capture with session ID and token accounting
@@ -183,7 +183,7 @@ class CodexBridge:
 
 def main():
     import argparse
-    parser = argparse.ArgumentParser(description="Antigravity Codex CLI Bridge")
+    parser = argparse.ArgumentParser(description="Codex CLI Bridge")
     subparsers = parser.add_subparsers(dest="command", help="Sub-commands")
 
     # Exec command

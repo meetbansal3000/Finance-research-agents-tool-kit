@@ -1,7 +1,7 @@
 # Equity Research Report: Apple Inc. (AAPL)
 **Filing Reference:** SEC Form 10-K (Fiscal Year Ended September 27, 2025)  
 **Report Date:** 2026-10-06  
-**Analyst:** Antigravity Research System  
+**Analyst:** Autonomous Research System  
 
 ---
 
@@ -42,4 +42,4 @@
 - [ANALYSIS] The implied growth rate of 28.84% [LEDGER_0025] exceeds the baseline growth assumption and reflects a premium multiple.
 
 ---
-*Report generated under Antigravity Verified Research Playbook. All figures verified by Provenance Ledger.*
+*Report generated under Institutional Verified Research Playbook. All figures verified by Provenance Ledger.*

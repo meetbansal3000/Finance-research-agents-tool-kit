@@ -3,7 +3,7 @@
 **Reporting Period:** FY2025 | Primary Currency: INR  
 **Workflow Reference:** Workflow 1  
 **Report Date:** 2026-10-06  
-**Analyst:** Antigravity Research System  
+**Analyst:** Autonomous Research System  
 
 ---
 
@@ -44,4 +44,4 @@
 - [ANALYSIS] The implied growth rate of 4.32% [LEDGER_0024] reflects market valuation expectations relative to historical compounding.
 
 ---
-*Report generated under Antigravity Verified Research Playbook. All figures verified by Provenance Ledger.*
+*Report generated under Institutional Verified Research Playbook. All figures verified by Provenance Ledger.*

@@ -1,9 +1,9 @@
 """
 dashboard.py - Institutional Equity Research & Shortlisting Terminal
-Built with Streamlit and Plotly for the Antigravity Autonomous Finance Suite.
+Built with Streamlit and Plotly for the Institutional Autonomous Finance Suite.
 Organized into 4 core functional domains:
   1. Market Intelligence & Screening (Executive Summary, Coverage Scorecard, TradingView Terminal)
-  2. Fundamental Research & Valuation (Interactive DCF, Multi-Agent Committee, Antigravity Copilot)
+  2. Fundamental Research & Valuation (Interactive DCF, Multi-Agent Committee, Financial Copilot)
   3. Quantitative Risk & Portfolio (NVIDIA cuOpt QP Portfolio Lab, Supply Chain Economics)
   4. Audit, Governance & System (Interactive 3D Pipeline Map, Decision Journal, Filings & Alerts)
 """
@@ -773,7 +773,7 @@ NAV_CHOICES = [
     # Domain 2: Fundamental Research & Valuation
     "◇  Intrinsic Valuation (DCF)",
     "✦  Autonomous Research Studio",
-    "◈  Antigravity Financial Copilot",
+    "◈  Financial Copilot",
     # Domain 3: Quantitative Risk & Portfolio
     "🌐  Meridian Multi-Asset Desk",
     "▤  Portfolio Construction Lab",
@@ -883,7 +883,7 @@ res <- dcf_calc$dcf(
 cat("Intrinsic Fair Value per Share:", res$result$fair_value_per_share, "\\n")""", language="r")
 
     with dev_tab_py:
-        st.markdown("##### 🐍 Integration for Python & Google Antigravity SDK")
+        st.markdown("##### 🐍 Integration for Python SDK")
         st.markdown("**Option 1: Programmatic Calculations & Screening**")
         st.code("""import pandas as pd
 from tools.ticker_search import compute_ticker_scorecard_metrics, load_saved_watchlist
@@ -905,7 +905,7 @@ dcf_res = dcf(
 )
 print(f"DCF Fair Value: ${dcf_res['result']['fair_value_per_share']:.2f}")""", language="python")
 
-        st.markdown("**Option 2: Antigravity Autonomous Agent (Google Antigravity SDK)**")
+        st.markdown("**Option 2: Autonomous Research Agent**")
         st.code("""from agents.antigravity_agent import run_query
 import asyncio
 
@@ -941,7 +941,7 @@ asyncio.run(run_query("Analyze NVDA DCF fair value and fuel inflation sensitivit
         st.code("""# Run full autonomous 3-agent research committee for any ticker
 python run_research.py --ticker TSLA
 
-# Run interactive Antigravity copilot in terminal
+# Run interactive financial copilot in terminal
 python agents/antigravity_agent.py
 
 # Query audited ticker search & metrics
@@ -2130,15 +2130,15 @@ elif "Autonomous Research Studio" in nav_choice:
                 st.info("Cryptographic audit markdown certificate not found for this dossier.")
 
 
-# --- MODULE 6: ANTIGRAVITY FINANCIAL COPILOT ---
-elif "Antigravity Financial Copilot" in nav_choice:
+# --- MODULE 6: FINANCIAL COPILOT ---
+elif "Financial Copilot" in nav_choice:
     col_head, col_info = st.columns([4.2, 1.3])
     with col_head:
-        st.markdown('<div class="header-style">Antigravity Financial Copilot</div>', unsafe_allow_html=True)
-        st.markdown('<div class="meridian-intro">Multi-turn research assistant and quantitative analytics engine powered by the Google Antigravity SDK.</div>', unsafe_allow_html=True)
+        st.markdown('<div class="header-style">Financial Copilot</div>', unsafe_allow_html=True)
+        st.markdown('<div class="meridian-intro">Multi-turn research assistant and quantitative analytics engine for market intelligence and portfolio analysis.</div>', unsafe_allow_html=True)
     with col_info:
         render_tab_info_guide(
-            title="Antigravity Financial Copilot",
+            title="Financial Copilot",
             purpose="Interactive quantitative financial agent with real-time tool calling and portfolio management.",
             capabilities=[
                 "Natural language stock research & valuation queries",
@@ -2147,7 +2147,7 @@ elif "Antigravity Financial Copilot" in nav_choice:
                 "Stateful portfolio tracking and capital allocation modeling"
             ],
             use_case="Query specific company metrics, run multi-asset risk comparisons, and compute portfolio allocation models.",
-            methodology="Google Antigravity SDK with strict system prompt forbidding mental math; calls deterministic tools."
+            methodology="Autonomous Multi-Agent SDK with strict system prompt forbidding mental math; calls deterministic tools."
         )
 
     env_api_key = os.environ.get("GEMINI_API_KEY", "")
@@ -2160,7 +2160,7 @@ elif "Antigravity Financial Copilot" in nav_choice:
         else:
             st.warning("🟡 GEMINI_API_KEY is not configured. Conversational AI requires a key, but all quantitative tools below work 100% offline.")
     with c_stat2:
-        st.info("⚡ Powered by `google-antigravity SDK`")
+        st.info("⚡ Powered by `Autonomous Financial SDK`")
 
     if "gemini_custom_key" not in st.session_state:
         st.session_state["gemini_custom_key"] = env_api_key
@@ -2232,7 +2232,7 @@ elif "Antigravity Financial Copilot" in nav_choice:
                 st.warning("Please enter a research query.")
             else:
                 api_key_active = st.session_state.get("gemini_custom_key") or os.environ.get("GEMINI_API_KEY", "")
-                with st.spinner(f"Antigravity Agent analyzing financial tools and synthesizing response for: '{query_to_run[:60]}...'"):
+                with st.spinner(f"Copilot analyzing financial tools and synthesizing response for: '{query_to_run[:60]}...'"):
                     try:
                         import concurrent.futures
                         import asyncio
@@ -2272,7 +2272,8 @@ elif "Antigravity Financial Copilot" in nav_choice:
                             fallback_lines.append(f"- **Return on Equity (ROE):** `{f.get('return_on_equity_roe', 'N/A')}` | **Revenue Growth (YoY):** `{f.get('revenue_growth_yoy', 'N/A')}`")
                             fallback_lines.append(f"- **Debt-to-Equity:** `{f.get('debt_to_equity', 'N/A')}` | **Current Ratio:** `{f.get('current_ratio', 'N/A')}`")
                             fallback_lines.append(f"- **1-Month Return:** `{h.get('total_return_percent', 'N/A')}` | **Annualized Volatility:** `{h.get('annualized_volatility', 'N/A')}`")
-                        fallback_lines.append("\n*Data verified against primary SEC filings and deterministic market telemetry via tools/antigravity_tools.py.*")
+                        fallback_lines.append("\n*Data verified against primary SEC filings and deterministic market telemetry.*")
+                        st.session_state["copilot_last_agent_output"] = "\n".join(fallback_lines)
                         st.session_state["copilot_last_agent_output"] = "\n".join(fallback_lines)
 
         if st.session_state.get("copilot_last_agent_output"):
@@ -3306,12 +3307,12 @@ elif "Interactive 3D Pipeline Map" in nav_choice:
             "rule": "Evidence-Backed Skepticism: Must state 'No strong counter-evidence found' if valuation and balance sheet are pristine; prohibited from fabricating synthetic bear cases."
         },
         {
-            "name": "Antigravity Copilot Agent",
+            "name": "Financial Copilot Agent",
             "file": "agents/antigravity_agent.py",
             "role": "Interactive Conversational Assistant",
             "badge": "COPILOT",
             "color": "#818CF8",
-            "desc": "Powers the interactive research copilot (Module 6) using the Google Antigravity SDK and Gemini. Routes natural-language queries into audited tools (quotes, metrics, DCF, portfolio optimization) with multi-turn conversational memory.",
+            "desc": "Powers the interactive research copilot (Module 6) using Gemini and autonomous tools. Routes natural-language queries into audited tools (quotes, metrics, DCF, portfolio optimization) with multi-turn conversational memory.",
             "rule": "Deterministic Tool Fallback: Automatically invokes audited local computation tools if external API quotas or networks are unavailable."
         },
         {

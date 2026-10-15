@@ -28,8 +28,8 @@ To be explicit about the true capabilities and operational boundaries of this to
 D:\AI-Workspace\finance agents for research\
 ├── .agents\
 │   ├── rules\
-│   │   └── research_rules.md  # Antigravity standing rules & calculation enforcement
-│   └── mcp_config.json        # Workspace-level MCP configuration for Antigravity
+│   │   └── research_rules.md  # Standing research rules & calculation enforcement
+│   └── mcp_config.json        # Workspace-level MCP configuration
 ├── .env                       # Environment variables (SEC User Agent, UTF-8) - NOT committed
 ├── .env.example               # Template environment configuration
 ├── .gitignore                 # Git ignore file
