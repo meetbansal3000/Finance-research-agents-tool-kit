@@ -430,6 +430,8 @@ class PaperTradingEngine:
         self.save_portfolio(data)
         return data
 
+    mark_to_market_portfolio = mark_to_market
+
     def reset_portfolio(self, initial_cash: float = INITIAL_PORTFOLIO_CASH) -> Dict[str, Any]:
         """Reset paper portfolio back to initial $1,000,000.00 cash balance."""
         os.makedirs(os.path.dirname(self.portfolio_file), exist_ok=True)

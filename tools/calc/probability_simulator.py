@@ -912,15 +912,17 @@ class EconometricProbabilitySimulator:
         """
         Generate parametric SABR Volatility Surface across standard tenors and strikes.
         """
-        sym = ticker or self.ticker or "SPY"
-        econo = self.analyze_ticker_distribution(sym)
-        vol = base_iv or (econo["volatility_annualized_pct"] / 100.0)
-        skew_sentiment = "bearish_skew" if econo["skewness"] < -0.2 else "neutral_smile"
+        sym = ticker or "SPY"
+        econo = self.calculate_empirical_moments(sym)
+        vol = base_iv or (econo.get("annualized_volatility", 0.25))
+        skew_sentiment = "bearish_skew" if econo.get("sample_skewness", -0.4) < -0.2 else "neutral_smile"
 
         surface = VolatilitySurfaceEngine(spot=spot)
         surface.fit_synthetic_surface(base_atm_iv=vol, skew_sentiment=skew_sentiment)
         grid_data = surface.generate_surface_grid()
         grid_data["ticker"] = sym
-        grid_data["underlying_empirical_skewness"] = econo["skewness"]
-        grid_data["underlying_empirical_kurtosis"] = econo["excess_kurtosis"]
+        grid_data["underlying_empirical_skewness"] = econo.get("sample_skewness", -0.4)
+        grid_data["underlying_empirical_kurtosis"] = econo.get("sample_excess_kurtosis", 1.8)
         return grid_data
+
+    analyze_ticker_distribution = calculate_empirical_moments

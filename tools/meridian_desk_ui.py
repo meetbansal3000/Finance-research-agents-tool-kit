@@ -279,8 +279,8 @@ def render_meridian_multi_asset_desk():
         real_sign = "+" if real_pnl >= 0 else ""
         kpi_p5.metric("Realized Closed P&L", f"{real_sign}${real_pnl:,.2f}", f"{len(closed_trades)} Trades Closed")
 
-        # Toolbar: Refresh Quotes, Reset
-        t_col1, t_col2, t_col3 = st.columns([1.5, 1.5, 3])
+        # Toolbar: Refresh Quotes, Reset, Risk Sentry Audit
+        t_col1, t_col2, t_col3, t_col4 = st.columns([1.5, 1.5, 2.0, 1.5])
         with t_col1:
             if st.button("🔄 Sync All Quotes & MTM", use_container_width=True, key="p_sync_btn"):
                 with st.spinner("Fetching live market quotes and marking positions to market..."):
@@ -291,6 +291,49 @@ def render_meridian_multi_asset_desk():
                 paper_engine.reset_portfolio()
                 st.success("✅ Portfolio reset to $1,000,000.00 USD cash.")
                 st.rerun()
+        with t_col3:
+            if st.button("🚨 Run Risk Sentry Audit", type="secondary", use_container_width=True, key="p_sentry_btn"):
+                with st.spinner("Executing autonomous quantitative risk sentry audit..."):
+                    from tools.risk_sentry import PortfolioRiskSentry
+                    sentry = PortfolioRiskSentry(paper_engine=paper_engine)
+                    sentry_res = sentry.audit_portfolio_risk()
+                    st.session_state["latest_risk_audit"] = sentry_res
+                    if sentry_res["total_breaches_count"] > 0:
+                        st.error(f"{sentry_res['status_badge']}: {sentry_res['total_breaches_count']} active breach(es) detected!")
+                    else:
+                        st.success(f"{sentry_res['status_badge']}: Portfolio within nominal tail risk bounds.")
+                    st.rerun()
+
+        # Risk Sentry Surveillance Strip
+        from tools.risk_sentry import PortfolioRiskSentry
+        risk_sentry = PortfolioRiskSentry(paper_engine=paper_engine)
+        sentry_state = risk_sentry.load_latest_sentry_state()
+        s_badge = sentry_state.get("status_badge", "⚪ UNINITIALIZED")
+        s_color = "#10B981" if "HEALTHY" in s_badge else ("#EF4444" if "CRITICAL" in s_badge else "#F59E0B")
+        s_last = sentry_state.get("last_audited_at", "Never")
+        if s_last and s_last != "Never":
+            s_last = s_last[:19].replace("T", " ") + " UTC"
+
+        st.markdown(f"""
+        <div style="background:rgba(15,23,42,0.85); border:1px solid {s_color}; border-left:4px solid {s_color}; border-radius:6px; padding:10px 14px; margin:10px 0;">
+            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
+                <span style="font-weight:700; color:{s_color}; font-size:0.92rem;">
+                    🚨 Autonomous Risk Sentry: {s_badge}
+                </span>
+                <span style="font-size:0.80rem; color:#94A3B8; font-family:monospace;">
+                    1-Day 95% CF-VaR: <b>${sentry_state.get('var_95_cf_usd', 0.0):,.2f} USD</b> ({sentry_state.get('var_95_cf_pct', 0.0):.2f}%) | Last Audit: {s_last}
+                </span>
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
+
+        recent_risk_alerts = risk_sentry.load_recent_risk_alerts(limit=5)
+        if recent_risk_alerts:
+            with st.expander(f"⚠️ Recent Risk Sentry Alerts ({len(recent_risk_alerts)})", expanded=False):
+                for ra in reversed(recent_risk_alerts):
+                    sev = ra.get("severity", "WARNING")
+                    b_col = "#EF4444" if sev == "CRITICAL" else "#F59E0B"
+                    st.markdown(f"<div style='border-left:3px solid {b_col}; padding:4px 8px; margin:4px 0; font-size:0.82rem; color:#E2E8F0;'><b>[{sev}] {ra.get('type', 'ALERT')}</b> ({ra.get('timestamp', '')[:19]}): {ra.get('message', '')}</div>", unsafe_allow_html=True)
 
         # Active Positions Book Table
         st.markdown("#### 📋 Open Deals & Active Positions Book")
