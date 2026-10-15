@@ -1022,6 +1022,12 @@ def render_meridian_multi_asset_desk():
                 sb_target_day = st.slider("Target Date (Days from Today)", 0, int(sb_dte), int(sb_dte // 2), key=f"sb_td_slider_{sb_live['symbol']}")
                 sb_iv_shift = st.slider("Implied Volatility Shift (%)", -40.0, 40.0, 0.0, 1.0, key=f"sb_iv_slider_{sb_live['symbol']}")
                 sb_target_spot = st.number_input("Target Evaluation Spot ($)", value=float(sb_spot), step=1.0, key=f"sb_tsp_{sb_live['symbol']}")
+                sb_use_sabr = st.checkbox(
+                    "Apply Parametric SABR Smile Surface",
+                    value=True,
+                    help="Interpolate exact out-of-the-money strike implied volatilities from calibrated SABR model instead of flat ATM IV.",
+                    key=f"sb_sabr_chk_{sb_live['symbol']}"
+                )
 
                 sb_expiry_yr = sb_dte / 365.0
                 sb_vol_dec = sb_iv / 100.0
@@ -1068,7 +1074,8 @@ def render_meridian_multi_asset_desk():
                     skewness=sb_skew,
                     kurtosis=sb_kurt,
                     target_days=sb_target_day,
-                    iv_shift_pct=sb_iv_shift
+                    iv_shift_pct=sb_iv_shift,
+                    apply_sabr_smile=sb_use_sabr
                 )
 
             with col_sb2:
@@ -1228,11 +1235,12 @@ def render_meridian_multi_asset_desk():
             # Comprehensive Key Metrics Breakdown Section
             st.divider()
             st.markdown("#### 🔬 Comprehensive Econometric Key Metrics & Tail Risk Matrix")
-            tab_m1, tab_m2, tab_m3, tab_m4 = st.tabs([
+            tab_m1, tab_m2, tab_m3, tab_m4, tab_m5 = st.tabs([
                 "📊 4-Moment Econometric Matrix",
                 "🛡️ Value-at-Risk (VaR) & CVaR (Expected Shortfall)",
                 "📐 Standard Deviation Cones: Gaussian vs Cornish-Fisher",
-                "🎯 Strategy Decision, Sizing & Greeks"
+                "🎯 Strategy Decision, Sizing & Greeks",
+                "🌐 3D Volatility Surface & SABR Smile"
             ])
 
             with tab_m1:
@@ -1368,6 +1376,75 @@ def render_meridian_multi_asset_desk():
                 p_c2.metric("Fat-Tail Adjusted POP", f"{pm['econometric_adjusted_pop_pct']:.1f}%", f"{pm['econometric_adjusted_pop_pct'] - pm['probability_of_profit_pct']:+.1f}% shift")
                 p_c3.metric("Full-Kelly Allocation", f"{pm['kelly_fraction_full_pct']:.1f}%", "Max Theoretical")
                 p_c4.metric("Half-Kelly Allocation", f"{pm['kelly_fraction_half_pct']:.1f}%", "Institutional Safe")
+
+            with tab_m5:
+                st.markdown("##### 🌐 Parametric SABR Volatility Surface & Smile Analytics")
+                surf_data = sb_sim_res.get("volatility_surface_analysis")
+                if not surf_data:
+                    surf_data = sim_engine.generate_volatility_surface_analysis(sb_spot, ticker=sb_live["symbol"], base_iv=sb_vol_dec)
+
+                s_diag = surf_data.get("diagnostics", {})
+                sd_c1, sd_c2, sd_c3, sd_c4 = st.columns(4)
+                sd_c1.metric("ATM Implied Vol (30D)", f"{s_diag.get('atm_iv_30d_pct', 0.0):.2f}%", "Base Vol Level")
+                sd_c2.metric("25-Delta Proxy Skew", f"{s_diag.get('skew_25d_proxy_pct', 0.0):+.2f}%", "Put IV - Call IV")
+                sd_c3.metric("Smile Curvature (Butterfly)", f"{s_diag.get('curvature_butterfly_pct', 0.0):+.2f}%", "Wing Convexity")
+                sd_c4.metric("Term Structure Slope", f"{s_diag.get('term_structure_slope_pct', 0.0):+.2f}%", "365D vs 30D ATM")
+
+                st.caption(f"**Smile Regime:** `{s_diag.get('regime_interpretation', 'BALANCED SMILE')}` | Underlying Skewness: `{surf_data.get('underlying_empirical_skewness', 0.0):.3f}` | Excess Kurtosis: `{surf_data.get('underlying_empirical_kurtosis', 0.0):.3f}`")
+
+                st.markdown("---")
+                col_chart, col_interp = st.columns([2.2, 1.0])
+
+                with col_chart:
+                    st.markdown("###### 📈 Multi-Tenor Volatility Smile Slices")
+                    fig_smile = go.Figure()
+                    dtes_list = surf_data.get("dtes", [7, 14, 30, 60, 90, 180, 365])
+                    matrix = surf_data.get("surface_iv_matrix_pct", [])
+                    strikes_list = surf_data.get("strikes", [])
+
+                    colors = ["#38BDF8", "#34D399", "#FBBF24", "#F472B6", "#A78BFA", "#818CF8", "#64748B"]
+                    for idx, dte_val in enumerate(dtes_list):
+                        if idx < len(matrix):
+                            fig_smile.add_trace(go.Scatter(
+                                x=strikes_list,
+                                y=matrix[idx],
+                                mode="lines+markers",
+                                name=f"{dte_val} DTE",
+                                line=dict(color=colors[idx % len(colors)], width=2),
+                                marker=dict(size=4)
+                            ))
+
+                    fig_smile.add_vline(x=sb_spot, line_dash="dash", line_color="#E2E8F0", annotation_text="Spot")
+                    fig_smile.update_layout(
+                        title=f"SABR Volatility Smile Curves: {sb_live['symbol']} (Spot: ${sb_spot:,.2f})",
+                        xaxis_title="Strike Price ($ USD)",
+                        yaxis_title="Implied Volatility (%)",
+                        plot_bgcolor="rgba(15,23,42,0.8)",
+                        paper_bgcolor="rgba(15,23,42,0)",
+                        font=dict(color="#E2E8F0"),
+                        legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1)
+                    )
+                    st.plotly_chart(fig_smile, use_container_width=True)
+
+                with col_interp:
+                    st.markdown("###### 🔍 Strike Volatility Interpolator")
+                    interp_k = st.number_input("Query Strike ($)", value=float(sb_spot), step=1.0, key=f"q_k_{sb_live['symbol']}")
+                    interp_dte = st.slider("Query DTE (Days)", 1, 365, int(sb_dte), key=f"q_dte_{sb_live['symbol']}")
+
+                    # Query dynamic volatility surface
+                    from tools.calc.volatility_surface import VolatilitySurfaceEngine
+                    q_surf = VolatilitySurfaceEngine(spot=sb_spot, risk_free_rate=sb_r_dec)
+                    q_surf.fit_synthetic_surface(base_atm_iv=sb_vol_dec, skew_sentiment="bearish_skew" if sb_skew < -0.2 else "neutral_smile")
+                    q_iv = q_surf.get_implied_volatility(strike=interp_k, dte_days=interp_dte)
+
+                    st.metric("Interpolated SABR Volatility", f"{q_iv * 100.0:.2f}%", f"{q_iv * 100.0 - sb_iv:+.2f}% vs ATM")
+                    st.metric("Log-Moneyness ln(K/S)", f"{math.log(max(0.01, interp_k) / sb_spot):+.3f}", "OTM Put" if interp_k < sb_spot else "OTM Call")
+
+                    # Greek price check
+                    from tools.calc.derivatives_math import BlackScholesEngine
+                    bs_call = BlackScholesEngine.price_and_greeks(sb_spot, interp_k, interp_dte / 365.0, sb_r_dec, q_iv, option_type="call")
+                    bs_put = BlackScholesEngine.price_and_greeks(sb_spot, interp_k, interp_dte / 365.0, sb_r_dec, q_iv, option_type="put")
+                    st.caption(f"**Smile BSM Fair Value:** Call: `${bs_call['price']:,.2f}` | Put: `${bs_put['price']:,.2f}`")
 
             # -----------------------------------------------------------------
             # MULTI-AGENT INVESTMENT COMMITTEE REVIEW & ADVERSARIAL AUDIT

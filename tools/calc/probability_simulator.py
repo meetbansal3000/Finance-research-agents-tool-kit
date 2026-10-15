@@ -20,7 +20,7 @@ from scipy.stats import norm, skew, kurtosis, jarque_bera
 from scipy.integrate import trapezoid
 import yfinance as yf
 
-from tools.calc.derivatives_math import BlackScholesEngine
+from tools.calc.derivatives_math import BlackScholesEngine, VolatilitySurfaceEngine, SABRModel
 
 
 # =============================================================================
@@ -486,7 +486,9 @@ class EconometricProbabilitySimulator:
         kurtosis: float = 1.80,
         target_days: int = 0,
         iv_shift_pct: float = 0.0,
-        num_grid_points: int = 151
+        num_grid_points: int = 151,
+        apply_sabr_smile: bool = False,
+        volatility_surface: Optional[VolatilitySurfaceEngine] = None
     ) -> Dict[str, Any]:
         """
         Interactive Options Strategy Probability Simulation.
@@ -498,14 +500,38 @@ class EconometricProbabilitySimulator:
         - Statistical Expected Value (EV in $USD)
         - Probability of Max Profit (POMP) & Probability of Max Loss (POML)
         - Kelly Criterion optimal position sizing fraction
+        - SABR Parametric Volatility Surface smile interpolation
         """
         if not legs:
             raise ValueError("Must provide at least one option or stock leg.")
 
         # Determine strategy expiration horizon (use maximum expiry across legs)
         max_expiry = max(leg.get("expiry_years", 30 / 365.0) for leg in legs)
-        weighted_vol = float(np.mean([leg.get("volatility", 0.25) for leg in legs]))
         drift = custom_drift if custom_drift is not None else (risk_free_rate - dividend_yield)
+
+        surface_engine = volatility_surface
+        surface_diagnostics = None
+        if apply_sabr_smile:
+            if surface_engine is None:
+                surface_engine = VolatilitySurfaceEngine(
+                    spot=spot,
+                    risk_free_rate=risk_free_rate,
+                    dividend_yield=dividend_yield
+                )
+                surface_engine.fit_synthetic_surface(
+                    base_atm_iv=float(np.mean([leg.get("volatility", 0.25) for leg in legs])),
+                    skew_sentiment="bearish_skew" if skewness < -0.2 else "neutral_smile"
+                )
+            # Adjust each leg's volatility from the SABR smile
+            for leg in legs:
+                if leg.get("type", "").lower() in ("call", "put") and "strike" in leg:
+                    leg_dte = leg.get("expiry_years", max_expiry) * 365.0
+                    smile_iv = surface_engine.get_implied_volatility(leg["strike"], leg_dte)
+                    leg["volatility"] = smile_iv
+                    leg["smile_iv_pct"] = round(float(smile_iv * 100.0), 2)
+            surface_diagnostics = surface_engine.generate_surface_grid()
+
+        weighted_vol = float(np.mean([leg.get("volatility", 0.25) for leg in legs]))
 
         # Baseline Strategy Greeks and Expiration Payoff
         strat_analysis = BlackScholesEngine.analyze_strategy_legs(
@@ -702,7 +728,8 @@ class EconometricProbabilitySimulator:
                 "net_gamma": strat_analysis["net_gamma"],
                 "net_vega": strat_analysis["net_vega"],
                 "net_theta_daily": strat_analysis["net_theta_daily"]
-            }
+            },
+            "volatility_surface_analysis": surface_diagnostics
         }
 
     # =========================================================================
@@ -875,3 +902,25 @@ class EconometricProbabilitySimulator:
             res[f"prob_drawdown_{int(dd)}_pct"] = round(p_touch * 100.0, 1)
 
         return res
+
+    def generate_volatility_surface_analysis(
+        self,
+        spot: float,
+        ticker: Optional[str] = None,
+        base_iv: Optional[float] = None
+    ) -> Dict[str, Any]:
+        """
+        Generate parametric SABR Volatility Surface across standard tenors and strikes.
+        """
+        sym = ticker or self.ticker or "SPY"
+        econo = self.analyze_ticker_distribution(sym)
+        vol = base_iv or (econo["volatility_annualized_pct"] / 100.0)
+        skew_sentiment = "bearish_skew" if econo["skewness"] < -0.2 else "neutral_smile"
+
+        surface = VolatilitySurfaceEngine(spot=spot)
+        surface.fit_synthetic_surface(base_atm_iv=vol, skew_sentiment=skew_sentiment)
+        grid_data = surface.generate_surface_grid()
+        grid_data["ticker"] = sym
+        grid_data["underlying_empirical_skewness"] = econo["skewness"]
+        grid_data["underlying_empirical_kurtosis"] = econo["excess_kurtosis"]
+        return grid_data

@@ -39,7 +39,10 @@ from tools.calc.derivatives_math import (
     FuturesCommodityEngine,
     FixedIncomeMacroEngine,
     CryptoDerivativesEngine,
-    CrossAssetRiskEngine
+    CrossAssetRiskEngine,
+    SABRModel,
+    SVIModel,
+    VolatilitySurfaceEngine
 )
 
 __all__ = [
@@ -66,6 +69,9 @@ __all__ = [
     "FuturesCommodityEngine",
     "FixedIncomeMacroEngine",
     "CryptoDerivativesEngine",
-    "CrossAssetRiskEngine"
+    "CrossAssetRiskEngine",
+    "SABRModel",
+    "SVIModel",
+    "VolatilitySurfaceEngine"
 ]
 

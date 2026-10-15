@@ -19,6 +19,9 @@ from tools.calc.derivatives_math import (
     FixedIncomeMacroEngine,
     CryptoDerivativesEngine,
     CrossAssetRiskEngine,
+    SABRModel,
+    SVIModel,
+    VolatilitySurfaceEngine,
 )
 
 
@@ -312,3 +315,109 @@ def test_crisis_stress_testing_scenarios():
     assert gfc["projected_pnl_usd"] < 0
     assert gfc["surviving_equity_usd"] < 1_000_000.0
     assert gfc["severity"] in ["CRITICAL BREACH", "WARNING"]
+
+
+# =============================================================================
+# 6. SABR / SVI VOLATILITY SURFACE & SMILE INTERPOLATOR TESTS
+# =============================================================================
+
+def test_sabr_implied_volatility_formula():
+    """Verify Hagan et al. SABR formula behavior across ATM and OTM strikes."""
+    fwd = 100.0
+    t = 0.25  # 3 months
+    alpha = 2.5   # with beta=0.5, ATM vol approx alpha / sqrt(100) = 0.25 (25%)
+    beta = 0.5
+    rho = -0.35  # negative skew
+    nu = 0.50    # smile curvature
+
+    atm_vol = SABRModel.implied_volatility(strike=100.0, forward=fwd, time_to_expiry=t, alpha=alpha, beta=beta, rho=rho, nu=nu)
+    otm_put_vol = SABRModel.implied_volatility(strike=90.0, forward=fwd, time_to_expiry=t, alpha=alpha, beta=beta, rho=rho, nu=nu)
+    otm_call_vol = SABRModel.implied_volatility(strike=110.0, forward=fwd, time_to_expiry=t, alpha=alpha, beta=beta, rho=rho, nu=nu)
+
+    # ATM vol should be approximately 25% (0.25)
+    assert 0.20 < atm_vol < 0.32
+    # With negative correlation rho, downside strike (90) must have higher IV than ATM (vol skew)
+    assert otm_put_vol > atm_vol
+    # Curvature / smile wings: positive nu generates elevated tail vol
+    assert otm_put_vol > otm_call_vol
+
+
+def test_sabr_slice_calibration():
+    """Verify calibration of SABR parameters against market strike-IV observations."""
+    fwd = 150.0
+    t = 45 / 365.0
+    strikes = [135.0, 140.0, 145.0, 150.0, 155.0, 160.0, 165.0]
+    # Synthetic market smile with typical equity skew
+    market_ivs = [0.295, 0.278, 0.262, 0.248, 0.237, 0.231, 0.229]
+
+    fit = SABRModel.calibrate_slice(
+        strikes=strikes,
+        market_ivs=market_ivs,
+        forward=fwd,
+        time_to_expiry=t,
+        beta=0.5
+    )
+
+    assert fit["converged"] is True
+    assert fit["rmse"] < 0.01  # Fit error less than 1% vol point
+    assert fit["rho"] < 0.0    # Calibrated negative correlation confirms equity skew
+    assert fit["alpha"] > 0.0
+    assert fit["nu"] > 0.0
+
+
+def test_svi_model_total_variance():
+    """Verify Gatheral's SVI formula calculates valid implied volatility."""
+    fwd = 100.0
+    t = 0.5
+    # Standard SVI parameters
+    a = 0.04
+    b = 0.10
+    rho = -0.40
+    m = 0.0
+    sigma = 0.15
+
+    iv_atm = SVIModel.implied_volatility(strike=100.0, forward=fwd, time_to_expiry=t, a=a, b=b, rho=rho, m=m, sigma=sigma)
+    iv_otm_put = SVIModel.implied_volatility(strike=90.0, forward=fwd, time_to_expiry=t, a=a, b=b, rho=rho, m=m, sigma=sigma)
+
+    assert 0.15 < iv_atm < 0.45
+    assert iv_otm_put > iv_atm  # SVI negative rho reproduces equity skew
+
+
+def test_volatility_surface_engine_grid_and_interpolation():
+    """Verify VolatilitySurfaceEngine multi-tenor fitting, 2D matrix generation, and diagnostics."""
+    spot = 200.0
+    engine = VolatilitySurfaceEngine(spot=spot, risk_free_rate=0.045, dividend_yield=0.0)
+    engine.fit_synthetic_surface(base_atm_iv=0.22, skew_sentiment="bearish_skew")
+
+    # Interpolate at arbitrary strike and DTE (e.g. 50 DTE, strike 195)
+    interp_vol = engine.get_implied_volatility(strike=195.0, dte_days=50)
+    assert 0.15 < interp_vol < 0.40
+
+    # Test full 2D surface grid generation
+    grid = engine.generate_surface_grid(strike_pct_range=(0.80, 1.20), num_strikes=9, dtes=[14, 30, 60, 90])
+    assert len(grid["strikes"]) == 9
+    assert len(grid["dtes"]) == 4
+    assert len(grid["surface_iv_matrix_pct"]) == 4
+    assert len(grid["surface_iv_matrix_pct"][0]) == 9
+
+    # Verify skew diagnostics
+    diag = grid["diagnostics"]
+    assert diag["skew_25d_proxy_pct"] > 0.0  # Downside put IV > Upside call IV
+    assert "regime_interpretation" in diag
+
+
+def test_black_scholes_price_with_surface():
+    """Verify BlackScholesEngine prices an option using dynamic smile IV from VolatilitySurfaceEngine."""
+    spot = 100.0
+    strike = 90.0  # OTM Put
+    t = 30 / 365.0
+    engine = VolatilitySurfaceEngine(spot=spot, risk_free_rate=0.045, dividend_yield=0.0)
+    engine.fit_synthetic_surface(base_atm_iv=0.20, skew_sentiment="bearish_skew")
+
+    # Flat ATM pricing at 20%
+    flat_res = BlackScholesEngine.price_and_greeks(spot, strike, t, 0.045, 0.20, option_type="put")
+    # Smile-adjusted pricing
+    smile_res = BlackScholesEngine.price_with_surface(spot, strike, t, 0.045, engine, option_type="put")
+
+    assert smile_res["smile_implied_volatility"] > 0.20  # Smile IV for 90 put must be higher than 20%
+    assert smile_res["price"] > flat_res["price"]        # Option price under skew must reflect higher downside risk

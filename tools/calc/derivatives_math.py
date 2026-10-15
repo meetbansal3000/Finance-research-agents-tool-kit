@@ -14,6 +14,8 @@ import numpy as np
 from scipy.stats import norm
 from scipy.optimize import brentq
 
+from tools.calc.volatility_surface import SABRModel, SVIModel, VolatilitySurfaceEngine
+
 
 # =============================================================================
 # 1. OPTIONS GREEK ENGINE (Black-Scholes-Merton & Analytical Greeks)
@@ -117,6 +119,29 @@ class BlackScholesEngine:
             "d1": round(float(d1), 4),
             "d2": round(float(d2), 4)
         }
+
+    @classmethod
+    def price_with_surface(
+        cls,
+        spot: float,
+        strike: float,
+        time_to_expiry: float,
+        risk_free_rate: float,
+        surface_engine: VolatilitySurfaceEngine,
+        dividend_yield: float = 0.0,
+        option_type: str = "call"
+    ) -> Dict[str, Any]:
+        """
+        Price European option using smile-adjusted volatility from a calibrated SABR VolatilitySurfaceEngine.
+        """
+        dte_days = time_to_expiry * 365.0
+        smile_vol = surface_engine.get_implied_volatility(strike, dte_days)
+        res = cls.price_and_greeks(
+            spot, strike, time_to_expiry, risk_free_rate, smile_vol, dividend_yield, option_type
+        )
+        res["smile_implied_volatility"] = round(float(smile_vol), 4)
+        res["smile_implied_volatility_pct"] = round(float(smile_vol * 100.0), 2)
+        return res
 
     @classmethod
     def implied_volatility(
