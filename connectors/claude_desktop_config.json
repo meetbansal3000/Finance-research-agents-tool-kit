@@ -1,0 +1,14 @@
+{
+  "mcpServers": {
+    "meridian-finance-workstation": {
+      "command": "D:\\AI-Workspace\\finance agents for research\\.venv\\Scripts\\python.exe",
+      "args": [
+        "-m",
+        "connectors.mcp_server"
+      ],
+      "env": {
+        "PYTHONUNBUFFERED": "1"
+      }
+    }
+  }
+}
