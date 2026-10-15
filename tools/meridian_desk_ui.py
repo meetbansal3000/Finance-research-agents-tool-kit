@@ -94,6 +94,21 @@ def render_meridian_multi_asset_desk():
         st.markdown("### 🏛️ Institutional Multi-Asset Committee Review")
         st.caption("Coordinate execution across all 5 specialized desks, aggregate portfolio risk, and enforce independent CRO gatekeeping.")
 
+        with st.expander("📐 Mathematical Formulations & Multi-Desk Synthesis Audit", expanded=False):
+            st.markdown(r"""
+            #### 🧮 Multi-Desk Capital Allocation & Synthesis Mathematics
+            - **Simplex Capital Budget Constraint**:
+              $$\sum_{i=1}^M \text{Allocation}_i = \text{Total Capital} \quad (\sum w_i = 1)$$
+            - **Cross-Asset Portfolio Variance**:
+              $$\sigma_p^2 = \mathbf{w}^T \mathbf{\Sigma} \mathbf{w} = \sum_{i=1}^M \sum_{j=1}^M w_i w_j \sigma_i \sigma_j \rho_{ij}$$
+            - **Parametric 1-Day 99% Value-at-Risk (VaR)**:
+              $$\text{VaR}_{99\%} = z_{0.99} \cdot \sigma_p \cdot \sqrt{\frac{1}{252}} \cdot \text{Capital} \quad (z_{0.99} \approx 2.3263)$$
+            - **Parametric 1-Day 99% Expected Shortfall (CVaR)**:
+              $$\text{CVaR}_{99\%} = \frac{\phi(z_{0.99})}{1 - 0.99} \cdot \sigma_p \cdot \sqrt{\frac{1}{252}} \cdot \text{Capital}$$
+            - **CRO Gatekeeper Rule**:
+              $$\text{Verdict} = \begin{cases} \text{REJECTED (VETO)}, & \text{if } \text{Critical Flags} > 0 \text{ or } \text{VaR}_{99\%} > 4.5\% \\ \text{CONDITIONAL APPROVAL}, & \text{if } \text{High Flags} > 0 \\ \text{APPROVED}, & \text{otherwise} \end{cases}$$
+            """)
+
         col_cfg1, col_cfg2 = st.columns([1.2, 2.0])
         with col_cfg1:
             st.markdown("#### 💼 Portfolio Specification")
@@ -282,6 +297,27 @@ def render_meridian_multi_asset_desk():
         st.markdown("### 🎯 Options Greek Strategist")
         st.caption("Analytical Black-Scholes-Merton option pricing, 1st/2nd-order Greeks, and multi-leg strategy payoff distributions.")
 
+        with st.expander("📐 Black-Scholes-Merton Analytical Formulas & Greeks Audit", expanded=False):
+            st.markdown(r"""
+            #### 🧮 Black-Scholes-Merton Options Pricing & Greek Sensitivities
+            - **Standard Normal Parameters**:
+              $$d_1 = \frac{\ln(S / K) + \left(r - q + \frac{1}{2}\sigma^2\right)\tau}{\sigma \sqrt{\tau}}, \quad d_2 = d_1 - \sigma \sqrt{\tau}$$
+            - **Option Pricing Equations**:
+              $$C(S, K, \tau) = S e^{-q\tau} N(d_1) - K e^{-r\tau} N(d_2)$$
+              $$P(S, K, \tau) = K e^{-r\tau} N(-d_2) - S e^{-q\tau} N(-d_1)$$
+            - **First-Order Greeks**:
+              $$\text{Delta } (\Delta): \quad \Delta_{\text{call}} = e^{-q\tau} N(d_1), \quad \Delta_{\text{put}} = -e^{-q\tau} N(-d_1)$$
+              $$\text{Vega } (\nu): \quad \nu = \frac{S e^{-q\tau} \sqrt{\tau} N'(d_1)}{100} \quad \left(\frac{\partial V}{\partial \sigma} \text{ per 1\% move}\right)$$
+              $$\text{Daily Theta } (\Theta): \quad \Theta_{\text{daily}} = \frac{1}{365} \left[ -\frac{S e^{-q\tau} N'(d_1) \sigma}{2\sqrt{\tau}} - r K e^{-r\tau} N(d_2) + q S e^{-q\tau} N(d_1) \right]$$
+              $$\text{Rho } (\rho): \quad \rho_{\text{call}} = K \tau e^{-r\tau} N(d_2) \times 0.01, \quad \rho_{\text{put}} = -K \tau e^{-r\tau} N(-d_2) \times 0.01$$
+            - **Second-Order Greeks**:
+              $$\text{Gamma } (\Gamma): \quad \Gamma = \frac{e^{-q\tau} N'(d_1)}{S \sigma \sqrt{\tau}} = \frac{\partial^2 V}{\partial S^2}$$
+              $$\text{Vanna}: \quad \text{Vanna} = -e^{-q\tau} N'(d_1) \frac{d_2}{\sigma} = \frac{\partial \Delta}{\partial \sigma}$$
+              $$\text{Volga}: \quad \text{Volga} = S e^{-q\tau} N'(d_1) \sqrt{\tau} \frac{d_1 d_2}{100 \sigma} = \frac{\partial \nu}{\partial \sigma}$$
+            - **Put-Call Parity**:
+              $$C - P = S e^{-q\tau} - K e^{-r\tau}$$
+            """)
+
         col_opt_mode1, col_opt_mode2 = st.columns([1, 2])
         with col_opt_mode1:
             st.markdown("#### ⚙️ Single Contract Evaluator")
@@ -311,14 +347,14 @@ def render_meridian_multi_asset_desk():
             st.markdown("#### 📊 Analytical Greeks & Sensitivities")
             g = opt_res["greeks"]
             c_g1, c_g2, c_g3, c_g4 = st.columns(4)
-            c_g1.metric("Fair Value", f"${g['price']:.2f}", f"Intrinsic: ${g['intrinsic_value']:.2f}")
-            c_g2.metric("Delta (Δ)", f"{g['delta']:+.4f}", f"{opt_res['hedging_delta_shares_per_contract']} shares")
+            c_g1.metric("Fair Value", f"${g['price']:,.2f}", f"Intrinsic: ${g['intrinsic_value']:,.2f}")
+            c_g2.metric("Delta (Δ)", f"{g['delta']:+.4f}", f"{opt_res['hedging_delta_shares_per_contract']:,} shares")
             c_g3.metric("Gamma (Γ)", f"{g['gamma']:.6f}", "dΔ / dSpot")
-            c_g4.metric("Vega (ν)", f"${g['vega']:.2f}", "per 1% Vol")
+            c_g4.metric("Vega (ν)", f"${g['vega']:,.2f}", "per 1% Vol")
 
             c_g5, c_g6, c_g7, c_g8 = st.columns(4)
-            c_g5.metric("Daily Theta (Θ)", f"${g['theta_daily']:.3f}/day", f"${g['theta_annual']:.2f}/yr")
-            c_g6.metric("Rho (ρ)", f"${g['rho']:.3f}", "per 1% Rate")
+            c_g5.metric("Daily Theta (Θ)", f"${g['theta_daily']:,.3f}/day", f"${g['theta_annual']:,.2f}/yr")
+            c_g6.metric("Rho (ρ)", f"${g['rho']:,.3f}", "per 1% Rate")
             c_g7.metric("Vanna", f"{g['vanna']:.6f}", "dΔ / dVol")
             c_g8.metric("Volga", f"{g['volga']:.6f}", "dVega / dVol")
 
@@ -388,10 +424,10 @@ def render_meridian_multi_asset_desk():
             st.plotly_chart(fig_pnl, use_container_width=True)
 
             sc1, sc2, sc3, sc4 = st.columns(4)
-            sc1.metric("Structure", sa["structure"], f"${sa['net_debit_credit']:.2f}")
+            sc1.metric("Structure", sa["structure"], f"${sa['net_debit_credit']:,.2f}")
             sc2.metric("Net Delta", f"{sa['net_delta']:+.3f}", "Directional bias")
-            sc3.metric("Net Vega", f"${sa['net_vega']:.2f}", "per 1% Vol")
-            sc4.metric("Net Daily Theta", f"${sa['net_theta_daily']:.2f}/day", "Time carry")
+            sc3.metric("Net Vega", f"${sa['net_vega']:,.2f}", "per 1% Vol")
+            sc4.metric("Net Daily Theta", f"${sa['net_theta_daily']:,.2f}/day", "Time carry")
 
     # =========================================================================
     # TAB 3: FUTURES & COMMODITY DESK
@@ -399,6 +435,28 @@ def render_meridian_multi_asset_desk():
     with tab_fut:
         st.markdown("### 🌾 Futures & Commodity Desk")
         st.caption("Term structure curve analysis, Contango vs. Backwardation roll yields, and exchange leverage & margin buffer auditing.")
+
+        with st.expander("📐 Futures Term Structure, Cost-of-Carry & Margin Formulas Audit", expanded=False):
+            st.markdown(r"""
+            #### 🧮 Futures Pricing, Term Structure & Exchange Margin Mathematics
+            - **Cost of Carry Model (Continuous Yield & Storage)**:
+              $$F(t, T) = S_t \, e^{(r - q + u)(T - t)}$$
+              Where $r$ is the risk-free rate, $q$ is the convenience yield (or dividend yield), and $u$ is storage/insurance costs.
+            - **Cash-and-Futures Basis**:
+              $$\text{Basis}_t = S_t - F_t$$
+            - **Annualized Roll Yield (Contango vs. Backwardation)**:
+              $$\text{Roll Yield}_{\text{ann}} = \frac{F_{\text{prompt}} - F_{\text{deferred}}}{F_{\text{prompt}}} \times \frac{365}{\Delta t_{\text{days}}}$$
+              - If $F_{\text{deferred}} > F_{\text{prompt}}$: **Contango** (negative roll yield / structural drag on long positions).
+              - If $F_{\text{prompt}} > F_{\text{deferred}}$: **Backwardation** (positive roll yield / structural carry benefit on long positions).
+            - **Total Contract Notional Value**:
+              $$\text{Notional} = N_{\text{contracts}} \times F \times M$$
+              Where $M$ is the contract multiplier (e.g., 1,000 bbl for CL, 100 oz for GC).
+            - **Effective Financial Leverage**:
+              $$\text{Leverage} = \frac{\text{Total Notional}}{\text{Account Equity}} = \frac{N_{\text{contracts}} \times F \times M}{\text{Equity}}$$
+            - **Exchange Maintenance Margin Call Trigger**:
+              $$\text{Trigger Price (Long)} = F - \frac{\text{Account Equity} - \text{Total Maintenance Margin}}{N_{\text{contracts}} \times M}$$
+              $$\text{Max Adverse Move (\%)} = \left(\frac{\text{Free Margin Headroom}}{\text{Total Notional}}\right) \times 100\%$$
+            """)
 
         col_fc1, col_fc2 = st.columns([1.1, 1.9])
         with col_fc1:
@@ -493,11 +551,12 @@ def render_meridian_multi_asset_desk():
         )
 
         ma = margin_res["margin_audit"]
+        st.caption(f"Contract Exposure: **{n_contracts:,} contracts** | Multiplier: **{multiplier:,.0f}** | Total Notional: **${ma['total_notional']:,.2f}** | Initial Margin: **${ma['total_initial_margin']:,.2f}** | Maintenance Margin: **${ma['total_maintenance_margin']:,.2f}**")
         m1, m2, m3, m4, m5 = st.columns(5)
         m1.metric("Effective Leverage", f"{ma['effective_leverage']:.1f}x", "Institutional Limit: 10x")
         m2.metric("Margin Utilization", f"{ma['margin_utilization_pct']:.1f}%", ma["risk_status"])
         m3.metric("Free Headroom", f"${ma['free_margin_headroom']:,.0f}", "Buffer")
-        m4.metric("Margin Call Price", f"${ma['margin_call_trigger_price']:.2f}", f"-{ma['max_adverse_move_pct']:.1f}% adverse")
+        m4.metric("Margin Call Price", f"${ma['margin_call_trigger_price']:,.2f}", f"-{ma['max_adverse_move_pct']:.1f}% adverse")
         m5.metric("Audit Verdict", margin_res["verdict"], "Risk Cap Checked")
 
     # =========================================================================
@@ -506,6 +565,29 @@ def render_meridian_multi_asset_desk():
     with tab_fi:
         st.markdown("### 📈 Fixed Income Macro Agent")
         st.caption("Sovereign yield curve inversion tracking, Macaulay & Modified duration, Convexity, DV01 ($ per bp), and interest rate shocks.")
+
+        with st.expander("📐 Fixed Income Bond Pricing, Duration, Convexity & DV01 Formulas Audit", expanded=False):
+            st.markdown(r"""
+            #### 🧮 Bond Valuation, Interest Rate Sensitivities & Yield Curve Mathematics
+            - **Bond Dirty / Full Price**:
+              $$P = \sum_{t=1}^n \frac{C}{(1 + y)^t} + \frac{M}{(1 + y)^n}$$
+              Where $C$ is coupon payment, $y$ is yield-to-maturity, $M$ is par value, and $n$ is periods to maturity.
+            - **Macaulay Duration (Weighted Average Maturity)**:
+              $$D_{\text{mac}} = \frac{1}{P} \sum_{t=1}^n \frac{t \cdot C_t}{(1 + y)^t} \quad \text{(years)}$$
+            - **Modified Duration (Direct Rate Sensitivity)**:
+              $$D_{\text{mod}} = \frac{D_{\text{mac}}}{1 + y} = -\frac{1}{P} \frac{\partial P}{\partial y}$$
+            - **Bond Convexity (Curvature Sensitivity)**:
+              $$C = \frac{1}{P (1 + y)^2} \sum_{t=1}^n \frac{t(t + 1) C_t}{(1 + y)^t} = \frac{1}{P} \frac{\partial^2 P}{\partial y^2}$$
+            - **Dollar Value of a Basis Point (DV01)**:
+              $$\text{DV01} = D_{\text{mod}} \times P \times 0.0001 = -\frac{\Delta P}{\Delta y \text{ (in bps)}}$$
+              $$\text{DV01 per \$1,000,000 Par} = \text{DV01} \times \left(\frac{1,000,000}{\text{Face Value}}\right)$$
+            - **Second-Order Taylor Series Price Shock Approximation**:
+              $$\frac{\Delta P}{P} \approx - D_{\text{mod}} \Delta y + \frac{1}{2} C (\Delta y)^2$$
+            - **Yield Curve Slopes & Inversion**:
+              $$\text{Spread}_{2\text{Y}-10\text{Y}} = (y_{10\text{Y}} - y_{2\text{Y}}) \times 100 \text{ bps}$$
+              $$\text{Spread}_{3\text{M}-10\text{Y}} = (y_{10\text{Y}} - y_{3\text{M}}) \times 100 \text{ bps}$$
+              Negative spreads indicate yield curve inversion and historically elevated recession probability.
+            """)
 
         col_fi1, col_fi2 = st.columns([1.1, 1.9])
         with col_fi1:
@@ -571,7 +653,7 @@ def render_meridian_multi_asset_desk():
 
         bm = bond_res["metrics"]
         bm1, bm2, bm3, bm4 = st.columns(4)
-        bm1.metric("Clean / Dirty Price", f"${bm['price']:.2f}", f"Par ${b_face:,.0f}")
+        bm1.metric("Clean / Dirty Price", f"${bm['price']:,.2f}", f"Par ${b_face:,.0f}")
         bm2.metric("Modified Duration", f"{bm['modified_duration']:.2f} yrs", f"Mac: {bm['macaulay_duration_years']:.2f} yrs")
         bm3.metric("Convexity", f"{bm['convexity']:.2f}", "Second-order buffer")
         bm4.metric("DV01 / Million Par", f"${bm['dv01_per_million_par']:,.2f}", "$ loss per +1 bp")
@@ -601,6 +683,28 @@ def render_meridian_multi_asset_desk():
         st.markdown("### ⚡ Crypto & 24/7 Derivatives Agent")
         st.caption("Continuous 24/7 market microstructure, perpetual swap funding rates, cash-and-carry basis arbitrage, and liquidation cascade modeling.")
 
+        with st.expander("📐 Perpetual Swap Funding, Cash-and-Carry Basis & Liquidation Formulas Audit", expanded=False):
+            st.markdown(r"""
+            #### 🧮 24/7 Crypto Derivatives, Funding Carry & Liquidation Microstructure
+            - **Perpetual Swap Premium Index**:
+              $$\mathcal{P} = \frac{\text{Mark Price} - \text{Index Spot}}{\text{Index Spot}} \times 10{,}000 \text{ (in basis points)}$$
+            - **Annualized Funding Carry**:
+              $$\text{Simple Annualized Rate} = F_{8h} \times 3 \times 365 = F_{8h} \times 1{,}095$$
+              $$\text{Compound APY} = \left(1 + \frac{F_{8h}}{100}\right)^{1095} - 1$$
+            - **Cash-and-Carry Basis Arbitrage**:
+              $$\text{Gross Basis} = F_{\text{dated}} - S_{\text{spot}}$$
+              $$\text{Gross Annualized APY} = \left(\frac{F_{\text{dated}} - S_{\text{spot}}}{S_{\text{spot}}}\right) \times \frac{365}{\text{DTE}} \times 100\%$$
+              $$\text{Net Annualized APY} = \left(\frac{F_{\text{dated}} - S_{\text{spot}} - \text{Execution Costs}}{S_{\text{spot}}}\right) \times \frac{365}{\text{DTE}} \times 100\%$$
+            - **Exchange Liquidation Engine Trigger Price**:
+              - **Long Position**:
+                $$P_{\text{liq}}^{\text{long}} = P_{\text{entry}} \times \left(1 - \frac{1}{\text{Leverage}} + \text{MMR}\right)$$
+              - **Short Position**:
+                $$P_{\text{liq}}^{\text{short}} = P_{\text{entry}} \times \left(1 + \frac{1}{\text{Leverage}} - \text{MMR}\right)$$
+              Where $\text{MMR}$ is the maintenance margin requirement (typically $0.5\% = 0.005$ on BTC).
+            - **Liquidation Cascade Vulnerability Score**:
+              $$\text{Score} = \min\left(100, \, \left(\frac{\text{Open Interest}}{\text{24h Volume}} \times 40\right) + \left(\frac{|F_{8h}|}{0.05\%} \times 30\right) + \text{Leverage Penalty}\right)$$
+            """)
+
         col_cr1, col_cr2 = st.columns([1.1, 1.9])
         with col_cr1:
             st.markdown("#### 🪙 Perpetual Swap Microstructure")
@@ -610,6 +714,7 @@ def render_meridian_multi_asset_desk():
             cr_f8 = st.number_input("Current 8h Funding Rate (%)", value=0.012, step=0.005, format="%.4f", key="cr_f8")
             cr_oi = st.number_input("Open Interest ($USD)", value=1_500_000_000.0, step=100_000_000.0, key="cr_oi")
             cr_vol = st.number_input("24h Volume ($USD)", value=5_000_000_000.0, step=500_000_000.0, key="cr_vl")
+            st.caption(f"Spot: **${cr_spot:,.2f}** | Mark: **${cr_mark:,.2f}** | OI: **${cr_oi:,.0f}** | 24h Vol: **${cr_vol:,.0f}**")
 
             crypto_res = orchestrator.crypto_desk.analyze_perpetual_funding(
                 symbol=cr_sym,
@@ -663,7 +768,7 @@ def render_meridian_multi_asset_desk():
             )
             ba = basis_res["basis_arbitrage"]
             b1, b2 = st.columns(2)
-            b1.metric("Gross Basis APY", f"{ba['gross_annualized_apy_pct']:+.2f}%", f"+${ba['gross_basis']:.2f}")
+            b1.metric("Gross Basis APY", f"{ba['gross_annualized_apy_pct']:+.2f}%", f"+${ba['gross_basis']:,.2f}")
             b2.metric("Net APY (After Fees)", f"{ba['net_annualized_apy_pct']:+.2f}%", "Arbitrage Viable" if ba["arbitrage_viable"] else "Unprofitable")
 
         with col_ar2:
@@ -686,6 +791,30 @@ def render_meridian_multi_asset_desk():
     with tab_risk:
         st.markdown("### 🛡️ Cross-Asset Risk Officer & Red Flags Registry")
         st.caption("Parametric & Historical Value-at-Risk (VaR), Expected Shortfall (CVaR), Correlation Heatmaps, Crisis Stress Matrix, and Institutional Red Flags.")
+
+        with st.expander("📐 Cross-Asset Portfolio Risk, VaR, CVaR & Stress Testing Formulas Audit", expanded=False):
+            st.markdown(r"""
+            #### 🧮 Portfolio Risk Aggregation, Extreme Tail Risk & Capital Guardrails
+            - **Cross-Asset Covariance Matrix Decomposition**:
+              $$\boldsymbol{\Sigma} = \mathbf{D} \, \mathbf{R} \, \mathbf{D}$$
+              Where $\mathbf{D} = \text{diag}(\sigma_1, \sigma_2, \dots, \sigma_n)$ is the diagonal volatility matrix and $\mathbf{R}$ is the cross-asset correlation matrix ($R_{ij} = \rho_{ij}$).
+            - **Portfolio Return Variance & Standard Deviation**:
+              $$\sigma_p^2 = \mathbf{w}^T \boldsymbol{\Sigma} \mathbf{w} = \sum_{i=1}^n \sum_{j=1}^n w_i w_j \sigma_i \sigma_j \rho_{ij}$$
+              $$\sigma_p = \sqrt{\mathbf{w}^T \boldsymbol{\Sigma} \mathbf{w}}$$
+            - **Parametric 1-Day Value-at-Risk (VaR at confidence level $\alpha$)**:
+              $$\text{VaR}_\alpha = z_\alpha \cdot \sigma_p \cdot \sqrt{\frac{1}{252}} \cdot W_{\text{portfolio}}$$
+              Where $z_{0.95} \approx 1.6449$, $z_{0.99} \approx 2.3263$, and $W_{\text{portfolio}}$ is total fund capital.
+            - **Parametric Expected Shortfall / Conditional VaR (CVaR)**:
+              $$\text{CVaR}_\alpha = \mathbb{E}[L \mid L > \text{VaR}_\alpha] = \frac{\phi(z_\alpha)}{1 - \alpha} \cdot \sigma_p \cdot \sqrt{\frac{1}{252}} \cdot W_{\text{portfolio}}$$
+              Where $\phi(z)$ is the standard Gaussian probability density function.
+            - **Black-Swan Crisis Scenario Factor Shock**:
+              $$\Delta W_{\text{crisis}} = \sum_{i=1}^n w_i \cdot W_{\text{portfolio}} \cdot \Delta r_{i, \text{crisis}}$$
+            - **Institutional Risk Appetite Bounds**:
+              - Maximum single asset concentration: $w_i \le 40\%$
+              - Maximum daily 99% VaR: $\text{VaR}_{99\%} \le 4.5\%$ of fund capital
+              - Maximum gross futures leverage: $\text{Gross Leverage} \le 10\times$
+              - Hard Gatekeeper Veto: Any active **CRITICAL** red flag triggers immediate trading suspension.
+            """)
 
         # Correlation Matrix Heatmap
         st.markdown("#### 🌐 Cross-Asset Correlation Matrix")
