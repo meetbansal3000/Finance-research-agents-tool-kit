@@ -117,11 +117,20 @@ def render_meridian_multi_asset_desk():
               $$\text{Verdict} = \begin{cases} \text{REJECTED (VETO)}, & \text{if } \text{Critical Flags} > 0 \text{ or } \text{VaR}_{99\%} > 4.5\% \\ \text{CONDITIONAL APPROVAL}, & \text{if } \text{High Flags} > 0 \\ \text{APPROVED}, & \text{otherwise} \end{cases}$$
             """)
 
-        col_cfg1, col_cfg2 = st.columns([1.2, 2.0])
+        col_cfg1, col_cfg2 = st.columns([1.1, 2.5])
         with col_cfg1:
             st.markdown("#### 💼 Portfolio Specification")
             port_name = st.text_input("Portfolio / Mandate Name", value="Meridian Global Macro Alpha Fund", key="mo_port_name")
-            total_cap = st.number_input("Total Capital Allocation ($USD)", min_value=100_000.0, max_value=1_000_000_000.0, value=10_000_000.0, step=500_000.0, key="mo_total_cap")
+            total_cap = st.number_input(
+                "Total Capital Allocation ($USD)",
+                min_value=10_000.0,
+                max_value=1_000_000_000.0,
+                value=1_000_000.0,
+                step=50_000.0,
+                format="%.2f",
+                key="mo_total_cap"
+            )
+            st.caption(f"💰 Selected Capital: **${total_cap:,.2f} USD**")
 
             preset = st.selectbox(
                 "Allocation Preset",
@@ -159,11 +168,26 @@ def render_meridian_multi_asset_desk():
             }
 
             c1, c2, c3, c4, c5 = st.columns(5)
-            c1.metric("Equities", f"${allocations['equities']:,.0f}", f"{eq_pct:.1f}%")
-            c2.metric("Fixed Income", f"${allocations['fixed_income']:,.0f}", f"{fi_pct:.1f}%")
-            c3.metric("Commodities", f"${allocations['commodities']:,.0f}", f"{comm_pct:.1f}%")
-            c4.metric("Crypto 24/7", f"${allocations['crypto']:,.0f}", f"{cryp_pct:.1f}%")
-            c5.metric("Options Overlay", f"${allocations['options_overlay']:,.0f}", f"{opt_pct:.1f}%")
+            cards = [
+                ("Equities", allocations["equities"], eq_pct, "#38BDF8"),
+                ("Fixed Income", allocations["fixed_income"], fi_pct, "#10B981"),
+                ("Commodities", allocations["commodities"], comm_pct, "#F59E0B"),
+                ("Crypto 24/7", allocations["crypto"], cryp_pct, "#A855F7"),
+                ("Options Overlay", allocations["options_overlay"], opt_pct, "#EC4899"),
+            ]
+            for col, (label, val, pct, border_color) in zip([c1, c2, c3, c4, c5], cards):
+                with col:
+                    st.markdown(f"""
+                    <div style="background:#121824; border:1px solid #1E2638; border-top:3px solid {border_color}; border-radius:6px; padding:10px 6px; text-align:center; min-width:0;">
+                        <div style="font-size:0.72rem; color:#94A3B8; font-weight:700; text-transform:uppercase; letter-spacing:0.03em; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="{label}">{label}</div>
+                        <div style="font-size:1.05rem; font-weight:800; color:#F8FAFC; font-family:'JetBrains Mono',monospace; margin:4px 0; white-space:nowrap;" title="${val:,.2f}">
+                            ${val:,.0f}
+                        </div>
+                        <div style="font-size:0.76rem; color:#10B981; font-weight:700;">
+                            ↑ {pct:.1f}%
+                        </div>
+                    </div>
+                    """, unsafe_allow_html=True)
 
         run_committee_btn = st.button("🚀 EXECUTE MULTI-DESK COMMITTEE AUDIT", type="primary", use_container_width=True)
 
@@ -420,14 +444,31 @@ def render_meridian_multi_asset_desk():
                 line=dict(color="#10B981", width=3)
             ))
             fig_pnl.add_hline(y=0, line_dash="dash", line_color="#64748B")
-            fig_pnl.add_vline(x=opt_spot, line_dash="dot", line_color="#38BDF8", annotation_text="Current Spot")
+            fig_pnl.add_vline(
+                x=opt_spot,
+                line_dash="dot",
+                line_color="#38BDF8",
+                annotation_text=f" Spot ${opt_spot:,.2f} ",
+                annotation_position="top left",
+                annotation_font=dict(color="#38BDF8", size=10.5, family="monospace"),
+                annotation_bgcolor="rgba(15, 23, 42, 0.92)",
+                annotation_bordercolor="#38BDF8",
+                annotation_borderwidth=1
+            )
             fig_pnl.update_layout(
-                title=f"{strat_choice} Payoff at Expiration ({opt_ticker})",
+                title=dict(
+                    text=f"<b>{strat_choice}</b> Payoff at Expiration ({opt_ticker})",
+                    x=0.01,
+                    y=0.98,
+                    xanchor="left",
+                    yanchor="top",
+                    font=dict(size=13, color="#F8FAFC")
+                ),
                 xaxis_title="Underlying Spot Price ($)",
                 yaxis_title="Net PnL ($)",
                 template="plotly_dark",
-                height=320,
-                margin=dict(l=20, r=20, t=40, b=20)
+                height=360,
+                margin=dict(l=35, r=35, t=65, b=25)
             )
             st.plotly_chart(fig_pnl, use_container_width=True)
 
@@ -623,22 +664,62 @@ def render_meridian_multi_asset_desk():
 
                 # Zero PnL Reference
                 fig_sb.add_hline(y=0, line_dash="dash", line_color="#64748B", secondary_y=False)
-                # Spot Reference
-                fig_sb.add_vline(x=sb_spot, line_dash="dot", line_color="#F59E0B", annotation_text="Spot")
 
-                # Breakevens
-                for be in pm["breakeven_points"]:
-                    fig_sb.add_vline(x=be, line_dash="dot", line_color="#EF4444", annotation_text=f"BE ${be:,.2f}")
+                # Spot Reference (staggered to top left with dark badge box to eliminate any collision with BE)
+                fig_sb.add_vline(
+                    x=sb_spot,
+                    line_dash="dot",
+                    line_color="#F59E0B",
+                    annotation_text=f" Spot ${sb_spot:,.2f} ",
+                    annotation_position="top left",
+                    annotation_font=dict(color="#F59E0B", size=10.5, family="monospace"),
+                    annotation_bgcolor="rgba(15, 23, 42, 0.92)",
+                    annotation_bordercolor="#F59E0B",
+                    annotation_borderwidth=1
+                )
+
+                # Breakevens (staggered to bottom right with dark badge box)
+                for i, be in enumerate(pm["breakeven_points"]):
+                    be_pos = "bottom right" if i % 2 == 0 else "bottom left"
+                    fig_sb.add_vline(
+                        x=be,
+                        line_dash="dot",
+                        line_color="#EF4444",
+                        annotation_text=f" BE ${be:,.2f} ",
+                        annotation_position=be_pos,
+                        annotation_font=dict(color="#EF4444", size=10.5, family="monospace"),
+                        annotation_bgcolor="rgba(15, 23, 42, 0.92)",
+                        annotation_bordercolor="#EF4444",
+                        annotation_borderwidth=1
+                    )
 
                 fig_sb.update_layout(
-                    title=f"{sb_strat} — Sensibull Dual PnL & Probability Distribution",
+                    title=dict(
+                        text=f"<b>{sb_strat}</b> — Sensibull Dual PnL & Probability Distribution",
+                        x=0.01,
+                        y=0.98,
+                        xanchor="left",
+                        yanchor="top",
+                        font=dict(size=13, color="#F8FAFC")
+                    ),
                     xaxis_title="Underlying Spot Price ($)",
                     yaxis_title="Net Strategy PnL ($)",
                     yaxis2_title="Probability Density",
                     template="plotly_dark",
-                    height=350,
-                    margin=dict(l=20, r=20, t=40, b=20),
-                    legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1)
+                    height=420,
+                    margin=dict(l=35, r=35, t=75, b=30),
+                    legend=dict(
+                        orientation="h",
+                        yanchor="bottom",
+                        y=1.03,
+                        xanchor="right",
+                        x=1.0,
+                        bgcolor="rgba(15, 23, 42, 0.85)",
+                        bordercolor="#334155",
+                        borderwidth=1,
+                        font=dict(size=10.5, color="#E2E8F0")
+                    ),
+                    hovermode="x unified"
                 )
                 st.plotly_chart(fig_sb, use_container_width=True)
 

@@ -272,6 +272,52 @@ st.markdown("""
         line-height: 1.45;
     }
 
+    /* Global Metric Styling & Ellipsis Truncation Prevention */
+    div[data-testid="stMetric"] {
+        background: var(--bg-card) !important;
+        padding: 0.65rem 0.85rem !important;
+        border-radius: var(--radius-sm) !important;
+        border: 1px solid var(--border-subtle) !important;
+        overflow: visible !important;
+    }
+
+    div[data-testid="stMetricLabel"] {
+        overflow: visible !important;
+        white-space: normal !important;
+    }
+
+    div[data-testid="stMetricLabel"] p {
+        font-size: 0.76rem !important;
+        font-weight: 600 !important;
+        color: var(--text-secondary) !important;
+        text-transform: uppercase !important;
+        letter-spacing: 0.04em !important;
+        margin-bottom: 0.2rem !important;
+        overflow: visible !important;
+        white-space: nowrap !important;
+    }
+
+    div[data-testid="stMetricValue"] {
+        overflow: visible !important;
+        white-space: nowrap !important;
+        text-overflow: clip !important;
+    }
+
+    div[data-testid="stMetricValue"] > div {
+        font-size: clamp(0.95rem, 1.35vw, 1.25rem) !important;
+        font-weight: 700 !important;
+        font-family: var(--font-mono) !important;
+        color: var(--text-primary) !important;
+        overflow: visible !important;
+        text-overflow: clip !important;
+        white-space: nowrap !important;
+    }
+
+    div[data-testid="stMetricDelta"] {
+        font-size: 0.78rem !important;
+        font-weight: 600 !important;
+    }
+
     /* Badge Tags */
     .badge {
         display: inline-block;
