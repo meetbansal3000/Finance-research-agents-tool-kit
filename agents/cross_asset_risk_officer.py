@@ -12,6 +12,7 @@ import datetime
 from typing import Dict, Any, List, Optional
 from tools.ledger import ProvenanceLedger
 from tools.calc.derivatives_math import CrossAssetRiskEngine
+from tools.calc.probability_simulator import EconometricProbabilitySimulator
 
 
 class CrossAssetRiskOfficer:
@@ -147,6 +148,72 @@ class CrossAssetRiskOfficer:
             "stress_results": stress_res,
             "provenance_ledger_id": ledger_id,
             "red_flags": red_flags
+        }
+
+    def evaluate_asset_tail_risk(
+        self,
+        ticker: str,
+        spot_price: float,
+        horizon_days: int = 30,
+        custom_volatility: Optional[float] = None
+    ) -> Dict[str, Any]:
+        """
+        Independent CRO assessment of asset return asymmetry, fat tails,
+        Cornish-Fisher VaR/CVaR, and Jarque-Bera normality rejection.
+        """
+        sim_engine = EconometricProbabilitySimulator()
+        moments = sim_engine.calculate_empirical_moments(ticker)
+        vol = custom_volatility if custom_volatility is not None else float(moments["annualized_volatility"])
+        t_years = horizon_days / 365.0
+
+        metrics = sim_engine.calculate_comprehensive_econometric_metrics(
+            spot=spot_price,
+            volatility=vol,
+            time_years=t_years,
+            drift=float(moments["annualized_drift"]),
+            skewness=float(moments["sample_skewness"]),
+            excess_kurtosis=float(moments["sample_excess_kurtosis"])
+        )
+
+        ledger_id = self.ledger.record(
+            tool="EconometricProbabilitySimulator.calculate_comprehensive_econometric_metrics",
+            inputs={"ticker": ticker, "spot": spot_price, "horizon_days": horizon_days, "vol": vol},
+            output={"skew": moments["sample_skewness"], "kurt": moments["sample_excess_kurtosis"], "var_cf_95_pct": metrics["var_metrics"]["var_cf_95_pct"]},
+            source="CRO Econometric Tail Risk Assessor",
+            ticker=ticker,
+            notes=f"CRO Tail Risk Assessment for {ticker}: Skew {moments['sample_skewness']}, Kurt {moments['sample_excess_kurtosis']}"
+        )
+
+        red_flags = []
+        if moments["normality_rejected"] and moments["sample_excess_kurtosis"] > 2.5:
+            red_flags.append({
+                "severity": "HIGH",
+                "category": "Severe Leptokurtic Tail Risk",
+                "message": f"Excess kurtosis ({moments['sample_excess_kurtosis']:.2f}) indicates severe fat tails. Gaussian risk models drastically underestimate tail losses."
+            })
+        if moments["sample_skewness"] < -0.60:
+            red_flags.append({
+                "severity": "HIGH",
+                "category": "Crash Asymmetry Fragility",
+                "message": f"Negative skewness ({moments['sample_skewness']:.2f}) reflects significant structural downside crash risk."
+            })
+        if metrics["var_metrics"]["fat_tail_surcharge_95_pct"] > 4.0:
+            red_flags.append({
+                "severity": "MEDIUM",
+                "category": "Elevated Fat-Tail VaR Surcharge",
+                "message": f"Fat-tail surcharge adds +{metrics['var_metrics']['fat_tail_surcharge_95_pct']:.2f}% to baseline 95% VaR."
+            })
+
+        return {
+            "agent": self.agent_role,
+            "ticker": ticker,
+            "horizon_days": horizon_days,
+            "spot_price": spot_price,
+            "empirical_moments": moments,
+            "econometric_metrics": metrics,
+            "provenance_ledger_id": ledger_id,
+            "red_flags": red_flags,
+            "verdict": "FLAGGED" if any(rf["severity"] in ["CRITICAL", "HIGH"] for rf in red_flags) else "MONITORED"
         }
 
     def consolidate_risk_audit(

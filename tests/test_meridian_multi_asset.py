@@ -366,3 +366,51 @@ def test_meridian_master_orchestrator_full_workflow():
     # Verify VaR and stress matrix
     assert "var_99_dollar" in result["var_metrics"]
     assert len(result["stress_matrix"]) >= 4
+
+
+def test_options_greek_agent_econometric_integration():
+    ledger = ProvenanceLedger(run_id="test_opt_econo")
+    agent = OptionsGreekStrategist(ledger=ledger)
+
+    legs = [
+        {"type": "call", "strike": 220.0, "quantity": 1, "volatility": 0.22, "expiry_years": 0.1},
+        {"type": "call", "strike": 235.0, "quantity": -1, "volatility": 0.22, "expiry_years": 0.1}
+    ]
+    res = agent.evaluate_strategy(
+        strategy_name="Bull Call Spread",
+        underlying_ticker="AAPL",
+        spot_price=220.0,
+        legs=legs,
+        custom_skewness=-0.45,
+        custom_kurtosis=1.80,
+        custom_drift=0.08
+    )
+
+    assert "probability_simulation" in res
+    assert "empirical_moments" in res
+    assert "econometric_metrics" in res
+    assert res["probability_simulation"]["probability_metrics"]["probability_of_profit_pct"] > 0
+    assert "cornish_fisher_z_95_down" in res["econometric_metrics"]["quantiles"]
+    assert "var_cf_95_pct" in res["econometric_metrics"]["var_metrics"]
+    assert res["verdict"] in ("APPROVED", "REJECTED")
+
+
+def test_cross_asset_risk_officer_tail_risk_evaluation():
+    ledger = ProvenanceLedger(run_id="test_cro_tail")
+    cro = CrossAssetRiskOfficer(ledger=ledger)
+
+    tail_res = cro.evaluate_asset_tail_risk(
+        ticker="NVDA",
+        spot_price=120.0,
+        horizon_days=30,
+        custom_volatility=0.45
+    )
+
+    assert tail_res["agent"] == "Cross-Asset Risk Officer"
+    assert tail_res["ticker"] == "NVDA"
+    assert "empirical_moments" in tail_res
+    assert "econometric_metrics" in tail_res
+    assert "var_metrics" in tail_res["econometric_metrics"]
+    assert tail_res["verdict"] in ("FLAGGED", "MONITORED")
+    assert tail_res["provenance_ledger_id"].startswith("LEDGER_")
+
