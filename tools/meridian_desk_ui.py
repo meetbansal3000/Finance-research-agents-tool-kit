@@ -42,6 +42,7 @@ from tools.ticker_search import lookup_primary_ticker, search_company_tickers
 from tools.data_layer import get_data_layer
 from tools.multi_asset_data import MultiAssetDataEngine
 from tools.paper_trading import get_paper_trading_engine, INITIAL_PORTFOLIO_CASH
+from tools.broker_client import ExecutionCostModel, MultiExchangeRouter, AlpacaBrokerClient, InteractiveBrokersClient
 
 
 @st.cache_data(ttl=60, show_spinner=False)
@@ -218,6 +219,11 @@ def render_meridian_multi_asset_desk():
         st.session_state["meridian_orchestrator"] = MeridianMultiAssetOrchestrator()
     orchestrator: MeridianMultiAssetOrchestrator = st.session_state["meridian_orchestrator"]
 
+    # Initialize Institutional Multi-Exchange Order Router in session state
+    if "multi_exchange_router" not in st.session_state:
+        st.session_state["multi_exchange_router"] = MultiExchangeRouter(active_mode="SIMULATION_PAPER")
+    router: MultiExchangeRouter = st.session_state["multi_exchange_router"]
+
     # 7 Specialized Sub-Tabs
     tab_orch, tab_opt, tab_prob, tab_fut, tab_fi, tab_crypto, tab_risk = st.tabs([
         "🏛️ Master Orchestrator",
@@ -335,6 +341,80 @@ def render_meridian_multi_asset_desk():
                     b_col = "#EF4444" if sev == "CRITICAL" else "#F59E0B"
                     st.markdown(f"<div style='border-left:3px solid {b_col}; padding:4px 8px; margin:4px 0; font-size:0.82rem; color:#E2E8F0;'><b>[{sev}] {ra.get('type', 'ALERT')}</b> ({ra.get('timestamp', '')[:19]}): {ra.get('message', '')}</div>", unsafe_allow_html=True)
 
+        # ---------------------------------------------------------------------
+        # BROKER GATEWAY & MULTI-EXCHANGE ORDER ROUTING CONTROL STRIP
+        # ---------------------------------------------------------------------
+        st.markdown("#### 🌐 Institutional Broker Gateway & Smart Order Router")
+        st.caption("Switch execution gateways, select routing venues, and monitor broker connection headroom.")
+
+        b_c1, b_c2, b_c3 = st.columns([2.0, 1.5, 1.5])
+        with b_c1:
+            exec_mode_options = [
+                "🏢 Simulation Paper Desk ($1,000,000 Capital Anchor)",
+                "🦙 Alpaca Markets Paper API (Sandbox)",
+                "⚡ Alpaca Markets Live Trading (Production API)",
+                "🌐 Interactive Brokers (IBKR SMART Router)"
+            ]
+            mode_map = {
+                "🏢 Simulation Paper Desk ($1,000,000 Capital Anchor)": "SIMULATION_PAPER",
+                "🦙 Alpaca Markets Paper API (Sandbox)": "ALPACA_PAPER",
+                "⚡ Alpaca Markets Live Trading (Production API)": "ALPACA_LIVE",
+                "🌐 Interactive Brokers (IBKR SMART Router)": "IBKR_GATEWAY"
+            }
+            curr_mode = router.active_mode
+            default_idx = 0
+            if curr_mode == "ALPACA_PAPER":
+                default_idx = 1
+            elif curr_mode == "ALPACA_LIVE":
+                default_idx = 2
+            elif curr_mode == "IBKR_GATEWAY":
+                default_idx = 3
+
+            selected_mode_label = st.selectbox(
+                "Active Execution Gateway",
+                exec_mode_options,
+                index=default_idx,
+                key="sel_exec_mode"
+            )
+            selected_mode = mode_map[selected_mode_label]
+            if selected_mode != router.active_mode:
+                router.set_execution_mode(selected_mode)
+            st.session_state["active_execution_mode"] = selected_mode
+
+        with b_c2:
+            venue_options = ["SMART", "IEX (Speed Bump)", "NASDAQ", "NYSE", "CME_GLOBEX", "CBOE", "DARK_POOL_CROSS"]
+            selected_venue = st.selectbox(
+                "Default Routing Venue",
+                venue_options,
+                index=0,
+                key="sel_routing_venue"
+            )
+            st.session_state["active_routing_venue"] = selected_venue
+
+        with b_c3:
+            # Display real-time broker connection status card
+            if router.active_mode in ("ALPACA_PAPER", "ALPACA_LIVE"):
+                acct = router.alpaca_client.get_account()
+                status_color = "#10B981" if acct.get("status") in ("ACTIVE", "SIMULATED_ACTIVE") else "#F59E0B"
+                b_status = acct.get("status", "ACTIVE")
+                b_bp = acct.get("buying_power_usd", 1000000.0 * 2.0)
+            elif router.active_mode == "IBKR_GATEWAY":
+                acct = router.ibkr_client.get_account()
+                status_color = "#38BDF8"
+                b_status = acct.get("status", "STANDBY")
+                b_bp = acct.get("buying_power_usd", 1000000.0 * 4.0)
+            else:
+                status_color = "#10B981"
+                b_status = "SIMULATION_ACTIVE"
+                b_bp = cash_bal * 2.0
+
+            st.markdown(f"""
+            <div style="background:#0F172A; border:1px solid #1E293B; border-radius:6px; padding:8px 12px; margin-top:24px;">
+                <div style="font-size:0.75rem; color:#94A3B8;">STATUS: <b style="color:{status_color};">{b_status}</b></div>
+                <div style="font-size:0.85rem; font-weight:700; color:#F8FAFC;">Buying Power: ${b_bp:,.2f}</div>
+            </div>
+            """, unsafe_allow_html=True)
+
         # Active Positions Book Table
         st.markdown("#### 📋 Open Deals & Active Positions Book")
         if not open_positions:
@@ -354,14 +434,16 @@ def render_meridian_multi_asset_desk():
                 p_pnl_pct = p.get("unrealized_pnl_pct", 0.0)
                 p_sign = "+" if p_pnl >= 0 else ""
                 pnl_color = "#10B981" if p_pnl >= 0 else "#F43F5E"
+                p_venue = p.get("routing_venue", "SMART")
+                p_fric = p.get("tca", {}).get("total_friction_usd", 0.0)
 
                 p_row1, p_row2, p_row3, p_row4, p_row5, p_row6 = st.columns([1.2, 1.5, 1.2, 1.5, 1.5, 1.2])
                 with p_row1:
-                    st.markdown(f"**{p_sym}**<br><span style='font-size:0.75rem; color:#94A3B8;'>{p_id} · {p_asset}</span>", unsafe_allow_html=True)
+                    st.markdown(f"**{p_sym}**<br><span style='font-size:0.75rem; color:#94A3B8;'>{p_id} · {p_asset} · <span style='color:#38BDF8;'>{p_venue}</span></span>", unsafe_allow_html=True)
                 with p_row2:
                     st.markdown(f"<span style='color:#38BDF8; font-weight:700;'>{p_side} {p_qty:,}</span><br><span style='font-size:0.75rem; color:#CBD5E1;'>{p.get('strategy_type', 'Standard')}</span>", unsafe_allow_html=True)
                 with p_row3:
-                    st.markdown(f"Entry: **${p_entry:,.2f}**<br>Live: **${p_curr:,.2f}**", unsafe_allow_html=True)
+                    st.markdown(f"Entry: **${p_entry:,.2f}**<br>Live: **${p_curr:,.2f}**<br><span style='font-size:0.72rem; color:#A7F3D0;'>TCA: ${p_fric:,.2f}</span>", unsafe_allow_html=True)
                 with p_row4:
                     st.markdown(f"Cost: **${p_cost:,.2f}**<br>Value: **${p_val:,.2f}**", unsafe_allow_html=True)
                 with p_row5:
@@ -893,14 +975,24 @@ def render_meridian_multi_asset_desk():
                     deal_strat_name = "Long Equity" if clean_side == "BUY" else "Short Equity"
                     deal_mult = 1.0
 
+                active_venue = st.session_state.get("active_routing_venue", "SMART")
+                active_mode = st.session_state.get("active_execution_mode", "SIMULATION_PAPER")
+                tca_deal = ExecutionCostModel.calculate_execution_costs(
+                    asset_class=deal_asset_class,
+                    side=clean_side,
+                    quantity=float(deal_qty),
+                    price=float(unit_px)
+                )
+
                 st.markdown(f"""
                 <div style="background:#0F172A; border:1px solid #1E293B; border-radius:6px; padding:10px 14px; margin-bottom:8px;">
                     <div style="display:flex; justify-content:space-between; align-items:center;">
-                        <span style="font-size:0.75rem; color:#94A3B8; text-transform:uppercase;">Outlay</span>
+                        <span style="font-size:0.75rem; color:#94A3B8; text-transform:uppercase;">Outlay · Venue: <b style="color:#38BDF8;">{active_venue}</b></span>
                         <span style="font-size:1.1rem; font-weight:800; color:#F8FAFC;">${total_deal_cost:,.2f} USD</span>
                     </div>
-                    <div style="font-size:0.75rem; color:#38BDF8; margin-top:2px;">
-                        Available Cash: <b>${p_cash:,.2f} USD</b>
+                    <div style="display:flex; justify-content:space-between; align-items:center; font-size:0.75rem; color:#38BDF8; margin-top:2px;">
+                        <span>Available Cash: <b>${p_cash:,.2f} USD</b></span>
+                        <span style="color:#A7F3D0;">Est TCA Friction: <b>${tca_deal['total_friction_usd']:,.2f} USD</b> ({tca_deal['friction_basis_points']:.1f} bps)</span>
                     </div>
                 </div>
                 """, unsafe_allow_html=True)
@@ -914,6 +1006,8 @@ def render_meridian_multi_asset_desk():
                         price=float(unit_px),
                         strategy_type=deal_strat_name,
                         multiplier=deal_mult,
+                        routing_venue=active_venue,
+                        execution_mode=active_mode,
                         notes=f"Executed via Options Greek Desk for {live_asset['name']}"
                     )
                     if exec_ok:
@@ -1602,7 +1696,15 @@ def render_meridian_multi_asset_desk():
                 clean_sb_side = "BUY" if "BUY" in sb_trade_action else "SELL"
                 sb_debit = abs(sb_sim_res["greeks_summary"]["net_debit_credit"])
                 sb_tot_cost = sb_trade_qty * sb_debit * 100.0
-                st.caption(f"Required Outlay: **${sb_tot_cost:,.2f} USD** | Available Cash: **${p_cash_sb:,.2f} USD**")
+                active_venue_sb = st.session_state.get("active_routing_venue", "SMART")
+                active_mode_sb = st.session_state.get("active_execution_mode", "SIMULATION_PAPER")
+                tca_sb = ExecutionCostModel.calculate_execution_costs(
+                    asset_class="Options",
+                    side=clean_sb_side,
+                    quantity=float(sb_trade_qty),
+                    price=float(sb_debit)
+                )
+                st.caption(f"Required Outlay: **${sb_tot_cost:,.2f} USD** | Venue: <b style='color:#38BDF8;'>{active_venue_sb}</b> | Est TCA Friction: **${tca_sb['total_friction_usd']:,.2f} USD**")
                 if st.button("🟢 EXECUTE SIMULATION STRATEGY AT MARKET ($)", type="primary", use_container_width=True, key=f"sb_exec_btn_{sb_live['symbol']}"):
                     c_notes = ""
                     if comm_key in st.session_state:
@@ -1617,6 +1719,8 @@ def render_meridian_multi_asset_desk():
                         price=float(sb_debit),
                         strategy_type=f"{sb_strat} (Simulator)",
                         multiplier=100.0,
+                        routing_venue=active_venue_sb,
+                        execution_mode=active_mode_sb,
                         notes=f"{c_notes}Simulated POP: {pm['probability_of_profit_pct']:.1f}%, EV: ${pm['expected_value_usd']:,.2f}"
                     )
                     if s_ok:
@@ -2039,7 +2143,15 @@ def render_meridian_multi_asset_desk():
             with eq_b3:
                 clean_eq_side = "BUY" if "BUY" in eq_side else "SELL"
                 eq_outlay = eq_qty * eq_sp
-                st.caption(f"Required Outlay: **${eq_outlay:,.2f} USD** | Available Cash: **${eq_cash:,.2f} USD**")
+                active_venue_eq = st.session_state.get("active_routing_venue", "SMART")
+                active_mode_eq = st.session_state.get("active_execution_mode", "SIMULATION_PAPER")
+                tca_eq = ExecutionCostModel.calculate_execution_costs(
+                    asset_class="Equities",
+                    side=clean_eq_side,
+                    quantity=float(eq_qty),
+                    price=float(eq_sp)
+                )
+                st.caption(f"Required Outlay: **${eq_outlay:,.2f} USD** | Venue: <b style='color:#38BDF8;'>{active_venue_eq}</b> | Est TCA Friction: **${tca_eq['total_friction_usd']:,.2f} USD**")
                 if st.button("🟢 EXECUTE SHARES ORDER ($)", type="primary", use_container_width=True, key=f"btn_eq_exec_{eq_live['symbol']}"):
                     eq_c_notes = ""
                     if eq_comm_key in st.session_state:
@@ -2054,6 +2166,8 @@ def render_meridian_multi_asset_desk():
                         price=float(eq_sp),
                         strategy_type="Equity Position",
                         multiplier=1.0,
+                        routing_venue=active_venue_eq,
+                        execution_mode=active_mode_eq,
                         notes=f"{eq_c_notes}Target: ${eq_tp:.2f}, SL: ${eq_sl:.2f}"
                     )
                     if eq_ok:
@@ -2292,7 +2406,15 @@ def render_meridian_multi_asset_desk():
         with fc_e3:
             clean_f_side = "BUY" if "BUY" in fut_side else "SELL"
             req_margin = fut_trade_qty * init_margin
-            st.caption(f"Required Initial Margin: **${req_margin:,.2f} USD** | Available Cash: **${fut_cash:,.2f} USD**")
+            active_venue_fut = st.session_state.get("active_routing_venue", "CME_GLOBEX")
+            active_mode_fut = st.session_state.get("active_execution_mode", "SIMULATION_PAPER")
+            tca_fut = ExecutionCostModel.calculate_execution_costs(
+                asset_class="Futures",
+                side=clean_f_side,
+                quantity=float(fut_trade_qty),
+                price=float(prompt_px)
+            )
+            st.caption(f"Required Initial Margin: **${req_margin:,.2f} USD** | Venue: <b style='color:#38BDF8;'>{active_venue_fut}</b> | Est TCA Friction: **${tca_fut['total_friction_usd']:,.2f} USD**")
             if st.button("🟢 EXECUTE FUTURES ORDER ($)", type="primary", use_container_width=True, key=f"btn_fut_exec_{sym}"):
                 f_ok, f_msg, f_pos = pe_fut.execute_trade(
                     symbol=f"{sym}=F",
@@ -2303,6 +2425,8 @@ def render_meridian_multi_asset_desk():
                     strategy_type=f"Futures {clean_f_side}",
                     multiplier=float(multiplier),
                     margin_per_unit=float(init_margin),
+                    routing_venue=active_venue_fut,
+                    execution_mode=active_mode_fut,
                     notes=f"{comm_choice} @ ${prompt_px:,.2f}"
                 )
                 if f_ok:
@@ -2555,7 +2679,15 @@ def render_meridian_multi_asset_desk():
         with cr_e3:
             clean_cr_side = "BUY" if "BUY" in cr_side else "SELL"
             req_cr_margin = (cr_qty * cr_spot) / cr_lev
-            st.caption(f"Required Margin ({cr_lev:.0f}x Leverage): **${req_cr_margin:,.2f} USD** | Available Cash: **${cr_cash:,.2f} USD**")
+            active_venue_cr = st.session_state.get("active_routing_venue", "DARK_POOL_CROSS")
+            active_mode_cr = st.session_state.get("active_execution_mode", "SIMULATION_PAPER")
+            tca_cr = ExecutionCostModel.calculate_execution_costs(
+                asset_class="Crypto",
+                side=clean_cr_side,
+                quantity=float(cr_qty),
+                price=float(cr_spot)
+            )
+            st.caption(f"Required Margin ({cr_lev:.0f}x): **${req_cr_margin:,.2f} USD** | Venue: <b style='color:#38BDF8;'>{active_venue_cr}</b> | Est TCA Friction: **${tca_cr['total_friction_usd']:,.2f} USD**")
             if st.button("🟢 EXECUTE PERPETUAL SWAP ($)", type="primary", use_container_width=True, key=f"btn_cr_exec_{cr_sym}"):
                 c_ok, c_msg, c_pos = pe_cr.execute_trade(
                     symbol=cr_sym.replace("-PERP", "-USD"),
@@ -2566,6 +2698,8 @@ def render_meridian_multi_asset_desk():
                     strategy_type=f"Crypto Perpetual ({cr_lev:.0f}x)",
                     multiplier=1.0,
                     margin_per_unit=float(cr_spot / cr_lev),
+                    routing_venue=active_venue_cr,
+                    execution_mode=active_mode_cr,
                     notes=f"{cr_sym} @ ${cr_spot:,.2f} ({cr_lev:.0f}x Leverage)"
                 )
                 if c_ok:

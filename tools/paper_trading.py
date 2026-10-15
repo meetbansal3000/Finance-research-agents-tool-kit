@@ -18,6 +18,7 @@ import math
 from typing import Dict, Any, List, Optional, Tuple
 import yfinance as yf
 from tools.ledger import ProvenanceLedger
+from tools.broker_client import ExecutionCostModel, MultiExchangeRouter
 
 PROJECT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 PORTFOLIO_FILE = os.path.join(PROJECT_DIR, "journal", "paper_portfolio.json")
@@ -31,9 +32,15 @@ class PaperTradingEngine:
     and updates the active portfolio book in real-time.
     """
 
-    def __init__(self, portfolio_file: Optional[str] = None, ledger: Optional[ProvenanceLedger] = None):
+    def __init__(
+        self,
+        portfolio_file: Optional[str] = None,
+        ledger: Optional[ProvenanceLedger] = None,
+        router: Optional[MultiExchangeRouter] = None
+    ):
         self.portfolio_file = portfolio_file or PORTFOLIO_FILE
         self.ledger = ledger or ProvenanceLedger(run_id="paper_trading")
+        self.router = router or MultiExchangeRouter()
         self._ensure_portfolio_file()
 
     def _ensure_portfolio_file(self) -> None:
@@ -84,12 +91,15 @@ class PaperTradingEngine:
         multiplier: float = 1.0,
         margin_per_unit: float = 0.0,
         legs: Optional[List[Dict[str, Any]]] = None,
-        notes: str = ""
+        notes: str = "",
+        routing_venue: str = "SMART",
+        execution_mode: Optional[str] = None
     ) -> Tuple[bool, str, Dict[str, Any]]:
         """
         Execute an order mirroring real live market conditions:
         - Validates sufficient cash or margin headroom.
         - Calculates total cost basis or margin requirement.
+        - Computes institutional TCA friction (bid-ask spread, exchange fees, market impact).
         - Debits cash balance.
         - Signs transaction with HMAC-SHA256 provenance ledger.
         - Adds position to the active portfolio book.
@@ -100,6 +110,7 @@ class PaperTradingEngine:
         qty = float(quantity)
         px = float(price)
         mult = float(multiplier)
+        active_mode = execution_mode or self.router.active_mode
 
         if not sym:
             return False, "Error: Ticker or symbol is required for execution.", {}
@@ -107,6 +118,14 @@ class PaperTradingEngine:
             return False, "Error: Trade quantity must be greater than zero.", {}
         if px <= 0:
             return False, "Error: Execution price must be greater than zero.", {}
+
+        # Compute Institutional Pre-Trade TCA metrics
+        tca = ExecutionCostModel.calculate_execution_costs(
+            asset_class=clean_asset,
+            side=clean_side,
+            quantity=qty,
+            price=px
+        )
 
         data = self.load_portfolio()
         cash = float(data.get("cash_balance", INITIAL_PORTFOLIO_CASH))
@@ -163,8 +182,12 @@ class PaperTradingEngine:
                 "side": clean_side,
                 "quantity": qty,
                 "execution_price": px,
+                "effective_price": tca.get("effective_price", px),
+                "routing_venue": routing_venue,
+                "execution_mode": active_mode,
                 "multiplier": mult,
-                "cost_basis": cost
+                "cost_basis": cost,
+                "tca_friction_usd": tca.get("total_friction_usd", 0.0)
             },
             output={
                 "status": "FILLED",
@@ -183,6 +206,7 @@ class PaperTradingEngine:
             "side": clean_side,
             "quantity": qty,
             "entry_price": px,
+            "effective_entry_price": tca.get("effective_price", px),
             "current_price": px,
             "multiplier": mult,
             "margin_committed": cost if clean_asset == "Futures" else 0.0,
@@ -190,6 +214,9 @@ class PaperTradingEngine:
             "market_value": cost,
             "unrealized_pnl": 0.0,
             "unrealized_pnl_pct": 0.0,
+            "routing_venue": routing_venue,
+            "execution_mode": active_mode,
+            "tca": tca,
             "opened_at": timestamp,
             "legs": legs or [],
             "notes": notes,
@@ -204,8 +231,8 @@ class PaperTradingEngine:
         self.mark_to_market()
 
         msg = (
-            f"✅ ORDER FILLED [{ord_id}]: {clean_side} {qty:,.2f} {sym} @ ${px:,.2f} "
-            f"(${cost:,.2f} Total) | Ledger: {ledger_id}"
+            f"✅ ORDER FILLED [{ord_id} via {routing_venue}]: {clean_side} {qty:,.2f} {sym} @ ${px:,.2f} "
+            f"(${cost:,.2f} Total | TCA Friction: ${tca['total_friction_usd']:,.2f}) | Ledger: {ledger_id}"
         )
         return True, msg, position
 
