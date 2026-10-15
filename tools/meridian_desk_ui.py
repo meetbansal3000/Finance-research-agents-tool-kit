@@ -37,6 +37,130 @@ from tools.calc.probability_simulator import (
     calculate_kelly_fraction
 )
 from plotly.subplots import make_subplots
+import yfinance as yf
+from tools.ticker_search import lookup_primary_ticker, search_company_tickers
+from tools.data_layer import get_data_layer
+from tools.multi_asset_data import MultiAssetDataEngine
+from tools.paper_trading import get_paper_trading_engine, INITIAL_PORTFOLIO_CASH
+
+
+@st.cache_data(ttl=60, show_spinner=False)
+def resolve_and_fetch_live_asset(query_str: str) -> Dict[str, Any]:
+    """
+    Intelligently resolves informal company names (e.g. 'micron', 'apple', 'nvidia', 'tesla')
+    or direct tickers ('MU', 'AAPL', 'NVDA') to official symbols, company metadata,
+    and real-time market prices, ATM strikes, and implied volatilities.
+    """
+    clean_q = (query_str or "").strip()
+    if not clean_q:
+        return {
+            "query": "", "symbol": "MU", "name": "Micron Technology, Inc.",
+            "exchange": "NASDAQ", "type": "EQUITY", "price": 100.0, "change_pct": 0.0,
+            "currency": "USD", "atm_strike": 100.0, "atm_iv_pct": 35.0, "dte": 30,
+            "expirations": [], "selected_expiry": "", "pcr_oi": 1.0, "resolved": False
+        }
+
+    # 1. Primary symbol resolution via ticker search engine
+    sym = lookup_primary_ticker(clean_q) or clean_q.upper()
+    sym = sym.strip().upper()
+
+    # 2. Company name and exchange lookup
+    name = sym
+    exchange = "US"
+    asset_type = "EQUITY"
+    try:
+        matches = search_company_tickers(clean_q, max_results=3)
+        for m in matches:
+            if m.get("symbol", "").upper() == sym:
+                name = m.get("name", sym)
+                exchange = m.get("exchange", "US")
+                asset_type = m.get("type", "EQUITY")
+                break
+        if name == sym and matches:
+            name = matches[0].get("name", sym)
+            exchange = matches[0].get("exchange", "US")
+            asset_type = matches[0].get("type", "EQUITY")
+    except Exception:
+        pass
+
+    # 3. Real-time market price lookup
+    price = 0.0
+    change_pct = 0.0
+    currency = "USD"
+    try:
+        dl = get_data_layer()
+        q = dl.get_quote(sym)
+        if q and q.get("price") is not None and float(q["price"]) > 0:
+            price = float(q["price"])
+            currency = q.get("currency", "USD")
+    except Exception:
+        pass
+
+    if price <= 0.0:
+        try:
+            t = yf.Ticker(sym)
+            fi = getattr(t, "fast_info", None)
+            p_val = getattr(fi, "last_price", None) or getattr(fi, "previous_close", None)
+            if p_val and float(p_val) > 0:
+                price = float(p_val)
+                prev = getattr(fi, "previous_close", price)
+                if prev and prev > 0:
+                    change_pct = ((price - prev) / prev) * 100.0
+                currency = getattr(fi, "currency", "USD") or "USD"
+        except Exception:
+            price = 100.0
+
+    # 4. Live Options Chain & Implied Volatility
+    atm_strike = price
+    atm_iv_pct = 35.0
+    dte = 30
+    expirations: List[str] = []
+    pcr_oi = 1.0
+    selected_expiry = ""
+
+    try:
+        m_engine = MultiAssetDataEngine()
+        opt = m_engine.get_options_chain(sym)
+        if opt:
+            atm_strike = float(opt.get("atm_strike", price))
+            expirations = opt.get("available_expirations", [])
+            selected_expiry = opt.get("selected_expiration", "")
+            pcr_oi = float(opt.get("put_call_ratio_oi", 1.0))
+            if selected_expiry:
+                try:
+                    exp_date = datetime.date.fromisoformat(selected_expiry)
+                    dte = max(1, (exp_date - datetime.date.today()).days)
+                except Exception:
+                    dte = 30
+
+            # Find ATM contract IV
+            atm_calls = [c for c in opt.get("calls", []) if abs(c["strike"] - atm_strike) < 0.01]
+            if atm_calls and atm_calls[0].get("iv_pct", 0.0) > 0:
+                atm_iv_pct = float(atm_calls[0]["iv_pct"])
+            elif opt.get("calls"):
+                closest = min(opt["calls"], key=lambda c: abs(c["strike"] - atm_strike))
+                if closest.get("iv_pct", 0.0) > 0:
+                    atm_iv_pct = float(closest["iv_pct"])
+    except Exception:
+        pass
+
+    return {
+        "query": clean_q,
+        "symbol": sym,
+        "name": name,
+        "exchange": exchange,
+        "type": asset_type,
+        "price": round(price, 2) if price > 0 else 100.0,
+        "change_pct": round(change_pct, 2),
+        "currency": currency,
+        "atm_strike": round(atm_strike, 2) if atm_strike > 0 else round(price, 2),
+        "atm_iv_pct": round(atm_iv_pct, 1) if atm_iv_pct > 0 else 35.0,
+        "dte": int(dte),
+        "expirations": expirations,
+        "selected_expiry": selected_expiry,
+        "pcr_oi": round(pcr_oi, 2),
+        "resolved": True
+    }
 
 
 def render_meridian_multi_asset_desk():
@@ -116,6 +240,111 @@ def render_meridian_multi_asset_desk():
             - **CRO Gatekeeper Rule**:
               $$\text{Verdict} = \begin{cases} \text{REJECTED (VETO)}, & \text{if } \text{Critical Flags} > 0 \text{ or } \text{VaR}_{99\%} > 4.5\% \\ \text{CONDITIONAL APPROVAL}, & \text{if } \text{High Flags} > 0 \\ \text{APPROVED}, & \text{otherwise} \end{cases}$$
             """)
+
+        # ---------------------------------------------------------------------
+        # 1. LIVE PAPER TRADING PORTFOLIO & REAL-DEAL POSITIONS BOOK
+        # ---------------------------------------------------------------------
+        st.markdown("### 💼 Live Trading Portfolio ($1,000,000 Capital Balance)")
+        st.caption("Real-time mark-to-market valuations, live cash tracking, and open deals execution ledger.")
+
+        paper_engine = get_paper_trading_engine()
+        port = paper_engine.load_portfolio()
+        open_positions = port.get("positions", [])
+        closed_trades = port.get("closed_trades", [])
+
+        # Executive KPI Cards
+        tot_equity = float(port.get("total_equity", INITIAL_PORTFOLIO_CASH))
+        cash_bal = float(port.get("cash_balance", INITIAL_PORTFOLIO_CASH))
+        open_val = float(port.get("total_open_value", 0.0))
+        unreal_pnl = float(port.get("total_unrealized_pnl", 0.0))
+        real_pnl = float(port.get("total_realized_pnl", 0.0))
+        ret_pct = float(port.get("portfolio_return_pct", 0.0))
+
+        kpi_p1, kpi_p2, kpi_p3, kpi_p4, kpi_p5 = st.columns(5)
+        kpi_p1.metric("Total Portfolio Equity", f"${tot_equity:,.2f}", f"{ret_pct:+.2f}% Overall")
+        kpi_p2.metric("Available Cash Balance", f"${cash_bal:,.2f}", "Uncommitted USD")
+        kpi_p3.metric("Active Deals Value", f"${open_val:,.2f}", f"{len(open_positions)} Open Deals")
+        unreal_sign = "+" if unreal_pnl >= 0 else ""
+        kpi_p4.metric("Unrealized MTM P&L", f"{unreal_sign}${unreal_pnl:,.2f}", "Live Mark-to-Market")
+        real_sign = "+" if real_pnl >= 0 else ""
+        kpi_p5.metric("Realized Closed P&L", f"{real_sign}${real_pnl:,.2f}", f"{len(closed_trades)} Trades Closed")
+
+        # Toolbar: Refresh Quotes, Reset
+        t_col1, t_col2, t_col3 = st.columns([1.5, 1.5, 3])
+        with t_col1:
+            if st.button("🔄 Sync All Quotes & MTM", use_container_width=True, key="p_sync_btn"):
+                with st.spinner("Fetching live market quotes and marking positions to market..."):
+                    paper_engine.mark_to_market()
+                    st.rerun()
+        with t_col2:
+            if st.button("🗑️ Reset Portfolio to $1M", use_container_width=True, key="p_reset_btn"):
+                paper_engine.reset_portfolio()
+                st.success("✅ Portfolio reset to $1,000,000.00 USD cash.")
+                st.rerun()
+
+        # Active Positions Book Table
+        st.markdown("#### 📋 Open Deals & Active Positions Book")
+        if not open_positions:
+            st.info("ℹ️ Your active portfolio is currently 100% Cash ($1,000,000.00 USD). Go to Tab 2 (Options), Tab 3 (Econometric Simulator), Tab 4 (Futures), or Tab 6 (Crypto) to execute real live deals at market prices!")
+        else:
+            for p in open_positions:
+                p_id = p["position_id"]
+                p_sym = p["symbol"]
+                p_asset = p["asset_class"]
+                p_side = p["side"]
+                p_qty = p["quantity"]
+                p_entry = p["entry_price"]
+                p_curr = p.get("current_price", p_entry)
+                p_cost = p["cost_basis"]
+                p_val = p.get("market_value", p_cost)
+                p_pnl = p.get("unrealized_pnl", 0.0)
+                p_pnl_pct = p.get("unrealized_pnl_pct", 0.0)
+                p_sign = "+" if p_pnl >= 0 else ""
+                pnl_color = "#10B981" if p_pnl >= 0 else "#F43F5E"
+
+                p_row1, p_row2, p_row3, p_row4, p_row5, p_row6 = st.columns([1.2, 1.5, 1.2, 1.5, 1.5, 1.2])
+                with p_row1:
+                    st.markdown(f"**{p_sym}**<br><span style='font-size:0.75rem; color:#94A3B8;'>{p_id} · {p_asset}</span>", unsafe_allow_html=True)
+                with p_row2:
+                    st.markdown(f"<span style='color:#38BDF8; font-weight:700;'>{p_side} {p_qty:,}</span><br><span style='font-size:0.75rem; color:#CBD5E1;'>{p.get('strategy_type', 'Standard')}</span>", unsafe_allow_html=True)
+                with p_row3:
+                    st.markdown(f"Entry: **${p_entry:,.2f}**<br>Live: **${p_curr:,.2f}**", unsafe_allow_html=True)
+                with p_row4:
+                    st.markdown(f"Cost: **${p_cost:,.2f}**<br>Value: **${p_val:,.2f}**", unsafe_allow_html=True)
+                with p_row5:
+                    st.markdown(f"<span style='color:{pnl_color}; font-weight:800;'>{p_sign}${p_pnl:,.2f}</span><br><span style='color:{pnl_color}; font-size:0.75rem;'>{p_sign}{p_pnl_pct:.2f}%</span>", unsafe_allow_html=True)
+                with p_row6:
+                    if st.button("🔴 Close Deal", key=f"close_{p_id}", use_container_width=True):
+                        c_ok, c_msg, c_rec = paper_engine.close_position(p_id)
+                        if c_ok:
+                            st.success(c_msg)
+                            st.rerun()
+                        else:
+                            st.error(c_msg)
+                st.markdown("<hr style='margin:4px 0 10px 0; border:0; border-top:1px solid #1E293B;'>", unsafe_allow_html=True)
+
+        if closed_trades:
+            with st.expander(f"📜 Closed Trades History ({len(closed_trades)} Completed Deals)", expanded=False):
+                for ct in reversed(closed_trades):
+                    cpnl = ct["realized_pnl"]
+                    csign = "+" if cpnl >= 0 else ""
+                    ccolor = "#10B981" if cpnl >= 0 else "#F43F5E"
+                    st.markdown(f"""
+                    <div style="background:#0F172A; border:1px solid #1E293B; border-radius:6px; padding:8px 12px; margin-bottom:6px; display:flex; justify-content:space-between; align-items:center;">
+                        <div>
+                            <b>{ct['symbol']}</b> ({ct['asset_class']} · {ct['strategy_type']}) · {ct['side']} {ct['quantity']} · Entry: ${ct['entry_price']:,.2f} → Exit: ${ct['exit_price']:,.2f}
+                            <div style="font-size:0.75rem; color:#94A3B8;">Closed: {ct['closed_at'][:19]} · Ledger: <code>{ct.get('ledger_id', 'N/A')}</code></div>
+                        </div>
+                        <div style="text-align:right;">
+                            <span style="color:{ccolor}; font-weight:800; font-size:1.05rem;">{csign}${cpnl:,.2f}</span>
+                            <div style="color:{ccolor}; font-size:0.75rem;">{csign}{ct['realized_pnl_pct']:.2f}%</div>
+                        </div>
+                    </div>
+                    """, unsafe_allow_html=True)
+
+        st.divider()
+        st.markdown("### 🏛️ Multi-Asset Committee Review & CRO Gatekeeper Audit")
+        st.caption("Coordinate execution across all 5 specialized desks, aggregate portfolio risk, and enforce independent CRO gatekeeping.")
 
         col_cfg1, col_cfg2 = st.columns([1.1, 2.5])
         with col_cfg1:
@@ -353,11 +582,81 @@ def render_meridian_multi_asset_desk():
         col_opt_mode1, col_opt_mode2 = st.columns([1, 2])
         with col_opt_mode1:
             st.markdown("#### ⚙️ Single Contract Evaluator")
-            opt_ticker = st.text_input("Underlying Ticker", value="NVDA", key="opt_tk")
-            opt_spot = st.number_input("Spot Price ($)", min_value=1.0, value=125.0, step=1.0, key="opt_sp")
-            opt_strike = st.number_input("Strike Price ($)", min_value=1.0, value=130.0, step=1.0, key="opt_sk")
-            opt_dte = st.number_input("Days to Expiration (DTE)", min_value=1, value=45, step=1, key="opt_dt")
-            opt_vol_pct = st.number_input("Implied Volatility (%)", min_value=1.0, max_value=300.0, value=35.0, step=1.0, key="opt_vl")
+            col_search_in, col_search_btn = st.columns([2.5, 1])
+            with col_search_in:
+                opt_query = st.text_input(
+                    "Company Name or Ticker",
+                    value=st.session_state.get("opt_query_val", "MU"),
+                    key="opt_tk_query",
+                    help="Type company name (e.g. micron, apple, nvidia, tesla) or ticker (e.g. MU, AAPL, NVDA)"
+                )
+            with col_search_btn:
+                st.write("")
+                st.write("")
+                opt_sync = st.button("🔄 Sync Live", key="opt_sync_quote_btn", use_container_width=True)
+
+            # Quick Pills
+            st.caption("Quick Select: ")
+            q_cols = st.columns(4)
+            for i, (q_label, q_sym) in enumerate([("MU", "MU"), ("NVDA", "NVDA"), ("AAPL", "AAPL"), ("TSLA", "TSLA")]):
+                if q_cols[i].button(q_label, key=f"qpill_opt_{q_sym}", use_container_width=True):
+                    opt_query = q_sym
+                    st.session_state["opt_query_val"] = q_sym
+                    st.rerun()
+
+            # Resolve live market data
+            live_asset = resolve_and_fetch_live_asset(opt_query)
+            st.session_state["opt_query_val"] = live_asset["symbol"]
+
+            # Live Market Banner
+            st.markdown(f"""
+            <div style="background:rgba(16,185,129,0.12); border:1px solid #10B981; border-radius:6px; padding:10px 14px; margin-bottom:12px;">
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                    <span style="font-weight:800; color:#F8FAFC; font-size:0.90rem;">
+                        🟢 {live_asset['name']} ({live_asset['exchange']}: {live_asset['symbol']})
+                    </span>
+                    <span style="font-family:monospace; font-weight:800; color:#10B981; font-size:1.02rem;">
+                        ${live_asset['price']:,.2f} USD
+                    </span>
+                </div>
+                <div style="font-size:0.75rem; color:#CBD5E1; margin-top:4px;">
+                    🎯 ATM Strike: <b>${live_asset['atm_strike']:,.2f}</b> · 📊 Live IV: <b>{live_asset['atm_iv_pct']:.1f}%</b> · ⏳ Expiry: <b>{live_asset['selected_expiry'] or 'Active'} ({live_asset['dte']}d)</b> · 🔄 PCR: <b>{live_asset['pcr_oi']:.2f}</b>
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
+
+            opt_spot = st.number_input(
+                "Spot Price ($)",
+                min_value=0.1,
+                value=float(live_asset["price"]),
+                step=1.0,
+                format="%.2f",
+                key=f"opt_sp_{live_asset['symbol']}"
+            )
+            opt_strike = st.number_input(
+                "Strike Price ($)",
+                min_value=0.1,
+                value=float(live_asset["atm_strike"]),
+                step=1.0,
+                format="%.2f",
+                key=f"opt_sk_{live_asset['symbol']}"
+            )
+            opt_dte = st.number_input(
+                "Days to Expiration (DTE)",
+                min_value=1,
+                value=int(live_asset["dte"]),
+                step=1,
+                key=f"opt_dt_{live_asset['symbol']}"
+            )
+            opt_vol_pct = st.number_input(
+                "Implied Volatility (%)",
+                min_value=1.0,
+                max_value=300.0,
+                value=float(live_asset["atm_iv_pct"]),
+                step=0.5,
+                format="%.1f",
+                key=f"opt_vl_{live_asset['symbol']}"
+            )
             opt_r_pct = st.number_input("Risk-Free Rate (%)", min_value=0.0, max_value=20.0, value=4.5, step=0.1, key="opt_rf")
             opt_type = st.radio("Option Type", ["Call", "Put"], horizontal=True, key="opt_tp")
 
@@ -366,7 +665,7 @@ def render_meridian_multi_asset_desk():
             r_decimal = opt_r_pct / 100.0
 
             opt_res = orchestrator.options_desk.analyze_contract(
-                underlying_ticker=opt_ticker,
+                underlying_ticker=live_asset["symbol"],
                 spot_price=opt_spot,
                 strike_price=opt_strike,
                 time_to_expiry_years=expiry_years,
@@ -429,7 +728,7 @@ def render_meridian_multi_asset_desk():
 
             strat_res = orchestrator.options_desk.evaluate_strategy(
                 strategy_name=strat_choice,
-                underlying_ticker=opt_ticker,
+                underlying_ticker=live_asset["symbol"],
                 spot_price=opt_spot,
                 legs=legs
             )
@@ -457,7 +756,7 @@ def render_meridian_multi_asset_desk():
             )
             fig_pnl.update_layout(
                 title=dict(
-                    text=f"<b>{strat_choice}</b> Payoff at Expiration ({opt_ticker})",
+                    text=f"<b>{strat_choice}</b> Payoff at Expiration ({live_asset['symbol']})",
                     x=0.01,
                     y=0.98,
                     xanchor="left",
@@ -493,6 +792,83 @@ def render_meridian_multi_asset_desk():
             sp2.metric("Expected Value (EV)", f"${qp['expected_value_usd']:+,.2f}", "Statistical EV")
             sp3.metric("Max Profit / Loss", f"${qp['max_profit_usd']:+,.2f}", f"Max loss: ${qp['max_loss_usd']:,.2f}")
             sp4.metric("Half-Kelly Allocation", f"{qp['kelly_fraction_half_pct']:.1f}%", f"Win/Loss: {qp['win_loss_ratio']:.2f}x")
+
+            # -----------------------------------------------------------------
+            # LIVE DEAL EXECUTION DESK ($1,000,000 SIMULATION CAPITAL)
+            # -----------------------------------------------------------------
+            st.divider()
+            st.markdown("#### ⚡ Live Deal Execution Desk ($1,000,000 Simulation Capital)")
+            st.caption("Place real-market paper orders executed against live quotes and debited directly from your $1,000,000 portfolio cash.")
+
+            pe = get_paper_trading_engine()
+            p_state = pe.load_portfolio()
+            p_cash = float(p_state.get("cash_balance", INITIAL_PORTFOLIO_CASH))
+
+            c_ex1, c_ex2, c_ex3 = st.columns([1.2, 1, 1.3])
+            with c_ex1:
+                deal_structure = st.radio(
+                    "Deal Instrument",
+                    [
+                        f"Single Option ({opt_type} @ ${opt_strike:,.2f})",
+                        f"Multi-Leg Strategy ({strat_choice})",
+                        f"Underlying Equity ({live_asset['symbol']} Shares)"
+                    ],
+                    key=f"opt_deal_struct_{live_asset['symbol']}"
+                )
+            with c_ex2:
+                deal_action = st.radio("Order Side", ["BUY (Long)", "SELL (Short)"], horizontal=True, key=f"opt_deal_side_{live_asset['symbol']}")
+                deal_qty = st.number_input("Order Quantity", min_value=1, max_value=1000, value=1, step=1, key=f"opt_deal_qty_{live_asset['symbol']}")
+
+            with c_ex3:
+                clean_side = "BUY" if "BUY" in deal_action else "SELL"
+                if "Single Option" in deal_structure:
+                    unit_px = g["price"]
+                    total_deal_cost = deal_qty * unit_px * 100.0
+                    deal_asset_class = "Options"
+                    deal_strat_name = f"Long {opt_type}" if clean_side == "BUY" else f"Short {opt_type}"
+                    deal_mult = 100.0
+                elif "Multi-Leg" in deal_structure:
+                    unit_px = abs(strat_res["strategy_analysis"]["net_debit_credit"])
+                    total_deal_cost = deal_qty * unit_px * 100.0
+                    deal_asset_class = "Options"
+                    deal_strat_name = strat_choice
+                    deal_mult = 100.0
+                else:
+                    unit_px = opt_spot
+                    total_deal_cost = deal_qty * unit_px
+                    deal_asset_class = "Equities"
+                    deal_strat_name = "Long Equity" if clean_side == "BUY" else "Short Equity"
+                    deal_mult = 1.0
+
+                st.markdown(f"""
+                <div style="background:#0F172A; border:1px solid #1E293B; border-radius:6px; padding:10px 14px; margin-bottom:8px;">
+                    <div style="display:flex; justify-content:space-between; align-items:center;">
+                        <span style="font-size:0.75rem; color:#94A3B8; text-transform:uppercase;">Outlay</span>
+                        <span style="font-size:1.1rem; font-weight:800; color:#F8FAFC;">${total_deal_cost:,.2f} USD</span>
+                    </div>
+                    <div style="font-size:0.75rem; color:#38BDF8; margin-top:2px;">
+                        Available Cash: <b>${p_cash:,.2f} USD</b>
+                    </div>
+                </div>
+                """, unsafe_allow_html=True)
+
+                if st.button("🟢 EXECUTE REAL DEAL AT MARKET ($)", type="primary", use_container_width=True, key=f"btn_exec_deal_{live_asset['symbol']}"):
+                    exec_ok, exec_msg, exec_pos = pe.execute_trade(
+                        symbol=live_asset["symbol"],
+                        asset_class=deal_asset_class,
+                        side=clean_side,
+                        quantity=float(deal_qty),
+                        price=float(unit_px),
+                        strategy_type=deal_strat_name,
+                        multiplier=deal_mult,
+                        notes=f"Executed via Options Greek Desk for {live_asset['name']}"
+                    )
+                    if exec_ok:
+                        st.success(exec_msg)
+                        st.balloons()
+                        st.rerun()
+                    else:
+                        st.error(exec_msg)
 
     # =========================================================================
     # TAB 3: ECONOMETRIC PROBABILITY SIMULATOR
@@ -551,20 +927,49 @@ def render_meridian_multi_asset_desk():
             col_sb1, col_sb2 = st.columns([1.1, 1.9])
             with col_sb1:
                 st.markdown("#### ⚙️ Strategy Specification")
+                sb_col_in, sb_col_btn = st.columns([2.5, 1])
+                with sb_col_in:
+                    sb_query = st.text_input(
+                        "Company Name or Symbol",
+                        value=st.session_state.get("sb_query_val", "MU"),
+                        key="sb_tk_query",
+                        help="Type company name (e.g. micron, apple, nvidia, tesla) or ticker (e.g. MU, AAPL, NVDA)"
+                    )
+                with sb_col_btn:
+                    st.write("")
+                    st.write("")
+                    sb_sync = st.button("🔄 Sync", key="sb_sync_btn", use_container_width=True)
+
+                sb_live = resolve_and_fetch_live_asset(sb_query)
+                st.session_state["sb_query_val"] = sb_live["symbol"]
+
+                st.markdown(f"""
+                <div style="background:rgba(16,185,129,0.12); border:1px solid #10B981; border-radius:6px; padding:8px 12px; margin-bottom:10px;">
+                    <div style="display:flex; justify-content:space-between; align-items:center;">
+                        <span style="font-weight:800; color:#F8FAFC; font-size:0.86rem;">
+                            🟢 {sb_live['name']} ({sb_live['symbol']})
+                        </span>
+                        <span style="font-family:monospace; font-weight:800; color:#10B981; font-size:0.95rem;">
+                            ${sb_live['price']:,.2f} USD
+                        </span>
+                    </div>
+                </div>
+                """, unsafe_allow_html=True)
+
                 sb_strat = st.selectbox(
                     "Strategy Structure",
                     ["Bull Call Spread", "Bear Put Spread", "Long Straddle", "Iron Condor", "Covered Call", "Short Put"],
                     key="sb_strat_select"
                 )
-                sb_spot = st.number_input("Underlying Spot ($)", min_value=1.0, value=125.0, step=1.0, key="sb_sp")
-                sb_dte = st.number_input("Days to Expiration (DTE)", min_value=2, value=45, step=1, key="sb_dte")
-                sb_iv = st.number_input("Implied Volatility (%)", min_value=1.0, max_value=300.0, value=35.0, step=1.0, key="sb_iv")
+                sb_spot = st.number_input("Underlying Spot ($)", min_value=0.1, value=float(sb_live["price"]), step=1.0, format="%.2f", key=f"sb_sp_{sb_live['symbol']}")
+                sb_dte = st.number_input("Days to Expiration (DTE)", min_value=2, value=max(2, int(sb_live["dte"])), step=1, key=f"sb_dte_{sb_live['symbol']}")
+                sb_iv = st.number_input("Implied Volatility (%)", min_value=1.0, max_value=300.0, value=float(sb_live["atm_iv_pct"]), step=0.5, format="%.1f", key=f"sb_iv_{sb_live['symbol']}")
                 sb_rf = st.number_input("Risk-Free Rate (%)", min_value=0.0, max_value=20.0, value=4.5, step=0.1, key="sb_rf")
 
                 st.markdown("#### 🎛️ Dynamic Target Date & IV Sliders")
                 sb_target_day = st.slider("Target Date (Days from Today)", 0, int(sb_dte), int(sb_dte // 2), key="sb_td_slider")
                 sb_iv_shift = st.slider("Implied Volatility Shift (%)", -40.0, 40.0, 0.0, 1.0, key="sb_iv_slider")
-                sb_target_spot = st.number_input("Target Evaluation Spot ($)", value=float(sb_spot), step=1.0, key="sb_tsp")
+                sb_target_spot = st.number_input("Target Evaluation Spot ($)", value=float(sb_spot), step=1.0, key=f"sb_tsp_{sb_live['symbol']}")
 
                 with st.expander("🔬 Econometric Higher-Moment Settings", expanded=False):
                     sb_skew = st.slider("Sample Skewness", -2.0, 1.0, -0.45, 0.05, key="sb_skew_sl")
@@ -752,27 +1157,94 @@ def render_meridian_multi_asset_desk():
             c_cols[5].metric("+2σ (95.5%)", f"${cones['plus_2_sigma']:,.2f}", "Upper 95%")
             c_cols[6].metric("+3σ (99.7%)", f"${cones['plus_3_sigma']:,.2f}", "Extr. High")
 
+            # -----------------------------------------------------------------
+            # LIVE DEAL EXECUTION DESK ($1,000,000 SIMULATION CAPITAL)
+            # -----------------------------------------------------------------
+            st.divider()
+            st.markdown("#### ⚡ Execute Evaluated Deal into Portfolio ($1,000,000 Simulation Capital)")
+            pe_sb = get_paper_trading_engine()
+            p_data_sb = pe_sb.load_portfolio()
+            p_cash_sb = float(p_data_sb.get("cash_balance", INITIAL_PORTFOLIO_CASH))
+
+            sc1, sc2, sc3 = st.columns([1, 1, 1.5])
+            with sc1:
+                sb_trade_action = st.radio("Trade Action", ["BUY to Open", "SELL to Open"], horizontal=True, key=f"sb_trade_act_{sb_live['symbol']}")
+            with sc2:
+                sb_trade_qty = st.number_input("Contracts Quantity", min_value=1, max_value=1000, value=1, step=1, key=f"sb_trade_q_{sb_live['symbol']}")
+            with sc3:
+                clean_sb_side = "BUY" if "BUY" in sb_trade_action else "SELL"
+                sb_debit = abs(sb_sim_res["greeks_summary"]["net_debit_credit"])
+                sb_tot_cost = sb_trade_qty * sb_debit * 100.0
+                st.caption(f"Required Outlay: **${sb_tot_cost:,.2f} USD** | Available Cash: **${p_cash_sb:,.2f} USD**")
+                if st.button("🟢 EXECUTE SIMULATION STRATEGY AT MARKET ($)", type="primary", use_container_width=True, key=f"sb_exec_btn_{sb_live['symbol']}"):
+                    s_ok, s_msg, s_pos = pe_sb.execute_trade(
+                        symbol=sb_live["symbol"],
+                        asset_class="Options",
+                        side=clean_sb_side,
+                        quantity=float(sb_trade_qty),
+                        price=float(sb_debit),
+                        strategy_type=f"{sb_strat} (Simulator)",
+                        multiplier=100.0,
+                        notes=f"Simulated POP: {pm['probability_of_profit_pct']:.1f}%, EV: ${pm['expected_value_usd']:,.2f}"
+                    )
+                    if s_ok:
+                        st.success(s_msg)
+                        st.balloons()
+                        st.rerun()
+                    else:
+                        st.error(s_msg)
+
         # ---------------------------------------------------------------------
         # 2. EQUITIES & SINGLE STOCKS (TARGET VS STOP-LOSS TOUCH RISK)
         # ---------------------------------------------------------------------
         elif "Equities" in sim_asset_mode:
             st.markdown("#### 📈 Single-Stock Probability of Touch & Execution Risk")
+            eq_s_col1, eq_s_col2 = st.columns([2.5, 1])
+            with eq_s_col1:
+                eq_query = st.text_input(
+                    "Company Name or Symbol",
+                    value=st.session_state.get("eq_query_val", "MU"),
+                    key="eq_query_in",
+                    help="Type company name (e.g. micron, apple, nvidia) or symbol (e.g. MU, AAPL)"
+                )
+            with eq_s_col2:
+                st.write("")
+                st.write("")
+                if st.button("🔄 Sync Live", key="eq_sync_btn", use_container_width=True):
+                    st.rerun()
+
+            eq_live = resolve_and_fetch_live_asset(eq_query)
+            st.session_state["eq_query_val"] = eq_live["symbol"]
+
+            st.markdown(f"""
+            <div style="background:rgba(16,185,129,0.12); border:1px solid #10B981; border-radius:6px; padding:8px 12px; margin-bottom:12px;">
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                    <span style="font-weight:800; color:#F8FAFC; font-size:0.88rem;">
+                        🟢 {eq_live['name']} ({eq_live['symbol']})
+                    </span>
+                    <span style="font-family:monospace; font-weight:800; color:#10B981; font-size:1.02rem;">
+                        ${eq_live['price']:,.2f} USD ({eq_live['change_pct']:+.2f}%)
+                    </span>
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
+
             eq_c1, eq_c2, eq_c3, eq_c4 = st.columns(4)
             with eq_c1:
-                eq_sp = st.number_input("Current Stock Price ($)", value=150.0, step=1.0, key="eq_sp")
+                eq_sp = st.number_input("Current Stock Price ($)", min_value=0.1, value=float(eq_live["price"]), step=1.0, format="%.2f", key=f"eq_sp_{eq_live['symbol']}")
             with eq_c2:
-                eq_tp = st.number_input("Profit Target Price ($)", value=175.0, step=1.0, key="eq_tp")
+                eq_tp = st.number_input("Profit Target Price ($)", min_value=0.1, value=round(float(eq_sp * 1.15), 2), step=1.0, format="%.2f", key=f"eq_tp_{eq_live['symbol']}")
             with eq_c3:
-                eq_sl = st.number_input("Stop Loss Price ($)", value=135.0, step=1.0, key="eq_sl")
+                eq_sl = st.number_input("Stop Loss Price ($)", min_value=0.1, value=round(float(eq_sp * 0.90), 2), step=1.0, format="%.2f", key=f"eq_sl_{eq_live['symbol']}")
             with eq_c4:
-                eq_hor = st.number_input("Horizon (Days)", min_value=5, value=60, step=5, key="eq_hor")
+                eq_hor = st.number_input("Horizon (Days)", min_value=5, value=60, step=5, key=f"eq_hor_{eq_live['symbol']}")
 
             eq_sim = sim_engine.simulate_equity_probability(
                 spot=eq_sp,
                 target_price=eq_tp,
                 stop_loss_price=eq_sl,
                 horizon_days=eq_hor,
-                volatility=0.28,
+                volatility=max(0.10, float(eq_live.get("atm_iv_pct", 35.0)) / 100.0),
                 drift=0.08
             )
 
@@ -782,6 +1254,39 @@ def render_meridian_multi_asset_desk():
             e3.metric("Prob Close Above Target", f"{eq_sim['prob_close_above_target_pct']:.1f}%", f"Fat-Tail: {eq_sim['econometric_prob_above_target_pct']:.1f}%")
             e4.metric("Risk / Reward Ratio", f"{eq_sim['risk_reward_ratio']:.2f}x", "Target/Stop Distance")
             e5.metric("Evaluation Horizon", f"{eq_hor} Days", "Continuous 252d Drift")
+
+            # Quick Equity Trade Execution
+            st.markdown("##### ⚡ Execute Stock Shares into Portfolio ($1,000,000 Capital Balance)")
+            pe_eq = get_paper_trading_engine()
+            eq_port = pe_eq.load_portfolio()
+            eq_cash = float(eq_port.get("cash_balance", INITIAL_PORTFOLIO_CASH))
+
+            eq_b1, eq_b2, eq_b3 = st.columns([1, 1, 1.5])
+            with eq_b1:
+                eq_side = st.radio("Side", ["BUY (Long)", "SELL (Short)"], horizontal=True, key=f"eq_side_{eq_live['symbol']}")
+            with eq_b2:
+                eq_qty = st.number_input("Shares", min_value=1, max_value=100000, value=50, step=10, key=f"eq_qty_{eq_live['symbol']}")
+            with eq_b3:
+                clean_eq_side = "BUY" if "BUY" in eq_side else "SELL"
+                eq_outlay = eq_qty * eq_sp
+                st.caption(f"Required Outlay: **${eq_outlay:,.2f} USD** | Available Cash: **${eq_cash:,.2f} USD**")
+                if st.button("🟢 EXECUTE SHARES ORDER ($)", type="primary", use_container_width=True, key=f"btn_eq_exec_{eq_live['symbol']}"):
+                    eq_ok, eq_msg, eq_pos = pe_eq.execute_trade(
+                        symbol=eq_live["symbol"],
+                        asset_class="Equities",
+                        side=clean_eq_side,
+                        quantity=float(eq_qty),
+                        price=float(eq_sp),
+                        strategy_type="Equity Position",
+                        multiplier=1.0,
+                        notes=f"Target: ${eq_tp:.2f}, SL: ${eq_sl:.2f}"
+                    )
+                    if eq_ok:
+                        st.success(eq_msg)
+                        st.balloons()
+                        st.rerun()
+                    else:
+                        st.error(eq_msg)
 
         # ---------------------------------------------------------------------
         # 3. FUTURES & COMMODITIES (ROLL HORIZON & MARGIN CALL PROBABILITY)
@@ -995,6 +1500,42 @@ def render_meridian_multi_asset_desk():
         m3.metric("Free Headroom", f"${ma['free_margin_headroom']:,.0f}", "Buffer")
         m4.metric("Margin Call Price", f"${ma['margin_call_trigger_price']:,.2f}", f"-{ma['max_adverse_move_pct']:.1f}% adverse")
         m5.metric("Audit Verdict", margin_res["verdict"], "Risk Cap Checked")
+
+        # ---------------------------------------------------------------------
+        # LIVE FUTURES DEAL EXECUTION DESK ($1,000,000 SIMULATION CAPITAL)
+        # ---------------------------------------------------------------------
+        st.markdown("##### ⚡ Execute Futures Contract into Portfolio ($1,000,000 Capital Balance)")
+        pe_fut = get_paper_trading_engine()
+        fut_p = pe_fut.load_portfolio()
+        fut_cash = float(fut_p.get("cash_balance", INITIAL_PORTFOLIO_CASH))
+
+        fc_e1, fc_e2, fc_e3 = st.columns([1, 1, 1.5])
+        with fc_e1:
+            fut_side = st.radio("Side", ["BUY (Long)", "SELL (Short)"], horizontal=True, key=f"fut_side_{sym}")
+        with fc_e2:
+            fut_trade_qty = st.number_input("Contracts to Trade", min_value=1, max_value=100, value=1, step=1, key=f"fut_qty_{sym}")
+        with fc_e3:
+            clean_f_side = "BUY" if "BUY" in fut_side else "SELL"
+            req_margin = fut_trade_qty * init_margin
+            st.caption(f"Required Initial Margin: **${req_margin:,.2f} USD** | Available Cash: **${fut_cash:,.2f} USD**")
+            if st.button("🟢 EXECUTE FUTURES ORDER ($)", type="primary", use_container_width=True, key=f"btn_fut_exec_{sym}"):
+                f_ok, f_msg, f_pos = pe_fut.execute_trade(
+                    symbol=f"{sym}=F",
+                    asset_class="Futures",
+                    side=clean_f_side,
+                    quantity=float(fut_trade_qty),
+                    price=float(prompt_px),
+                    strategy_type=f"Futures {clean_f_side}",
+                    multiplier=float(multiplier),
+                    margin_per_unit=float(init_margin),
+                    notes=f"{comm_choice} @ ${prompt_px:,.2f}"
+                )
+                if f_ok:
+                    st.success(f_msg)
+                    st.balloons()
+                    st.rerun()
+                else:
+                    st.error(f_msg)
 
     # =========================================================================
     # TAB 4: FIXED INCOME MACRO AGENT
@@ -1221,6 +1762,43 @@ def render_meridian_multi_asset_desk():
             l1, l2 = st.columns(2)
             l1.metric("Liquidation Price", f"${lm['liquidation_price']:,.2f}", f"-{lm['adverse_buffer_pct']:.1f}% Buffer")
             l2.metric("Danger Status", lm["danger_level"], liq_res["verdict"])
+
+        # ---------------------------------------------------------------------
+        # LIVE CRYPTO DEAL EXECUTION DESK ($1,000,000 SIMULATION CAPITAL)
+        # ---------------------------------------------------------------------
+        st.divider()
+        st.markdown("#### ⚡ Execute Crypto Perpetual Deal into Portfolio ($1,000,000 Capital Balance)")
+        pe_cr = get_paper_trading_engine()
+        cr_p = pe_cr.load_portfolio()
+        cr_cash = float(cr_p.get("cash_balance", INITIAL_PORTFOLIO_CASH))
+
+        cr_e1, cr_e2, cr_e3 = st.columns([1, 1, 1.5])
+        with cr_e1:
+            cr_side = st.radio("Side", ["BUY (Long)", "SELL (Short)"], horizontal=True, key=f"cr_side_{cr_sym}")
+        with cr_e2:
+            cr_qty = st.number_input("Position Size (Coins)", min_value=0.01, max_value=100.0, value=0.50, step=0.05, format="%.2f", key=f"cr_qty_{cr_sym}")
+        with cr_e3:
+            clean_cr_side = "BUY" if "BUY" in cr_side else "SELL"
+            req_cr_margin = (cr_qty * cr_spot) / cr_lev
+            st.caption(f"Required Margin ({cr_lev:.0f}x Leverage): **${req_cr_margin:,.2f} USD** | Available Cash: **${cr_cash:,.2f} USD**")
+            if st.button("🟢 EXECUTE PERPETUAL SWAP ($)", type="primary", use_container_width=True, key=f"btn_cr_exec_{cr_sym}"):
+                c_ok, c_msg, c_pos = pe_cr.execute_trade(
+                    symbol=cr_sym.replace("-PERP", "-USD"),
+                    asset_class="Crypto",
+                    side=clean_cr_side,
+                    quantity=float(cr_qty),
+                    price=float(cr_spot),
+                    strategy_type=f"Crypto Perpetual ({cr_lev:.0f}x)",
+                    multiplier=1.0,
+                    margin_per_unit=float(cr_spot / cr_lev),
+                    notes=f"{cr_sym} @ ${cr_spot:,.2f} ({cr_lev:.0f}x Leverage)"
+                )
+                if c_ok:
+                    st.success(c_msg)
+                    st.balloons()
+                    st.rerun()
+                else:
+                    st.error(c_msg)
 
     # =========================================================================
     # TAB 6: CROSS-ASSET RISK OFFICER & RED FLAGS

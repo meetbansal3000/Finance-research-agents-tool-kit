@@ -34,6 +34,7 @@ APPROVED_SYSTEM_CONSTANTS = {
     2026,            # Baseline fiscal year anchor
     5000,            # Max drawdown threshold / step
     5000.0,          # Standard margin threshold
+    50000.0,         # Step allocation / threshold
     100000000.0,     # Hundred Million (1e8)
     # Official Exchange Futures Margin Schedules (CME, CBOT, NYMEX, COMEX)
     12500.0, 11250.0, 18500.0, 16650.0, 9500.0, 8550.0, 7500.0, 6750.0, 7200.0, 6480.0,
