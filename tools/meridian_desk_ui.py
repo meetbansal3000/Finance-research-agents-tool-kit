@@ -88,7 +88,7 @@ def render_meridian_multi_asset_desk():
     tab_orch, tab_opt, tab_prob, tab_fut, tab_fi, tab_crypto, tab_risk = st.tabs([
         "🏛️ Master Orchestrator",
         "🎯 Options Greek Strategist",
-        "🎲 Econometric Probability Simulator (Sensibull)",
+        "🎲 Econometric Probability Simulator",
         "🌾 Futures & Commodity Desk",
         "📈 Fixed Income Macro Agent",
         "⚡ Crypto & 24/7 Derivatives",
@@ -478,7 +478,7 @@ def render_meridian_multi_asset_desk():
             sc3.metric("Net Vega", f"${sa['net_vega']:,.2f}", "per 1% Vol")
             sc4.metric("Net Daily Theta", f"${sa['net_theta_daily']:,.2f}/day", "Time carry")
 
-            # Quick Sensibull probability metrics
+            # Quick econometric probability metrics
             prob_sim_quick = EconometricProbabilitySimulator()
             quick_prob = prob_sim_quick.simulate_options_strategy_probability(
                 spot=opt_spot,
@@ -495,20 +495,20 @@ def render_meridian_multi_asset_desk():
             sp4.metric("Half-Kelly Allocation", f"{qp['kelly_fraction_half_pct']:.1f}%", f"Win/Loss: {qp['win_loss_ratio']:.2f}x")
 
     # =========================================================================
-    # TAB 3: ECONOMETRIC PROBABILITY SIMULATOR (SENSIBULL ENGINE)
+    # TAB 3: ECONOMETRIC PROBABILITY SIMULATOR
     # =========================================================================
     with tab_prob:
-        st.markdown("### 🎲 Econometric Probability Simulator (Sensibull Engine)")
-        st.caption("Cross-asset continuous probability density modeling, Sensibull-style Target Date P&L sliders, IV shifts, standard deviation cones (±1σ, ±2σ, ±3σ), and Cornish-Fisher fat-tail adjustments.")
+        st.markdown("### 🎲 Econometric Probability Simulator")
+        st.caption("Cross-asset continuous probability density modeling, dynamic Target Date P&L sliders, IV shifts, standard deviation cones (±1σ, ±2σ, ±3σ), and Cornish-Fisher fat-tail adjustments.")
 
-        with st.expander("📐 Econometric Probability Methods, Barrier Hitting Times & Sensibull Rules Audit", expanded=False):
+        with st.expander("📐 Econometric Probability Methods, Barrier Hitting Times & Quantitative Rules Audit", expanded=False):
             st.markdown(r"""
             #### 🧮 Econometric Probability Theory & Interactive Strategy Mathematics
             - **Continuous Risk-Neutral Lognormal Density Function**:
               $$f(S_T) = \frac{1}{S_T \sigma \sqrt{2\pi T}} \exp\left( -\frac{\left(\ln(S_T / S_0) - (\mu - \frac{1}{2}\sigma^2)T\right)^2}{2\sigma^2 T} \right)$$
             - **Probability of Profit (POP %)**:
               $$\text{POP} = \int_{S_T: \text{PnL}(S_T) > 0} f(S_T) \, dS_T$$
-            - **Sensibull Target Date P&L Equation**:
+            - **Target Date P&L Equation (Interim Horizon)**:
               At target time $t \in [0, T]$ with implied volatility shock $\Delta\sigma$:
               $$\text{PnL}_{\text{target}}(S_t) = \sum_{i=1}^M q_i \cdot \text{BSM}\left(S_t, K_i, T - t, r, \sigma_i + \Delta\sigma, \text{type}_i\right) - \text{Initial Cost}$$
             - **Continuous Barrier Touch Probability (First Hitting Time / Reflection Principle)**:
@@ -532,7 +532,7 @@ def render_meridian_multi_asset_desk():
         sim_asset_mode = st.radio(
             "Select Probability Simulation Domain",
             [
-                "🎯 Options Multi-Leg Strategy (Sensibull Interactive Mode)",
+                "🎯 Options Multi-Leg Strategy (Interactive Mode)",
                 "📈 Equities & Single Stocks (Target vs Stop-Loss Touch Risk)",
                 "🌾 Futures & Commodities (Roll Horizon & Margin Call Probability)",
                 "⚡ Crypto 24/7 Perpetuals (Liquidation Breach Probability)",
@@ -545,7 +545,7 @@ def render_meridian_multi_asset_desk():
         sim_engine = EconometricProbabilitySimulator()
 
         # ---------------------------------------------------------------------
-        # 1. OPTIONS MULTI-LEG STRATEGY (SENSIBULL INTERACTIVE MODE)
+        # 1. OPTIONS MULTI-LEG STRATEGY (INTERACTIVE MODE)
         # ---------------------------------------------------------------------
         if "Options" in sim_asset_mode:
             col_sb1, col_sb2 = st.columns([1.1, 1.9])
@@ -561,7 +561,7 @@ def render_meridian_multi_asset_desk():
                 sb_iv = st.number_input("Implied Volatility (%)", min_value=1.0, max_value=300.0, value=35.0, step=1.0, key="sb_iv")
                 sb_rf = st.number_input("Risk-Free Rate (%)", min_value=0.0, max_value=20.0, value=4.5, step=0.1, key="sb_rf")
 
-                st.markdown("#### 🎛️ Sensibull Dynamic Sliders")
+                st.markdown("#### 🎛️ Dynamic Target Date & IV Sliders")
                 sb_target_day = st.slider("Target Date (Days from Today)", 0, int(sb_dte), int(sb_dte // 2), key="sb_td_slider")
                 sb_iv_shift = st.slider("Implied Volatility Shift (%)", -40.0, 40.0, 0.0, 1.0, key="sb_iv_slider")
                 sb_target_spot = st.number_input("Target Evaluation Spot ($)", value=float(sb_spot), step=1.0, key="sb_tsp")
@@ -618,7 +618,7 @@ def render_meridian_multi_asset_desk():
                 )
 
             with col_sb2:
-                st.markdown("#### 📊 Sensibull Strategy Payoff & Probability Density Curves")
+                st.markdown("#### 📊 Strategy Payoff & Probability Density Curves")
                 tda = sb_sim_res["target_date_analysis"]
                 pm = sb_sim_res["probability_metrics"]
 
@@ -695,7 +695,7 @@ def render_meridian_multi_asset_desk():
 
                 fig_sb.update_layout(
                     title=dict(
-                        text=f"<b>{sb_strat}</b> — Sensibull Dual PnL & Probability Distribution",
+                        text=f"<b>{sb_strat}</b> — Dual PnL & Probability Distribution",
                         x=0.01,
                         y=0.98,
                         xanchor="left",

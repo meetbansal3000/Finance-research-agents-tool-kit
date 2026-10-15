@@ -1,11 +1,11 @@
 """
 tests/test_probability_simulator.py
-Unit and integration tests for Econometric Probability Simulator (Sensibull-style):
+Unit and integration tests for Econometric Probability Simulator:
 1. Log-normal PDF, CDF, and Standard Deviation Cones (1-sigma, 2-sigma, 3-sigma)
 2. Probability of Profit (POP), Expected Value (EV), POMP, POML for options strategies
 3. Continuous-time barrier touch probability (first hitting time / reflection principle)
 4. Cornish-Fisher expansion for empirical skewness and excess kurtosis (fat tails)
-5. Sensibull-style Target Date PnL interpolation and IV shock shift
+5. Dynamic Target Date PnL interpolation and IV shock shift
 6. Cross-asset probability simulations (Equities, Futures, Crypto Perps, Portfolio)
 7. Kelly criterion and risk-reward equations
 """
@@ -127,7 +127,7 @@ def test_probability_of_profit_options_spread():
     assert "breakeven_points" in metrics
     assert len(metrics["breakeven_points"]) >= 1
 
-    # Check Sensibull Target Date curves exist
+    # Check Target Date curves exist
     target_date = res["target_date_analysis"]
     assert "target_pnl_curve" in target_date
     assert "expiry_pnl_curve" in target_date

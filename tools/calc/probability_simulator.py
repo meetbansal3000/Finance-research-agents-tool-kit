@@ -2,12 +2,12 @@
 tools/calc/probability_simulator.py
 Econometric Probability & Strategy Simulation Engine for Meridian Terminal.
 
-Incorporates Sensibull-style interactive options analytics and econometric modeling:
+Incorporates institutional interactive options analytics and econometric modeling:
 1. Analytical Log-Normal Probability Density Function (PDF) & Cumulative Distribution Function (CDF).
 2. Standard Deviation Cones (1-sigma 68.27%, 2-sigma 95.45%, 3-sigma 99.73%).
 3. Probability of Profit (POP) and Probability of Touch (hitting time reflection principle).
 4. Cornish-Fisher Expansion for empirical fat-tail leptokurtosis and negative skewness adjustments.
-5. Sensibull Target Date P&L curves with Implied Volatility (IV) shocks and time decay.
+5. Dynamic Target Date P&L curves with Implied Volatility (IV) shocks and time decay.
 6. Probability of Max Profit (POMP) & Probability of Max Loss (POML).
 7. Cross-Asset Probability Evaluators (Equities, Futures Margin Breaches, Crypto Liquidation, Portfolio Drawdown).
 8. Statistical Expected Value (EV) and Kelly Criterion Position Sizing.
@@ -111,7 +111,7 @@ def calculate_kelly_fraction(
 
 class EconometricProbabilitySimulator:
     """
-    Institutional Econometric Probability Simulator mirroring Sensibull & Bloomberg OVME.
+    Institutional Econometric Probability Simulator conforming to Black-Scholes and Bloomberg OVME standards.
     Provides probability of profit, expected value, multi-leg target date P&L,
     standard deviation cones, and cross-asset risk distributions.
     """
@@ -189,12 +189,12 @@ class EconometricProbabilitySimulator:
         num_grid_points: int = 151
     ) -> Dict[str, Any]:
         """
-        Sensibull-Style Interactive Options Strategy Probability Simulation.
+        Interactive Options Strategy Probability Simulation.
         Calculates:
         - Probability of Profit (POP %) under Risk-Neutral & Econometric Drift
         - Econometrically adjusted POP using Cornish-Fisher fat-tail expansion
         - Probability of Touch for each Breakeven point
-        - Sensibull Target Date PnL curve vs Expiration PnL curve
+        - Dynamic Target Date PnL curve vs Expiration PnL curve
         - Statistical Expected Value (EV in $USD)
         - Probability of Max Profit (POMP) & Probability of Max Loss (POML)
         - Kelly Criterion optimal position sizing fraction
@@ -245,7 +245,7 @@ class EconometricProbabilitySimulator:
             expiry_pnls.append(float(payoff_val))
         expiry_pnls = np.array(expiry_pnls)
 
-        # 2. Sensibull Target Date P&L Curve (with IV Shift)
+        # 2. Dynamic Target Date P&L Curve (with IV Shift)
         target_t_years = target_days / 365.0
         effective_iv_multiplier = 1.0 + (iv_shift_pct / 100.0)
 
@@ -309,7 +309,7 @@ class EconometricProbabilitySimulator:
         else:
             pop_econometric_pct = pop_pct
 
-        # 6. Touch Probabilities for Breakeven Points (Sensibull "Chance of Touching")
+        # 6. Touch Probabilities for Breakeven Points (Continuous Chance of Touching)
         be_touch_probs = {}
         for be in breakevens:
             p_touch = hitting_time_touch_probability(
