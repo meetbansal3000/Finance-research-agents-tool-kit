@@ -30,6 +30,13 @@ from tools.calc.derivatives_math import (
     CryptoDerivativesEngine,
     CrossAssetRiskEngine
 )
+from tools.calc.probability_simulator import (
+    EconometricProbabilitySimulator,
+    cornish_fisher_quantile,
+    hitting_time_touch_probability,
+    calculate_kelly_fraction
+)
+from plotly.subplots import make_subplots
 
 
 def render_meridian_multi_asset_desk():
@@ -77,10 +84,11 @@ def render_meridian_multi_asset_desk():
         st.session_state["meridian_orchestrator"] = MeridianMultiAssetOrchestrator()
     orchestrator: MeridianMultiAssetOrchestrator = st.session_state["meridian_orchestrator"]
 
-    # 6 Specialized Sub-Tabs
-    tab_orch, tab_opt, tab_fut, tab_fi, tab_crypto, tab_risk = st.tabs([
+    # 7 Specialized Sub-Tabs
+    tab_orch, tab_opt, tab_prob, tab_fut, tab_fi, tab_crypto, tab_risk = st.tabs([
         "🏛️ Master Orchestrator",
         "🎯 Options Greek Strategist",
+        "🎲 Econometric Probability Simulator (Sensibull)",
         "🌾 Futures & Commodity Desk",
         "📈 Fixed Income Macro Agent",
         "⚡ Crypto & 24/7 Derivatives",
@@ -429,8 +437,356 @@ def render_meridian_multi_asset_desk():
             sc3.metric("Net Vega", f"${sa['net_vega']:,.2f}", "per 1% Vol")
             sc4.metric("Net Daily Theta", f"${sa['net_theta_daily']:,.2f}/day", "Time carry")
 
+            # Quick Sensibull probability metrics
+            prob_sim_quick = EconometricProbabilitySimulator()
+            quick_prob = prob_sim_quick.simulate_options_strategy_probability(
+                spot=opt_spot,
+                legs=legs,
+                risk_free_rate=r_decimal,
+                target_days=max(1, opt_dte // 2),
+                iv_shift_pct=0.0
+            )
+            qp = quick_prob["probability_metrics"]
+            sp1, sp2, sp3, sp4 = st.columns(4)
+            sp1.metric("Prob of Profit (POP)", f"{qp['probability_of_profit_pct']:.1f}%", f"Fat-tail: {qp['econometric_adjusted_pop_pct']:.1f}%")
+            sp2.metric("Expected Value (EV)", f"${qp['expected_value_usd']:+,.2f}", "Statistical EV")
+            sp3.metric("Max Profit / Loss", f"${qp['max_profit_usd']:+,.2f}", f"Max loss: ${qp['max_loss_usd']:,.2f}")
+            sp4.metric("Half-Kelly Allocation", f"{qp['kelly_fraction_half_pct']:.1f}%", f"Win/Loss: {qp['win_loss_ratio']:.2f}x")
+
     # =========================================================================
-    # TAB 3: FUTURES & COMMODITY DESK
+    # TAB 3: ECONOMETRIC PROBABILITY SIMULATOR (SENSIBULL ENGINE)
+    # =========================================================================
+    with tab_prob:
+        st.markdown("### 🎲 Econometric Probability Simulator (Sensibull Engine)")
+        st.caption("Cross-asset continuous probability density modeling, Sensibull-style Target Date P&L sliders, IV shifts, standard deviation cones (±1σ, ±2σ, ±3σ), and Cornish-Fisher fat-tail adjustments.")
+
+        with st.expander("📐 Econometric Probability Methods, Barrier Hitting Times & Sensibull Rules Audit", expanded=False):
+            st.markdown(r"""
+            #### 🧮 Econometric Probability Theory & Interactive Strategy Mathematics
+            - **Continuous Risk-Neutral Lognormal Density Function**:
+              $$f(S_T) = \frac{1}{S_T \sigma \sqrt{2\pi T}} \exp\left( -\frac{\left(\ln(S_T / S_0) - (\mu - \frac{1}{2}\sigma^2)T\right)^2}{2\sigma^2 T} \right)$$
+            - **Probability of Profit (POP %)**:
+              $$\text{POP} = \int_{S_T: \text{PnL}(S_T) > 0} f(S_T) \, dS_T$$
+            - **Sensibull Target Date P&L Equation**:
+              At target time $t \in [0, T]$ with implied volatility shock $\Delta\sigma$:
+              $$\text{PnL}_{\text{target}}(S_t) = \sum_{i=1}^M q_i \cdot \text{BSM}\left(S_t, K_i, T - t, r, \sigma_i + \Delta\sigma, \text{type}_i\right) - \text{Initial Cost}$$
+            - **Continuous Barrier Touch Probability (First Hitting Time / Reflection Principle)**:
+              For underlying spot $S_0$ and barrier price $B$ over horizon $T$ with drift $\alpha = \mu - \frac{1}{2}\sigma^2$:
+              $$P(\tau_B \le T) = N\left(\frac{-\ln(B/S_0) + \alpha T}{\sigma\sqrt{T}}\right) + \left(\frac{B}{S_0}\right)^{\frac{2\alpha}{\sigma^2}} N\left(\frac{-\ln(B/S_0) - \alpha T}{\sigma\sqrt{T}}\right)$$
+              Touch probability is significantly higher than expiration finish probability ($P_{\text{touch}} \approx 2 \times P_{\text{finish}}$ for ATM).
+            - **Cornish-Fisher Fat-Tail (Leptokurtosis & Skewness) Expansion**:
+              Adjusts standard Gaussian quantile $z_\alpha$ for empirical asset return asymmetry:
+              $$z_{\text{CF}} = z + \frac{S}{6}(z^2 - 1) + \frac{K}{24}(z^3 - 3z) - \frac{S^2}{36}(2z^3 - 5z)$$
+              Where $S$ is sample skewness ($S < 0$ in market panics) and $K$ is excess kurtosis ($K > 0$ for fat tails).
+            - **Standard Deviation Cones**:
+              $$\pm 1\sigma \text{ (68.27\%)} = S_0 \exp\left( (\mu - \frac{1}{2}\sigma^2)T \pm 1.0 \sigma \sqrt{T} \right)$$
+              $$\pm 2\sigma \text{ (95.45\%)} = S_0 \exp\left( (\mu - \frac{1}{2}\sigma^2)T \pm 2.0 \sigma \sqrt{T} \right)$$
+              $$\pm 3\sigma \text{ (99.73\%)} = S_0 \exp\left( (\mu - \frac{1}{2}\sigma^2)T \pm 3.0 \sigma \sqrt{T} \right)$$
+            - **Statistical Expected Value (EV)**:
+              $$\mathbb{E}[\text{PnL}] = \int_{-\infty}^{\infty} \text{PnL}(S_T) f(S_T) \, dS_T$$
+            - **Half-Kelly Capital Allocation Rule**:
+              $$f^* = \frac{1}{2} \left[ \frac{p \cdot b - (1 - p)}{b} \right] \quad \text{where } p = \text{POP}, \; b = \frac{\text{Avg Win}}{\text{Avg Loss}}$$
+            """)
+
+        sim_asset_mode = st.radio(
+            "Select Probability Simulation Domain",
+            [
+                "🎯 Options Multi-Leg Strategy (Sensibull Interactive Mode)",
+                "📈 Equities & Single Stocks (Target vs Stop-Loss Touch Risk)",
+                "🌾 Futures & Commodities (Roll Horizon & Margin Call Probability)",
+                "⚡ Crypto 24/7 Perpetuals (Liquidation Breach Probability)",
+                "🛡️ Multi-Asset Portfolio (Max Drawdown & Hurdle Probability)"
+            ],
+            horizontal=True,
+            key="sim_asset_mode"
+        )
+
+        sim_engine = EconometricProbabilitySimulator()
+
+        # ---------------------------------------------------------------------
+        # 1. OPTIONS MULTI-LEG STRATEGY (SENSIBULL INTERACTIVE MODE)
+        # ---------------------------------------------------------------------
+        if "Options" in sim_asset_mode:
+            col_sb1, col_sb2 = st.columns([1.1, 1.9])
+            with col_sb1:
+                st.markdown("#### ⚙️ Strategy Specification")
+                sb_strat = st.selectbox(
+                    "Strategy Structure",
+                    ["Bull Call Spread", "Bear Put Spread", "Long Straddle", "Iron Condor", "Covered Call", "Short Put"],
+                    key="sb_strat_select"
+                )
+                sb_spot = st.number_input("Underlying Spot ($)", min_value=1.0, value=125.0, step=1.0, key="sb_sp")
+                sb_dte = st.number_input("Days to Expiration (DTE)", min_value=2, value=45, step=1, key="sb_dte")
+                sb_iv = st.number_input("Implied Volatility (%)", min_value=1.0, max_value=300.0, value=35.0, step=1.0, key="sb_iv")
+                sb_rf = st.number_input("Risk-Free Rate (%)", min_value=0.0, max_value=20.0, value=4.5, step=0.1, key="sb_rf")
+
+                st.markdown("#### 🎛️ Sensibull Dynamic Sliders")
+                sb_target_day = st.slider("Target Date (Days from Today)", 0, int(sb_dte), int(sb_dte // 2), key="sb_td_slider")
+                sb_iv_shift = st.slider("Implied Volatility Shift (%)", -40.0, 40.0, 0.0, 1.0, key="sb_iv_slider")
+                sb_target_spot = st.number_input("Target Evaluation Spot ($)", value=float(sb_spot), step=1.0, key="sb_tsp")
+
+                with st.expander("🔬 Econometric Higher-Moment Settings", expanded=False):
+                    sb_skew = st.slider("Sample Skewness", -2.0, 1.0, -0.45, 0.05, key="sb_skew_sl")
+                    sb_kurt = st.slider("Excess Kurtosis", 0.0, 8.0, 1.80, 0.10, key="sb_kurt_sl")
+
+                sb_expiry_yr = sb_dte / 365.0
+                sb_vol_dec = sb_iv / 100.0
+                sb_r_dec = sb_rf / 100.0
+
+                # Build Strategy Legs
+                if sb_strat == "Bull Call Spread":
+                    sb_legs = [
+                        {"type": "call", "strike": sb_spot * 0.98, "quantity": 1, "volatility": sb_vol_dec, "expiry_years": sb_expiry_yr},
+                        {"type": "call", "strike": sb_spot * 1.05, "quantity": -1, "volatility": sb_vol_dec, "expiry_years": sb_expiry_yr}
+                    ]
+                elif sb_strat == "Bear Put Spread":
+                    sb_legs = [
+                        {"type": "put", "strike": sb_spot * 1.02, "quantity": 1, "volatility": sb_vol_dec, "expiry_years": sb_expiry_yr},
+                        {"type": "put", "strike": sb_spot * 0.95, "quantity": -1, "volatility": sb_vol_dec, "expiry_years": sb_expiry_yr}
+                    ]
+                elif sb_strat == "Long Straddle":
+                    sb_legs = [
+                        {"type": "call", "strike": sb_spot, "quantity": 1, "volatility": sb_vol_dec, "expiry_years": sb_expiry_yr},
+                        {"type": "put", "strike": sb_spot, "quantity": 1, "volatility": sb_vol_dec, "expiry_years": sb_expiry_yr}
+                    ]
+                elif sb_strat == "Iron Condor":
+                    sb_legs = [
+                        {"type": "put", "strike": sb_spot * 0.90, "quantity": 1, "volatility": sb_vol_dec, "expiry_years": sb_expiry_yr},
+                        {"type": "put", "strike": sb_spot * 0.95, "quantity": -1, "volatility": sb_vol_dec, "expiry_years": sb_expiry_yr},
+                        {"type": "call", "strike": sb_spot * 1.05, "quantity": -1, "volatility": sb_vol_dec, "expiry_years": sb_expiry_yr},
+                        {"type": "call", "strike": sb_spot * 1.10, "quantity": 1, "volatility": sb_vol_dec, "expiry_years": sb_expiry_yr}
+                    ]
+                elif sb_strat == "Covered Call":
+                    sb_legs = [
+                        {"type": "stock", "quantity": 100},
+                        {"type": "call", "strike": sb_spot * 1.05, "quantity": -1, "volatility": sb_vol_dec, "expiry_years": sb_expiry_yr}
+                    ]
+                else:  # Short Put
+                    sb_legs = [
+                        {"type": "put", "strike": sb_spot * 0.95, "quantity": -1, "volatility": sb_vol_dec, "expiry_years": sb_expiry_yr}
+                    ]
+
+                sb_sim_res = sim_engine.simulate_options_strategy_probability(
+                    spot=sb_spot,
+                    legs=sb_legs,
+                    risk_free_rate=sb_r_dec,
+                    skewness=sb_skew,
+                    kurtosis=sb_kurt,
+                    target_days=sb_target_day,
+                    iv_shift_pct=sb_iv_shift
+                )
+
+            with col_sb2:
+                st.markdown("#### 📊 Sensibull Strategy Payoff & Probability Density Curves")
+                tda = sb_sim_res["target_date_analysis"]
+                pm = sb_sim_res["probability_metrics"]
+
+                fig_sb = make_subplots(specs=[[{"secondary_y": True}]])
+
+                # Trace 1: PnL at Expiry
+                fig_sb.add_trace(
+                    go.Scatter(
+                        x=tda["spot_grid"],
+                        y=tda["expiry_pnl_curve"],
+                        mode="lines",
+                        name="PnL at Expiry",
+                        line=dict(color="#10B981", width=3)
+                    ),
+                    secondary_y=False
+                )
+
+                # Trace 2: PnL on Target Date
+                fig_sb.add_trace(
+                    go.Scatter(
+                        x=tda["spot_grid"],
+                        y=tda["target_pnl_curve"],
+                        mode="lines",
+                        name=f"PnL on Day {sb_target_day} (IV {sb_iv_shift:+.0f}%)",
+                        line=dict(color="#38BDF8", width=2.5, dash="dash")
+                    ),
+                    secondary_y=False
+                )
+
+                # Trace 3: Underlying Probability Density Function (PDF) on Secondary Axis
+                fig_sb.add_trace(
+                    go.Scatter(
+                        x=tda["spot_grid"],
+                        y=tda["pdf_distribution"],
+                        mode="lines",
+                        name="Underlying Probability PDF",
+                        line=dict(color="#A855F7", width=1.5),
+                        fill="tozeroy",
+                        fillcolor="rgba(168, 85, 247, 0.12)"
+                    ),
+                    secondary_y=True
+                )
+
+                # Zero PnL Reference
+                fig_sb.add_hline(y=0, line_dash="dash", line_color="#64748B", secondary_y=False)
+                # Spot Reference
+                fig_sb.add_vline(x=sb_spot, line_dash="dot", line_color="#F59E0B", annotation_text="Spot")
+
+                # Breakevens
+                for be in pm["breakeven_points"]:
+                    fig_sb.add_vline(x=be, line_dash="dot", line_color="#EF4444", annotation_text=f"BE ${be:,.2f}")
+
+                fig_sb.update_layout(
+                    title=f"{sb_strat} — Sensibull Dual PnL & Probability Distribution",
+                    xaxis_title="Underlying Spot Price ($)",
+                    yaxis_title="Net Strategy PnL ($)",
+                    yaxis2_title="Probability Density",
+                    template="plotly_dark",
+                    height=350,
+                    margin=dict(l=20, r=20, t=40, b=20),
+                    legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1)
+                )
+                st.plotly_chart(fig_sb, use_container_width=True)
+
+                # KPI Row 1: Primary Probability Metrics
+                k1, k2, k3, k4 = st.columns(4)
+                k1.metric("Prob of Profit (POP)", f"{pm['probability_of_profit_pct']:.1f}%", f"Fat-Tail: {pm['econometric_adjusted_pop_pct']:.1f}%")
+                k2.metric("Expected Value (EV)", f"${pm['expected_value_usd']:+,.2f}", "Statistical EV")
+                k3.metric("Prob Max Profit", f"{pm['prob_max_profit_pct']:.1f}%", f"Max: +${pm['max_profit_usd']:,.2f}")
+                k4.metric("Prob Max Loss", f"{pm['prob_max_loss_pct']:.1f}%", f"Max: ${pm['max_loss_usd']:,.2f}")
+
+                # KPI Row 2: Capital Allocation & Touch Probabilities
+                k5, k6, k7, k8 = st.columns(4)
+                k5.metric("Win / Loss Ratio", f"{pm['win_loss_ratio']:.2f}x", "Profit/Loss Magnitude")
+                k6.metric("Half-Kelly Sizing", f"{pm['kelly_fraction_half_pct']:.1f}%", f"Full: {pm['kelly_fraction_full_pct']:.1f}%")
+                # Format touch probabilities string
+                touch_str = ", ".join([f"{k}: {v}%" for k, v in pm["breakeven_touch_probabilities"].items()]) if pm["breakeven_touch_probabilities"] else "None"
+                k7.metric("Touch Probability", touch_str[:25], "Chance of touching BE")
+                k8.metric("Structure Net Premium", f"${sb_sim_res['greeks_summary']['net_debit_credit']:,.2f}", sb_sim_res['greeks_summary']['structure'])
+
+            # Standard Deviation Cones Table
+            st.divider()
+            st.markdown("#### 📐 Standard Deviation Cones & Expected Ranges at Expiration")
+            cones = sb_sim_res["sigma_cones"]
+            c_cols = st.columns(7)
+            c_cols[0].metric("-3σ (99.7%)", f"${cones['minus_3_sigma']:,.2f}", "Extr. Low")
+            c_cols[1].metric("-2σ (95.5%)", f"${cones['minus_2_sigma']:,.2f}", "Lower 95%")
+            c_cols[2].metric("-1σ (68.3%)", f"${cones['minus_1_sigma']:,.2f}", "Lower 68%")
+            c_cols[3].metric("Expected Mean", f"${cones['mean_expected']:,.2f}", "Drift Path")
+            c_cols[4].metric("+1σ (68.3%)", f"${cones['plus_1_sigma']:,.2f}", "Upper 68%")
+            c_cols[5].metric("+2σ (95.5%)", f"${cones['plus_2_sigma']:,.2f}", "Upper 95%")
+            c_cols[6].metric("+3σ (99.7%)", f"${cones['plus_3_sigma']:,.2f}", "Extr. High")
+
+        # ---------------------------------------------------------------------
+        # 2. EQUITIES & SINGLE STOCKS (TARGET VS STOP-LOSS TOUCH RISK)
+        # ---------------------------------------------------------------------
+        elif "Equities" in sim_asset_mode:
+            st.markdown("#### 📈 Single-Stock Probability of Touch & Execution Risk")
+            eq_c1, eq_c2, eq_c3, eq_c4 = st.columns(4)
+            with eq_c1:
+                eq_sp = st.number_input("Current Stock Price ($)", value=150.0, step=1.0, key="eq_sp")
+            with eq_c2:
+                eq_tp = st.number_input("Profit Target Price ($)", value=175.0, step=1.0, key="eq_tp")
+            with eq_c3:
+                eq_sl = st.number_input("Stop Loss Price ($)", value=135.0, step=1.0, key="eq_sl")
+            with eq_c4:
+                eq_hor = st.number_input("Horizon (Days)", min_value=5, value=60, step=5, key="eq_hor")
+
+            eq_sim = sim_engine.simulate_equity_probability(
+                spot=eq_sp,
+                target_price=eq_tp,
+                stop_loss_price=eq_sl,
+                horizon_days=eq_hor,
+                volatility=0.28,
+                drift=0.08
+            )
+
+            e1, e2, e3, e4, e5 = st.columns(5)
+            e1.metric("Prob Touch Target", f"{eq_sim['prob_touch_target_pct']:.1f}%", f"+{eq_sim['target_upside_pct']:.1f}% gain")
+            e2.metric("Prob Touch Stop Loss", f"{eq_sim['prob_touch_stop_loss_pct']:.1f}%", f"{eq_sim['stop_loss_pct']:.1f}% loss")
+            e3.metric("Prob Close Above Target", f"{eq_sim['prob_close_above_target_pct']:.1f}%", f"Fat-Tail: {eq_sim['econometric_prob_above_target_pct']:.1f}%")
+            e4.metric("Risk / Reward Ratio", f"{eq_sim['risk_reward_ratio']:.2f}x", "Target/Stop Distance")
+            e5.metric("Evaluation Horizon", f"{eq_hor} Days", "Continuous 252d Drift")
+
+        # ---------------------------------------------------------------------
+        # 3. FUTURES & COMMODITIES (ROLL HORIZON & MARGIN CALL PROBABILITY)
+        # ---------------------------------------------------------------------
+        elif "Futures" in sim_asset_mode:
+            st.markdown("#### 🌾 Futures Margin Call & Roll Horizon Probability")
+            fc_c1, fc_c2, fc_c3, fc_c4 = st.columns(4)
+            with fc_c1:
+                fut_px = st.number_input("Futures Price ($)", value=75.40, step=0.5, key="fc_px_sim")
+            with fc_c2:
+                fut_mct = st.number_input("Margin Call Trigger Price ($)", value=68.50, step=0.5, key="fc_mct_sim")
+            with fc_c3:
+                fut_days = st.number_input("Days to Roll / Settlement", min_value=1, value=28, step=1, key="fc_days_sim")
+            with fc_c4:
+                fut_vol = st.number_input("Annualized Volatility (%)", value=35.0, step=1.0, key="fc_vol_sim") / 100.0
+
+            fc_sim = sim_engine.simulate_futures_margin_risk(
+                futures_price=fut_px,
+                margin_call_trigger_price=fut_mct,
+                days_to_expiry=fut_days,
+                volatility=fut_vol
+            )
+
+            f1, f2, f3 = st.columns(3)
+            f1.metric("Prob Margin Call Breach", f"{fc_sim['prob_margin_call_breach_pct']:.1f}%", fc_sim["risk_level"])
+            f2.metric("Margin Headroom Buffer", f"{fc_sim['margin_headroom_pct']:.1f}%", "To Liquidation")
+            f3.metric("Risk Classification", fc_sim["risk_level"], "Institutional Gatekeeper")
+
+        # ---------------------------------------------------------------------
+        # 4. CRYPTO 24/7 PERPETUALS (LIQUIDATION BREACH PROBABILITY)
+        # ---------------------------------------------------------------------
+        elif "Crypto" in sim_asset_mode:
+            st.markdown("#### ⚡ Continuous 24/7 Liquidation Vulnerability Simulator")
+            cr_c1, cr_c2, cr_c3, cr_c4 = st.columns(4)
+            with cr_c1:
+                cr_sp_in = st.number_input("Perpetual Mark Price ($)", value=65000.0, step=500.0, key="cr_sp_sim")
+            with cr_c2:
+                cr_lq_in = st.number_input("Liquidation Engine Price ($)", value=float(cr_sp_in * 0.90), step=500.0, key="cr_lq_sim")
+            with cr_c3:
+                cr_hrs = st.number_input("Window Horizon (Hours)", min_value=1, value=72, step=12, key="cr_hrs_sim")
+            with cr_c4:
+                cr_v_in = st.number_input("Crypto Volatility (%)", value=65.0, step=5.0, key="cr_vol_sim") / 100.0
+
+            cr_sim = sim_engine.simulate_crypto_perpetual_risk(
+                spot_price=cr_sp_in,
+                liquidation_price=cr_lq_in,
+                volatility=cr_v_in,
+                hours_to_evaluate=cr_hrs
+            )
+
+            c1, c2, c3, c4 = st.columns(4)
+            c1.metric("Liquidation Probability", f"{cr_sim['prob_liquidation_pct']:.2f}%", f"{cr_hrs}h Continuous Window")
+            c2.metric("Adverse Move Buffer", f"{cr_sim['adverse_buffer_pct']:.1f}%", "Buffer to Engine")
+            c3.metric("Cascade Fragility Score", f"{cr_sim['cascade_probability_score']:.1f}/100", cr_sim["status"])
+            c4.metric("Status Flag", cr_sim["status"], "Exchange Risk Engine")
+
+        # ---------------------------------------------------------------------
+        # 5. MULTI-ASSET PORTFOLIO (MAX DRAWDOWN & HURDLE PROBABILITY)
+        # ---------------------------------------------------------------------
+        else:
+            st.markdown("#### 🛡️ Multi-Asset Portfolio Continuous Drawdown Simulator")
+            p_c1, p_c2, p_c3, p_c4 = st.columns(4)
+            with p_c1:
+                p_cap = st.number_input("Portfolio Capital ($USD)", value=1000000.0, step=1000.0, key="p_cap_sim")
+            with p_c2:
+                p_vol = st.number_input("Annualized Portfolio Volatility (%)", value=14.0, step=1.0, key="p_vol_sim") / 100.0
+            with p_c3:
+                p_ret = st.number_input("Expected Annual Return (%)", value=8.5, step=0.5, key="p_ret_sim") / 100.0
+            with p_c4:
+                p_days = st.number_input("Horizon (Trading Days)", value=252, step=21, key="p_days_sim")
+
+            p_sim = sim_engine.simulate_portfolio_drawdown_probability(
+                capital=p_cap,
+                annual_vol=p_vol,
+                annual_drift=p_ret,
+                days_horizon=p_days
+            )
+
+            d1, d2, d3, d4 = st.columns(4)
+            d1.metric("Prob >5% Drawdown", f"{p_sim['prob_drawdown_5_pct']:.1f}%", "Moderate pullback")
+            d2.metric("Prob >10% Drawdown", f"{p_sim['prob_drawdown_10_pct']:.1f}%", "Market correction")
+            d3.metric("Prob >15% Drawdown", f"{p_sim['prob_drawdown_15_pct']:.1f}%", "Elevated volatility")
+            d4.metric("Prob >20% Drawdown", f"{p_sim['prob_drawdown_20_pct']:.1f}%", "Bear market drawdown")
+
+    # =========================================================================
+    # TAB 4: FUTURES & COMMODITY DESK
     # =========================================================================
     with tab_fut:
         st.markdown("### 🌾 Futures & Commodity Desk")
