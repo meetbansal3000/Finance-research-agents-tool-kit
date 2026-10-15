@@ -194,7 +194,8 @@ class BlackScholesEngine:
             expiry = leg.get("expiry_years", 30 / 365.0)
             vol = leg.get("volatility", 0.25)
             metrics = cls.price_and_greeks(spot, strike, expiry, risk_free_rate, vol, dividend_yield, leg_type)
-            premium = metrics["price"]
+            premium = float(leg.get("custom_premium", metrics["price"]))
+            leg["price"] = premium
             net_initial_cost += premium * qty
             net_delta += metrics["delta"] * qty
             net_gamma += metrics["gamma"] * qty

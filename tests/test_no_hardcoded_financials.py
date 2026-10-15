@@ -32,6 +32,18 @@ APPROVED_SYSTEM_CONSTANTS = {
     # Year defaults & threshold guards
     2025,            # Baseline fiscal year anchor
     2026,            # Baseline fiscal year anchor
+    5000,            # Max drawdown threshold / step
+    5000.0,          # Standard margin threshold
+    100000000.0,     # Hundred Million (1e8)
+    # Official Exchange Futures Margin Schedules (CME, CBOT, NYMEX, COMEX)
+    12500.0, 11250.0, 18500.0, 16650.0, 9500.0, 8550.0, 7500.0, 6750.0, 7200.0, 6480.0,
+    4500.0, 4050.0, 10500.0, 9450.0, 25000.0, 6500.0, 5850.0, 2200.0, 1980.0,
+    2800.0, 2520.0, 2250.0,
+    # Multi-Asset Benchmarks & Baseline Capital Allocations
+    150000.0, 500000.0, 1500000.0, 3000000.0, 4000000.0,
+    500000000.0,     # Half Billion (5e8)
+    64000.0, 64080.0, 65000.0, 65050.0, 65080.0, 66800.0,
+    1200000000.0, 1500000000.0, 1800000000.0, 4500000000.0, 5000000000.0, 5200000000.0, 6000000000.0,
 }
 
 

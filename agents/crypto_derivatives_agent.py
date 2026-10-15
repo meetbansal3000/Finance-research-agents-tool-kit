@@ -30,8 +30,8 @@ class CryptoDerivativesAgent:
         spot_price: float,
         mark_price: float,
         funding_rate_8h_pct: float,
-        open_interest_usd: float = 1_200_000_000.0,
-        daily_volume_usd: float = 4_500_000_000.0
+        open_interest_usd: float = 1.2 * 1000000000.0,
+        daily_volume_usd: float = 4.5 * 1000000000.0
     ) -> Dict[str, Any]:
         """
         Evaluate perpetual swap funding rate dynamics, annualized carry, and liquidation risk.

@@ -81,7 +81,7 @@ class OptionsGreekStrategist:
         # Red flags detection
         red_flags = []
         moneyness = spot_price / strike_price
-        if abs(greeks["gamma"]) > 0.05 and time_to_expiry_years < (7.0 / 365.0):
+        if (abs(greeks["gamma"]) > 0.02 or (spot_price * abs(greeks["gamma"])) > 1.0) and time_to_expiry_years < (7.0 / 365.0):
             red_flags.append({
                 "severity": "HIGH",
                 "category": "Gamma Cliff Risk",
@@ -139,7 +139,7 @@ class OptionsGreekStrategist:
         )
 
         red_flags = []
-        if result["max_loss"] == "Unlimited" or (isinstance(result["max_loss"], (int, float)) and result["max_loss"] < -5000):
+        if result["max_loss"] == "Unlimited" or (isinstance(result["max_loss"], (int, float)) and result["max_loss"] < -5 * 1000):
             red_flags.append({
                 "severity": "CRITICAL",
                 "category": "Uncapped Tail Risk",

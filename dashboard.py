@@ -775,6 +775,7 @@ NAV_CHOICES = [
     "✦  Autonomous Research Studio",
     "◈  Antigravity Financial Copilot",
     # Domain 3: Quantitative Risk & Portfolio
+    "🌐  Meridian Multi-Asset Desk",
     "▤  Portfolio Construction Lab",
     "↗  Supply Chain & Logistics Risk",
     # Domain 4: Audit, Governance & System
@@ -2415,6 +2416,11 @@ elif "Antigravity Financial Copilot" in nav_choice:
 # DOMAIN 3: QUANTITATIVE RISK & PORTFOLIO
 # =============================================================================
 
+# --- MODULE: MERIDIAN MULTI-ASSET MASTER ORCHESTRATOR ---
+elif "Meridian Multi-Asset Desk" in nav_choice:
+    from tools.meridian_desk_ui import render_meridian_multi_asset_desk
+    render_meridian_multi_asset_desk()
+
 # --- MODULE 7: PORTFOLIO CONSTRUCTION LAB ---
 elif "Portfolio Construction Lab" in nav_choice:
     col_head, col_info = st.columns([4.2, 1.3])
@@ -3334,6 +3340,60 @@ elif "Interactive 3D Pipeline Map" in nav_choice:
             "color": "#A855F7",
             "desc": "Serves as the immutable single source of truth for the multi-agent committee. Pulls official SEC EDGAR filings, logs calculation provenance trees, and signs outputs with HMAC-SHA256 hashes.",
             "rule": "Tamper-Evident History: Guarantees that no data point can be altered post-execution without invalidating the cryptographic checksum."
+        },
+        {
+            "name": "Meridian Multi-Asset Master Orchestrator",
+            "file": "agents/meridian_orchestrator.py",
+            "role": "Cross-Asset Master Conductor",
+            "badge": "MULTI-ASSET",
+            "color": "#38BDF8",
+            "desc": "Coordinates 5 specialized desks across Options, Futures, Fixed Income, Crypto, and Risk. Synthesizes cross-asset investment dossiers and enforces CRO risk gatekeeping.",
+            "rule": "Mandatory CRO Gatekeeping: Prohibited from approving allocations with critical risk or leverage breaches."
+        },
+        {
+            "name": "Options Greek Strategist",
+            "file": "agents/options_greek_agent.py",
+            "role": "Derivatives & Volatility Specialist",
+            "badge": "OPTIONS",
+            "color": "#818CF8",
+            "desc": "Computes exact Black-Scholes 1st and 2nd-order Greeks, models IV skew, simulates multi-leg options strategy payoffs, and prescribes delta-hedging overlays.",
+            "rule": "Analytical Precision: Enforces zero numerical shortcuts on Gamma/Vanna/Volga and flags near-expiry gamma cliffs."
+        },
+        {
+            "name": "Futures & Commodity Desk Agent",
+            "file": "agents/futures_commodity_agent.py",
+            "role": "Curve & Roll Yield Specialist",
+            "badge": "COMMODITIES",
+            "color": "#F59E0B",
+            "desc": "Evaluates cost-of-carry pricing, analyzes Contango vs. Backwardation term structures, computes annualized roll yield decay/boost, and stress-tests exchange margins.",
+            "rule": "Margin Discipline: Enforces strict 10x leverage caps and alerts on contango roll drag >10%/year."
+        },
+        {
+            "name": "Fixed Income Macro Agent",
+            "file": "agents/fixed_income_macro_agent.py",
+            "role": "Rates & Duration Strategist",
+            "badge": "MACRO-RATES",
+            "color": "#10B981",
+            "desc": "Analyzes sovereign yield curve inversions (2Y-10Y, 3M-10Y), computes Macaulay/Modified duration, Convexity, and DV01, and simulates interest rate shocks.",
+            "rule": "Inversion Surveillance: Automatically flags 2Y-10Y curve inversions as macro recession alerts."
+        },
+        {
+            "name": "Crypto & 24/7 Derivatives Agent",
+            "file": "agents/crypto_derivatives_agent.py",
+            "role": "24/7 Digital Derivatives Specialist",
+            "badge": "CRYPTO-24/7",
+            "color": "#06B6D4",
+            "desc": "Monitors perpetual swap 8h funding rates, compound APY, cash-and-carry basis arbitrage, and models liquidation cascade risks across continuous markets.",
+            "rule": "Liquidation Protection: Flags liquidation buffers <8% and excessive speculative funding dislocations."
+        },
+        {
+            "name": "Cross-Asset Risk Officer",
+            "file": "agents/cross_asset_risk_officer.py",
+            "role": "Chief Risk Officer Gatekeeper",
+            "badge": "CRO-AUDIT",
+            "color": "#F43F5E",
+            "desc": "Independent risk gatekeeper computing Parametric VaR (95%/99%), Expected Shortfall (CVaR), historical crisis stress testing, and maintains the Master Red Flags Registry.",
+            "rule": "Binding Gatekeeper Veto: Has unconditional authority to reject portfolios exceeding institutional VaR caps."
         }
     ]
 
