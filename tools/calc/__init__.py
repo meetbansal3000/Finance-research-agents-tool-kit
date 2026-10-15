@@ -44,6 +44,12 @@ from tools.calc.derivatives_math import (
     SVIModel,
     VolatilitySurfaceEngine
 )
+from tools.calc.walk_forward_backtest import (
+    WalkForwardBacktester,
+    WalkForwardSplitter,
+    AlgoOpportunityScanner,
+    calculate_institutional_metrics
+)
 
 __all__ = [
     "yoy_growth",
@@ -72,6 +78,10 @@ __all__ = [
     "CrossAssetRiskEngine",
     "SABRModel",
     "SVIModel",
-    "VolatilitySurfaceEngine"
+    "VolatilitySurfaceEngine",
+    "WalkForwardBacktester",
+    "WalkForwardSplitter",
+    "AlgoOpportunityScanner",
+    "calculate_institutional_metrics"
 ]
 

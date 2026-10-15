@@ -44,6 +44,8 @@ from tools.multi_asset_data import MultiAssetDataEngine
 from tools.paper_trading import get_paper_trading_engine, INITIAL_PORTFOLIO_CASH
 from tools.broker_client import ExecutionCostModel, MultiExchangeRouter, AlpacaBrokerClient, InteractiveBrokersClient
 from tools.alert_dispatcher import get_alert_dispatcher, WebhookAlertDispatcher
+from tools.calc.walk_forward_backtest import WalkForwardBacktester, AlgoOpportunityScanner
+from tools.backtest import BacktestSandbox
 
 
 @st.cache_data(ttl=60, show_spinner=False)
@@ -225,15 +227,16 @@ def render_meridian_multi_asset_desk():
         st.session_state["multi_exchange_router"] = MultiExchangeRouter(active_mode="SIMULATION_PAPER")
     router: MultiExchangeRouter = st.session_state["multi_exchange_router"]
 
-    # 7 Specialized Sub-Tabs
-    tab_orch, tab_opt, tab_prob, tab_fut, tab_fi, tab_crypto, tab_risk = st.tabs([
+    # 8 Specialized Sub-Tabs
+    tab_orch, tab_opt, tab_prob, tab_fut, tab_fi, tab_crypto, tab_risk, tab_bt = st.tabs([
         "🏛️ Master Orchestrator",
         "🎯 Options Greek Strategist",
         "🎲 Econometric Probability Simulator",
         "🌾 Futures & Commodity Desk",
         "📈 Fixed Income Macro Agent",
         "⚡ Crypto & 24/7 Derivatives",
-        "🛡️ Cross-Asset Risk Officer & Red Flags"
+        "🛡️ Cross-Asset Risk Officer & Red Flags",
+        "📊 Walk-Forward Backtest & Algo Engine"
     ])
 
     # =========================================================================
@@ -2894,3 +2897,282 @@ def render_meridian_multi_asset_desk():
                     <div style="font-size:0.78rem; color:#94A3B8; margin-top:6px;">{desc}</div>
                 </div>
                 """, unsafe_allow_html=True)
+
+    # =========================================================================
+    # TAB 8: WALK-FORWARD BACKTESTER & AUTOMATED STRATEGY ALGO ENGINE
+    # =========================================================================
+    with tab_bt:
+        st.markdown("### 📊 Institutional Walk-Forward Multi-Asset Backtester & Automated Strategy Algo Engine")
+        st.caption("Rolling In-Sample/Out-of-Sample cross-validation with zero lookahead bias, non-linear Kyle/Almgren-Chriss TCA friction, Cornish-Fisher VaR trailing stops, Half-Kelly capital sizing, and autonomous positive-expectancy scanner.")
+
+        bt_sub1, bt_sub2 = st.tabs([
+            "📈 Walk-Forward Multi-Asset Backtester",
+            "🤖 Autonomous Strategy Algo Scanner & Committee Dispatch"
+        ])
+
+        with bt_sub1:
+            st.markdown("#### 🔬 Rolling Walk-Forward Strategy Simulation")
+            st.caption("Evaluate strategy robustness across out-of-sample market regimes with realistic market impact and exchange fee friction.")
+
+            # Controls
+            c1, c2, c3, c4 = st.columns([1.5, 1.5, 1.2, 1.2])
+            with c1:
+                strat_choice = st.selectbox(
+                    "Algorithmic Strategy Architecture",
+                    [
+                        "EquityMomentumVolFilter",
+                        "OptionsCreditSpreadCarry",
+                        "MeanVarianceQP"
+                    ],
+                    index=0,
+                    help="EquityMomentumVolFilter: Trend + Cornish-Fisher VaR filter. OptionsCreditSpreadCarry: OTM Put spreads with POP_CF hurdle. MeanVarianceQP: Rolling Markowitz QP."
+                )
+            with c2:
+                tickers_input = st.text_input(
+                    "Portfolio Tickers (comma-separated)",
+                    value="AAPL, MSFT, NVDA, SPY",
+                    help="Multi-asset basket to simulate."
+                )
+            with c3:
+                tr_window = st.slider("Train Window (Days)", min_value=60, max_value=252, value=180, step=30)
+                te_window = st.slider("Test Window (Days)", min_value=20, max_value=120, value=60, step=10)
+            with c4:
+                init_cap = st.number_input("Initial Capital ($ USD)", min_value=1000.0, max_value=10000000.0, value=1000000.0, step=50000.0)
+                bench_sym = st.selectbox("Benchmark", ["SPY", "QQQ"], index=0)
+
+            run_bt_clicked = st.button("🚀 Run Institutional Walk-Forward Backtest", use_container_width=True, type="primary")
+
+            if run_bt_clicked:
+                syms = [s.strip().upper() for s in tickers_input.split(",") if s.strip()]
+                if not syms:
+                    syms = ["AAPL", "MSFT", "SPY"]
+                with st.spinner("Executing walk-forward cross-validation folds and non-linear TCA simulation..."):
+                    sandbox = BacktestSandbox()
+                    bt_res = sandbox.run_walk_forward_backtest(
+                        tickers=syms,
+                        strategy=strat_choice,
+                        benchmark=bench_sym,
+                        train_window=int(tr_window),
+                        test_window=int(te_window),
+                        initial_capital=float(init_cap)
+                    )
+                    st.session_state["wf_backtest_res"] = bt_res
+
+            res = st.session_state.get("wf_backtest_res")
+            if res:
+                m = res.get("metrics", {})
+                wfe = res.get("walk_forward_efficiency", {})
+
+                # Metric Cards
+                st.divider()
+                st.markdown("##### 📊 Institutional Performance Summary")
+                m_c1, m_c2, m_c3, m_c4, m_c5 = st.columns(5)
+                with m_c1:
+                    st.metric("Total Return", f"{m.get('total_return_pct', 0.0):+.2f}%", delta=f"{m.get('alpha_pct', 0.0):+.2f}% Alpha")
+                with m_c2:
+                    st.metric("Benchmark (SPY)", f"{m.get('benchmark_return_pct', 0.0):+.2f}%")
+                with m_c3:
+                    st.metric("Sharpe Ratio (Rf=4.25%)", f"{m.get('sharpe_ratio', 0.0):.2f}")
+                with m_c4:
+                    st.metric("Sortino Ratio", f"{m.get('sortino_ratio', 0.0):.2f}")
+                with m_c5:
+                    st.metric("Calmar Ratio", f"{m.get('calmar_ratio', 0.0):.2f}")
+
+                m_c6, m_c7, m_c8, m_c9, m_c10 = st.columns(5)
+                with m_c6:
+                    st.metric("Max Drawdown", f"{m.get('max_drawdown_pct', 0.0):.2f}%")
+                with m_c7:
+                    st.metric("Max DD Duration", f"{m.get('max_drawdown_duration_days', 0)} days")
+                with m_c8:
+                    st.metric("Win Rate %", f"{m.get('win_rate_pct', 0.0):.1f}%", f"{m.get('winning_trades', 0)}/{m.get('total_trades', 0)} trades")
+                with m_c9:
+                    st.metric("Profit Factor", f"{m.get('profit_factor', 0.0):.2f}")
+                with m_c10:
+                    st.metric("TCA Friction Paid", f"${m.get('total_tca_cost_usd', 0.0):,.2f}")
+
+                # Walk-Forward Efficiency (WFE) Card
+                wfe_val = wfe.get("wfe_ratio", 0.0)
+                is_robust = wfe.get("robustness_verdict") == "ROBUST_EDGE"
+                badge_bg = "rgba(16,185,129,0.15)" if is_robust else "rgba(244,63,94,0.15)"
+                badge_fg = "#10B981" if is_robust else "#F43F5E"
+                st.markdown(f"""
+                <div style="background:{badge_bg}; border:1px solid {badge_fg}; border-radius:8px; padding:12px 18px; margin:14px 0;">
+                    <div style="display:flex; justify-content:space-between; align-items:center;">
+                        <span style="font-weight:700; color:#F8FAFC; font-size:0.95rem;">🔬 Walk-Forward Out-of-Sample Efficiency (WFE Ratio): <span style="color:{badge_fg}; font-family:monospace; font-size:1.05rem;">{wfe_val:.2f}</span></span>
+                        <span style="background:{badge_fg}; color:#0F172A; font-weight:800; font-size:0.75rem; padding:3px 10px; border-radius:4px;">{wfe.get('robustness_verdict', 'N/A')}</span>
+                    </div>
+                    <div style="font-size:0.80rem; color:#94A3B8; margin-top:4px;">
+                        In-Sample Avg Sharpe: <b style="color:#F8FAFC;">{wfe.get('in_sample_avg_sharpe', 0.0):.2f}</b> | 
+                        Out-of-Sample Avg Sharpe: <b style="color:#F8FAFC;">{wfe.get('out_of_sample_avg_sharpe', 0.0):.2f}</b> | 
+                        Standard Threshold: WFE &ge; 0.50 denotes non-overfitted institutional alpha.
+                    </div>
+                </div>
+                """, unsafe_allow_html=True)
+
+                # Interactive Plotly Dual Curves
+                dates = res.get("daily_dates", [])
+                p_equity = res.get("daily_equity", [])
+                b_equity = res.get("daily_benchmark", [])
+
+                if dates and p_equity:
+                    fig_curve = go.Figure()
+                    fig_curve.add_trace(go.Scatter(
+                        x=dates,
+                        y=p_equity,
+                        mode="lines",
+                        name=f"Portfolio ({res.get('strategy')})",
+                        line=dict(color="#10B981", width=2.5)
+                    ))
+                    if b_equity:
+                        fig_curve.add_trace(go.Scatter(
+                            x=dates,
+                            y=b_equity,
+                            mode="lines",
+                            name=f"Benchmark ({res.get('benchmark', 'SPY')})",
+                            line=dict(color="#38BDF8", width=1.5, dash="dash")
+                        ))
+                    fig_curve.update_layout(
+                        title=f"Walk-Forward Cumulative Equity Curve vs {res.get('benchmark', 'SPY')} ($1,000,000.00 Base)",
+                        xaxis_title="Date",
+                        yaxis_title="Portfolio Valuation ($ USD)",
+                        template="plotly_dark",
+                        height=380,
+                        margin=dict(l=20, r=20, t=40, b=20),
+                        hovermode="x unified"
+                    )
+                    st.plotly_chart(fig_curve, use_container_width=True)
+
+                    # Underwater Drawdown Curve
+                    p_arr = np.array(p_equity, dtype=float)
+                    peaks = np.maximum.accumulate(p_arr)
+                    dd_pct = ((p_arr - peaks) / peaks) * 100.0
+
+                    fig_dd = go.Figure()
+                    fig_dd.add_trace(go.Scatter(
+                        x=dates,
+                        y=dd_pct,
+                        mode="lines",
+                        fill="tozeroy",
+                        name="Drawdown %",
+                        line=dict(color="#F43F5E", width=1.5),
+                        fillcolor="rgba(244,63,94,0.25)"
+                    ))
+                    fig_dd.update_layout(
+                        title="Peak-to-Trough Portfolio Underwater Drawdown (%)",
+                        xaxis_title="Date",
+                        yaxis_title="Drawdown (%)",
+                        template="plotly_dark",
+                        height=240,
+                        margin=dict(l=20, r=20, t=35, b=20)
+                    )
+                    st.plotly_chart(fig_dd, use_container_width=True)
+
+                # Walk-Forward Folds Breakdown Table
+                windows = res.get("windows", [])
+                if windows:
+                    st.markdown("##### 🗓️ Walk-Forward Rolling Folds Breakdown")
+                    st.dataframe(pd.DataFrame(windows), use_container_width=True)
+
+                # Trade Logs
+                trades = res.get("trades_log", [])
+                if trades:
+                    st.markdown("##### 📜 Out-of-Sample Trade Execution & TCA Log")
+                    st.dataframe(pd.DataFrame(trades), use_container_width=True)
+
+        with bt_sub2:
+            st.markdown("#### 🤖 Autonomous Positive-Expectancy Strategy Scanner")
+            st.caption("Scans watchlists for trades with E[PnL] > 0, Cornish-Fisher POP >= 65%, and automated Investment Committee approval.")
+
+            sc_c1, sc_c2 = st.columns([3, 1])
+            with sc_c1:
+                scan_tickers_in = st.text_input(
+                    "Scanner Universe (comma-separated)",
+                    value="SPY, QQQ, AAPL, MSFT, NVDA, AMZN, GOOGL, META, TSLA, GLD",
+                    help="Asset symbols to screen for positive econometric edge."
+                )
+            with sc_c2:
+                min_pop_slider = st.slider("Min Cornish-Fisher POP (%)", min_value=50, max_value=85, value=65, step=5)
+
+            scan_btn = st.button("🔍 Scan Universe for High-Expectancy Algo Trades", use_container_width=True, type="primary")
+
+            if scan_btn:
+                scan_list = [s.strip().upper() for s in scan_tickers_in.split(",") if s.strip()]
+                with st.spinner("Analyzing higher-order moments, Cornish-Fisher quantiles, and transaction friction..."):
+                    scanner = AlgoOpportunityScanner()
+                    opps = scanner.scan_universe(tickers=scan_list, min_pop_cf=float(min_pop_slider) / 100.0)
+                    st.session_state["scanned_algo_opps"] = opps
+
+            opps = st.session_state.get("scanned_algo_opps")
+            if opps is not None:
+                st.divider()
+                st.markdown(f"##### 🎯 Identified Opportunities ({len(opps)} Found)")
+                if not opps:
+                    st.info("No candidates passed the positive expectancy (E[PnL] > 0) and POP hurdle. Universe is currently under high tail-risk or compressed premium.")
+                else:
+                    for idx, opp in enumerate(opps):
+                        v_color = "#10B981" if opp["committee_verdict"] == "APPROVED" else "#F59E0B"
+                        with st.container():
+                            st.markdown(f"""
+                            <div style="background:rgba(18,24,36,0.85); border:1px solid #1E2638; border-left:4px solid {v_color}; border-radius:8px; padding:14px 18px; margin-bottom:12px;">
+                                <div style="display:flex; justify-content:space-between; align-items:center;">
+                                    <div style="font-size:1.05rem; font-weight:800; color:#F8FAFC;">
+                                        {opp['ticker']} <span style="font-size:0.80rem; font-weight:600; color:#38BDF8; margin-left:8px;">${opp['spot_price']:.2f}</span>
+                                    </div>
+                                    <div>
+                                        <span style="background:rgba(255,255,255,0.06); color:#38BDF8; font-size:0.75rem; font-weight:700; padding:2px 8px; border-radius:4px; margin-right:6px;">{opp['strategy_type']}</span>
+                                        <span style="background:{v_color}; color:#0F172A; font-size:0.75rem; font-weight:800; padding:2px 8px; border-radius:4px;">{opp['committee_verdict']}</span>
+                                    </div>
+                                </div>
+                                <div style="display:grid; grid-template-columns:repeat(5, 1fr); gap:10px; margin-top:10px; font-size:0.78rem;">
+                                    <div><span style="color:#64748B;">Action:</span> <b style="color:#F8FAFC;">{opp['action']}</b></div>
+                                    <div><span style="color:#64748B;">Cornish-Fisher POP:</span> <b style="color:#10B981;">{opp['pop_cf_pct']:.1f}%</b></div>
+                                    <div><span style="color:#64748B;">Half-Kelly Alloc:</span> <b style="color:#38BDF8;">{opp['half_kelly_allocation_pct']:.1f}%</b></div>
+                                    <div><span style="color:#64748B;">Expected PnL:</span> <b style="color:#10B981;">+${opp['expected_pnl_usd']:,.2f}</b></div>
+                                    <div><span style="color:#64748B;">TCA Cost:</span> <b style="color:#F59E0B;">${opp['tca_cost_usd']:.2f}</b></div>
+                                </div>
+                                <div style="display:grid; grid-template-columns:repeat(4, 1fr); gap:10px; margin-top:6px; font-size:0.74rem; color:#94A3B8;">
+                                    <div>Vol: <b>{opp['annualized_vol_pct']:.1f}%</b></div>
+                                    <div>Skewness: <b>{opp['skewness']:.2f}</b></div>
+                                    <div>Kurtosis: <b>{opp['excess_kurtosis']:.2f}</b></div>
+                                    <div>1D 99% CF-VaR: <b>{opp['cf_var_99_daily_pct']:.2f}%</b></div>
+                                </div>
+                                <div style="font-size:0.76rem; color:#94A3B8; margin-top:8px; border-top:1px solid #1E2638; padding-top:6px;">
+                                    <b>Committee Rationale:</b> {opp['rationale']}
+                                </div>
+                            </div>
+                            """, unsafe_allow_html=True)
+
+                            col_d1, col_d2 = st.columns([1.5, 4.5])
+                            with col_d1:
+                                if st.button(f"⚡ Dispatch {opp['ticker']} to SMART Router", key=f"disp_{opp['ticker']}_{idx}", use_container_width=True):
+                                    with st.spinner(f"Routing {opp['ticker']} through Multi-Exchange Smart Router..."):
+                                        try:
+                                            # Route order via router
+                                            router = st.session_state["multi_exchange_router"]
+                                            route_res = router.route_order(
+                                                ticker=opp["ticker"],
+                                                asset_class="Options" if "OPTIONS" in opp["strategy_type"] else "Equities",
+                                                side="BUY" if "BUY" in opp["action"] else "SELL",
+                                                quantity=10.0 if "OPTIONS" in opp["strategy_type"] else 100.0,
+                                                price=opp["spot_price"],
+                                                preferred_venue="SMART"
+                                            )
+                                            # Dispatch Webhook Alert
+                                            dispatcher = get_alert_dispatcher()
+                                            dispatcher.dispatch_alert(
+                                                alert_type="ALGO_STRATEGY_DISPATCH",
+                                                title=f"⚡ Algo Trade Dispatched: {opp['ticker']} {opp['action']}",
+                                                message=f"Autonomous scanner identified positive expectancy (+${opp['expected_pnl_usd']:,.2f}) with Cornish-Fisher POP {opp['pop_cf_pct']:.1f}%. Routed via {route_res.get('selected_venue', 'SMART')}.",
+                                                severity="SUCCESS",
+                                                metadata={
+                                                    "ticker": opp["ticker"],
+                                                    "strategy": opp["strategy_type"],
+                                                    "pop_cf_pct": opp["pop_cf_pct"],
+                                                    "expected_pnl": opp["expected_pnl_usd"],
+                                                    "venue": route_res.get("selected_venue", "SMART"),
+                                                    "receipt_hmac": route_res.get("execution_receipt", {}).get("receipt_hmac_sha256", "N/A")
+                                                }
+                                            )
+                                            st.success(f"✅ Routed to {route_res.get('selected_venue', 'SMART')}! Status: {route_res.get('routing_status')} | Receipt: {route_res.get('execution_receipt', {}).get('receipt_hmac_sha256', 'N/A')[:16]}... Webhook alert broadcasted!")
+                                        except Exception as e:
+                                            st.error(f"Routing error: {str(e)}")
