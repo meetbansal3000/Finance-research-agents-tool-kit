@@ -1370,6 +1370,101 @@ def render_meridian_multi_asset_desk():
                 p_c4.metric("Half-Kelly Allocation", f"{pm['kelly_fraction_half_pct']:.1f}%", "Institutional Safe")
 
             # -----------------------------------------------------------------
+            # MULTI-AGENT INVESTMENT COMMITTEE REVIEW & ADVERSARIAL AUDIT
+            # -----------------------------------------------------------------
+            st.divider()
+            st.markdown("#### 🏛️ Multi-Agent Investment Committee Review & Adversarial Stress Audit")
+            st.caption("Convene the autonomous Multi-Asset Investment Committee: Options Greek Strategist, Cross-Asset Risk Officer, and Skeptic Agent debate the strategy live, evaluate non-Gaussian tail risk, and issue a binding audit verdict.")
+
+            comm_col1, comm_col2 = st.columns([1.5, 2.5])
+            with comm_col1:
+                run_comm_btn = st.button(
+                    "🏛️ CONVENE INVESTMENT COMMITTEE REVIEW",
+                    type="secondary",
+                    use_container_width=True,
+                    key=f"btn_comm_opt_{sb_live['symbol']}"
+                )
+            with comm_col2:
+                st.caption("Autonomous Gatekeeping: Synthesizes quantitative Greeks, Cornish-Fisher VaR surcharge, and Skeptic adversarial challenges into a cryptographic provenance dossier.")
+
+            comm_key = f"comm_review_opt_{sb_live['symbol']}"
+            if run_comm_btn:
+                with st.spinner("Convening Multi-Agent Investment Committee & synthesizing adversarial audit..."):
+                    orchestrator = MeridianMultiAssetOrchestrator()
+                    comm_res = orchestrator.evaluate_strategy_deal_committee(
+                        symbol=sb_live["symbol"],
+                        strategy_name=sb_strat,
+                        spot_price=sb_spot,
+                        legs=sb_legs,
+                        risk_free_rate=sb_r_dec,
+                        custom_volatility=sb_vol_dec,
+                        custom_drift=sb_drift,
+                        custom_skewness=sb_skew,
+                        custom_kurtosis=sb_kurt,
+                        target_days=sb_target_day,
+                        iv_shift_pct=sb_iv_shift
+                    )
+                    st.session_state[comm_key] = comm_res
+
+            if comm_key in st.session_state:
+                c_res = st.session_state[comm_key]
+                v_color = "#10B981" if c_res["verdict"] == "APPROVED" else ("#F59E0B" if c_res["verdict"] == "CONDITIONAL_APPROVAL" else "#EF4444")
+                v_badge = "🟢 APPROVED" if c_res["verdict"] == "APPROVED" else ("🟡 CONDITIONAL APPROVAL" if c_res["verdict"] == "CONDITIONAL_APPROVAL" else "🔴 REJECTED")
+
+                st.markdown(f"""
+                <div style="background:rgba(15,23,42,0.85); border:2px solid {v_color}; border-radius:8px; padding:14px 18px; margin:12px 0;">
+                    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
+                        <span style="font-weight:800; font-size:1.05rem; color:{v_color};">
+                            {v_badge} — Investment Committee Consensus
+                        </span>
+                        <span style="font-family:monospace; font-weight:700; color:#F8FAFC; font-size:0.92rem;">
+                            Committee Confidence: <b>{c_res['confidence_score']:.1f}/100</b> | ID: <code>{c_res['provenance_ledger_id'][:18]}...</code>
+                        </span>
+                    </div>
+                    <div style="color:#CBD5E1; font-size:0.86rem; margin-top:6px;">
+                        {c_res['verdict_rationale']}
+                    </div>
+                </div>
+                """, unsafe_allow_html=True)
+
+                # 3-Agent Committee Perspectives
+                c1, c2, c3 = st.columns(3)
+                with c1:
+                    st.markdown("##### 🎯 Options Greek Strategist")
+                    st.caption("Derivative Greeks & Payoff Structure")
+                    st.write(f"• **Net Delta**: `{gs.get('net_delta', 0.0):+.3f}` | **Gamma**: `{gs.get('net_gamma', 0.0):+.4f}`")
+                    st.write(f"• **Net Vega**: `{gs.get('net_vega', 0.0):+.2f}` | **Theta**: `${gs.get('net_theta_daily', 0.0):+,.2f}/day`")
+                    st.write(f"• **Gaussian POP**: `{pm['probability_of_profit_pct']:.1f}%`")
+                    st.write(f"• **Half-Kelly Sizing**: `{pm['kelly_fraction_half_pct']:.1f}%`")
+
+                with c2:
+                    st.markdown("##### 🛡️ Cross-Asset Risk Officer")
+                    st.caption("Cornish-Fisher Tail Risk & VaR Surcharge")
+                    cro_d = c_res["desk_reports"]["Cross-Asset Risk Officer"]
+                    st.write(f"• **Tail Status**: `{cro_d.get('verdict', 'MONITORED')}`")
+                    st.write(f"• **95% CF VaR**: `${econo['var_metrics']['var_cf_95_dollars']:,.2f}` (`{econo['var_metrics']['var_cf_95_pct']:.2f}%`)")
+                    st.write(f"• **Fat-Tail Surcharge**: `+${econo['var_metrics']['fat_tail_surcharge_95_dollars']:,.2f}` (`+{econo['var_metrics']['fat_tail_surcharge_95_pct']:.2f}%`)")
+                    st.write(f"• **Tail Asymmetry**: `{econo['tail_asymmetry']['tail_asymmetry_ratio']:.2f}x`")
+
+                with c3:
+                    st.markdown("##### 🕵️ Skeptic Adversarial Agent")
+                    st.caption("Stress Tests & Counter-Theses")
+                    sk_d = c_res["desk_reports"]["Skeptic Agent"]
+                    st.write(f"• **Skeptic Verdict**: `{sk_d.get('skeptic_verdict', 'CONCUR')}`")
+                    st.write(f"• **Adversarial Score**: `{sk_d.get('skeptic_score', 75.0):.1f}/100`")
+                    challs = sk_d.get("adversarial_challenges", [])
+                    if challs:
+                        for ch in challs[:2]:
+                            st.write(f"• ⚠️ **{ch['challenge']}**: {ch['argument'][:60]}...")
+                    else:
+                        st.write("• ✔️ No critical structural thesis objections found.")
+
+                if c_res.get("mitigations"):
+                    st.markdown("**Actionable Risk Mitigations Recommended by Committee:**")
+                    for m in c_res["mitigations"]:
+                        st.info(f"🛡️ {m}")
+
+            # -----------------------------------------------------------------
             # LIVE DEAL EXECUTION DESK ($1,000,000 SIMULATION CAPITAL)
             # -----------------------------------------------------------------
             st.divider()
@@ -1389,6 +1484,11 @@ def render_meridian_multi_asset_desk():
                 sb_tot_cost = sb_trade_qty * sb_debit * 100.0
                 st.caption(f"Required Outlay: **${sb_tot_cost:,.2f} USD** | Available Cash: **${p_cash_sb:,.2f} USD**")
                 if st.button("🟢 EXECUTE SIMULATION STRATEGY AT MARKET ($)", type="primary", use_container_width=True, key=f"sb_exec_btn_{sb_live['symbol']}"):
+                    c_notes = ""
+                    if comm_key in st.session_state:
+                        c_info = st.session_state[comm_key]
+                        c_notes = f"Committee: {c_info['verdict']} ({c_info['confidence_score']:.0f}/100) | "
+
                     s_ok, s_msg, s_pos = pe_sb.execute_trade(
                         symbol=sb_live["symbol"],
                         asset_class="Options",
@@ -1397,7 +1497,7 @@ def render_meridian_multi_asset_desk():
                         price=float(sb_debit),
                         strategy_type=f"{sb_strat} (Simulator)",
                         multiplier=100.0,
-                        notes=f"Simulated POP: {pm['probability_of_profit_pct']:.1f}%, EV: ${pm['expected_value_usd']:,.2f}"
+                        notes=f"{c_notes}Simulated POP: {pm['probability_of_profit_pct']:.1f}%, EV: ${pm['expected_value_usd']:,.2f}"
                     )
                     if s_ok:
                         st.success(s_msg)
@@ -1711,6 +1811,100 @@ def render_meridian_multi_asset_desk():
                 cone_cols[5].metric("+2σ (95.45%)", f"${eq_cf_cones['plus_2_sigma_cf']:,.2f}", f"Gauss: ${eq_norm_cones['plus_2_sigma']:,.2f}")
                 cone_cols[6].metric("+3σ (99.73%)", f"${eq_cf_cones['plus_3_sigma_cf']:,.2f}", f"Gauss: ${eq_norm_cones['plus_3_sigma']:,.2f}")
 
+            # -----------------------------------------------------------------
+            # MULTI-AGENT INVESTMENT COMMITTEE REVIEW & ADVERSARIAL AUDIT
+            # -----------------------------------------------------------------
+            st.divider()
+            st.markdown("#### 🏛️ Multi-Agent Investment Committee Review & Adversarial Stress Audit")
+            st.caption("Convene the autonomous Multi-Asset Investment Committee: Equity Risk Specialist, Cross-Asset Risk Officer, and Skeptic Agent debate the position live, stress-testing stop-loss touch probability and tail asymmetry.")
+
+            eq_comm_col1, eq_comm_col2 = st.columns([1.5, 2.5])
+            with eq_comm_col1:
+                run_eq_comm_btn = st.button(
+                    "🏛️ CONVENE INVESTMENT COMMITTEE REVIEW",
+                    type="secondary",
+                    use_container_width=True,
+                    key=f"btn_comm_eq_{eq_live['symbol']}"
+                )
+            with eq_comm_col2:
+                st.caption("Autonomous Gatekeeping: Evaluates upside/downside touch probabilities, Cornish-Fisher VaR surcharge, and Skeptic adversarial challenges.")
+
+            eq_comm_key = f"comm_review_eq_{eq_live['symbol']}"
+            if run_eq_comm_btn:
+                with st.spinner("Convening Multi-Agent Investment Committee & synthesizing adversarial audit..."):
+                    orchestrator = MeridianMultiAssetOrchestrator()
+                    eq_comm_res = orchestrator.evaluate_strategy_deal_committee(
+                        symbol=eq_live["symbol"],
+                        strategy_name=f"Equity Shares ({eq_live['symbol']})",
+                        spot_price=eq_sp,
+                        target_price=eq_tp,
+                        stop_loss_price=eq_sl,
+                        horizon_days=eq_hor,
+                        custom_volatility=eq_vol,
+                        custom_drift=eq_drift,
+                        custom_skewness=eq_skew,
+                        custom_kurtosis=eq_kurt
+                    )
+                    st.session_state[eq_comm_key] = eq_comm_res
+
+            if eq_comm_key in st.session_state:
+                eq_c_res = st.session_state[eq_comm_key]
+                eq_v_color = "#10B981" if eq_c_res["verdict"] == "APPROVED" else ("#F59E0B" if eq_c_res["verdict"] == "CONDITIONAL_APPROVAL" else "#EF4444")
+                eq_v_badge = "🟢 APPROVED" if eq_c_res["verdict"] == "APPROVED" else ("🟡 CONDITIONAL APPROVAL" if eq_c_res["verdict"] == "CONDITIONAL_APPROVAL" else "🔴 REJECTED")
+
+                st.markdown(f"""
+                <div style="background:rgba(15,23,42,0.85); border:2px solid {eq_v_color}; border-radius:8px; padding:14px 18px; margin:12px 0;">
+                    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
+                        <span style="font-weight:800; font-size:1.05rem; color:{eq_v_color};">
+                            {eq_v_badge} — Investment Committee Consensus
+                        </span>
+                        <span style="font-family:monospace; font-weight:700; color:#F8FAFC; font-size:0.92rem;">
+                            Committee Confidence: <b>{eq_c_res['confidence_score']:.1f}/100</b> | ID: <code>{eq_c_res['provenance_ledger_id'][:18]}...</code>
+                        </span>
+                    </div>
+                    <div style="color:#CBD5E1; font-size:0.86rem; margin-top:6px;">
+                        {eq_c_res['verdict_rationale']}
+                    </div>
+                </div>
+                """, unsafe_allow_html=True)
+
+                # 3-Agent Committee Perspectives
+                ec1, ec2, ec3 = st.columns(3)
+                with ec1:
+                    st.markdown("##### 📈 Equities Specialist")
+                    st.caption("Barrier Touch & Expectancy")
+                    st.write(f"• **Target Touch**: `{eq_sim['prob_touch_target_pct']:.1f}%` (+{eq_sim['target_upside_pct']:.1f}%)")
+                    st.write(f"• **Stop Loss Touch**: `{eq_sim['prob_touch_stop_loss_pct']:.1f}%` ({eq_sim['stop_loss_pct']:.1f}%)")
+                    st.write(f"• **Risk/Reward**: `{eq_sim['risk_reward_ratio']:.2f}x`")
+                    st.write(f"• **Expected Horizon**: `{eq_hor} Days`")
+
+                with ec2:
+                    st.markdown("##### 🛡️ Cross-Asset Risk Officer")
+                    st.caption("Cornish-Fisher Tail Risk & VaR Surcharge")
+                    eq_cro_d = eq_c_res["desk_reports"]["Cross-Asset Risk Officer"]
+                    st.write(f"• **Tail Status**: `{eq_cro_d.get('verdict', 'MONITORED')}`")
+                    st.write(f"• **95% CF VaR**: `${eq_econo['var_metrics']['var_cf_95_dollars']:,.2f}` (`{eq_econo['var_metrics']['var_cf_95_pct']:.2f}%`)")
+                    st.write(f"• **Fat-Tail Surcharge**: `+${eq_econo['var_metrics']['fat_tail_surcharge_95_dollars']:,.2f}` (`+{eq_econo['var_metrics']['fat_tail_surcharge_95_pct']:.2f}%`)")
+                    st.write(f"• **Tail Asymmetry**: `{eq_econo['tail_asymmetry']['tail_asymmetry_ratio']:.2f}x`")
+
+                with ec3:
+                    st.markdown("##### 🕵️ Skeptic Adversarial Agent")
+                    st.caption("Stress Tests & Counter-Theses")
+                    eq_sk_d = eq_c_res["desk_reports"]["Skeptic Agent"]
+                    st.write(f"• **Skeptic Verdict**: `{eq_sk_d.get('skeptic_verdict', 'CONCUR')}`")
+                    st.write(f"• **Adversarial Score**: `{eq_sk_d.get('skeptic_score', 75.0):.1f}/100`")
+                    eq_challs = eq_sk_d.get("adversarial_challenges", [])
+                    if eq_challs:
+                        for ch in eq_challs[:2]:
+                            st.write(f"• ⚠️ **{ch['challenge']}**: {ch['argument'][:60]}...")
+                    else:
+                        st.write("• ✔️ No critical structural thesis objections found.")
+
+                if eq_c_res.get("mitigations"):
+                    st.markdown("**Actionable Risk Mitigations Recommended by Committee:**")
+                    for m in eq_c_res["mitigations"]:
+                        st.info(f"🛡️ {m}")
+
             # Quick Equity Trade Execution
             st.markdown("##### ⚡ Execute Stock Shares into Portfolio ($1,000,000 Capital Balance)")
             pe_eq = get_paper_trading_engine()
@@ -1727,6 +1921,11 @@ def render_meridian_multi_asset_desk():
                 eq_outlay = eq_qty * eq_sp
                 st.caption(f"Required Outlay: **${eq_outlay:,.2f} USD** | Available Cash: **${eq_cash:,.2f} USD**")
                 if st.button("🟢 EXECUTE SHARES ORDER ($)", type="primary", use_container_width=True, key=f"btn_eq_exec_{eq_live['symbol']}"):
+                    eq_c_notes = ""
+                    if eq_comm_key in st.session_state:
+                        eq_c_info = st.session_state[eq_comm_key]
+                        eq_c_notes = f"Committee: {eq_c_info['verdict']} ({eq_c_info['confidence_score']:.0f}/100) | "
+
                     eq_ok, eq_msg, eq_pos = pe_eq.execute_trade(
                         symbol=eq_live["symbol"],
                         asset_class="Equities",
@@ -1735,7 +1934,7 @@ def render_meridian_multi_asset_desk():
                         price=float(eq_sp),
                         strategy_type="Equity Position",
                         multiplier=1.0,
-                        notes=f"Target: ${eq_tp:.2f}, SL: ${eq_sl:.2f}"
+                        notes=f"{eq_c_notes}Target: ${eq_tp:.2f}, SL: ${eq_sl:.2f}"
                     )
                     if eq_ok:
                         st.success(eq_msg)

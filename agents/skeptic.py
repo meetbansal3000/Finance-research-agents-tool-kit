@@ -791,3 +791,105 @@ class SkepticAgent:
             "nvidia_critique": nvidia_critique_text,
             "nvidia_ledger_id": nvidia_ledger_id
         }
+
+    def audit_derivatives_strategy_thesis(
+        self,
+        ticker: str,
+        strategy_name: str,
+        spot_price: float,
+        probability_metrics: Dict[str, Any],
+        econometric_metrics: Dict[str, Any],
+        greeks_summary: Optional[Dict[str, Any]] = None
+    ) -> Dict[str, Any]:
+        """
+        Adversarial Skeptic stress-audit of an options or derivatives strategy.
+        Challenges:
+        1. Negative Expectancy under fat tails.
+        2. Volatility Crush / IV Overpayment.
+        3. Leptokurtic POP Decay.
+        4. Tail Risk Surcharge Penalty.
+        5. Position Sizing & Kelly Feasibility.
+        """
+        pop = probability_metrics.get("probability_of_profit_pct", 50.0)
+        pop_cf = probability_metrics.get("econometric_adjusted_pop_pct", pop)
+        ev = probability_metrics.get("expected_value_usd", 0.0)
+        kelly = probability_metrics.get("kelly_fraction_half_pct", 0.0)
+        win_loss = probability_metrics.get("win_loss_ratio", 1.0)
+
+        vm = econometric_metrics.get("var_metrics", {})
+        fat_surcharge = vm.get("fat_tail_surcharge_95_pct", 0.0)
+        vol_ann = econometric_metrics.get("volatility_annualized_pct", 25.0)
+
+        adversarial_challenges = []
+        skeptic_score = 75.0
+
+        if ev < 0:
+            adversarial_challenges.append({
+                "severity": "CRITICAL",
+                "challenge": "Negative Mathematical Expectancy",
+                "argument": f"Strategy generates an expected loss of ${abs(ev):,.2f} USD per execution. Even with favorable nominal win rate, payoffs do not overcome tail penalties."
+            })
+            skeptic_score -= 30.0
+
+        if (pop - pop_cf) > 4.0:
+            adversarial_challenges.append({
+                "severity": "HIGH",
+                "challenge": "Fat-Tail POP Illusion",
+                "argument": f"Nominal Black-Scholes win probability ({pop:.1f}%) collapses to {pop_cf:.1f}% when adjusted for real-world kurtosis and skewness."
+            })
+            skeptic_score -= 15.0
+
+        greeks = greeks_summary or {}
+        net_vega = greeks.get("net_vega", 0.0)
+        if net_vega > 2.0 and vol_ann > 50.0:
+            adversarial_challenges.append({
+                "severity": "HIGH",
+                "challenge": "Vol Crush Vulnerability",
+                "argument": f"High positive Vega exposure ({net_vega:+.2f}) in a high-vol regime ({vol_ann:.1f}%). Strategy is acutely vulnerable to post-event IV collapse."
+            })
+            skeptic_score -= 15.0
+        elif net_vega < -2.0 and vol_ann < 20.0:
+            adversarial_challenges.append({
+                "severity": "HIGH",
+                "challenge": "Short Vega Explosion Risk",
+                "argument": f"Short Vega ({net_vega:+.2f}) in a low-vol regime ({vol_ann:.1f}%). Vulnerable to sudden volatility spikes (VIX shock)."
+            })
+            skeptic_score -= 15.0
+
+        if fat_surcharge > 3.5:
+            adversarial_challenges.append({
+                "severity": "MEDIUM",
+                "challenge": "Excessive Fat-Tail Penalty",
+                "argument": f"Underlying asset distribution imposes a +{fat_surcharge:.2f}% penalty on 95% Downside VaR. Strategy wings may fail in a 2-sigma gap."
+            })
+            skeptic_score -= 10.0
+
+        if kelly <= 0.0:
+            adversarial_challenges.append({
+                "severity": "MEDIUM",
+                "challenge": "Unfavorable Kelly Sizing (Zero Allocation)",
+                "argument": f"Kelly criterion sizing fraction is 0.0% (Win/Loss ratio {win_loss:.2f}x). Strategy fails minimum capital efficiency threshold."
+            })
+            skeptic_score -= 10.0
+
+        skeptic_score = max(5.0, min(95.0, skeptic_score))
+        skeptic_verdict = "DISSENT" if skeptic_score < 45.0 else ("CONCUR_WITH_CAUTION" if skeptic_score < 70.0 else "CONCUR")
+
+        ledger_id = self.ledger.record(
+            tool="SkepticAgent.audit_derivatives_strategy_thesis",
+            inputs={"ticker": ticker, "strategy": strategy_name, "spot": spot_price, "pop": pop, "ev": ev},
+            output={"skeptic_score": skeptic_score, "verdict": skeptic_verdict, "challenges": len(adversarial_challenges)},
+            source="Skeptic Adversarial Derivatives Auditor",
+            ticker=ticker,
+            notes=f"Skeptic Audit for {ticker} {strategy_name}: Score {skeptic_score}/100, Verdict {skeptic_verdict}"
+        )
+
+        return {
+            "agent": "Skeptic Adversarial Agent",
+            "ticker": ticker,
+            "strategy_name": strategy_name,
+            "skeptic_score": round(skeptic_score, 1),
+            "skeptic_verdict": skeptic_verdict,
+            "adversarial_challenges": adversarial_challenges,
+            "provenance_ledger_id": ledger_id
+        }
