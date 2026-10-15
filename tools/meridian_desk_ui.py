@@ -163,6 +163,16 @@ def resolve_and_fetch_live_asset(query_str: str) -> Dict[str, Any]:
     }
 
 
+@st.cache_data(ttl=1800, show_spinner=False)
+def get_cached_empirical_moments(symbol: str) -> Dict[str, Any]:
+    """
+    Caches 252-day empirical higher moments calculation (drift, volatility,
+    skewness, excess kurtosis, Jarque-Bera) for 30 minutes to ensure snappy UI interaction.
+    """
+    engine = EconometricProbabilitySimulator()
+    return engine.calculate_empirical_moments(symbol)
+
+
 def render_meridian_multi_asset_desk():
     """Renders the comprehensive institutional Meridian Multi-Asset Web Terminal."""
 
@@ -966,14 +976,52 @@ def render_meridian_multi_asset_desk():
                 sb_iv = st.number_input("Implied Volatility (%)", min_value=1.0, max_value=300.0, value=float(sb_live["atm_iv_pct"]), step=0.5, format="%.1f", key=f"sb_iv_{sb_live['symbol']}")
                 sb_rf = st.number_input("Risk-Free Rate (%)", min_value=0.0, max_value=20.0, value=4.5, step=0.1, key="sb_rf")
 
-                st.markdown("#### 🎛️ Dynamic Target Date & IV Sliders")
-                sb_target_day = st.slider("Target Date (Days from Today)", 0, int(sb_dte), int(sb_dte // 2), key="sb_td_slider")
-                sb_iv_shift = st.slider("Implied Volatility Shift (%)", -40.0, 40.0, 0.0, 1.0, key="sb_iv_slider")
-                sb_target_spot = st.number_input("Target Evaluation Spot ($)", value=float(sb_spot), step=1.0, key=f"sb_tsp_{sb_live['symbol']}")
+                sb_moments = get_cached_empirical_moments(sb_live["symbol"])
 
-                with st.expander("🔬 Econometric Higher-Moment Settings", expanded=False):
-                    sb_skew = st.slider("Sample Skewness", -2.0, 1.0, -0.45, 0.05, key="sb_skew_sl")
-                    sb_kurt = st.slider("Excess Kurtosis", 0.0, 8.0, 1.80, 0.10, key="sb_kurt_sl")
+                sb_calib_mode = st.radio(
+                    "Econometric Calibration Engine",
+                    [
+                        "📡 Auto-Calibrated (252d Live Return Moments)",
+                        "🎛️ Interactive Custom Scenario (Manual Sliders)"
+                    ],
+                    horizontal=True,
+                    key=f"sb_calib_mode_{sb_live['symbol']}"
+                )
+
+                if sb_calib_mode.startswith("📡"):
+                    sb_skew = float(sb_moments["sample_skewness"])
+                    sb_kurt = float(sb_moments["sample_excess_kurtosis"])
+                    sb_drift = float(sb_moments["annualized_drift"])
+                    st.markdown(f"""
+                    <div style="background:rgba(168,85,247,0.10); border:1px solid #A855F7; border-radius:6px; padding:8px 12px; margin-bottom:10px;">
+                        <div style="display:flex; justify-content:space-between; align-items:center;">
+                            <span style="font-weight:700; color:#F8FAFC; font-size:0.82rem;">
+                                🔬 252d Return Moments ({sb_moments['tail_regime'][:24]}):
+                            </span>
+                            <span style="font-family:monospace; font-weight:700; color:#A855F7; font-size:0.82rem;">
+                                Skew: {sb_skew:+.2f} | Kurt: {sb_kurt:+.2f} | Drift: {sb_moments['annualized_drift_pct']:+.1f}%
+                            </span>
+                        </div>
+                        <div style="font-size:0.75rem; color:#94A3B8; margin-top:3px;">
+                            Jarque-Bera: <b>{sb_moments['jarque_bera_stat']:,.1f}</b> (p={sb_moments['jarque_bera_p_value']:.4f}) — <b>{'Normality REJECTED' if sb_moments['normality_rejected'] else 'Normal Accepted'}</b>
+                        </div>
+                    </div>
+                    """, unsafe_allow_html=True)
+                else:
+                    st.caption("🎛️ Interactive sliders directly warp the probability curves and metrics in real time:")
+                    c_sk1, c_sk2 = st.columns(2)
+                    with c_sk1:
+                        sb_skew = st.slider("Sample Skewness (S)", -2.50, 1.50, float(sb_moments["sample_skewness"]), 0.05, key=f"sb_skew_sl_{sb_live['symbol']}", help="Negative = crash/downside tail elongation, Positive = upside explosion")
+                        sb_drift_pct = st.slider("Annualized Drift (μ %)", -50.0, 50.0, float(sb_moments["annualized_drift_pct"]), 0.5, key=f"sb_drift_sl_{sb_live['symbol']}")
+                    with c_sk2:
+                        sb_kurt = st.slider("Excess Kurtosis (K)", 0.0, 10.0, max(0.0, float(sb_moments["sample_excess_kurtosis"])), 0.10, key=f"sb_kurt_sl_{sb_live['symbol']}", help="K > 0 = Leptokurtic fat tails, higher black swan probability")
+                        sb_rf = st.number_input("Risk-Free Rate (%)", min_value=0.0, max_value=20.0, value=float(sb_rf), step=0.1, key=f"sb_rf_in_{sb_live['symbol']}")
+                    sb_drift = sb_drift_pct / 100.0
+
+                st.markdown("#### 🎛️ Dynamic Target Date & IV Sliders")
+                sb_target_day = st.slider("Target Date (Days from Today)", 0, int(sb_dte), int(sb_dte // 2), key=f"sb_td_slider_{sb_live['symbol']}")
+                sb_iv_shift = st.slider("Implied Volatility Shift (%)", -40.0, 40.0, 0.0, 1.0, key=f"sb_iv_slider_{sb_live['symbol']}")
+                sb_target_spot = st.number_input("Target Evaluation Spot ($)", value=float(sb_spot), step=1.0, key=f"sb_tsp_{sb_live['symbol']}")
 
                 sb_expiry_yr = sb_dte / 365.0
                 sb_vol_dec = sb_iv / 100.0
@@ -1016,6 +1064,7 @@ def render_meridian_multi_asset_desk():
                     spot=sb_spot,
                     legs=sb_legs,
                     risk_free_rate=sb_r_dec,
+                    custom_drift=sb_drift,
                     skewness=sb_skew,
                     kurtosis=sb_kurt,
                     target_days=sb_target_day,
@@ -1026,6 +1075,7 @@ def render_meridian_multi_asset_desk():
                 st.markdown("#### 📊 Strategy Payoff & Probability Density Curves")
                 tda = sb_sim_res["target_date_analysis"]
                 pm = sb_sim_res["probability_metrics"]
+                econo = sb_sim_res["econometric_metrics"]
 
                 fig_sb = make_subplots(specs=[[{"secondary_y": True}]])
 
@@ -1047,22 +1097,36 @@ def render_meridian_multi_asset_desk():
                         x=tda["spot_grid"],
                         y=tda["target_pnl_curve"],
                         mode="lines",
-                        name=f"PnL on Day {sb_target_day} (IV {sb_iv_shift:+.0f}%)",
+                        name=f"PnL Day {sb_target_day} (IV {sb_iv_shift:+.0f}%)",
                         line=dict(color="#38BDF8", width=2.5, dash="dash")
                     ),
                     secondary_y=False
                 )
 
-                # Trace 3: Underlying Probability Density Function (PDF) on Secondary Axis
+                # Trace 3: Empirical Cornish-Fisher PDF (Fat Tails & Skewness)
+                cf_pdf = tda.get("cornish_fisher_pdf", tda["pdf_distribution"])
                 fig_sb.add_trace(
                     go.Scatter(
                         x=tda["spot_grid"],
-                        y=tda["pdf_distribution"],
+                        y=cf_pdf,
                         mode="lines",
-                        name="Underlying Probability PDF",
-                        line=dict(color="#A855F7", width=1.5),
+                        name=f"Empirical PDF (Skew {sb_skew:+.2f}, Kurt {sb_kurt:+.2f})",
+                        line=dict(color="#A855F7", width=2),
                         fill="tozeroy",
-                        fillcolor="rgba(168, 85, 247, 0.12)"
+                        fillcolor="rgba(168, 85, 247, 0.18)"
+                    ),
+                    secondary_y=True
+                )
+
+                # Trace 4: Gaussian Normal PDF (Thin-Tail Benchmark)
+                norm_pdf = tda.get("normal_pdf", tda["pdf_distribution"])
+                fig_sb.add_trace(
+                    go.Scatter(
+                        x=tda["spot_grid"],
+                        y=norm_pdf,
+                        mode="lines",
+                        name="Gaussian Normal PDF (Benchmark)",
+                        line=dict(color="#94A3B8", width=1.5, dash="dot")
                     ),
                     secondary_y=True
                 )
@@ -1098,9 +1162,26 @@ def render_meridian_multi_asset_desk():
                         annotation_borderwidth=1
                     )
 
+                # 95% & 99% Cornish-Fisher VaR price markers
+                e_cones = econo["standard_deviation_cones"]["econometric_adjusted"]
+                cf_var_95_px = e_cones.get("minus_2_sigma_cf")
+                cf_var_99_px = e_cones.get("minus_3_sigma_cf")
+                if cf_var_95_px and cf_var_95_px > min(tda["spot_grid"]):
+                    fig_sb.add_vline(
+                        x=cf_var_95_px,
+                        line_dash="dashdot",
+                        line_color="#EC4899",
+                        annotation_text=f" 95% VaR ${cf_var_95_px:,.2f} ",
+                        annotation_position="top right",
+                        annotation_font=dict(color="#EC4899", size=9.5, family="monospace"),
+                        annotation_bgcolor="rgba(15, 23, 42, 0.92)",
+                        annotation_bordercolor="#EC4899",
+                        annotation_borderwidth=1
+                    )
+
                 fig_sb.update_layout(
                     title=dict(
-                        text=f"<b>{sb_strat}</b> — Dual PnL & Probability Distribution",
+                        text=f"<b>{sb_strat}</b> — Dual PnL & Continuous Econometric Distribution",
                         x=0.01,
                         y=0.98,
                         xanchor="left",
@@ -1144,18 +1225,149 @@ def render_meridian_multi_asset_desk():
                 k7.metric("Touch Probability", touch_str[:25], "Chance of touching BE")
                 k8.metric("Structure Net Premium", f"${sb_sim_res['greeks_summary']['net_debit_credit']:,.2f}", sb_sim_res['greeks_summary']['structure'])
 
-            # Standard Deviation Cones Table
+            # Comprehensive Key Metrics Breakdown Section
             st.divider()
-            st.markdown("#### 📐 Standard Deviation Cones & Expected Ranges at Expiration")
-            cones = sb_sim_res["sigma_cones"]
-            c_cols = st.columns(7)
-            c_cols[0].metric("-3σ (99.7%)", f"${cones['minus_3_sigma']:,.2f}", "Extr. Low")
-            c_cols[1].metric("-2σ (95.5%)", f"${cones['minus_2_sigma']:,.2f}", "Lower 95%")
-            c_cols[2].metric("-1σ (68.3%)", f"${cones['minus_1_sigma']:,.2f}", "Lower 68%")
-            c_cols[3].metric("Expected Mean", f"${cones['mean_expected']:,.2f}", "Drift Path")
-            c_cols[4].metric("+1σ (68.3%)", f"${cones['plus_1_sigma']:,.2f}", "Upper 68%")
-            c_cols[5].metric("+2σ (95.5%)", f"${cones['plus_2_sigma']:,.2f}", "Upper 95%")
-            c_cols[6].metric("+3σ (99.7%)", f"${cones['plus_3_sigma']:,.2f}", "Extr. High")
+            st.markdown("#### 🔬 Comprehensive Econometric Key Metrics & Tail Risk Matrix")
+            tab_m1, tab_m2, tab_m3, tab_m4 = st.tabs([
+                "📊 4-Moment Econometric Matrix",
+                "🛡️ Value-at-Risk (VaR) & CVaR (Expected Shortfall)",
+                "📐 Standard Deviation Cones: Gaussian vs Cornish-Fisher",
+                "🎯 Strategy Decision, Sizing & Greeks"
+            ])
+
+            with tab_m1:
+                st.markdown("##### 🧮 4-Moment Empirical Return Analysis & Normality Tests")
+                m_c1, m_c2, m_c3, m_c4 = st.columns(4)
+                m_c1.metric(
+                    "1st Moment: Annual Drift (μ)",
+                    f"{econo['drift_annualized_pct']:+.2f}%",
+                    f"Horizon: {econo['horizon_days']} Days"
+                )
+                m_c2.metric(
+                    "2nd Moment: Volatility (σ)",
+                    f"{econo['volatility_annualized_pct']:.2f}%",
+                    f"Period σ: {econo['period_volatility_pct']:.2f}%"
+                )
+                m_c3.metric(
+                    "3rd Moment: Sample Skew (S)",
+                    f"{econo['skewness']:+.4f}",
+                    sb_moments.get("skew_regime", "Crash Asymmetry")[:22]
+                )
+                m_c4.metric(
+                    "4th Moment: Excess Kurtosis (K)",
+                    f"{econo['excess_kurtosis']:+.4f}",
+                    sb_moments.get("tail_regime", "Leptokurtic")[:22]
+                )
+
+                st.markdown("---")
+                jb_c1, jb_c2, jb_c3, jb_c4 = st.columns(4)
+                jb_c1.metric(
+                    "Jarque-Bera Test (JB)",
+                    f"{sb_moments.get('jarque_bera_stat', 0.0):,.2f}",
+                    "Normality Test"
+                )
+                jb_c2.metric(
+                    "JB p-value",
+                    f"{sb_moments.get('jarque_bera_p_value', 0.0):.6f}",
+                    "p < 0.05 = Reject Gauss"
+                )
+                norm_rej = sb_moments.get("normality_rejected", True)
+                jb_c3.metric(
+                    "Normality Hypothesis",
+                    "REJECTED ❌" if norm_rej else "ACCEPTED ✔️",
+                    "Fat Tails Proven" if norm_rej else "Gaussian Fit"
+                )
+                jb_c4.metric(
+                    "1-Year Max Drawdown",
+                    f"-{sb_moments.get('max_drawdown_pct', 0.0):.2f}%",
+                    f"Sharpe: {sb_moments.get('sharpe_ratio_proxy', 0.0):.2f}"
+                )
+
+            with tab_m2:
+                st.markdown("##### 🛡️ Downside Value-at-Risk (VaR) & Conditional VaR (Expected Shortfall)")
+                vm = econo["var_metrics"]
+                cm = econo["cvar_expected_shortfall"]
+                ta = econo["tail_asymmetry"]
+
+                v_c1, v_c2, v_c3, v_c4 = st.columns(4)
+                v_c1.metric(
+                    "95% Gaussian VaR",
+                    f"{vm['var_normal_95_pct']:.2f}%",
+                    f"${vm['var_normal_95_dollars']:,.2f} USD"
+                )
+                v_c2.metric(
+                    "95% Cornish-Fisher VaR",
+                    f"{vm['var_cf_95_pct']:.2f}%",
+                    f"${vm['var_cf_95_dollars']:,.2f} USD"
+                )
+                v_c3.metric(
+                    "95% Fat-Tail VaR Surcharge",
+                    f"+{vm['fat_tail_surcharge_95_pct']:.2f}%",
+                    f"+${vm['fat_tail_surcharge_95_dollars']:,.2f} USD"
+                )
+                v_c4.metric(
+                    "95% CVaR (Expected Shortfall)",
+                    f"{cm['cvar_cf_95_pct']:.2f}%",
+                    f"${cm['cvar_cf_95_dollars']:,.2f} USD"
+                )
+
+                st.markdown("---")
+                v2_c1, v2_c2, v2_c3, v2_c4 = st.columns(4)
+                v2_c1.metric(
+                    "99% Gaussian VaR (Extreme)",
+                    f"{vm['var_normal_99_pct']:.2f}%",
+                    f"${vm['var_normal_99_dollars']:,.2f} USD"
+                )
+                v2_c2.metric(
+                    "99% Cornish-Fisher VaR",
+                    f"{vm['var_cf_99_pct']:.2f}%",
+                    f"${vm['var_cf_99_dollars']:,.2f} USD"
+                )
+                v2_c3.metric(
+                    "99% Fat-Tail VaR Surcharge",
+                    f"+{vm['fat_tail_surcharge_99_pct']:.2f}%",
+                    f"+${vm['fat_tail_surcharge_99_dollars']:,.2f} USD"
+                )
+                v2_c4.metric(
+                    "99% CVaR (Expected Shortfall)",
+                    f"{cm['cvar_cf_99_pct']:.2f}%",
+                    f"${cm['cvar_cf_99_dollars']:,.2f} USD"
+                )
+
+                st.caption(f"⚡ **Tail Asymmetry Ratio**: `{ta['tail_asymmetry_ratio']:.2f}x` | **Downside Amplification**: `{ta['downside_amplification']}`. Negative skewness and leptokurtosis cause downside crash risk to significantly exceed upside variance.")
+
+            with tab_m3:
+                st.markdown("##### 📐 Standard Deviation Cones: Gaussian vs Cornish-Fisher Expansion")
+                norm_cones = econo["standard_deviation_cones"]["normal"]
+                cf_cones = econo["standard_deviation_cones"]["econometric_adjusted"]
+
+                st.caption("Side-by-side terminal price bounds at expiration. Notice how Cornish-Fisher pushes lower tail bounds further down and adjusts the upper expansion for skewness:")
+
+                cone_cols = st.columns(7)
+                cone_cols[0].metric("-3σ (99.73%)", f"${cf_cones['minus_3_sigma_cf']:,.2f}", f"Gauss: ${norm_cones['minus_3_sigma']:,.2f}")
+                cone_cols[1].metric("-2σ (95.45%)", f"${cf_cones['minus_2_sigma_cf']:,.2f}", f"Gauss: ${norm_cones['minus_2_sigma']:,.2f}")
+                cone_cols[2].metric("-1σ (68.27%)", f"${cf_cones['minus_1_sigma_cf']:,.2f}", f"Gauss: ${norm_cones['minus_1_sigma']:,.2f}")
+                cone_cols[3].metric("Expected Mean", f"${norm_cones['mean_expected']:,.2f}", f"Median: ${norm_cones['median_expected']:,.2f}")
+                cone_cols[4].metric("+1σ (68.27%)", f"${cf_cones['plus_1_sigma_cf']:,.2f}", f"Gauss: ${norm_cones['plus_1_sigma']:,.2f}")
+                cone_cols[5].metric("+2σ (95.45%)", f"${cf_cones['plus_2_sigma_cf']:,.2f}", f"Gauss: ${norm_cones['plus_2_sigma']:,.2f}")
+                cone_cols[6].metric("+3σ (99.73%)", f"${cf_cones['plus_3_sigma_cf']:,.2f}", f"Gauss: ${norm_cones['plus_3_sigma']:,.2f}")
+
+            with tab_m4:
+                st.markdown("##### 🎯 Strategy Architecture, Capital Allocation & Greeks Summary")
+                gs = sb_sim_res["greeks_summary"]
+                g_c1, g_c2, g_c3, g_c4, g_c5 = st.columns(5)
+                g_c1.metric("Net Delta (Δ)", f"{gs.get('net_delta', 0.0):+.3f}", "Directional bias")
+                g_c2.metric("Net Gamma (Γ)", f"{gs.get('net_gamma', 0.0):+.4f}", "Delta acceleration")
+                g_c3.metric("Net Vega (𝒱)", f"{gs.get('net_vega', 0.0):+.2f}", "Per 1% IV shift")
+                g_c4.metric("Daily Theta (Θ)", f"${gs.get('net_theta_daily', 0.0):+,.2f}", "Time decay / day")
+                g_c5.metric("Net Premium", f"${gs.get('net_debit_credit', 0.0):,.2f}", gs.get("structure", "Spread"))
+
+                st.markdown("---")
+                p_c1, p_c2, p_c3, p_c4 = st.columns(4)
+                p_c1.metric("Gaussian POP", f"{pm['probability_of_profit_pct']:.1f}%", "Unadjusted")
+                p_c2.metric("Fat-Tail Adjusted POP", f"{pm['econometric_adjusted_pop_pct']:.1f}%", f"{pm['econometric_adjusted_pop_pct'] - pm['probability_of_profit_pct']:+.1f}% shift")
+                p_c3.metric("Full-Kelly Allocation", f"{pm['kelly_fraction_full_pct']:.1f}%", "Max Theoretical")
+                p_c4.metric("Half-Kelly Allocation", f"{pm['kelly_fraction_half_pct']:.1f}%", "Institutional Safe")
 
             # -----------------------------------------------------------------
             # LIVE DEAL EXECUTION DESK ($1,000,000 SIMULATION CAPITAL)
@@ -1229,6 +1441,52 @@ def render_meridian_multi_asset_desk():
             </div>
             """, unsafe_allow_html=True)
 
+            eq_moments = get_cached_empirical_moments(eq_live["symbol"])
+
+            eq_calib_mode = st.radio(
+                "Econometric Calibration Engine",
+                [
+                    "📡 Auto-Calibrated (252d Live Return Moments)",
+                    "🎛️ Interactive Custom Scenario (Manual Sliders)"
+                ],
+                horizontal=True,
+                key=f"eq_calib_mode_{eq_live['symbol']}"
+            )
+
+            if eq_calib_mode.startswith("📡"):
+                eq_skew = float(eq_moments["sample_skewness"])
+                eq_kurt = float(eq_moments["sample_excess_kurtosis"])
+                eq_drift = float(eq_moments["annualized_drift"])
+                eq_vol = float(eq_moments["annualized_volatility"])
+                st.markdown(f"""
+                <div style="background:rgba(168,85,247,0.10); border:1px solid #A855F7; border-radius:6px; padding:8px 12px; margin-bottom:10px;">
+                    <div style="display:flex; justify-content:space-between; align-items:center;">
+                        <span style="font-weight:700; color:#F8FAFC; font-size:0.82rem;">
+                            🔬 252d Return Moments ({eq_moments['tail_regime'][:24]}):
+                        </span>
+                        <span style="font-family:monospace; font-weight:700; color:#A855F7; font-size:0.82rem;">
+                            Skew: {eq_skew:+.2f} | Kurt: {eq_kurt:+.2f} | Drift: {eq_moments['annualized_drift_pct']:+.1f}% | Vol: {eq_moments['annualized_volatility_pct']:.1f}%
+                        </span>
+                    </div>
+                    <div style="font-size:0.75rem; color:#94A3B8; margin-top:3px;">
+                        Jarque-Bera: <b>{eq_moments['jarque_bera_stat']:,.1f}</b> (p={eq_moments['jarque_bera_p_value']:.4f}) — <b>{'Normality REJECTED' if eq_moments['normality_rejected'] else 'Normal Accepted'}</b>
+                    </div>
+                </div>
+                """, unsafe_allow_html=True)
+            else:
+                st.caption("🎛️ Interactive sliders directly warp the probability curves and metrics in real time:")
+                e_s1, e_s2, e_s3, e_s4 = st.columns(4)
+                with e_s1:
+                    eq_skew = st.slider("Sample Skewness", -2.50, 1.50, float(eq_moments["sample_skewness"]), 0.05, key=f"eq_skew_sl_{eq_live['symbol']}")
+                with e_s2:
+                    eq_kurt = st.slider("Excess Kurtosis", 0.0, 10.0, max(0.0, float(eq_moments["sample_excess_kurtosis"])), 0.10, key=f"eq_kurt_sl_{eq_live['symbol']}")
+                with e_s3:
+                    eq_drift_pct = st.slider("Annual Drift (%)", -50.0, 50.0, float(eq_moments["annualized_drift_pct"]), 0.5, key=f"eq_drift_sl_{eq_live['symbol']}")
+                    eq_drift = eq_drift_pct / 100.0
+                with e_s4:
+                    eq_vol_pct = st.slider("Volatility (%)", 5.0, 200.0, float(eq_moments["annualized_volatility_pct"]), 0.5, key=f"eq_vol_sl_{eq_live['symbol']}")
+                    eq_vol = eq_vol_pct / 100.0
+
             eq_c1, eq_c2, eq_c3, eq_c4 = st.columns(4)
             with eq_c1:
                 eq_sp = st.number_input("Current Stock Price ($)", min_value=0.1, value=float(eq_live["price"]), step=1.0, format="%.2f", key=f"eq_sp_{eq_live['symbol']}")
@@ -1244,16 +1502,214 @@ def render_meridian_multi_asset_desk():
                 target_price=eq_tp,
                 stop_loss_price=eq_sl,
                 horizon_days=eq_hor,
-                volatility=max(0.10, float(eq_live.get("atm_iv_pct", 35.0)) / 100.0),
-                drift=0.08
+                volatility=eq_vol,
+                drift=eq_drift,
+                skewness=eq_skew,
+                kurtosis=eq_kurt
             )
+
+            # Equity Dual Distribution Chart
+            eq_curves = eq_sim["distribution_curves"]
+            eq_econo = eq_sim["econometric_metrics"]
+            fig_eq = go.Figure()
+
+            fig_eq.add_trace(go.Scatter(
+                x=eq_curves["spot_grid"],
+                y=eq_curves["cornish_fisher_pdf"],
+                mode="lines",
+                name=f"Empirical PDF (Skew {eq_skew:+.2f}, Kurt {eq_kurt:+.2f})",
+                line=dict(color="#A855F7", width=2),
+                fill="tozeroy",
+                fillcolor="rgba(168, 85, 247, 0.18)"
+            ))
+
+            fig_eq.add_trace(go.Scatter(
+                x=eq_curves["spot_grid"],
+                y=eq_curves["normal_pdf"],
+                mode="lines",
+                name="Gaussian Normal PDF (Benchmark)",
+                line=dict(color="#94A3B8", width=1.5, dash="dot")
+            ))
+
+            # Reference Lines
+            fig_eq.add_vline(
+                x=eq_sp,
+                line_dash="dot",
+                line_color="#F59E0B",
+                annotation_text=f" Spot ${eq_sp:,.2f} ",
+                annotation_position="top left",
+                annotation_font=dict(color="#F59E0B", size=10.5, family="monospace"),
+                annotation_bgcolor="rgba(15, 23, 42, 0.92)",
+                annotation_bordercolor="#F59E0B",
+                annotation_borderwidth=1
+            )
+
+            fig_eq.add_vline(
+                x=eq_tp,
+                line_dash="dash",
+                line_color="#10B981",
+                annotation_text=f" Target ${eq_tp:,.2f} ",
+                annotation_position="top right",
+                annotation_font=dict(color="#10B981", size=10.5, family="monospace"),
+                annotation_bgcolor="rgba(15, 23, 42, 0.92)",
+                annotation_bordercolor="#10B981",
+                annotation_borderwidth=1
+            )
+
+            fig_eq.add_vline(
+                x=eq_sl,
+                line_dash="dash",
+                line_color="#EF4444",
+                annotation_text=f" Stop Loss ${eq_sl:,.2f} ",
+                annotation_position="bottom left",
+                annotation_font=dict(color="#EF4444", size=10.5, family="monospace"),
+                annotation_bgcolor="rgba(15, 23, 42, 0.92)",
+                annotation_bordercolor="#EF4444",
+                annotation_borderwidth=1
+            )
+
+            eq_cones_cf = eq_econo["standard_deviation_cones"]["econometric_adjusted"]
+            eq_var_95_px = eq_cones_cf.get("minus_2_sigma_cf")
+            if eq_var_95_px and eq_var_95_px > min(eq_curves["spot_grid"]):
+                fig_eq.add_vline(
+                    x=eq_var_95_px,
+                    line_dash="dashdot",
+                    line_color="#EC4899",
+                    annotation_text=f" 95% VaR ${eq_var_95_px:,.2f} ",
+                    annotation_position="bottom right",
+                    annotation_font=dict(color="#EC4899", size=9.5, family="monospace"),
+                    annotation_bgcolor="rgba(15, 23, 42, 0.92)",
+                    annotation_bordercolor="#EC4899",
+                    annotation_borderwidth=1
+                )
+
+            fig_eq.update_layout(
+                title=dict(
+                    text=f"<b>{eq_live['symbol']}</b> — Continuous Horizon Return Distribution & Barrier Levels",
+                    x=0.01,
+                    y=0.98,
+                    xanchor="left",
+                    yanchor="top",
+                    font=dict(size=13, color="#F8FAFC")
+                ),
+                xaxis_title="Stock Price ($)",
+                yaxis_title="Probability Density",
+                template="plotly_dark",
+                height=380,
+                margin=dict(l=35, r=35, t=65, b=30),
+                legend=dict(
+                    orientation="h",
+                    yanchor="bottom",
+                    y=1.03,
+                    xanchor="right",
+                    x=1.0,
+                    bgcolor="rgba(15, 23, 42, 0.85)",
+                    bordercolor="#334155",
+                    borderwidth=1,
+                    font=dict(size=10.5, color="#E2E8F0")
+                ),
+                hovermode="x unified"
+            )
+            st.plotly_chart(fig_eq, use_container_width=True)
 
             e1, e2, e3, e4, e5 = st.columns(5)
             e1.metric("Prob Touch Target", f"{eq_sim['prob_touch_target_pct']:.1f}%", f"+{eq_sim['target_upside_pct']:.1f}% gain")
             e2.metric("Prob Touch Stop Loss", f"{eq_sim['prob_touch_stop_loss_pct']:.1f}%", f"{eq_sim['stop_loss_pct']:.1f}% loss")
             e3.metric("Prob Close Above Target", f"{eq_sim['prob_close_above_target_pct']:.1f}%", f"Fat-Tail: {eq_sim['econometric_prob_above_target_pct']:.1f}%")
             e4.metric("Risk / Reward Ratio", f"{eq_sim['risk_reward_ratio']:.2f}x", "Target/Stop Distance")
-            e5.metric("Evaluation Horizon", f"{eq_hor} Days", "Continuous 252d Drift")
+            e5.metric("Evaluation Horizon", f"{eq_hor} Days", f"Drift: {eq_econo['drift_annualized_pct']:+.1f}%")
+
+            # Comprehensive Key Metrics Breakdown Section for Equities
+            st.divider()
+            st.markdown("#### 🔬 Single-Stock Econometric Tail Risk Matrix")
+            eq_tab_m1, eq_tab_m2, eq_tab_m3 = st.tabs([
+                "📊 4-Moment Return Matrix",
+                "🛡️ Value-at-Risk (VaR) & CVaR (Expected Shortfall)",
+                "📐 Standard Deviation Cones: Gaussian vs Cornish-Fisher"
+            ])
+
+            with eq_tab_m1:
+                st.markdown("##### 🧮 4-Moment Empirical Return Analysis & Normality Tests")
+                em_c1, em_c2, em_c3, em_c4 = st.columns(4)
+                em_c1.metric(
+                    "1st Moment: Annual Drift (μ)",
+                    f"{eq_econo['drift_annualized_pct']:+.2f}%",
+                    f"Horizon: {eq_econo['horizon_days']} Days"
+                )
+                em_c2.metric(
+                    "2nd Moment: Volatility (σ)",
+                    f"{eq_econo['volatility_annualized_pct']:.2f}%",
+                    f"Period σ: {eq_econo['period_volatility_pct']:.2f}%"
+                )
+                em_c3.metric(
+                    "3rd Moment: Sample Skew (S)",
+                    f"{eq_econo['skewness']:+.4f}",
+                    eq_moments.get("skew_regime", "Crash Asymmetry")[:22]
+                )
+                em_c4.metric(
+                    "4th Moment: Excess Kurtosis (K)",
+                    f"{eq_econo['excess_kurtosis']:+.4f}",
+                    eq_moments.get("tail_regime", "Leptokurtic")[:22]
+                )
+
+                st.markdown("---")
+                ejb_c1, ejb_c2, ejb_c3, ejb_c4 = st.columns(4)
+                ejb_c1.metric(
+                    "Jarque-Bera Test (JB)",
+                    f"{eq_moments.get('jarque_bera_stat', 0.0):,.2f}",
+                    "Normality Test"
+                )
+                ejb_c2.metric(
+                    "JB p-value",
+                    f"{eq_moments.get('jarque_bera_p_value', 0.0):.6f}",
+                    "p < 0.05 = Reject Gauss"
+                )
+                eq_norm_rej = eq_moments.get("normality_rejected", True)
+                ejb_c3.metric(
+                    "Normality Hypothesis",
+                    "REJECTED ❌" if eq_norm_rej else "ACCEPTED ✔️",
+                    "Fat Tails Proven" if eq_norm_rej else "Gaussian Fit"
+                )
+                ejb_c4.metric(
+                    "1-Year Max Drawdown",
+                    f"-{eq_moments.get('max_drawdown_pct', 0.0):.2f}%",
+                    f"Sharpe: {eq_moments.get('sharpe_ratio_proxy', 0.0):.2f}"
+                )
+
+            with eq_tab_m2:
+                st.markdown("##### 🛡️ Downside Value-at-Risk (VaR) & Conditional VaR (Expected Shortfall)")
+                evm = eq_econo["var_metrics"]
+                ecm = eq_econo["cvar_expected_shortfall"]
+                eta = eq_econo["tail_asymmetry"]
+
+                ev_c1, ev_c2, ev_c3, ev_c4 = st.columns(4)
+                ev_c1.metric("95% Gaussian VaR", f"{evm['var_normal_95_pct']:.2f}%", f"${evm['var_normal_95_dollars']:,.2f} USD")
+                ev_c2.metric("95% Cornish-Fisher VaR", f"{evm['var_cf_95_pct']:.2f}%", f"${evm['var_cf_95_dollars']:,.2f} USD")
+                ev_c3.metric("95% Fat-Tail Surcharge", f"+{evm['fat_tail_surcharge_95_pct']:.2f}%", f"+${evm['fat_tail_surcharge_95_dollars']:,.2f} USD")
+                ev_c4.metric("95% CVaR (Expected Shortfall)", f"{ecm['cvar_cf_95_pct']:.2f}%", f"${ecm['cvar_cf_95_dollars']:,.2f} USD")
+
+                st.markdown("---")
+                ev2_c1, ev2_c2, ev2_c3, ev2_c4 = st.columns(4)
+                ev2_c1.metric("99% Gaussian VaR (Extreme)", f"{evm['var_normal_99_pct']:.2f}%", f"${evm['var_normal_99_dollars']:,.2f} USD")
+                ev2_c2.metric("99% Cornish-Fisher VaR", f"{evm['var_cf_99_pct']:.2f}%", f"${evm['var_cf_99_dollars']:,.2f} USD")
+                ev2_c3.metric("99% Fat-Tail Surcharge", f"+{evm['fat_tail_surcharge_99_pct']:.2f}%", f"+${evm['fat_tail_surcharge_99_dollars']:,.2f} USD")
+                ev2_c4.metric("99% CVaR (Expected Shortfall)", f"{ecm['cvar_cf_99_pct']:.2f}%", f"${ecm['cvar_cf_99_dollars']:,.2f} USD")
+
+                st.caption(f"⚡ **Tail Asymmetry Ratio**: `{eta['tail_asymmetry_ratio']:.2f}x` | **Downside Amplification**: `{eta['downside_amplification']}`.")
+
+            with eq_tab_m3:
+                st.markdown("##### 📐 Standard Deviation Cones: Gaussian vs Cornish-Fisher Expansion")
+                eq_norm_cones = eq_econo["standard_deviation_cones"]["normal"]
+                eq_cf_cones = eq_econo["standard_deviation_cones"]["econometric_adjusted"]
+
+                cone_cols = st.columns(7)
+                cone_cols[0].metric("-3σ (99.73%)", f"${eq_cf_cones['minus_3_sigma_cf']:,.2f}", f"Gauss: ${eq_norm_cones['minus_3_sigma']:,.2f}")
+                cone_cols[1].metric("-2σ (95.45%)", f"${eq_cf_cones['minus_2_sigma_cf']:,.2f}", f"Gauss: ${eq_norm_cones['minus_2_sigma']:,.2f}")
+                cone_cols[2].metric("-1σ (68.27%)", f"${eq_cf_cones['minus_1_sigma_cf']:,.2f}", f"Gauss: ${eq_norm_cones['minus_1_sigma']:,.2f}")
+                cone_cols[3].metric("Expected Mean", f"${eq_norm_cones['mean_expected']:,.2f}", f"Median: ${eq_norm_cones['median_expected']:,.2f}")
+                cone_cols[4].metric("+1σ (68.27%)", f"${eq_cf_cones['plus_1_sigma_cf']:,.2f}", f"Gauss: ${eq_norm_cones['plus_1_sigma']:,.2f}")
+                cone_cols[5].metric("+2σ (95.45%)", f"${eq_cf_cones['plus_2_sigma_cf']:,.2f}", f"Gauss: ${eq_norm_cones['plus_2_sigma']:,.2f}")
+                cone_cols[6].metric("+3σ (99.73%)", f"${eq_cf_cones['plus_3_sigma_cf']:,.2f}", f"Gauss: ${eq_norm_cones['plus_3_sigma']:,.2f}")
 
             # Quick Equity Trade Execution
             st.markdown("##### ⚡ Execute Stock Shares into Portfolio ($1,000,000 Capital Balance)")
@@ -1265,7 +1721,7 @@ def render_meridian_multi_asset_desk():
             with eq_b1:
                 eq_side = st.radio("Side", ["BUY (Long)", "SELL (Short)"], horizontal=True, key=f"eq_side_{eq_live['symbol']}")
             with eq_b2:
-                eq_qty = st.number_input("Shares", min_value=1, max_value=100000, value=50, step=10, key=f"eq_qty_{eq_live['symbol']}")
+                eq_qty = st.number_input("Shares", min_value=1, max_value=1000, value=50, step=10, key=f"eq_qty_{eq_live['symbol']}")
             with eq_b3:
                 clean_eq_side = "BUY" if "BUY" in eq_side else "SELL"
                 eq_outlay = eq_qty * eq_sp
