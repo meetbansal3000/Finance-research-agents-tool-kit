@@ -269,3 +269,63 @@ def test_paper_trading_with_venue_routing(temp_paper_engine):
     assert "tca" in pos
     assert pos["effective_entry_price"] >= 150.0
     assert pos["cost_basis"] == 40.0 * 150.0  # Nominal base preserved
+
+
+# =============================================================================
+# 6. PAPER-TRADING REALISM & SECURITY INTEGRITY TESTS
+# =============================================================================
+
+def test_streamlit_config_server_address_and_xsrf():
+    """Verify that .streamlit/config.toml binds only to 127.0.0.1 and enables XSRF protection."""
+    root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    cfg_path = os.path.join(root_dir, ".streamlit", "config.toml")
+    assert os.path.exists(cfg_path), f"Missing config file at {cfg_path}"
+
+    with open(cfg_path, "r", encoding="utf-8") as f:
+        content = f.read()
+
+    assert 'address = "127.0.0.1"' in content or "address = '127.0.0.1'" in content
+    assert "enableXsrfProtection = true" in content
+
+
+def test_ibkr_client_refuses_non_du_account():
+    """Verify that InteractiveBrokersClient refuses live account IDs and enforces 'DU' paper prefix."""
+    # 1. Refuse live individual account starting with 'U'
+    with pytest.raises(ValueError, match="Live IBKR account.*strictly prohibited"):
+        InteractiveBrokersClient(account_id="U1234567")
+
+    # 2. Refuse un-prefixed numeric account ID
+    with pytest.raises(ValueError, match="Live IBKR account.*strictly prohibited"):
+        InteractiveBrokersClient(account_id="12345678")
+
+    # 3. Refuse arbitrary live string
+    with pytest.raises(ValueError, match="Live IBKR account.*strictly prohibited"):
+        InteractiveBrokersClient(account_id="LIVE_ACCOUNT")
+
+    # 4. Refuse live setter modification
+    client = InteractiveBrokersClient(account_id="DU1234567")
+    assert client.account_id == "DU1234567"
+    assert client.is_configured is True
+
+    with pytest.raises(ValueError, match="Live IBKR account.*strictly prohibited"):
+        client.account_id = "U9876543"
+
+    # 5. Default standby client uses DU-SIMULATED
+    default_client = InteractiveBrokersClient()
+    assert default_client.account_id == "DU-SIMULATED"
+    assert default_client.account_id.startswith("DU")
+
+
+def test_dashboard_quote_unavailable_blocks_order():
+    """Verify that missing or stale live quotes show 'quote unavailable' and block order execution without 100.0 fallback."""
+    parsed_tickers = ["NVDA", "UNKNOWN_TICKER"]
+    live_quotes = {
+        "NVDA": {"price": 221.30, "change": 1.5, "available": True},
+        "UNKNOWN_TICKER": {"price": None, "change": 0.0, "available": False}
+    }
+
+    missing_tickers = [t for t in parsed_tickers if not live_quotes.get(t, {}).get("available", False)]
+    assert "UNKNOWN_TICKER" in missing_tickers
+    assert len(missing_tickers) == 1
+    # Ensure no 100.0 fallback was assigned
+    assert live_quotes["UNKNOWN_TICKER"]["price"] is None

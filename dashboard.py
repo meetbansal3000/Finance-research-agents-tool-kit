@@ -2752,17 +2752,20 @@ elif "Portfolio Construction Lab" in nav_choice:
             # Interactive Weights Sliders
             st.markdown("###### ⚖️ Asset Weight Allocations (%)")
             
-            # Fetch live prices for tickers to display in the editor
+            # Fetch live prices for tickers to display in the editor (Zero arbitrary 100.0 fallback)
             live_quotes = {}
             for t in parsed_tickers:
                 try:
                     t_obj = yf.Ticker(t)
                     fi = getattr(t_obj, "fast_info", None)
-                    p = float(getattr(fi, "last_price", None) or getattr(fi, "previous_close", None) or 100.0)
-                    chg = float(getattr(fi, "regular_market_change_percent", None) or 0.0)
-                    live_quotes[t] = {"price": p, "change": chg}
+                    p_val = getattr(fi, "last_price", None) or getattr(fi, "previous_close", None)
+                    if p_val is not None and not np.isnan(p_val) and float(p_val) > 0:
+                        chg = float(getattr(fi, "regular_market_change_percent", None) or 0.0)
+                        live_quotes[t] = {"price": float(p_val), "change": chg, "available": True}
+                    else:
+                        live_quotes[t] = {"price": None, "change": 0.0, "available": False}
                 except Exception:
-                    live_quotes[t] = {"price": 100.0, "change": 0.0}
+                    live_quotes[t] = {"price": None, "change": 0.0, "available": False}
 
             custom_weights = {}
             default_eq_weight = round(100.0 / len(parsed_tickers), 1)
@@ -2771,8 +2774,12 @@ elif "Portfolio Construction Lab" in nav_choice:
             cols_slider = st.columns(min(len(parsed_tickers), 5))
             for i, t in enumerate(parsed_tickers):
                 with cols_slider[i % len(cols_slider)]:
-                    q = live_quotes.get(t, {"price": 100.0, "change": 0.0})
-                    st.markdown(f"**{t}** &nbsp; <span style='font-size:0.8rem; color:#38BDF8;'>${q['price']:.2f}</span>", unsafe_allow_html=True)
+                    q = live_quotes.get(t, {"price": None, "change": 0.0, "available": False})
+                    if q.get("available") and q.get("price") is not None and q["price"] > 0:
+                        price_html = f"${q['price']:.2f}"
+                    else:
+                        price_html = "<span style='color:#EF4444; font-weight:600;'>quote unavailable</span>"
+                    st.markdown(f"**{t}** &nbsp; <span style='font-size:0.8rem; color:#38BDF8;'>{price_html}</span>", unsafe_allow_html=True)
                     w_val = st.slider(
                         f"Weight for {t}",
                         min_value=0.0,
@@ -2788,7 +2795,10 @@ elif "Portfolio Construction Lab" in nav_choice:
                     st.caption(f"${dollar_alloc:,.0f} ({w_val:.1f}%)")
 
             total_weight = sum(custom_weights.values())
-            
+            missing_quote_tickers = [t for t in parsed_tickers if not live_quotes.get(t, {}).get("available", False)]
+            if missing_quote_tickers:
+                st.error(f"⛔ Order Blocked: Real-time quote unavailable for: {', '.join(missing_quote_tickers)}. Live quotes are mandatory.")
+
             col_w_btn1, col_w_btn2, col_w_sum = st.columns([1.2, 1.2, 2])
             with col_w_btn1:
                 if st.button("⚖️ Equalize Weights (100%)", key="btn_eq_w", use_container_width=True):
@@ -2810,6 +2820,9 @@ elif "Portfolio Construction Lab" in nav_choice:
             btn_analyze_custom = st.button("🚀 Analyze & Track My Custom Portfolio", type="primary", use_container_width=True)
 
             if btn_analyze_custom:
+                if missing_quote_tickers:
+                    st.error(f"⛔ Cannot submit order: Live quote unavailable for {', '.join(missing_quote_tickers)}. Please remove unquoted assets.")
+                else:
                 with st.spinner(f"Fetching live market return series and backtesting {parsed_tickers}..."):
                     try:
                         sandbox = BacktestSandbox()

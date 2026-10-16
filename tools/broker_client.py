@@ -418,6 +418,7 @@ class InteractiveBrokersClient(BaseBrokerClient):
     """
     Interactive Brokers (IBKR) Client Portal Web API bridge.
     Connects to the local IBKR Gateway gateway service (typically port 5000).
+    Only paper trading accounts (starting with 'DU') are permitted.
     """
 
     def __init__(
@@ -426,30 +427,55 @@ class InteractiveBrokersClient(BaseBrokerClient):
         account_id: Optional[str] = None,
         ledger: Optional[ProvenanceLedger] = None
     ):
+        raw_acct = account_id if account_id is not None else os.getenv("IBKR_ACCOUNT_ID", "")
+        if raw_acct:
+            clean_acct = raw_acct.strip().upper()
+            if not clean_acct.startswith("DU"):
+                raise ValueError(
+                    f"Live IBKR account '{raw_acct}' is strictly prohibited. "
+                    "Only IBKR paper trading accounts starting with 'DU' (e.g. DU1234567) are permitted."
+                )
+            self._account_id = clean_acct
+        else:
+            self._account_id = "DU-SIMULATED"
+
         self.gateway_host = gateway_host or os.getenv("IBKR_GATEWAY_URL", "https://localhost:5000/v1/api")
-        self.account_id = account_id or os.getenv("IBKR_ACCOUNT_ID", "")
         self.ledger = ledger or DEFAULT_LEDGER
 
     @property
+    def account_id(self) -> str:
+        return self._account_id
+
+    @account_id.setter
+    def account_id(self, val: str) -> None:
+        clean = (val or "").strip().upper()
+        if clean and not clean.startswith("DU"):
+            raise ValueError(
+                f"Live IBKR account '{val}' is strictly prohibited. "
+                "Only IBKR paper trading accounts starting with 'DU' are permitted."
+            )
+        self._account_id = clean or "DU-SIMULATED"
+
+    @property
     def is_configured(self) -> bool:
-        return bool(self.account_id and len(self.account_id) > 3)
+        return bool(self.account_id and self.account_id.startswith("DU") and len(self.account_id) > 3 and self.account_id != "DU-SIMULATED")
 
     def get_account(self) -> Dict[str, Any]:
         """Query IBKR portfolio equity and net liquidation value."""
         if not self.is_configured:
             return {
-                "broker": "Interactive Brokers (IBKR Bridge)",
+                "broker": "Interactive Brokers (IBKR Paper Bridge)",
                 "status": "GATEWAY_STANDBY",
                 "currency": "USD",
                 "equity_usd": 1000000.0,
                 "cash_usd": 1000000.0,
                 "buying_power_usd": 4000000.0,  # 4x Portfolio Margin
-                "account_id": self.account_id or "U-SIMULATED",
+                "account_id": self.account_id,
                 "configured": False
             }
 
         return {
-            "broker": "Interactive Brokers",
+            "broker": "Interactive Brokers (Paper)",
             "status": "CONNECTED",
             "account_id": self.account_id,
             "currency": "USD",
