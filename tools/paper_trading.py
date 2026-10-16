@@ -23,7 +23,26 @@ from tools.fill_model import RealisticFillModel
 
 PROJECT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 PORTFOLIO_FILE = os.path.join(PROJECT_DIR, "journal", "paper_portfolio.json")
-INITIAL_PORTFOLIO_CASH = 1000000.0  # $1,000,000.00 Simulation Capital
+
+CURRENCY_SYMBOLS: Dict[str, str] = {
+    "USD": "$",
+    "EUR": "€",
+    "GBP": "£",
+    "JPY": "¥",
+    "CAD": "CA$",
+    "AUD": "A$",
+    "CHF": "CHF ",
+    "INR": "₹"
+}
+
+def get_currency_symbol(currency: str = "USD") -> str:
+    """Return the display symbol for a given currency code."""
+    return CURRENCY_SYMBOLS.get((currency or "USD").strip().upper(), f"{(currency or 'USD').strip().upper()} ")
+
+# Configurable starting capital: defaults to environment variable or $100,000.00 (NOT $1,000,000)
+DEFAULT_STARTING_CAPITAL = float(os.getenv("STARTING_CAPITAL", os.getenv("PAPER_STARTING_CAPITAL", "100000.0")))
+DEFAULT_CURRENCY = os.getenv("PORTFOLIO_CURRENCY", os.getenv("CURRENCY", "USD")).strip().upper()
+INITIAL_PORTFOLIO_CASH = DEFAULT_STARTING_CAPITAL
 
 
 class PaperTradingEngine:
@@ -31,33 +50,41 @@ class PaperTradingEngine:
     Institutional paper trading execution engine.
     Executes real-market orders against live quotes, validates cash & margin headroom,
     and updates the active portfolio book in real-time.
+    Supports user-configurable starting capital and multi-currency accounting.
     """
 
     def __init__(
         self,
         portfolio_file: Optional[str] = None,
         ledger: Optional[ProvenanceLedger] = None,
-        router: Optional[MultiExchangeRouter] = None
+        router: Optional[MultiExchangeRouter] = None,
+        initial_capital: Optional[float] = None,
+        currency: Optional[str] = None
     ):
         self.portfolio_file = portfolio_file or PORTFOLIO_FILE
         self.ledger = ledger or ProvenanceLedger(run_id="paper_trading")
         self.router = router or MultiExchangeRouter()
+        self.initial_capital = float(initial_capital) if initial_capital is not None else DEFAULT_STARTING_CAPITAL
+        self.currency = (currency or DEFAULT_CURRENCY).strip().upper()
         self._ensure_portfolio_file()
 
     def _ensure_portfolio_file(self) -> None:
         """Initialize paper_portfolio.json if it doesn't exist."""
         os.makedirs(os.path.dirname(self.portfolio_file), exist_ok=True)
         if not os.path.exists(self.portfolio_file):
+            sym = get_currency_symbol(self.currency)
             initial_state = {
-                "initial_cash": INITIAL_PORTFOLIO_CASH,
-                "cash_balance": INITIAL_PORTFOLIO_CASH,
+                "initial_cash": self.initial_capital,
+                "cash_balance": self.initial_capital,
+                "currency": self.currency,
+                "currency_symbol": sym,
                 "created_at": datetime.datetime.now(datetime.timezone.utc).isoformat(),
                 "last_updated": datetime.datetime.now(datetime.timezone.utc).isoformat(),
                 "positions": [],
                 "closed_trades": [],
                 "total_realized_pnl": 0.0,
                 "total_unrealized_pnl": 0.0,
-                "total_equity": INITIAL_PORTFOLIO_CASH
+                "total_equity": self.initial_capital
             }
             with open(self.portfolio_file, "w", encoding="utf-8") as f:
                 json.dump(initial_state, f, indent=2)
@@ -68,12 +95,14 @@ class PaperTradingEngine:
         try:
             with open(self.portfolio_file, "r", encoding="utf-8") as f:
                 data = json.load(f)
+            if "currency" not in data:
+                data["currency"] = self.currency
+            if "currency_symbol" not in data:
+                data["currency_symbol"] = get_currency_symbol(data["currency"])
             return data
         except Exception:
             # Fallback reinitialization if file is corrupted
-            self.reset_portfolio()
-            with open(self.portfolio_file, "r", encoding="utf-8") as f:
-                return json.load(f)
+            return self.reset_portfolio()
 
     def save_portfolio(self, data: Dict[str, Any]) -> None:
         """Persist portfolio state to disk."""
@@ -213,7 +242,9 @@ class PaperTradingEngine:
                 tca["effective_price"] = effective_px
 
         data = self.load_portfolio()
-        cash = float(data.get("cash_balance", INITIAL_PORTFOLIO_CASH))
+        curr_code = data.get("currency", self.currency)
+        curr_sym = data.get("currency_symbol", get_currency_symbol(curr_code))
+        cash = float(data.get("cash_balance", self.initial_capital))
 
         # Determine capital commitment / margin
         price_for_cost = effective_px if apply_tca_to_cost_basis else px
@@ -238,7 +269,7 @@ class PaperTradingEngine:
             if cost > cash:
                 return (
                     False,
-                    f"Insufficient Cash: Order requires ${cost:,.2f} USD, but available cash is ${cash:,.2f} USD.",
+                    f"Insufficient Cash: Order requires {curr_sym}{cost:,.2f} {curr_code}, but available cash is {curr_sym}{cash:,.2f} {curr_code}.",
                     {}
                 )
             new_cash = round(cash - cost, 2)
@@ -247,7 +278,7 @@ class PaperTradingEngine:
             if cost > cash:
                 return (
                     False,
-                    f"Insufficient Margin: Short position requires ${cost:,.2f} USD margin buffer.",
+                    f"Insufficient Margin: Short position requires {curr_sym}{cost:,.2f} {curr_code} margin buffer.",
                     {}
                 )
             new_cash = round(cash - cost, 2)
@@ -328,8 +359,8 @@ class PaperTradingEngine:
 
         status_tag = "ORDER PARTIALLY FILLED" if is_partial else "ORDER FILLED"
         msg = (
-            f"✅ {status_tag} [{ord_id} via {routing_venue}]: {clean_side} {fill_qty:,.2f} {sym} @ ${effective_px:,.4f} "
-            f"(${cost:,.2f} Total | TCA Friction: ${tca['total_friction_usd']:,.2f}) | Ledger: {ledger_id}"
+            f"✅ {status_tag} [{ord_id} via {routing_venue}]: {clean_side} {fill_qty:,.2f} {sym} @ {curr_sym}{effective_px:,.4f} "
+            f"({curr_sym}{cost:,.2f} Total {curr_code} | TCA Friction: {curr_sym}{tca['total_friction_usd']:,.2f}) | Ledger: {ledger_id}"
         )
         if is_partial:
             msg += f" | {unfilled_qty:,.2f} remaining unfilled"
@@ -474,11 +505,13 @@ class PaperTradingEngine:
         self.save_portfolio(data)
         self.mark_to_market()
 
+        curr_code = data.get("currency", self.currency)
+        curr_sym = data.get("currency_symbol", get_currency_symbol(curr_code))
         sign_sym = "+" if realized_pnl >= 0 else ""
         msg = (
-            f"✅ CLOSED [{position_id}]: {side} {qty} {sym} @ ${px:,.2f} | "
-            f"P&L: {sign_sym}${realized_pnl:,.2f} ({sign_sym}{ret_pct:.2f}%) | "
-            f"Cash Balance: ${new_cash:,.2f} | Ledger: {ledger_id}"
+            f"✅ CLOSED [{position_id}]: {side} {qty} {sym} @ {curr_sym}{px:,.2f} {curr_code} | "
+            f"P&L: {sign_sym}{curr_sym}{realized_pnl:,.2f} ({sign_sym}{ret_pct:.2f}%) | "
+            f"Cash Balance: {curr_sym}{new_cash:,.2f} {curr_code} | Ledger: {ledger_id}"
         )
         return True, msg, closed_record
 
@@ -777,12 +810,23 @@ class PaperTradingEngine:
             "ledger_id": ledger_id
         }
 
-    def reset_portfolio(self, initial_cash: float = INITIAL_PORTFOLIO_CASH) -> Dict[str, Any]:
-        """Reset paper portfolio back to initial $1,000,000.00 cash balance."""
+    def reset_portfolio(
+        self,
+        initial_cash: Optional[float] = None,
+        currency: Optional[str] = None
+    ) -> Dict[str, Any]:
+        """Reset paper portfolio back to initial cash balance and currency."""
         os.makedirs(os.path.dirname(self.portfolio_file), exist_ok=True)
+        init_c = float(initial_cash) if initial_cash is not None else self.initial_capital
+        curr = (currency or self.currency).strip().upper()
+        sym = get_currency_symbol(curr)
+        self.initial_capital = init_c
+        self.currency = curr
         reset_state = {
-            "initial_cash": float(initial_cash),
-            "cash_balance": float(initial_cash),
+            "initial_cash": init_c,
+            "cash_balance": init_c,
+            "currency": curr,
+            "currency_symbol": sym,
             "created_at": datetime.datetime.now(datetime.timezone.utc).isoformat(),
             "last_updated": datetime.datetime.now(datetime.timezone.utc).isoformat(),
             "positions": [],
@@ -790,12 +834,36 @@ class PaperTradingEngine:
             "total_realized_pnl": 0.0,
             "total_unrealized_pnl": 0.0,
             "total_open_value": 0.0,
-            "total_equity": float(initial_cash),
+            "total_equity": init_c,
             "portfolio_return_pct": 0.0
         }
         with open(self.portfolio_file, "w", encoding="utf-8") as f:
             json.dump(reset_state, f, indent=2)
         return reset_state
+
+    def set_starting_capital(
+        self,
+        amount: float,
+        currency: str = "USD",
+        reset_positions: bool = False
+    ) -> Dict[str, Any]:
+        """Configure starting capital and currency."""
+        amt = float(amount)
+        curr = currency.strip().upper()
+        self.initial_capital = amt
+        self.currency = curr
+        if reset_positions:
+            return self.reset_portfolio(initial_cash=amt, currency=curr)
+        data = self.load_portfolio()
+        old_init = float(data.get("initial_cash", amt))
+        delta = amt - old_init
+        data["initial_cash"] = amt
+        data["cash_balance"] = round(float(data.get("cash_balance", amt)) + delta, 2)
+        data["currency"] = curr
+        data["currency_symbol"] = get_currency_symbol(curr)
+        self.save_portfolio(data)
+        self.mark_to_market()
+        return data
 
 
 _ENGINE_INSTANCE: Optional[PaperTradingEngine] = None

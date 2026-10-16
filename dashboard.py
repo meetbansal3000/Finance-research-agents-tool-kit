@@ -2640,13 +2640,13 @@ elif "Portfolio Construction Lab" in nav_choice:
         st.markdown('<div class="meridian-intro">Real-time market valuation, custom user portfolio weights, NVIDIA cuOpt optimization, and step-by-step mathematical return audits. Zero static pre-loaded data.</div>', unsafe_allow_html=True)
     with col_info:
         render_tab_info_guide(
-            title="Interactive Portfolio Lab & $1M Simulation",
-            purpose="Build your own custom portfolio or run algorithmic optimization, deploy simulated cash capital ($1,000,000 baseline), and inspect exact return calculations.",
+            title="Interactive Portfolio Lab & Simulation",
+            purpose="Build your own custom portfolio or run algorithmic optimization, deploy simulated cash capital (configurable baseline), and inspect exact return calculations.",
             capabilities=[
                 "Live financial market data quotes directly via Yahoo Finance API",
                 "Custom user portfolio builder with interactive weight and share controls",
                 "NVIDIA cuOpt quadratic programming (QP) convex variance minimization",
-                "$1,000,000 simulated cash capital deployment & discrete share sizing",
+                "Configurable simulated cash capital deployment & discrete share sizing",
                 "Daily cumulative equity growth curve simulation vs S&P 500 benchmark",
                 "Complete step-by-step mathematical return audit and trade execution ticket"
             ],
@@ -2670,33 +2670,34 @@ elif "Portfolio Construction Lab" in nav_choice:
     # Capital & Timeframe Controls
     c_ctrl1, c_ctrl2, c_ctrl3 = st.columns([1.5, 1.2, 1.5])
     with c_ctrl1:
+        default_capital = float(os.getenv("STARTING_CAPITAL", "100000.0"))
         sim_capital = st.number_input(
-            "💵 Simulated Cash Capital ($)",
-            min_value=10_000.0,
+            "💵 Simulated Cash Capital ($ USD)",
+            min_value=1_000.0,
             max_value=100_000_000.0,
-            value=st.session_state.get("sim_capital_val", 1_000_000.0),
-            step=50_000.0,
+            value=st.session_state.get("sim_capital_val", default_capital),
+            step=10_000.0,
             format="%.2f",
             key="port_sim_capital_field",
-            help="Simulated cash capital deployed across portfolio assets."
+            help="User-configurable simulated cash capital deployed across portfolio assets."
         )
         st.session_state["sim_capital_val"] = sim_capital
         cap_c1, cap_c2, cap_c3, cap_c4 = st.columns(4)
         with cap_c1:
-            if st.button("$250k", key="cap_btn_250k", use_container_width=True):
-                st.session_state["sim_capital_val"] = 250_000.0
+            if st.button("$25k", key="cap_btn_25k", use_container_width=True):
+                st.session_state["sim_capital_val"] = 25_000.0
                 st.rerun()
         with cap_c2:
-            if st.button("$500k", key="cap_btn_500k", use_container_width=True):
-                st.session_state["sim_capital_val"] = 500_000.0
+            if st.button("$50k", key="cap_btn_50k", use_container_width=True):
+                st.session_state["sim_capital_val"] = 50_000.0
                 st.rerun()
         with cap_c3:
-            if st.button("$1.0M", key="cap_btn_1m", use_container_width=True):
-                st.session_state["sim_capital_val"] = 1_000_000.0
+            if st.button("$100k", key="cap_btn_100k", use_container_width=True):
+                st.session_state["sim_capital_val"] = 100_000.0
                 st.rerun()
         with cap_c4:
-            if st.button("$5.0M", key="cap_btn_5m", use_container_width=True):
-                st.session_state["sim_capital_val"] = 5_000_000.0
+            if st.button("$250k", key="cap_btn_250k", use_container_width=True):
+                st.session_state["sim_capital_val"] = 250_000.0
                 st.rerun()
 
     with c_ctrl2:

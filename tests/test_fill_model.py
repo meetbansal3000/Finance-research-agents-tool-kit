@@ -242,6 +242,7 @@ def test_partial_fill_on_adv_share_threshold(temp_engine):
     - Status: PARTIALLY_FILLED.
     - Portfolio position reflects 20,000 shares.
     """
+    temp_engine.reset_portfolio(initial_cash=1000000.0)
     ok, msg, pos = temp_engine.execute_trade(
         symbol="INTC",
         asset_class="Equities",

@@ -264,42 +264,70 @@ def render_meridian_multi_asset_desk():
         # ---------------------------------------------------------------------
         # 1. LIVE PAPER TRADING PORTFOLIO & REAL-DEAL POSITIONS BOOK
         # ---------------------------------------------------------------------
-        st.markdown("### 💼 Live Trading Portfolio ($1,000,000 Capital Balance)")
-        st.caption("Real-time mark-to-market valuations, live cash tracking, and open deals execution ledger.")
-
         paper_engine = get_paper_trading_engine()
         port = paper_engine.load_portfolio()
         open_positions = port.get("positions", [])
         closed_trades = port.get("closed_trades", [])
+        curr_code = port.get("currency", "USD")
+        curr_sym = port.get("currency_symbol", "$")
 
         # Executive KPI Cards
-        tot_equity = float(port.get("total_equity", INITIAL_PORTFOLIO_CASH))
-        cash_bal = float(port.get("cash_balance", INITIAL_PORTFOLIO_CASH))
+        init_cap = float(port.get("initial_cash", paper_engine.initial_capital))
+        tot_equity = float(port.get("total_equity", init_cap))
+        cash_bal = float(port.get("cash_balance", init_cap))
         open_val = float(port.get("total_open_value", 0.0))
         unreal_pnl = float(port.get("total_unrealized_pnl", 0.0))
         real_pnl = float(port.get("total_realized_pnl", 0.0))
         ret_pct = float(port.get("portfolio_return_pct", 0.0))
 
+        st.markdown(f"### 💼 Live Trading Portfolio ({curr_sym}{init_cap:,.0f} {curr_code} Capital)")
+        st.caption(f"Real-time mark-to-market valuations, live cash tracking ({curr_code}), and execution ledger.")
+
         kpi_p1, kpi_p2, kpi_p3, kpi_p4, kpi_p5 = st.columns(5)
-        kpi_p1.metric("Total Portfolio Equity", f"${tot_equity:,.2f}", f"{ret_pct:+.2f}% Overall")
-        kpi_p2.metric("Available Cash Balance", f"${cash_bal:,.2f}", "Uncommitted USD")
-        kpi_p3.metric("Active Deals Value", f"${open_val:,.2f}", f"{len(open_positions)} Open Deals")
+        kpi_p1.metric(f"Total Equity ({curr_code})", f"{curr_sym}{tot_equity:,.2f}", f"{ret_pct:+.2f}% Overall")
+        kpi_p2.metric(f"Available Cash ({curr_code})", f"{curr_sym}{cash_bal:,.2f}", f"Uncommitted {curr_code}")
+        kpi_p3.metric("Active Deals Value", f"{curr_sym}{open_val:,.2f}", f"{len(open_positions)} Open Deals")
         unreal_sign = "+" if unreal_pnl >= 0 else ""
-        kpi_p4.metric("Unrealized MTM P&L", f"{unreal_sign}${unreal_pnl:,.2f}", "Live Mark-to-Market")
+        kpi_p4.metric("Unrealized MTM P&L", f"{unreal_sign}{curr_sym}{unreal_pnl:,.2f}", "Live Mark-to-Market")
         real_sign = "+" if real_pnl >= 0 else ""
-        kpi_p5.metric("Realized Closed P&L", f"{real_sign}${real_pnl:,.2f}", f"{len(closed_trades)} Trades Closed")
+        kpi_p5.metric("Realized Closed P&L", f"{real_sign}{curr_sym}{real_pnl:,.2f}", f"{len(closed_trades)} Trades Closed")
+
+        # Starting Capital & Currency Configuration Expander
+        with st.expander("⚙️ Configure Starting Capital & Currency", expanded=False):
+            cfg_c1, cfg_c2, cfg_c3 = st.columns([2.0, 1.5, 1.5])
+            with cfg_c1:
+                cfg_cap = st.number_input(
+                    f"Starting Capital ({curr_code})",
+                    min_value=1000.0,
+                    max_value=100000000.0,
+                    value=float(init_cap),
+                    step=10000.0,
+                    format="%.2f",
+                    key="p_cfg_cap_input"
+                )
+            with cfg_c2:
+                available_currs = ["USD", "EUR", "GBP", "JPY", "CAD", "AUD", "CHF", "INR"]
+                curr_idx = available_currs.index(curr_code) if curr_code in available_currs else 0
+                cfg_curr = st.selectbox("Base Currency", available_currs, index=curr_idx, key="p_cfg_curr_select")
+            with cfg_c3:
+                st.write("")
+                st.write("")
+                if st.button("💾 Apply & Reinitialize", use_container_width=True, key="p_save_cap_btn"):
+                    paper_engine.reset_portfolio(initial_cash=cfg_cap, currency=cfg_curr)
+                    st.success(f"✅ Starting capital configured to {cfg_curr} {cfg_cap:,.2f}")
+                    st.rerun()
 
         # Toolbar: Refresh Quotes, Reset, Risk Sentry Audit
-        t_col1, t_col2, t_col3, t_col4 = st.columns([1.5, 1.5, 2.0, 1.5])
+        t_col1, t_col2, t_col3 = st.columns([1.5, 2.0, 2.0])
         with t_col1:
             if st.button("🔄 Sync All Quotes & MTM", use_container_width=True, key="p_sync_btn"):
                 with st.spinner("Fetching live market quotes and marking positions to market..."):
                     paper_engine.mark_to_market()
                     st.rerun()
         with t_col2:
-            if st.button("🗑️ Reset Portfolio to $1M", use_container_width=True, key="p_reset_btn"):
+            if st.button(f"🗑️ Reset to {curr_sym}{init_cap:,.0f} {curr_code}", use_container_width=True, key="p_reset_btn"):
                 paper_engine.reset_portfolio()
-                st.success("✅ Portfolio reset to $1,000,000.00 USD cash.")
+                st.success(f"✅ Portfolio reset to {curr_sym}{init_cap:,.2f} {curr_code} cash.")
                 st.rerun()
         with t_col3:
             if st.button("🚨 Run Risk Sentry Audit", type="secondary", use_container_width=True, key="p_sentry_btn"):
@@ -410,11 +438,11 @@ def render_meridian_multi_asset_desk():
         b_c1, b_c2, b_c3 = st.columns([2.0, 1.5, 1.5])
         with b_c1:
             exec_mode_options = [
-                "🏢 Simulation Paper Desk ($1,000,000 Capital Anchor)",
+                f"🏢 Simulation Paper Desk ({curr_sym}{init_cap:,.0f} {curr_code})",
                 "🦙 Alpaca Markets Paper API (Sandbox)"
             ]
             mode_map = {
-                "🏢 Simulation Paper Desk ($1,000,000 Capital Anchor)": "SIMULATION_PAPER",
+                f"🏢 Simulation Paper Desk ({curr_sym}{init_cap:,.0f} {curr_code})": "SIMULATION_PAPER",
                 "🦙 Alpaca Markets Paper API (Sandbox)": "ALPACA_PAPER"
             }
             curr_mode = router.active_mode
@@ -447,7 +475,7 @@ def render_meridian_multi_asset_desk():
                 acct = router.alpaca_client.get_account()
                 status_color = "#10B981" if acct.get("status") in ("ACTIVE", "SIMULATED_ACTIVE") else "#F59E0B"
                 b_status = acct.get("status", "ACTIVE")
-                b_bp = acct.get("buying_power_usd", 1000000.0 * 2.0)
+                b_bp = acct.get("buying_power_usd", init_cap * 2.0)
             else:
                 status_color = "#10B981"
                 b_status = "SIMULATION_ACTIVE"
@@ -456,14 +484,14 @@ def render_meridian_multi_asset_desk():
             st.markdown(f"""
             <div style="background:#0F172A; border:1px solid #1E293B; border-radius:6px; padding:8px 12px; margin-top:24px;">
                 <div style="font-size:0.75rem; color:#94A3B8;">STATUS: <b style="color:{status_color};">{b_status}</b></div>
-                <div style="font-size:0.85rem; font-weight:700; color:#F8FAFC;">Buying Power: ${b_bp:,.2f}</div>
+                <div style="font-size:0.85rem; font-weight:700; color:#F8FAFC;">Buying Power: {curr_sym}{b_bp:,.2f} {curr_code}</div>
             </div>
             """, unsafe_allow_html=True)
 
         # Active Positions Book Table
         st.markdown("#### 📋 Open Deals & Active Positions Book")
         if not open_positions:
-            st.info("ℹ️ Your active portfolio is currently 100% Cash ($1,000,000.00 USD). Go to Tab 2 (Options), Tab 3 (Econometric Simulator), Tab 4 (Futures), or Tab 6 (Crypto) to execute real live deals at market prices!")
+            st.info(f"ℹ️ Your active portfolio is currently 100% Cash ({curr_sym}{cash_bal:,.2f} {curr_code}). Go to Tab 2 (Options), Tab 3 (Econometric Simulator), Tab 4 (Futures), or Tab 6 (Crypto) to execute real live deals at market prices!")
         else:
             for p in open_positions:
                 p_id = p["position_id"]

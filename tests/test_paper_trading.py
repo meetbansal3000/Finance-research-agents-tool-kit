@@ -1,7 +1,7 @@
 """
 tests/test_paper_trading.py - Unit Tests for Live Paper Trading Execution Engine
-Verifies $1,000,000 initial capital, execution mechanics, options multiplier,
-futures initial margin, position closing, mark-to-market, and cryptographic receipts.
+Verifies configurable starting capital (default chosen by user, not $1M), currency display,
+execution mechanics, options multiplier, futures initial margin, position closing, and receipts.
 """
 
 import os
@@ -26,8 +26,10 @@ def temp_engine():
 
 def test_initial_portfolio_balance(temp_engine):
     data = temp_engine.load_portfolio()
-    assert data["initial_cash"] == 1000000.0
-    assert data["cash_balance"] == 1000000.0
+    assert data["initial_cash"] == 100000.0  # Configurable default (not $1,000,000)
+    assert data["cash_balance"] == 100000.0
+    assert data["currency"] == "USD"
+    assert data["currency_symbol"] == "$"
     assert len(data["positions"]) == 0
     assert len(data["closed_trades"]) == 0
 
@@ -48,7 +50,7 @@ def test_execute_equity_trade(temp_engine):
     assert pos["quantity"] == 100.0
 
     port = temp_engine.load_portfolio()
-    assert port["cash_balance"] == 1000000.0 - 10500.0
+    assert port["cash_balance"] == 100000.0 - 10500.0
     assert len(port["positions"]) == 1
 
 
@@ -68,20 +70,21 @@ def test_execute_options_trade_multiplier(temp_engine):
     assert pos["multiplier"] == 100.0
 
     port = temp_engine.load_portfolio()
-    assert port["cash_balance"] == 1000000.0 - 3000.0
+    assert port["cash_balance"] == 100000.0 - 3000.0
 
 
 def test_insufficient_cash_rejection(temp_engine):
-    # Trying to buy $2,000,000 worth of stock with $1,000,000 cash
+    # Trying to buy $200,000 worth of stock with $100,000 cash
     ok, msg, pos = temp_engine.execute_trade(
         symbol="AAPL",
         asset_class="Equities",
         side="BUY",
-        quantity=20000.0,
+        quantity=2000.0,
         price=100.0
     )
     assert ok is False
     assert "Insufficient Cash" in msg
+    assert "USD" in msg or "$" in msg
 
 
 def test_close_position_realized_pnl(temp_engine):
@@ -109,7 +112,7 @@ def test_close_position_realized_pnl(temp_engine):
     port = temp_engine.load_portfolio()
     assert len(port["positions"]) == 0
     assert len(port["closed_trades"]) == 1
-    assert port["cash_balance"] == 1000000.0 + 2000.0
+    assert port["cash_balance"] == 100000.0 + 2000.0
     assert port["total_realized_pnl"] == 2000.0
 
 
@@ -127,7 +130,7 @@ def test_mark_to_market_update(temp_engine):
     assert summary["positions"][0]["current_price"] == 220.0
     assert summary["positions"][0]["unrealized_pnl"] == 1000.0
     assert summary["total_unrealized_pnl"] == 1000.0
-    assert summary["total_equity"] == 1001000.0
+    assert summary["total_equity"] == 101000.0
 
 
 def test_reset_portfolio(temp_engine):
@@ -138,10 +141,87 @@ def test_reset_portfolio(temp_engine):
         quantity=10.0,
         price=400.0
     )
-    reset = temp_engine.reset_portfolio(initial_cash=1000000.0)
-    assert reset["cash_balance"] == 1000000.0
+    reset = temp_engine.reset_portfolio()
+    assert reset["cash_balance"] == 100000.0
+    assert reset["initial_cash"] == 100000.0
     assert len(reset["positions"]) == 0
     assert reset["total_realized_pnl"] == 0.0
+
+
+def test_configurable_starting_capital_constructor():
+    with tempfile.NamedTemporaryFile(suffix=".json", delete=False) as f:
+        t_path = f.name
+    if os.path.exists(t_path):
+        os.remove(t_path)
+    try:
+        custom_engine = PaperTradingEngine(
+            portfolio_file=t_path,
+            initial_capital=50000.0,
+            currency="EUR"
+        )
+        port = custom_engine.load_portfolio()
+        assert port["initial_cash"] == 50000.0
+        assert port["cash_balance"] == 50000.0
+        assert port["currency"] == "EUR"
+        assert port["currency_symbol"] == "€"
+    finally:
+        if os.path.exists(t_path):
+            os.remove(t_path)
+
+
+def test_configurable_starting_capital_via_env(monkeypatch):
+    monkeypatch.setenv("STARTING_CAPITAL", "75000.0")
+    monkeypatch.setenv("PORTFOLIO_CURRENCY", "GBP")
+    with tempfile.NamedTemporaryFile(suffix=".json", delete=False) as f:
+        t_path = f.name
+    if os.path.exists(t_path):
+        os.remove(t_path)
+    try:
+        custom_engine = PaperTradingEngine(
+            portfolio_file=t_path,
+            initial_capital=float(os.getenv("STARTING_CAPITAL")),
+            currency=os.getenv("PORTFOLIO_CURRENCY")
+        )
+        port = custom_engine.load_portfolio()
+        assert port["initial_cash"] == 75000.0
+        assert port["currency"] == "GBP"
+        assert port["currency_symbol"] == "£"
+    finally:
+        if os.path.exists(t_path):
+            os.remove(t_path)
+
+
+def test_set_starting_capital_and_currency_method(temp_engine):
+    res = temp_engine.set_starting_capital(250000.0, currency="CAD", reset_positions=True)
+    assert res["initial_cash"] == 250000.0
+    assert res["cash_balance"] == 250000.0
+    assert res["currency"] == "CAD"
+    assert res["currency_symbol"] == "CA$"
+
+
+def test_currency_display_in_order_messages():
+    with tempfile.NamedTemporaryFile(suffix=".json", delete=False) as f:
+        t_path = f.name
+    if os.path.exists(t_path):
+        os.remove(t_path)
+    try:
+        eur_engine = PaperTradingEngine(
+            portfolio_file=t_path,
+            initial_capital=100000.0,
+            currency="EUR"
+        )
+        ok, msg, pos = eur_engine.execute_trade(
+            symbol="SAP",
+            asset_class="Equities",
+            side="BUY",
+            quantity=10.0,
+            price=150.0
+        )
+        assert ok is True
+        assert "EUR" in msg
+    finally:
+        if os.path.exists(t_path):
+            os.remove(t_path)
 
 
 def test_company_name_resolution_for_paper_trading():
