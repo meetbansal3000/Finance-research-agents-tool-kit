@@ -586,38 +586,63 @@ class MultiExchangeRouter:
         price: float,
         preferred_venue: str = "SMART",
         order_type: str = "market",
-        is_maker: bool = False
+        is_maker: bool = False,
+        limit_price: Optional[float] = None,
+        quote_timestamp: Optional[Union[float, int, str, datetime.datetime]] = None,
+        max_quote_age_seconds: float = 900.0,
+        enforce_market_hours: bool = False,
+        current_time: Optional[datetime.datetime] = None,
+        average_daily_volume: Optional[float] = None,
+        max_volume_share: float = 0.10
     ) -> Tuple[bool, str, Dict[str, Any]]:
         """
         Route an order through the active execution venue with complete TCA friction modeling:
         - Calculates exchange fees and slippage impact.
+        - Validates market hours, quote freshness, and limit crossings.
+        - Supports partial fills when quantity exceeds ADV volume share.
         - Dispatches order to selected broker gateway.
         - Emits signed provenance ledger confirmation.
         """
         if self.active_mode not in self.AVAILABLE_MODES:
             return False, f"❌ Execution mode '{self.active_mode}' is not permitted. Only {self.AVAILABLE_MODES} are allowed.", {}
 
+        from tools.fill_model import RealisticFillModel
+
         asset = asset_class.capitalize() if asset_class else "Equities"
         qty = abs(float(quantity))
         px = float(price)
+        venue = preferred_venue or "SMART"
 
-        # 1. Pre-Trade Transaction Cost Analysis (TCA)
-        tca = self.cost_model.calculate_execution_costs(
+        # Execute institutional fill model
+        fill = RealisticFillModel.execute_fill(
+            symbol=symbol,
             asset_class=asset,
             side=side,
             quantity=qty,
-            price=px,
+            market_price=px,
+            order_type=order_type,
+            limit_price=limit_price,
+            average_daily_volume=average_daily_volume,
+            max_volume_share=max_volume_share,
+            quote_timestamp=quote_timestamp,
+            max_quote_age_seconds=max_quote_age_seconds,
+            enforce_market_hours=enforce_market_hours,
+            current_time=current_time,
             is_maker=is_maker
         )
 
-        effective_px = tca["effective_price"]
-        venue = preferred_venue or "SMART"
+        if not fill.get("success", False):
+            return False, fill.get("message", "Fill rejected"), fill
 
-        # 2. Broker Routing Dispatch
+        effective_px = fill["execution_price"]
+        tca = fill["tca"]
+        filled_qty = fill["filled_quantity"]
+
+        # Broker Routing Dispatch
         if self.active_mode == "ALPACA_PAPER":
             ok, msg, broker_res = self.alpaca_client.submit_order(
                 symbol=symbol,
-                quantity=qty,
+                quantity=filled_qty,
                 side=side,
                 order_type=order_type,
                 price=effective_px,
@@ -626,6 +651,7 @@ class MultiExchangeRouter:
             broker_res["tca"] = tca
             broker_res["routed_venue"] = venue
             broker_res["execution_mode"] = self.active_mode
+            broker_res["fill_details"] = fill
             return ok, msg, broker_res
 
         else:
@@ -637,23 +663,29 @@ class MultiExchangeRouter:
                 "symbol": symbol.upper(),
                 "asset_class": asset,
                 "side": side.upper(),
-                "quantity": qty,
+                "quantity": filled_qty,
+                "requested_quantity": qty,
+                "unfilled_quantity": fill.get("unfilled_quantity", 0.0),
+                "is_partial": fill.get("is_partial", False),
                 "order_type": order_type.upper(),
                 "routed_venue": venue,
                 "benchmark_price": px,
                 "filled_avg_price": effective_px,
                 "tca": tca,
-                "status": "FILLED",
+                "status": fill.get("status", "FILLED"),
                 "executed_at": datetime.datetime.now(datetime.timezone.utc).isoformat()
             }
             ledger_id = DEFAULT_LEDGER.record(
                 tool="MultiExchangeRouter.route_and_execute",
-                inputs={"symbol": symbol, "quantity": qty, "side": side, "venue": venue},
+                inputs={"symbol": symbol, "quantity": filled_qty, "side": side, "venue": venue},
                 output=rec,
                 source="Multi-Exchange Router",
                 ticker=symbol.upper(),
-                notes=f"Routed {side} {qty} {symbol} via {venue} @ ${effective_px:,.2f} USD (Friction: ${tca['total_friction_usd']:,.2f})"
+                notes=f"Routed {side} {filled_qty} {symbol} via {venue} @ ${effective_px:,.2f} USD (Friction: ${tca['total_friction_usd']:,.2f})"
             )
             rec["provenance_ledger_id"] = ledger_id
-            msg = f"✅ Routed Fill [{venue}]: {side.upper()} {qty} {symbol.upper()} @ ${effective_px:,.2f} USD (TCA Friction: ${tca['total_friction_usd']:,.2f} USD)"
+            status_tag = "Partially Filled" if fill.get("is_partial") else "Fill"
+            msg = f"✅ Routed {status_tag} [{venue}]: {side.upper()} {filled_qty} {symbol.upper()} @ ${effective_px:,.2f} USD (TCA Friction: ${tca['total_friction_usd']:,.2f} USD)"
+            if fill.get("is_partial"):
+                msg += f" | {fill.get('unfilled_quantity')} unfilled"
             return True, msg, rec
