@@ -193,14 +193,39 @@ class AlpacaBrokerClient(BaseBrokerClient):
         api_key: Optional[str] = None,
         secret_key: Optional[str] = None,
         is_paper: bool = True,
+        base_url: Optional[str] = None,
         ledger: Optional[ProvenanceLedger] = None
     ):
-        self.is_paper = is_paper
+        if not is_paper:
+            raise ValueError("Live trading is strictly prohibited. AlpacaBrokerClient only permits paper trading (is_paper=True).")
+
         self.api_key = api_key or os.getenv("APCA_API_KEY_ID", "")
         self.secret_key = secret_key or os.getenv("APCA_API_SECRET_KEY", "")
-        base_override = os.getenv("APCA_API_BASE_URL", "")
-        self.base_url = base_override if base_override else (self.PAPER_URL if is_paper else self.LIVE_URL)
+        self.is_paper = True
+
+        raw_base = base_url or os.getenv("APCA_API_BASE_URL", "")
+        target_url = raw_base if raw_base else self.PAPER_URL
+        self._validate_not_live_url(target_url)
+        self._base_url = target_url
         self.ledger = ledger or DEFAULT_LEDGER
+
+    @classmethod
+    def _validate_not_live_url(cls, url: str) -> None:
+        """Refuse any attempt to use a live trading URL."""
+        normalized = (url or "").strip().lower()
+        if "api.alpaca.markets" in normalized and "paper-api.alpaca.markets" not in normalized:
+            raise ValueError(f"Live trading URL '{url}' is refused. Only paper trading sandbox endpoints are permitted.")
+        if "live" in normalized and "paper" not in normalized:
+            raise ValueError(f"Live trading URL '{url}' is refused. Only paper trading sandbox endpoints are permitted.")
+
+    @property
+    def base_url(self) -> str:
+        return self._base_url
+
+    @base_url.setter
+    def base_url(self, url: str) -> None:
+        self._validate_not_live_url(url)
+        self._base_url = url
 
     @property
     def is_configured(self) -> bool:
@@ -495,9 +520,7 @@ class MultiExchangeRouter:
 
     AVAILABLE_MODES = [
         "SIMULATION_PAPER",
-        "ALPACA_PAPER",
-        "ALPACA_LIVE",
-        "IBKR_GATEWAY"
+        "ALPACA_PAPER"
     ]
 
     VENUES = {
@@ -514,18 +537,15 @@ class MultiExchangeRouter:
         ibkr_client: Optional[InteractiveBrokersClient] = None
     ):
         self.active_mode = active_mode if active_mode in self.AVAILABLE_MODES else "SIMULATION_PAPER"
-        self.alpaca_client = alpaca_client or AlpacaBrokerClient(is_paper=(self.active_mode != "ALPACA_LIVE"))
+        self.alpaca_client = alpaca_client or AlpacaBrokerClient(is_paper=True)
         self.ibkr_client = ibkr_client or InteractiveBrokersClient()
         self.cost_model = ExecutionCostModel()
 
     def set_execution_mode(self, mode: str) -> bool:
-        """Switch active execution mode."""
+        """Switch active execution mode. Strictly refuses live trading modes."""
         if mode in self.AVAILABLE_MODES:
             self.active_mode = mode
-            if mode == "ALPACA_LIVE":
-                self.alpaca_client.is_paper = False
-                self.alpaca_client.base_url = self.alpaca_client.LIVE_URL
-            elif mode == "ALPACA_PAPER":
+            if mode == "ALPACA_PAPER":
                 self.alpaca_client.is_paper = True
                 self.alpaca_client.base_url = self.alpaca_client.PAPER_URL
             return True
@@ -548,6 +568,9 @@ class MultiExchangeRouter:
         - Dispatches order to selected broker gateway.
         - Emits signed provenance ledger confirmation.
         """
+        if self.active_mode not in self.AVAILABLE_MODES:
+            return False, f"❌ Execution mode '{self.active_mode}' is not permitted. Only {self.AVAILABLE_MODES} are allowed.", {}
+
         asset = asset_class.capitalize() if asset_class else "Equities"
         qty = abs(float(quantity))
         px = float(price)
@@ -565,22 +588,8 @@ class MultiExchangeRouter:
         venue = preferred_venue or "SMART"
 
         # 2. Broker Routing Dispatch
-        if self.active_mode in ("ALPACA_PAPER", "ALPACA_LIVE"):
+        if self.active_mode == "ALPACA_PAPER":
             ok, msg, broker_res = self.alpaca_client.submit_order(
-                symbol=symbol,
-                quantity=qty,
-                side=side,
-                order_type=order_type,
-                price=effective_px,
-                asset_class=asset
-            )
-            broker_res["tca"] = tca
-            broker_res["routed_venue"] = venue
-            broker_res["execution_mode"] = self.active_mode
-            return ok, msg, broker_res
-
-        elif self.active_mode == "IBKR_GATEWAY":
-            ok, msg, broker_res = self.ibkr_client.submit_order(
                 symbol=symbol,
                 quantity=qty,
                 side=side,

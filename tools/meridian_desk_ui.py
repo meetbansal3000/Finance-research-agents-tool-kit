@@ -411,24 +411,14 @@ def render_meridian_multi_asset_desk():
         with b_c1:
             exec_mode_options = [
                 "🏢 Simulation Paper Desk ($1,000,000 Capital Anchor)",
-                "🦙 Alpaca Markets Paper API (Sandbox)",
-                "⚡ Alpaca Markets Live Trading (Production API)",
-                "🌐 Interactive Brokers (IBKR SMART Router)"
+                "🦙 Alpaca Markets Paper API (Sandbox)"
             ]
             mode_map = {
                 "🏢 Simulation Paper Desk ($1,000,000 Capital Anchor)": "SIMULATION_PAPER",
-                "🦙 Alpaca Markets Paper API (Sandbox)": "ALPACA_PAPER",
-                "⚡ Alpaca Markets Live Trading (Production API)": "ALPACA_LIVE",
-                "🌐 Interactive Brokers (IBKR SMART Router)": "IBKR_GATEWAY"
+                "🦙 Alpaca Markets Paper API (Sandbox)": "ALPACA_PAPER"
             }
             curr_mode = router.active_mode
-            default_idx = 0
-            if curr_mode == "ALPACA_PAPER":
-                default_idx = 1
-            elif curr_mode == "ALPACA_LIVE":
-                default_idx = 2
-            elif curr_mode == "IBKR_GATEWAY":
-                default_idx = 3
+            default_idx = 1 if curr_mode == "ALPACA_PAPER" else 0
 
             selected_mode_label = st.selectbox(
                 "Active Execution Gateway",
@@ -453,16 +443,11 @@ def render_meridian_multi_asset_desk():
 
         with b_c3:
             # Display real-time broker connection status card
-            if router.active_mode in ("ALPACA_PAPER", "ALPACA_LIVE"):
+            if router.active_mode == "ALPACA_PAPER":
                 acct = router.alpaca_client.get_account()
                 status_color = "#10B981" if acct.get("status") in ("ACTIVE", "SIMULATED_ACTIVE") else "#F59E0B"
                 b_status = acct.get("status", "ACTIVE")
                 b_bp = acct.get("buying_power_usd", 1000000.0 * 2.0)
-            elif router.active_mode == "IBKR_GATEWAY":
-                acct = router.ibkr_client.get_account()
-                status_color = "#38BDF8"
-                b_status = acct.get("status", "STANDBY")
-                b_bp = acct.get("buying_power_usd", 1000000.0 * 4.0)
             else:
                 status_color = "#10B981"
                 b_status = "SIMULATION_ACTIVE"

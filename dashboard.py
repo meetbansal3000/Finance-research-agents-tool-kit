@@ -481,6 +481,165 @@ def load_historical_prices(ticker: str, period: str = "1y"):
         return pd.DataFrame()
 
 
+REPORTS_DIR = os.path.join(PROJECT_DIR, "reports")
+
+
+def load_pipeline_ledger_dcf_metrics(ticker: str) -> dict:
+    """
+    Dynamically loads Free Cash Flow, Shares Outstanding, Net Debt, and Market Price
+    from the pipeline's audited provenance ledger sidecars in reports/, along with each metric's period end.
+    Returns 'data unavailable' for periods if the metric or ledger is missing.
+    """
+    clean_sym = (ticker or "").strip().upper()
+    is_inr = ".NS" in clean_sym or ".BO" in clean_sym
+
+    result = {
+        "found": False,
+        "run_id": None,
+        "ledger_path": None,
+        "fcf": None,
+        "fcf_period": "data unavailable",
+        "shares": None,
+        "shares_period": "data unavailable",
+        "net_debt": None,
+        "net_debt_period": "data unavailable",
+        "price": None,
+        "price_period": "data unavailable",
+        "wacc": None,
+        "growth": None,
+        "t_growth": None,
+    }
+
+    if not os.path.exists(REPORTS_DIR):
+        return result
+
+    matching_files = []
+    for root, dirs, files in os.walk(REPORTS_DIR):
+        for fname in files:
+            if fname.endswith("provenance.json"):
+                full_path = os.path.join(root, fname)
+                rel = os.path.relpath(full_path, REPORTS_DIR).replace("\\", "/")
+                parts = rel.split("/")
+                folder_name = parts[0].upper()
+                file_upper = fname.upper()
+
+                if folder_name.startswith(f"{clean_sym}_") or folder_name == clean_sym:
+                    matching_files.append(full_path)
+                elif file_upper.startswith(f"{clean_sym}_") or file_upper.startswith(f"{clean_sym.lower()}_"):
+                    matching_files.append(full_path)
+
+    if not matching_files:
+        return result
+
+    # Prioritize analyst_report.provenance.json, then research_report, then newest mtime
+    def _rank_path(p: str):
+        is_analyst = 3 if "analyst_report" in p.lower() else (2 if "research_report" in p.lower() else (0 if "skeptic" in p.lower() else 1))
+        folder = os.path.basename(os.path.dirname(p))
+        date_part = ""
+        if "_" in folder:
+            date_part = folder.split("_")[-1]
+        mtime = os.path.getmtime(p)
+        return (date_part, is_analyst, mtime)
+
+    matching_files.sort(key=_rank_path, reverse=True)
+    best_ledger_path = matching_files[0]
+
+    try:
+        with open(best_ledger_path, "r", encoding="utf-8") as f:
+            ledger_data = json.load(f)
+
+        entries = ledger_data.get("entries", {})
+        result["found"] = True
+        result["run_id"] = ledger_data.get("run_id")
+        result["ledger_path"] = best_ledger_path
+
+        general_period = None
+        for lid, e in entries.items():
+            pe = e.get("period_end") or e.get("period") or e.get("fiscal_year")
+            if pe and str(pe).startswith(("202", "FY202")):
+                general_period = str(pe)
+                break
+
+        for lid, e in entries.items():
+            tool = (e.get("tool") or "").lower()
+            notes = (e.get("notes") or "").lower()
+            inputs = e.get("inputs") or {}
+            pe = e.get("period_end") or e.get("period") or e.get("fiscal_year") or general_period
+
+            if "tools.calc.dcf" in tool:
+                if result["fcf"] is None and "base_fcf" in inputs:
+                    result["fcf"] = float(inputs["base_fcf"])
+                    if pe:
+                        result["fcf_period"] = str(pe)
+                if result["shares"] is None and "shares_outstanding" in inputs:
+                    result["shares"] = float(inputs["shares_outstanding"])
+                    if pe:
+                        result["shares_period"] = str(pe)
+                if result["net_debt"] is None and "net_debt" in inputs:
+                    result["net_debt"] = float(inputs["net_debt"])
+                    if pe:
+                        result["net_debt_period"] = str(pe)
+                if result["wacc"] is None and "discount_rate" in inputs:
+                    result["wacc"] = float(inputs["discount_rate"])
+                if result["t_growth"] is None and "terminal_growth_rate" in inputs:
+                    result["t_growth"] = float(inputs["terminal_growth_rate"])
+                if result["growth"] is None and "growth_rates" in inputs and isinstance(inputs["growth_rates"], list) and len(inputs["growth_rates"]) > 0:
+                    result["growth"] = float(inputs["growth_rates"][0])
+
+            if "tools.calc.reverse_dcf" in tool:
+                if result["price"] is None and "current_price" in inputs:
+                    result["price"] = float(inputs["current_price"])
+                    result["price_period"] = str(e.get("timestamp", ""))[:10] or "data unavailable"
+
+            if ("free_cash_flow" in tool or "freecashflow" in notes) and "yield" not in tool:
+                val = e.get("output") if e.get("output") is not None else e.get("raw_value")
+                if val is not None and result["fcf"] is None:
+                    result["fcf"] = float(val)
+                    if pe:
+                        result["fcf_period"] = str(pe)
+
+            if "net_debt" in tool or "net debt" in notes or "net cash" in notes:
+                val = e.get("output") if e.get("output") is not None else e.get("raw_value")
+                if val is not None and result["net_debt"] is None:
+                    result["net_debt"] = float(val)
+                    if pe:
+                        result["net_debt_period"] = str(pe)
+
+            if ("shares" in notes or "commonstocksharesoutstanding" in str(inputs).lower()) and result["shares"] is None:
+                val = e.get("output") if e.get("output") is not None else e.get("raw_value")
+                if val is not None and float(val) > 0:
+                    result["shares"] = float(val)
+                    if pe:
+                        result["shares_period"] = str(pe)
+
+            if ("quote" in tool or "market price" in notes) and result["price"] is None:
+                val = e.get("output") if e.get("output") is not None else e.get("raw_value")
+                if val is not None and float(val) > 0:
+                    result["price"] = float(val)
+                    ts = e.get("timestamp")
+                    result["price_period"] = str(ts)[:10] if ts else (str(pe) if pe else "data unavailable")
+
+        if result["fcf"] is not None and result["fcf_period"] == "data unavailable" and general_period:
+            result["fcf_period"] = general_period
+        if result["shares"] is not None and result["shares_period"] == "data unavailable" and general_period:
+            result["shares_period"] = general_period
+        if result["net_debt"] is not None and result["net_debt_period"] == "data unavailable" and general_period:
+            result["net_debt_period"] = general_period
+
+        if is_inr:
+            if result["fcf"] is not None and abs(result["fcf"]) > 1e8:
+                result["fcf"] = result["fcf"] / 1e7
+            if result["shares"] is not None and result["shares"] > 1e7:
+                result["shares"] = result["shares"] / 1e7
+            if result["net_debt"] is not None and abs(result["net_debt"]) > 1e8:
+                result["net_debt"] = result["net_debt"] / 1e7
+
+    except Exception:
+        pass
+
+    return result
+
+
 @st.cache_data(ttl=600)
 def get_dcf_company_profile(ticker: str):
     sym = (ticker or "NVDA").strip().upper()
@@ -489,36 +648,39 @@ def get_dcf_company_profile(ticker: str):
     currency_code = "INR (₹ Cr)" if is_inr else ("EUR (€)" if is_eur else "USD ($)")
     currency_sym = "₹" if is_inr else ("€" if is_eur else "$")
 
-    presets = {
-        "NVDA": {"fcf": 60850000000.0, "shares": 24500000000.0, "net_debt": -38200000000.0, "price": 239.24, "wacc": 0.095, "growth": 0.22, "t_growth": 0.035, "company_name": "NVIDIA Corporation", "sector": "Semiconductors"},
-        "AAPL": {"fcf": 108807000000.0, "shares": 14594180000.0, "net_debt": -33763000000.0, "price": 333.63, "wacc": 0.085, "growth": 0.08, "t_growth": 0.03, "company_name": "Apple Inc.", "sector": "Consumer Electronics"},
-        "MSFT": {"fcf": 74071000000.0, "shares": 7430000000.0, "net_debt": -36549000000.0, "price": 529.30, "wacc": 0.088, "growth": 0.12, "t_growth": 0.03, "company_name": "Microsoft Corporation", "sector": "Enterprise Software & Cloud"},
-        "GOOGL": {"fcf": 73200000000.0, "shares": 12250000000.0, "net_debt": -71100000000.0, "price": 347.68, "wacc": 0.090, "growth": 0.14, "t_growth": 0.03, "company_name": "Alphabet Inc.", "sector": "Interactive Media & Cloud"},
-        "TSLA": {"fcf": 4836000000.0, "shares": 3949547000.0, "net_debt": -27444000000.0, "price": 367.16, "wacc": 0.095, "growth": 0.18, "t_growth": 0.03, "company_name": "Tesla, Inc.", "sector": "Automotive & Energy Storage"},
-        "TCS.NS": {"fcf": 44971.0, "shares": 361.8, "net_debt": -35395.0, "price": 3450.0, "wacc": 0.115, "growth": 0.08, "t_growth": 0.045, "company_name": "Tata Consultancy Services Ltd.", "sector": "IT Consulting & Services"}
-    }
+    ledger_metrics = load_pipeline_ledger_dcf_metrics(sym)
+    has_ledger = (
+        ledger_metrics["found"]
+        and ledger_metrics["fcf"] is not None
+        and ledger_metrics["shares"] is not None
+    )
 
     profile = {
         "ticker": sym,
         "company_name": sym,
         "sector": "General Equities",
-        "price": 100.0,
-        "fcf": 1e9,
-        "shares": 1e8,
-        "net_debt": 0.0,
-        "wacc": 0.09,
-        "growth": 0.10,
-        "t_growth": 0.025,
+        "price": ledger_metrics["price"] if ledger_metrics["price"] is not None else 0.0,
+        "price_period": ledger_metrics["price_period"],
+        "fcf": ledger_metrics["fcf"] if ledger_metrics["fcf"] is not None else 0.0,
+        "fcf_period": ledger_metrics["fcf_period"],
+        "shares": ledger_metrics["shares"] if ledger_metrics["shares"] is not None else 1.0,
+        "shares_period": ledger_metrics["shares_period"],
+        "net_debt": ledger_metrics["net_debt"] if ledger_metrics["net_debt"] is not None else 0.0,
+        "net_debt_period": ledger_metrics["net_debt_period"],
+        "wacc": ledger_metrics["wacc"] if ledger_metrics["wacc"] is not None else (0.115 if is_inr else 0.095),
+        "growth": ledger_metrics["growth"] if ledger_metrics["growth"] is not None else (0.08 if is_inr else 0.12),
+        "t_growth": ledger_metrics["t_growth"] if ledger_metrics["t_growth"] is not None else (0.04 if is_inr else 0.03),
         "currency_code": currency_code,
         "currency_sym": currency_sym,
-        "source": "Estimated Baseline"
+        "source": (
+            f"Pipeline Provenance Ledger ({os.path.basename(ledger_metrics['ledger_path'])})"
+            if has_ledger
+            else "ILLUSTRATIVE EXAMPLE (Data Unavailable in Pipeline Ledger)"
+        ),
+        "is_illustrative": not has_ledger
     }
 
-    if sym in presets:
-        profile.update(presets[sym])
-        profile["source"] = "Audited SEC / Annual Filing Baseline"
-
-    # Always fetch live price and updated balance sheet metrics
+    # Enrich metadata (company name, sector) and fallback market price if missing from ledger
     try:
         t_obj = yf.Ticker(sym)
         fi = getattr(t_obj, "fast_info", None)
@@ -539,14 +701,8 @@ def get_dcf_company_profile(ticker: str):
                     live_price = float(last_c)
 
         if live_price and live_price > 0:
-            profile["price"] = float(live_price)
-
-        # Shares
-        shs = None
-        if fi:
-            val = getattr(fi, "shares", None)
-            if val is not None and not np.isnan(val) and float(val) > 0:
-                shs = float(val)
+            if profile["price"] <= 0.0:
+                profile["price"] = float(live_price)
 
         info = {}
         try:
@@ -555,11 +711,6 @@ def get_dcf_company_profile(ticker: str):
             pass
 
         if info:
-            if not shs:
-                shs = info.get("sharesOutstanding") or info.get("impliedSharesOutstanding")
-            if shs and float(shs) > 0:
-                profile["shares"] = float(shs)
-
             c_name = info.get("shortName") or info.get("longName")
             if c_name:
                 profile["company_name"] = str(c_name)
@@ -567,30 +718,34 @@ def get_dcf_company_profile(ticker: str):
             if sec:
                 profile["sector"] = str(sec)
 
-            if sym not in presets:
+            # If ticker has no pipeline ledger, populate illustrative data from live market with period 'data unavailable'
+            if not has_ledger:
+                shs = None
+                if fi:
+                    val = getattr(fi, "shares", None)
+                    if val is not None and not np.isnan(val) and float(val) > 0:
+                        shs = float(val)
+                if not shs:
+                    shs = info.get("sharesOutstanding") or info.get("impliedSharesOutstanding")
+                if shs and float(shs) > 0:
+                    profile["shares"] = float(shs) / (1e7 if is_inr else 1.0)
+
                 raw_fcf = info.get("freeCashflow")
                 if raw_fcf is not None and not np.isnan(raw_fcf) and float(raw_fcf) > 0:
-                    profile["fcf"] = float(raw_fcf)
-                    profile["source"] = "SEC Filings (TTM FCF)"
+                    profile["fcf"] = float(raw_fcf) / (1e7 if is_inr else 1.0)
                 else:
                     ocf = info.get("operatingCashflow")
                     capex = info.get("capitalExpenditures")
                     if ocf is not None and float(ocf) > 0:
-                        est_f = float(ocf) - abs(float(capex or 0))
+                        est_f = float(ocf) - abs(float(capex or 0.0))
                         if est_f > 0:
-                            profile["fcf"] = est_f
-                            profile["source"] = "SEC Filings (OCF - CapEx)"
-                        else:
-                            profile["fcf"] = max(profile["price"] * (shs or 1e8) * 0.035, 1e7)
-                            profile["source"] = "Estimated 3.5% FCF Yield"
-                    else:
-                        profile["fcf"] = max(profile["price"] * (shs or 1e8) * 0.035, 1e7)
-                        profile["source"] = "Estimated 3.5% FCF Yield"
+                            profile["fcf"] = est_f / (1e7 if is_inr else 1.0)
 
                 tot_d = float(info.get("totalDebt") or 0.0)
                 tot_c = float(info.get("totalCash") or 0.0)
-                profile["net_debt"] = tot_d - tot_c
-
+                profile["net_debt"] = (tot_d - tot_c) / (1e7 if is_inr else 1.0)
+                profile["is_illustrative"] = True
+                profile["source"] = "ILLUSTRATIVE EXAMPLE (Data Unavailable in Pipeline Ledger)"
     except Exception:
         pass
 
@@ -695,25 +850,25 @@ def get_agent_and_market_prediction(ticker: str):
             except Exception:
                 pass
 
-    # Standard audited DCF presets
-    dcf_presets = {
-        "NVDA": {"fcf": 60850000000.0, "shares": 24500000000.0, "net_debt": -38200000000.0, "wacc": 0.095, "growth": 0.22, "t_growth": 0.035},
-        "AAPL": {"fcf": 108807000000.0, "shares": 14594180000.0, "net_debt": -33763000000.0, "wacc": 0.085, "growth": 0.08, "t_growth": 0.03},
-        "MSFT": {"fcf": 74071000000.0, "shares": 7430000000.0, "net_debt": -36549000000.0, "wacc": 0.088, "growth": 0.12, "t_growth": 0.03},
-        "GOOGL": {"fcf": 73200000000.0, "shares": 12250000000.0, "net_debt": -71100000000.0, "wacc": 0.090, "growth": 0.14, "t_growth": 0.03},
-        "TCS.NS": {"fcf": 44971.0, "shares": 361.8, "net_debt": -35395.0, "wacc": 0.115, "growth": 0.08, "t_growth": 0.045}
-    }
-    
+    # Load fundamental DCF parameters dynamically from the pipeline provenance ledger
+    ledger_dcf = load_pipeline_ledger_dcf_metrics(clean_sym)
     curr_p = market_data["current_price"]
-    if clean_sym in dcf_presets:
-        p = dcf_presets[clean_sym]
+
+    if ledger_dcf["found"] and ledger_dcf["fcf"] is not None and ledger_dcf["shares"] is not None and ledger_dcf["shares"] > 0:
+        p_fcf = float(ledger_dcf["fcf"])
+        p_shares = float(ledger_dcf["shares"])
+        p_net_debt = float(ledger_dcf["net_debt"]) if ledger_dcf["net_debt"] is not None else 0.0
+        p_wacc = float(ledger_dcf["wacc"]) if ledger_dcf["wacc"] is not None else (0.115 if ".NS" in clean_sym or ".BO" in clean_sym else 0.095)
+        p_growth = float(ledger_dcf["growth"]) if ledger_dcf["growth"] is not None else (0.08 if ".NS" in clean_sym or ".BO" in clean_sym else 0.12)
+        p_t_growth = float(ledger_dcf["t_growth"]) if ledger_dcf["t_growth"] is not None else (0.04 if ".NS" in clean_sym or ".BO" in clean_sym else 0.03)
+
         dcf_calc = dcf(
-            base_fcf=p["fcf"],
-            growth_rates=[p["growth"]] * 5,
-            discount_rate=p["wacc"],
-            terminal_growth_rate=p["t_growth"],
-            shares_outstanding=p["shares"],
-            net_debt=p["net_debt"]
+            base_fcf=p_fcf,
+            growth_rates=[p_growth] * 5,
+            discount_rate=p_wacc,
+            terminal_growth_rate=p_t_growth,
+            shares_outstanding=p_shares,
+            net_debt=p_net_debt
         )
         dcf_res = dcf_calc.get("result", {})
         fv = dcf_res.get("fair_value_per_share", 0.0)
@@ -1420,6 +1575,9 @@ elif "Intrinsic Valuation" in nav_choice:
     </div>
     """, unsafe_allow_html=True)
 
+    if profile.get("is_illustrative", False):
+        st.warning(f"⚠️ **[ILLUSTRATIVE EXAMPLE]** Pipeline ledger data unavailable for {custom_sym}. Figures and parameters shown are illustrative placeholders with period end: data unavailable.")
+
     # Scenario Selection & Custom Inputs
     sec_col1, sec_col2 = st.columns([2.5, 3.5])
     with sec_col1:
@@ -1434,23 +1592,26 @@ elif "Intrinsic Valuation" in nav_choice:
             c_f1, c_f2, c_f3 = st.columns(3)
             with c_f1:
                 input_fcf = st.number_input(
-                    "Base Free Cash Flow",
+                    f"Base Free Cash Flow ({profile.get('fcf_period', 'data unavailable')})",
                     value=float(profile["fcf"]),
                     format="%.2f",
+                    help=f"Period End: {profile.get('fcf_period', 'data unavailable')}",
                     key=f"dcf_input_fcf_{custom_sym}"
                 )
             with c_f2:
                 input_shares = st.number_input(
-                    "Diluted Shares Outstanding",
+                    f"Diluted Shares ({profile.get('shares_period', 'data unavailable')})",
                     value=float(profile["shares"]),
                     format="%.2f",
+                    help=f"Period End: {profile.get('shares_period', 'data unavailable')}",
                     key=f"dcf_input_shares_{custom_sym}"
                 )
             with c_f3:
                 input_net_debt = st.number_input(
-                    "Balance Sheet Net Debt (Debt - Cash)",
+                    f"Net Debt ({profile.get('net_debt_period', 'data unavailable')})",
                     value=float(profile["net_debt"]),
                     format="%.2f",
+                    help=f"Period End: {profile.get('net_debt_period', 'data unavailable')}",
                     key=f"dcf_input_netdebt_{custom_sym}"
                 )
             profile["fcf"] = input_fcf
@@ -1554,13 +1715,15 @@ elif "Intrinsic Valuation" in nav_choice:
     st.divider()
     m_col1, m_col2, m_col3, m_col4 = st.columns(4)
     with m_col1:
-        st.metric("Current Market Price", f"{currency_sym}{curr_price:,.2f}")
+        price_pe = profile.get("price_period", "data unavailable")
+        st.metric("Current Market Price", f"{currency_sym}{curr_price:,.2f}", help=f"Price As-of / Period End: {price_pe}")
     with m_col2:
         st.metric("Model Fair Value", f"{currency_sym}{fair_val:,.2f}", help=f"Probability-Weighted Fair Value: {currency_sym}{weighted_fv:,.2f}")
     with m_col3:
         st.metric("Margin of Safety / Upside", f"{upside_pct:+.1f}%", delta=f"{upside_pct:+.1f}%")
     with m_col4:
-        st.metric("Enterprise Value", f"{currency_sym}{dcf_res['enterprise_value'] / 1e9:,.1f}B", help=f"Balance Sheet Net Debt: {currency_sym}{profile['net_debt']/1e9:,.1f}B")
+        nd_pe = profile.get("net_debt_period", "data unavailable")
+        st.metric("Enterprise Value", f"{currency_sym}{dcf_res['enterprise_value'] / 1e9:,.1f}B", help=f"Balance Sheet Net Debt (Period End: {nd_pe}): {currency_sym}{profile['net_debt']/1e9:,.1f}B")
 
     # Margin of Safety Verdict Badge
     if upside_pct >= 25.0:
@@ -1827,7 +1990,8 @@ elif "Intrinsic Valuation" in nav_choice:
             )
             st.plotly_chart(fig_donut, use_container_width=True)
 
-        st.markdown("##### 📋 Audited Free Cash Flow Schedule")
+        schedule_title = "##### 📋 Audited Free Cash Flow Schedule" if not profile.get("is_illustrative") else "##### 📋 Free Cash Flow Projection Schedule [ILLUSTRATIVE]"
+        st.markdown(schedule_title)
         schedule_rows = []
         cum_pv = 0.0
         for i in range(1, 6):

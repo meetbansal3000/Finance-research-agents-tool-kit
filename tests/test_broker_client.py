@@ -171,20 +171,61 @@ def test_ibkr_submit_order_smart_route():
 def test_multi_exchange_router_modes():
     router = MultiExchangeRouter(active_mode="SIMULATION_PAPER")
     assert router.active_mode == "SIMULATION_PAPER"
+    assert router.AVAILABLE_MODES == ["SIMULATION_PAPER", "ALPACA_PAPER"]
 
+    # Allowed paper modes
     assert router.set_execution_mode("ALPACA_PAPER") is True
     assert router.active_mode == "ALPACA_PAPER"
     assert router.alpaca_client.is_paper is True
 
-    assert router.set_execution_mode("ALPACA_LIVE") is True
-    assert router.active_mode == "ALPACA_LIVE"
-    assert router.alpaca_client.is_paper is False
+    # Prohibited live modes MUST be refused
+    assert router.set_execution_mode("ALPACA_LIVE") is False
+    assert router.active_mode == "ALPACA_PAPER"
 
-    assert router.set_execution_mode("IBKR_GATEWAY") is True
-    assert router.active_mode == "IBKR_GATEWAY"
+    assert router.set_execution_mode("IBKR_GATEWAY") is False
+    assert router.active_mode == "ALPACA_PAPER"
 
-    # Invalid mode returns False
+    assert router.set_execution_mode("SIMULATION_PAPER") is True
+    assert router.active_mode == "SIMULATION_PAPER"
+
+    # Arbitrary invalid mode returns False
     assert router.set_execution_mode("INVALID_EXCHANGE") is False
+
+
+def test_refuse_live_trading_urls(monkeypatch):
+    """
+    Strict guardrail verification: any attempt to use a live URL
+    or initialize a live broker client must be refused.
+    """
+    # 1. Reject is_paper=False
+    with pytest.raises(ValueError, match="Live trading is strictly prohibited"):
+        AlpacaBrokerClient(is_paper=False)
+
+    # 2. Reject explicit live Alpaca URL
+    with pytest.raises(ValueError, match="Live trading URL"):
+        AlpacaBrokerClient(base_url="https://api.alpaca.markets")
+
+    with pytest.raises(ValueError, match="Live trading URL"):
+        AlpacaBrokerClient(base_url="https://api.alpaca.markets/v2")
+
+    # 3. Reject live URL via environment variable override
+    monkeypatch.setenv("APCA_API_BASE_URL", "https://api.alpaca.markets")
+    with pytest.raises(ValueError, match="Live trading URL"):
+        AlpacaBrokerClient()
+
+    # 4. Reject live URL pattern (e.g. production/live endpoint)
+    with pytest.raises(ValueError, match="Live trading URL"):
+        AlpacaBrokerClient(base_url="https://live-trading.brokerage.com/v1")
+
+    # 5. Reject setter modification to a live URL
+    client = AlpacaBrokerClient(is_paper=True, base_url="https://paper-api.alpaca.markets")
+    with pytest.raises(ValueError, match="Live trading URL"):
+        client.base_url = "https://api.alpaca.markets"
+
+    # 6. Valid paper URLs succeed
+    valid_client = AlpacaBrokerClient(is_paper=True, base_url="https://paper-api.alpaca.markets")
+    assert valid_client.base_url == "https://paper-api.alpaca.markets"
+    assert valid_client.is_paper is True
 
 
 def test_multi_exchange_router_execution():
