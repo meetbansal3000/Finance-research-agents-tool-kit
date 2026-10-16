@@ -18,7 +18,7 @@ def temp_engine():
     # Remove file so engine initializes it
     if os.path.exists(temp_path):
         os.remove(temp_path)
-    engine = PaperTradingEngine(portfolio_file=temp_path)
+    engine = PaperTradingEngine(portfolio_file=temp_path, enforce_journal_gate=False)
     yield engine
     if os.path.exists(temp_path):
         os.remove(temp_path)
@@ -208,7 +208,8 @@ def test_currency_display_in_order_messages():
         eur_engine = PaperTradingEngine(
             portfolio_file=t_path,
             initial_capital=100000.0,
-            currency="EUR"
+            currency="EUR",
+            enforce_journal_gate=False
         )
         ok, msg, pos = eur_engine.execute_trade(
             symbol="SAP",

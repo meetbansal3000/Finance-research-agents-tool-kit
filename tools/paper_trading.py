@@ -20,6 +20,7 @@ import yfinance as yf
 from tools.ledger import ProvenanceLedger
 from tools.broker_client import ExecutionCostModel, MultiExchangeRouter
 from tools.fill_model import RealisticFillModel
+from tools.journal_gate import JournalGate
 
 PROJECT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 PORTFOLIO_FILE = os.path.join(PROJECT_DIR, "journal", "paper_portfolio.json")
@@ -59,14 +60,24 @@ class PaperTradingEngine:
         ledger: Optional[ProvenanceLedger] = None,
         router: Optional[MultiExchangeRouter] = None,
         initial_capital: Optional[float] = None,
-        currency: Optional[str] = None
+        currency: Optional[str] = None,
+        max_position_size_pct: Optional[float] = None,
+        enforce_journal_gate: bool = True,
+        journal_csv_path: Optional[str] = None
     ):
         self.portfolio_file = portfolio_file or PORTFOLIO_FILE
+        self.journal_csv_path = journal_csv_path
         self.ledger = ledger or ProvenanceLedger(run_id="paper_trading")
         self.router = router or MultiExchangeRouter()
         self.initial_capital = float(initial_capital) if initial_capital is not None else DEFAULT_STARTING_CAPITAL
         self.currency = (currency or DEFAULT_CURRENCY).strip().upper()
+        self.max_position_size_pct = float(max_position_size_pct) if max_position_size_pct is not None else float(os.getenv("MAX_POSITION_SIZE_PCT", "0.20"))
+        self.enforce_journal_gate = enforce_journal_gate
         self._ensure_portfolio_file()
+
+    def set_position_size_rule(self, max_pct: float) -> None:
+        """Configure maximum permitted position size as a percentage of total portfolio equity."""
+        self.max_position_size_pct = max(0.01, min(1.0, float(max_pct)))
 
     def _ensure_portfolio_file(self) -> None:
         """Initialize paper_portfolio.json if it doesn't exist."""
@@ -132,10 +143,16 @@ class PaperTradingEngine:
         current_time: Optional[datetime.datetime] = None,
         average_daily_volume: Optional[float] = None,
         max_volume_share: float = 0.10,
-        apply_tca_to_cost_basis: bool = False
+        apply_tca_to_cost_basis: bool = False,
+        thesis: Optional[str] = None,
+        invalidation_condition: Optional[str] = None,
+        review_date: Optional[Union[str, datetime.date, datetime.datetime]] = None,
+        max_position_size_pct: Optional[float] = None,
+        enforce_journal_gate: Optional[bool] = None
     ) -> Tuple[bool, str, Dict[str, Any]]:
         """
         Execute an order mirroring real live market conditions:
+        - Mandatory Journal Gate: requires thesis, invalidation condition, size under limit, and review date.
         - Market orders fill at next price plus modelled spread and slippage.
         - Limit orders fill only if price crosses the limit.
         - Partial fills when order size exceeds max_volume_share of average volume.
@@ -264,6 +281,25 @@ class PaperTradingEngine:
             # Equities / ETFs / Bonds
             cost = round(fill_qty * price_for_cost * mult + fee_for_cost, 2)
 
+        # 6. Mandatory Journal Gate Verification
+        gate_active = self.enforce_journal_gate if enforce_journal_gate is None else enforce_journal_gate
+        gate_data = {"gate": "BYPASSED"}
+        if gate_active:
+            tot_eq = float(data.get("total_equity", self.initial_capital))
+            rule_pct = max_position_size_pct if max_position_size_pct is not None else self.max_position_size_pct
+            gate_ok, gate_msg, gate_data = JournalGate.validate_trade(
+                thesis=thesis,
+                invalidation_condition=invalidation_condition,
+                order_cost=cost,
+                total_equity=tot_eq,
+                review_date=review_date,
+                max_position_size_pct=rule_pct,
+                currency=curr_code,
+                currency_symbol=curr_sym
+            )
+            if not gate_ok:
+                return False, gate_msg, gate_data
+
         # Check cash headroom for Long/Buy orders
         if clean_side == "BUY":
             if cost > cash:
@@ -310,7 +346,12 @@ class PaperTradingEngine:
                 "execution_mode": active_mode,
                 "multiplier": mult,
                 "cost_basis": cost,
-                "tca_friction_usd": tca.get("total_friction_usd", 0.0)
+                "tca_friction_usd": tca.get("total_friction_usd", 0.0),
+                "thesis": thesis or "",
+                "invalidation_condition": invalidation_condition or "",
+                "review_date": str(review_date) if review_date else "",
+                "position_size_pct": gate_data.get("position_size_pct", 0.0),
+                "max_position_size_pct": gate_data.get("max_position_size_pct", self.max_position_size_pct)
             },
             output={
                 "status": "PARTIALLY_FILLED" if is_partial else "FILLED",
@@ -347,12 +388,31 @@ class PaperTradingEngine:
             "opened_at": timestamp,
             "legs": legs or [],
             "notes": notes,
-            "ledger_id": ledger_id
+            "ledger_id": ledger_id,
+            "thesis": thesis or "",
+            "invalidation_condition": invalidation_condition or "",
+            "review_date": str(review_date) if review_date else "",
+            "journal_gate": gate_data
         }
 
         data["cash_balance"] = new_cash
         data["positions"].append(position)
         self.save_portfolio(data)
+
+        # Append to journal CSV if gate is active and fields provided
+        if gate_active and thesis and invalidation_condition and review_date:
+            csv_kwargs = {"journal_csv_path": self.journal_csv_path} if self.journal_csv_path else {}
+            JournalGate.append_journal_record(
+                order_id=ord_id,
+                symbol=sym,
+                side=clean_side,
+                entry_price=effective_px,
+                quantity=fill_qty,
+                thesis=thesis,
+                invalidation_condition=invalidation_condition,
+                review_date=str(review_date),
+                **csv_kwargs
+            )
 
         # Recalculate totals
         self.mark_to_market()

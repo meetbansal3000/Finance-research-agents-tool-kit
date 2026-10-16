@@ -27,7 +27,7 @@ def temp_paper_engine():
         temp_path = f.name
     if os.path.exists(temp_path):
         os.remove(temp_path)
-    engine = PaperTradingEngine(portfolio_file=temp_path)
+    engine = PaperTradingEngine(portfolio_file=temp_path, enforce_journal_gate=False)
     yield engine
     if os.path.exists(temp_path):
         os.remove(temp_path)
