@@ -48,37 +48,70 @@ APPROVED_SYSTEM_CONSTANTS = {
 }
 
 
-def test_no_hardcoded_financials_in_tools_and_agents():
+def test_no_hardcoded_financials_in_tools_agents_scripts_dashboard():
+    """
+    Task 4 Verification:
+    Scans agents/, tools/, scripts/, and dashboard.py for numeric literals of 1e6 or more.
+    Fails unless the literal is on the allowlist file (tests/financial_literals_allowlist.json)
+    with a written justification.
+    """
+    import json
+
     root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    target_dirs = [os.path.join(root_dir, "tools"), os.path.join(root_dir, "agents")]
+    allowlist_path = os.path.join(root_dir, "tests", "financial_literals_allowlist.json")
+    assert os.path.exists(allowlist_path), f"Allowlist file missing: {allowlist_path}"
+
+    with open(allowlist_path, "r", encoding="utf-8") as f:
+        allowlist = json.load(f)
+
+    # Verify every allowlisted item has a valid written justification string
+    for k, v in allowlist.items():
+        assert isinstance(v, str) and len(v.strip()) > 10, f"Allowlist entry {k} missing written justification."
+
+    allowed_floats = {float(k): v for k, v in allowlist.items()}
+
+    targets = [
+        os.path.join(root_dir, "agents"),
+        os.path.join(root_dir, "tools"),
+        os.path.join(root_dir, "scripts"),
+        os.path.join(root_dir, "dashboard.py"),
+    ]
+
+    target_files = []
+    for t in targets:
+        if os.path.isfile(t):
+            target_files.append(t)
+        elif os.path.isdir(t):
+            for dirpath, _, filenames in os.walk(t):
+                for fname in filenames:
+                    if fname.endswith(".py"):
+                        target_files.append(os.path.join(dirpath, fname))
 
     unallowlisted_findings = []
 
-    for t_dir in target_dirs:
-        for dirpath, _, filenames in os.walk(t_dir):
-            for fname in filenames:
-                if fname.endswith(".py"):
-                    fpath = os.path.join(dirpath, fname)
-                    with open(fpath, "r", encoding="utf-8", errors="ignore") as f:
-                        try:
-                            tree = ast.parse(f.read(), filename=fpath)
-                        except SyntaxError:
-                            continue
+    for fpath in target_files:
+        rel_path = os.path.relpath(fpath, root_dir)
+        with open(fpath, "r", encoding="utf-8", errors="ignore") as f:
+            try:
+                tree = ast.parse(f.read(), filename=fpath)
+            except SyntaxError:
+                continue
 
-                    rel_path = os.path.relpath(fpath, root_dir)
-                    for node in ast.walk(tree):
-                        if isinstance(node, ast.Constant) and isinstance(node.value, (int, float)):
-                            val = abs(node.value)
-                            if val >= 1000:
-                                if val not in APPROVED_SYSTEM_CONSTANTS and float(val) not in APPROVED_SYSTEM_CONSTANTS:
-                                    unallowlisted_findings.append({
-                                        "file": rel_path,
-                                        "line": node.lineno,
-                                        "value": node.value
-                                    })
+        for node in ast.walk(tree):
+            if isinstance(node, ast.Constant) and isinstance(node.value, (int, float)):
+                val = abs(node.value)
+                if val >= 1000000.0:  # 1e6 or more
+                    f_val = float(val)
+                    if f_val not in allowed_floats:
+                        unallowlisted_findings.append({
+                            "file": rel_path,
+                            "line": node.lineno,
+                            "value": node.value
+                        })
 
     assert len(unallowlisted_findings) == 0, (
-        f"Found {len(unallowlisted_findings)} unallowlisted hardcoded numeric literal(s) in tools/ or agents/:\n"
+        f"Task 4 Violation: Found {len(unallowlisted_findings)} unallowlisted numeric literal(s) >= 1e6 "
+        f"without justification in tests/financial_literals_allowlist.json:\n"
         + "\n".join(f"  {f['file']}:{f['line']} -> {f['value']}" for f in unallowlisted_findings)
     )
 

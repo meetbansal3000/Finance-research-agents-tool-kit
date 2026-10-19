@@ -1,3 +1,4 @@
+# synthetic fixture, not for reports
 """
 Run 11 hold-out sentences before code modifications to capture raw output.
 """

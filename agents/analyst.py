@@ -169,6 +169,35 @@ class AnalystAgent:
             notes="AAPL Current Market Price"
         )
 
+        hist_fcf = {}
+        hist_fcf_ledger_ids = {}
+        for u in us_gaap.get("NetCashProvidedByUsedInOperatingActivities", {}).get("units", {}).get("USD", []):
+            if u.get("form") == "10-K" and u.get("fp") == "FY" and "val" in u:
+                period_end = u.get("end")
+                fy_key = f"FY{u.get('fy') or (period_end[:4] if period_end else '')}"
+                ocf_v = float(u["val"])
+                ocf_accn = u.get("accn", "")
+                capex_matches = [
+                    cu for cu in us_gaap.get("PaymentsToAcquirePropertyPlantAndEquipment", {}).get("units", {}).get("USD", [])
+                    if cu.get("form") == "10-K" and cu.get("end") == period_end and "val" in cu
+                ]
+                capex_v = float(capex_matches[-1]["val"]) if capex_matches else 0.0
+                capex_accn = capex_matches[-1].get("accn", "") if capex_matches else ""
+                fcf_v = ocf_v - capex_v
+                hist_fcf[fy_key] = fcf_v
+                l_id = self.ledger.record(
+                    tool="tools.calc.free_cash_flow",
+                    ticker=ticker,
+                    currency="USD",
+                    inputs={"ocf": ocf_v, "capex": capex_v, "period_end": period_end, "ocf_accn": ocf_accn, "capex_accn": capex_accn},
+                    output=fcf_v,
+                    raw_value=fcf_v,
+                    source=f"SEC CompanyFacts CIK{cik} (OCF Accn: {ocf_accn}, Capex Accn: {capex_accn})",
+                    period=fy_key,
+                    notes=f"{ticker} Multi-Year FCF {fy_key} (Period End: {period_end})"
+                )
+                hist_fcf_ledger_ids[fy_key] = l_id
+
         return {
             "ticker": "AAPL",
             "company_name": "Apple Inc.",
@@ -204,6 +233,7 @@ class AnalystAgent:
                 "rec_prev": m_bs["PriorAccountsReceivable"]["ledger_id"],
                 "inv_curr": m_bs["Inventories"]["ledger_id"],
                 "inv_prev": m_bs["PriorInventories"]["ledger_id"],
+                "historical_fcf": hist_fcf_ledger_ids,
             },
             "facts": {
                 "rev_fact": rev_fact,
@@ -212,14 +242,7 @@ class AnalystAgent:
                 "ocf_fact": ocf_fact,
                 "capex_fact": capex_fact,
             },
-            "historical_fcf_series": {
-                f"FY{u.get('fy') or (u.get('end')[:4] if u.get('end') else '')}": float(u["val"]) - (
-                    float([cu for cu in us_gaap.get("PaymentsToAcquirePropertyPlantAndEquipment", {}).get("units", {}).get("USD", []) if cu.get("form") == "10-K" and cu.get("end") == u.get("end") and "val" in cu][-1]["val"])
-                    if [cu for cu in us_gaap.get("PaymentsToAcquirePropertyPlantAndEquipment", {}).get("units", {}).get("USD", []) if cu.get("form") == "10-K" and cu.get("end") == u.get("end") and "val" in cu] else 0.0
-                )
-                for u in us_gaap.get("NetCashProvidedByUsedInOperatingActivities", {}).get("units", {}).get("USD", [])
-                if u.get("form") == "10-K" and u.get("fp") == "FY" and "val" in u
-            }
+            "historical_fcf_series": hist_fcf
         }
 
     def _fetch_msft_data(self) -> Dict[str, Any]:
@@ -345,6 +368,35 @@ class AnalystAgent:
             notes="MSFT Current Market Price"
         )
 
+        hist_fcf = {}
+        hist_fcf_ledger_ids = {}
+        for u in us_gaap.get("NetCashProvidedByUsedInOperatingActivities", {}).get("units", {}).get("USD", []):
+            if u.get("form") in ("10-K", "10-Q") and "val" in u:
+                period_end = u.get("end")
+                fy_key = f"FY{u.get('fy') or (period_end[:4] if period_end else '')}"
+                ocf_v = float(u["val"])
+                ocf_accn = u.get("accn", "")
+                capex_matches = [
+                    cu for cu in us_gaap.get("PaymentsToAcquirePropertyPlantAndEquipment", {}).get("units", {}).get("USD", [])
+                    if cu.get("form") in ("10-K", "10-Q") and cu.get("end") == period_end and "val" in cu
+                ]
+                capex_v = float(capex_matches[-1]["val"]) if capex_matches else 0.0
+                capex_accn = capex_matches[-1].get("accn", "") if capex_matches else ""
+                fcf_v = ocf_v - capex_v
+                hist_fcf[fy_key] = fcf_v
+                l_id = self.ledger.record(
+                    tool="tools.calc.free_cash_flow",
+                    ticker=ticker,
+                    currency="USD",
+                    inputs={"ocf": ocf_v, "capex": capex_v, "period_end": period_end, "ocf_accn": ocf_accn, "capex_accn": capex_accn},
+                    output=fcf_v,
+                    raw_value=fcf_v,
+                    source=f"SEC CompanyFacts CIK{cik} (OCF Accn: {ocf_accn}, Capex Accn: {capex_accn})",
+                    period=fy_key,
+                    notes=f"{ticker} Multi-Year FCF {fy_key} (Period End: {period_end})"
+                )
+                hist_fcf_ledger_ids[fy_key] = l_id
+
         return {
             "ticker": "MSFT",
             "company_name": "Microsoft Corporation",
@@ -380,6 +432,7 @@ class AnalystAgent:
                 "rec_prev": m_bs["PriorAccountsReceivable"]["ledger_id"],
                 "inv_curr": m_bs["Inventories"]["ledger_id"],
                 "inv_prev": m_bs["PriorInventories"]["ledger_id"],
+                "historical_fcf": hist_fcf_ledger_ids,
             },
             "facts": {
                 "rev_fact": rev_fact,
@@ -388,14 +441,7 @@ class AnalystAgent:
                 "ocf_fact": ocf_fact,
                 "capex_fact": capex_fact,
             },
-            "historical_fcf_series": {
-                f"FY{u.get('fy') or (u.get('end')[:4] if u.get('end') else '')}": float(u["val"]) - (
-                    float([cu for cu in us_gaap.get("PaymentsToAcquirePropertyPlantAndEquipment", {}).get("units", {}).get("USD", []) if cu.get("form") in ("10-K", "10-Q") and cu.get("end") == u.get("end") and "val" in cu][-1]["val"])
-                    if [cu for cu in us_gaap.get("PaymentsToAcquirePropertyPlantAndEquipment", {}).get("units", {}).get("USD", []) if cu.get("form") in ("10-K", "10-Q") and cu.get("end") == u.get("end") and "val" in cu] else 0.0
-                )
-                for u in us_gaap.get("NetCashProvidedByUsedInOperatingActivities", {}).get("units", {}).get("USD", [])
-                if u.get("form") in ("10-K", "10-Q") and "val" in u
-            }
+            "historical_fcf_series": hist_fcf
         }
 
     def _fetch_tcs_data(self) -> Dict[str, Any]:
@@ -605,14 +651,30 @@ class AnalystAgent:
 
         # Multi-year historical FCF series
         hist_fcf = {}
+        hist_fcf_ledger_ids = {}
         for end_d in sorted_ends[-4:]:
             o_item = ocf_series.get(end_d)
             c_item = capex_series.get(end_d) if capex_series else None
             if o_item:
                 o_v = float(o_item["val"])
                 c_v = float(c_item["val"]) if c_item else 0.0
+                o_accn = o_item.get("accn", "")
+                c_accn = c_item.get("accn", "") if c_item else ""
                 yr_label = f"FY_{end_d[:4]}"
-                hist_fcf[yr_label] = o_v - c_v
+                fcf_v = o_v - c_v
+                hist_fcf[yr_label] = fcf_v
+                l_hist = self.ledger.record(
+                    tool="tools.calc.free_cash_flow",
+                    ticker=ticker,
+                    currency="USD",
+                    inputs={"ocf": o_v, "capex": c_v, "period_end": end_d, "ocf_accn": o_accn, "capex_accn": c_accn},
+                    output=fcf_v,
+                    raw_value=fcf_v,
+                    source=f"https://data.sec.gov/api/xbrl/companyfacts/CIK{cik}.json (OCF Accn: {o_accn}, Capex Accn: {c_accn})",
+                    period=yr_label,
+                    notes=f"{ticker} Multi-Year FCF {yr_label} (Period End: {end_d})"
+                )
+                hist_fcf_ledger_ids[yr_label] = l_hist
 
         # Market quote via DataLayer
         quote = dl.get_quote(ticker, ledger=self.ledger)
@@ -782,6 +844,7 @@ class AnalystAgent:
             "rec_prev": l_rec_prev,
             "inv_curr": l_inv_curr,
             "inv_prev": l_inv_prev,
+            "historical_fcf": hist_fcf_ledger_ids,
         }
 
         return {

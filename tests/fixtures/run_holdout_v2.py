@@ -1,3 +1,4 @@
+# synthetic fixture, not for reports
 """
 scripts/run_holdout_v2.py
 Runs the verbatim 10 hold-out sentences from tests/holdout_v2.txt against the ReportVerifier

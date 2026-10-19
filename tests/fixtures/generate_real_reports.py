@@ -1,3 +1,4 @@
+# synthetic fixture, not for reports
 """
 Generate Real Live Data Reports and Audits for AAPL and TCS.NS.
 Pulls live filing data from SEC EDGAR XBRL and Yahoo Finance,

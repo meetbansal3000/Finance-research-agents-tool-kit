@@ -1,0 +1,16 @@
+{
+  "1000000.0": "Scale factor for 1 Million (used for currency scaling in millions, unit conversions, and default baseline capital).",
+  "1500000.0": "Baseline paper-trading desk sample capital allocation in UI preset ($1.5M).",
+  "3000000.0": "Baseline paper-trading desk sample capital allocation in UI preset ($3.0M).",
+  "4000000.0": "Baseline paper-trading desk sample capital allocation in UI preset ($4.0M) and broker client test benchmark.",
+  "10000000.0": "Scale factor for 1 Crore (used for Indian numbering system ₹1 Crore / 10M scale divisor in financial reporting).",
+  "100000000.0": "Threshold constant for 100 Million ($100M capital allocation / large exposure cap).",
+  "500000000.0": "Market liquidity ceiling threshold constant for 500 Million ($500M).",
+  "1000000000.0": "Scale factor for 1 Billion (used for $1B scale divisor and iXBRL fact scale identification).",
+  "1500000000.0": "Illustrative M&A deal committee valuation scenario in Meridian orchestrator ($1.5B).",
+  "1800000000.0": "Illustrative M&A deal committee valuation scenario in Meridian orchestrator ($1.8B).",
+  "5000000000.0": "Illustrative M&A deal committee valuation scenario in Meridian orchestrator ($5.0B).",
+  "5200000000.0": "Illustrative M&A deal committee valuation scenario in Meridian orchestrator ($5.2B).",
+  "6000000000.0": "Illustrative M&A deal committee valuation scenario in Meridian orchestrator ($6.0B).",
+  "1000000000000.0": "Scale factor for 1 Trillion / Lakh Crore (used for $1T scale divisor and iXBRL fact scale identification)."
+}
