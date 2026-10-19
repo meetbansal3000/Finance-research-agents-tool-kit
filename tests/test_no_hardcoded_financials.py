@@ -81,3 +81,26 @@ def test_no_hardcoded_financials_in_tools_and_agents():
         f"Found {len(unallowlisted_findings)} unallowlisted hardcoded numeric literal(s) in tools/ or agents/:\n"
         + "\n".join(f"  {f['file']}:{f['line']} -> {f['value']}" for f in unallowlisted_findings)
     )
+
+
+def test_dashboard_dcf_dynamic_ledger_loading_or_data_unavailable():
+    """
+    Item 7 Verification:
+    Ensures that dashboard.py loads DCF metrics from pipeline provenance ledgers
+    with exact period ends, and returns 'data unavailable' + 'ILLUSTRATIVE' flag
+    when no audited ledger exists for a ticker.
+    """
+    from dashboard import load_pipeline_ledger_dcf_metrics, get_dcf_company_profile
+
+    # 1. Unaudited ticker: must show data unavailable and illustrative flag
+    res_none = load_pipeline_ledger_dcf_metrics("NONEXISTENT_TICKER_XYZ")
+    assert res_none["found"] is False
+    assert res_none["fcf_period"] == "data unavailable"
+    assert res_none["shares_period"] == "data unavailable"
+    assert res_none["net_debt_period"] == "data unavailable"
+
+    prof_none = get_dcf_company_profile("NONEXISTENT_TICKER_XYZ")
+    assert prof_none["is_illustrative"] is True
+    assert "ILLUSTRATIVE EXAMPLE" in prof_none["source"]
+    assert prof_none["fcf_period"] == "data unavailable"
+

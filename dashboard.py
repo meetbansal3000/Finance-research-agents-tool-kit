@@ -2886,22 +2886,22 @@ elif "Portfolio Construction Lab" in nav_choice:
                 if missing_quote_tickers:
                     st.error(f"⛔ Cannot submit order: Live quote unavailable for {', '.join(missing_quote_tickers)}. Please remove unquoted assets.")
                 else:
-                with st.spinner(f"Fetching live market return series and backtesting {parsed_tickers}..."):
-                    try:
-                        sandbox = BacktestSandbox()
-                        # Convert weights to fractional dict
-                        weights_frac = {t: custom_weights[t] / 100.0 for t in parsed_tickers}
-                        bt_res = sandbox.run_custom_portfolio_backtest(
-                            tickers=parsed_tickers,
-                            weights=weights_frac,
-                            benchmark="SPY",
-                            period=selected_period
-                        )
-                        st.session_state["port_bt_res"] = bt_res
-                        st.session_state["port_analysis_mode"] = "custom"
-                        st.success("✅ Live Market Data Fetched & Portfolio Evaluated Successfully!")
-                    except Exception as e:
-                        st.error(f"Error fetching live data: {str(e)}")
+                    with st.spinner(f"Fetching live market return series and backtesting {parsed_tickers}..."):
+                        try:
+                            sandbox = BacktestSandbox()
+                            # Convert weights to fractional dict
+                            weights_frac = {t: custom_weights[t] / 100.0 for t in parsed_tickers}
+                            bt_res = sandbox.run_custom_portfolio_backtest(
+                                tickers=parsed_tickers,
+                                weights=weights_frac,
+                                benchmark="SPY",
+                                period=selected_period
+                            )
+                            st.session_state["port_bt_res"] = bt_res
+                            st.session_state["port_analysis_mode"] = "custom"
+                            st.success("✅ Live Market Data Fetched & Portfolio Evaluated Successfully!")
+                        except Exception as e:
+                            st.error(f"Error fetching live data: {str(e)}")
 
     # --- MODE 2: ALGORITHMIC OPTIMIZER (NVIDIA CUOPT) ---
     else:
