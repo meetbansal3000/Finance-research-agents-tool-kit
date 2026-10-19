@@ -89,20 +89,22 @@ def test_no_hardcoded_financials_in_tools_agents_scripts_dashboard():
 
     unallowlisted_findings = []
 
-    for fpath in target_files:
-        rel_path = os.path.relpath(fpath, root_dir)
-        with open(fpath, "r", encoding="utf-8", errors="ignore") as f:
-            try:
-                tree = ast.parse(f.read(), filename=fpath)
-            except SyntaxError:
-                continue
+    for file_path in target_files:
+        rel_path = os.path.relpath(file_path, root_dir)
+        with open(file_path, "r", encoding="utf-8") as file_handle:
+            source_content = file_handle.read()
+
+        try:
+            tree = ast.parse(source_content, filename=file_path)
+        except SyntaxError as parse_err:
+            pytest.fail(f"Syntax error encountered in {rel_path}:{parse_err.lineno}: {parse_err.msg}")
 
         for node in ast.walk(tree):
             if isinstance(node, ast.Constant) and isinstance(node.value, (int, float)):
                 val = abs(node.value)
-                if val >= 1000000.0:  # 1e6 or more
-                    f_val = float(val)
-                    if f_val not in allowed_floats:
+                if val >= 1000000.0:
+                    numeric_value = float(val)
+                    if numeric_value not in allowed_floats:
                         unallowlisted_findings.append({
                             "file": rel_path,
                             "line": node.lineno,

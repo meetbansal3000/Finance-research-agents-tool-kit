@@ -13,6 +13,7 @@ import sys
 import datetime
 import json
 import glob
+import re
 import pandas as pd
 import numpy as np
 
@@ -492,9 +493,6 @@ def load_pipeline_ledger_dcf_metrics(ticker: str) -> dict:
     from the pipeline's audited provenance ledger sidecars in reports/, along with each metric's period end.
     Returns 'data unavailable' for periods if the metric or ledger is missing.
     """
-    clean_sym = (ticker or "").strip().upper()
-    is_inr = ".NS" in clean_sym or ".BO" in clean_sym
-
     result = {
         "found": False,
         "run_id": None,
@@ -512,43 +510,50 @@ def load_pipeline_ledger_dcf_metrics(ticker: str) -> dict:
         "t_growth": None,
     }
 
+    if not ticker or not isinstance(ticker, str):
+        return result
+
+    clean_sym = re.sub(r"[^A-Z0-9._-]", "", ticker.strip().upper())
+    if not clean_sym:
+        return result
+
+    is_inr = clean_sym.endswith((".NS", ".BO"))
+
     if not os.path.exists(REPORTS_DIR):
         return result
 
-    matching_files = []
-    for root, dirs, files in os.walk(REPORTS_DIR):
+    matching_ledger_paths: list[str] = []
+    for root, _, files in os.walk(REPORTS_DIR):
         for fname in files:
             if fname.endswith("provenance.json"):
                 full_path = os.path.join(root, fname)
-                rel = os.path.relpath(full_path, REPORTS_DIR).replace("\\", "/")
-                parts = rel.split("/")
-                folder_name = parts[0].upper()
+                folder_name = os.path.basename(root).upper()
                 file_upper = fname.upper()
 
                 if folder_name.startswith(f"{clean_sym}_") or folder_name == clean_sym:
-                    matching_files.append(full_path)
+                    matching_ledger_paths.append(full_path)
                 elif file_upper.startswith(f"{clean_sym}_") or file_upper.startswith(f"{clean_sym.lower()}_"):
-                    matching_files.append(full_path)
+                    matching_ledger_paths.append(full_path)
 
-    if not matching_files:
+    if not matching_ledger_paths:
         return result
 
-    # Prioritize analyst_report.provenance.json, then research_report, then newest mtime
-    def _rank_path(p: str):
-        is_analyst = 3 if "analyst_report" in p.lower() else (2 if "research_report" in p.lower() else (0 if "skeptic" in p.lower() else 1))
-        folder = os.path.basename(os.path.dirname(p))
-        date_part = ""
-        if "_" in folder:
-            date_part = folder.split("_")[-1]
-        mtime = os.path.getmtime(p)
+    def _rank_path(path_str: str) -> tuple[str, int, float]:
+        is_analyst = 3 if "analyst_report" in path_str.lower() else (2 if "research_report" in path_str.lower() else (0 if "skeptic" in path_str.lower() else 1))
+        folder = os.path.basename(os.path.dirname(path_str))
+        date_part = folder.split("_")[-1] if "_" in folder else ""
+        try:
+            mtime = os.path.getmtime(path_str)
+        except OSError:
+            mtime = 0.0
         return (date_part, is_analyst, mtime)
 
-    matching_files.sort(key=_rank_path, reverse=True)
-    best_ledger_path = matching_files[0]
+    matching_ledger_paths.sort(key=_rank_path, reverse=True)
+    best_ledger_path = matching_ledger_paths[0]
 
     try:
-        with open(best_ledger_path, "r", encoding="utf-8") as f:
-            ledger_data = json.load(f)
+        with open(best_ledger_path, "r", encoding="utf-8") as ledger_file:
+            ledger_data = json.load(ledger_file)
 
         entries = ledger_data.get("entries", {})
         result["found"] = True
@@ -556,17 +561,17 @@ def load_pipeline_ledger_dcf_metrics(ticker: str) -> dict:
         result["ledger_path"] = best_ledger_path
 
         general_period = None
-        for lid, e in entries.items():
-            pe = e.get("period_end") or e.get("period") or e.get("fiscal_year")
+        for _, entry in entries.items():
+            pe = entry.get("period_end") or entry.get("period") or entry.get("fiscal_year")
             if pe and str(pe).startswith(("202", "FY202")):
                 general_period = str(pe)
                 break
 
-        for lid, e in entries.items():
-            tool = (e.get("tool") or "").lower()
-            notes = (e.get("notes") or "").lower()
-            inputs = e.get("inputs") or {}
-            pe = e.get("period_end") or e.get("period") or e.get("fiscal_year") or general_period
+        for _, entry in entries.items():
+            tool = (entry.get("tool") or "").lower()
+            notes = (entry.get("notes") or "").lower()
+            inputs = entry.get("inputs") or {}
+            pe = entry.get("period_end") or entry.get("period") or entry.get("fiscal_year") or general_period
 
             if "tools.calc.dcf" in tool:
                 if result["fcf"] is None and "base_fcf" in inputs:
@@ -591,34 +596,34 @@ def load_pipeline_ledger_dcf_metrics(ticker: str) -> dict:
             if "tools.calc.reverse_dcf" in tool:
                 if result["price"] is None and "current_price" in inputs:
                     result["price"] = float(inputs["current_price"])
-                    result["price_period"] = str(e.get("timestamp", ""))[:10] or "data unavailable"
+                    result["price_period"] = str(entry.get("timestamp", ""))[:10] or "data unavailable"
 
             if ("free_cash_flow" in tool or "freecashflow" in notes) and "yield" not in tool:
-                val = e.get("output") if e.get("output") is not None else e.get("raw_value")
+                val = entry.get("output") if entry.get("output") is not None else entry.get("raw_value")
                 if val is not None and result["fcf"] is None:
                     result["fcf"] = float(val)
                     if pe:
                         result["fcf_period"] = str(pe)
 
             if "net_debt" in tool or "net debt" in notes or "net cash" in notes:
-                val = e.get("output") if e.get("output") is not None else e.get("raw_value")
+                val = entry.get("output") if entry.get("output") is not None else entry.get("raw_value")
                 if val is not None and result["net_debt"] is None:
                     result["net_debt"] = float(val)
                     if pe:
                         result["net_debt_period"] = str(pe)
 
             if ("shares" in notes or "commonstocksharesoutstanding" in str(inputs).lower()) and result["shares"] is None:
-                val = e.get("output") if e.get("output") is not None else e.get("raw_value")
+                val = entry.get("output") if entry.get("output") is not None else entry.get("raw_value")
                 if val is not None and float(val) > 0:
                     result["shares"] = float(val)
                     if pe:
                         result["shares_period"] = str(pe)
 
             if ("quote" in tool or "market price" in notes) and result["price"] is None:
-                val = e.get("output") if e.get("output") is not None else e.get("raw_value")
+                val = entry.get("output") if entry.get("output") is not None else entry.get("raw_value")
                 if val is not None and float(val) > 0:
                     result["price"] = float(val)
-                    ts = e.get("timestamp")
+                    ts = entry.get("timestamp")
                     result["price_period"] = str(ts)[:10] if ts else (str(pe) if pe else "data unavailable")
 
         if result["fcf"] is not None and result["fcf_period"] == "data unavailable" and general_period:
@@ -636,7 +641,7 @@ def load_pipeline_ledger_dcf_metrics(ticker: str) -> dict:
             if result["net_debt"] is not None and abs(result["net_debt"]) > 1e8:
                 result["net_debt"] = result["net_debt"] / 1e7
 
-    except Exception:
+    except (json.JSONDecodeError, OSError, ValueError, KeyError):
         pass
 
     return result
