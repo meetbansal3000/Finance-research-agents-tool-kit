@@ -5,7 +5,7 @@ Provides fast company-name-to-ticker discovery, resolution, and watchlist persis
 
 import os
 import json
-from typing import List, Dict, Any, Optional, Tuple
+from typing import List, Dict, Any, Optional, Tuple, Union
 import requests
 import yfinance as yf
 
@@ -184,6 +184,37 @@ def reset_watchlist() -> List[str]:
     """Reset watchlist back to default 6 institutional baseline companies."""
     save_watchlist(DEFAULT_WATCHLIST)
     return list(DEFAULT_WATCHLIST)
+
+
+def set_watchlist(tickers: Union[List[str], str]) -> List[str]:
+    """
+    Replace current watchlist/wishlist with a custom list of tickers or comma-separated string.
+    Resolves any company names to primary tickers and saves persistently to JSON.
+    """
+    if isinstance(tickers, str):
+        raw_items = [t.strip() for t in tickers.replace(";", ",").split(",") if t.strip()]
+    else:
+        raw_items = list(tickers)
+
+    cleaned: List[str] = []
+    seen = set()
+    for item in raw_items:
+        resolved = lookup_primary_ticker(str(item)) or str(item).strip().upper()
+        if resolved and resolved not in seen:
+            seen.add(resolved)
+            cleaned.append(resolved)
+
+    save_watchlist(cleaned)
+    return cleaned
+
+
+# Wishlist / Watchlist Function Aliases
+load_saved_wishlist = load_saved_watchlist
+save_wishlist = save_watchlist
+set_wishlist = set_watchlist
+add_to_wishlist = add_to_watchlist
+remove_from_wishlist = remove_from_watchlist
+reset_wishlist = reset_watchlist
 
 
 # =============================================================================

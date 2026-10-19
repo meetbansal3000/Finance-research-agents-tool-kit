@@ -21,6 +21,7 @@ from tools.ledger import ProvenanceLedger
 from tools.broker_client import ExecutionCostModel, MultiExchangeRouter
 from tools.fill_model import RealisticFillModel
 from tools.journal_gate import JournalGate
+from tools.trading_analytics import TradingAnalytics
 
 PROJECT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 PORTFOLIO_FILE = os.path.join(PROJECT_DIR, "journal", "paper_portfolio.json")
@@ -924,6 +925,43 @@ class PaperTradingEngine:
         self.save_portfolio(data)
         self.mark_to_market()
         return data
+
+    def get_analytics(
+        self,
+        benchmark: str = "SPY",
+        benchmark_return_pct: Optional[float] = None,
+        n_bootstraps: int = 1000,
+        confidence_level: float = 0.95,
+        random_seed: Optional[int] = None,
+        min_trades_threshold: int = 30
+    ) -> Dict[str, Any]:
+        """
+        Calculates execution analytics:
+        - Return vs chosen benchmark (SPY/custom) and alpha
+        - Max drawdown (% and $)
+        - Hit rate %
+        - Average win and average loss ($ and %)
+        - Mathematical expectancy ($/trade and risk ratio)
+        - Number of trades (total, winning, losing, breakeven)
+        - Bootstrap confidence intervals for mean PnL, hit rate, and expectancy
+        - Explicit warning when fewer than 30 trades are logged
+        """
+        data = self.load_portfolio()
+        closed_trades = data.get("closed_trades", [])
+        init_cap = float(data.get("initial_cash", self.initial_capital))
+        curr_eq = float(data.get("total_equity", init_cap))
+
+        return TradingAnalytics.calculate_analytics(
+            closed_trades=closed_trades,
+            initial_capital=init_cap,
+            current_equity=curr_eq,
+            benchmark=benchmark,
+            benchmark_return_pct=benchmark_return_pct,
+            n_bootstraps=n_bootstraps,
+            confidence_level=confidence_level,
+            random_seed=random_seed,
+            min_trades_threshold=min_trades_threshold
+        )
 
 
 _ENGINE_INSTANCE: Optional[PaperTradingEngine] = None

@@ -58,6 +58,19 @@ def test_watchlist_lifecycle(tmp_path, monkeypatch):
     reset = reset_watchlist()
     assert reset == DEFAULT_WATCHLIST
 
+    # Custom set_watchlist / set_wishlist with company names and symbols
+    from tools.ticker_search import set_watchlist, set_wishlist, load_saved_wishlist
+    custom_list = set_watchlist(["Apple", "MSFT", "Tesla", "NVDA"])
+    assert custom_list == ["AAPL", "MSFT", "TSLA", "NVDA"]
+
+    # Verify wishlist alias
+    loaded_wishlist = load_saved_wishlist()
+    assert loaded_wishlist == ["AAPL", "MSFT", "TSLA", "NVDA"]
+
+    # String input support
+    str_list = set_wishlist("GOOGL, AMZN; META")
+    assert str_list == ["GOOGL", "AMZN", "META"]
+
 
 def test_compute_ticker_scorecard_metrics():
     aapl_m = compute_ticker_scorecard_metrics("AAPL")

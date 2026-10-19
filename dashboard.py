@@ -39,9 +39,11 @@ from tools.ticker_search import (
     add_to_watchlist,
     remove_from_watchlist,
     reset_watchlist,
+    set_watchlist,
     compute_ticker_scorecard_metrics,
     DEFAULT_WATCHLIST
 )
+from tools.paper_trading import get_paper_trading_engine
 
 from tools.tradingview import (
     format_tradingview_symbol,
@@ -993,17 +995,35 @@ nav_choice = st.sidebar.radio(
 
 st.sidebar.divider()
 
-# Global Watchlist Manager in Sidebar (Responsive Form Submission on Enter)
-st.sidebar.subheader(f"⭐ Active Coverage ({len(st.session_state['watchlist'])})")
-st.sidebar.caption(", ".join(st.session_state["watchlist"][:8]) + ("..." if len(st.session_state["watchlist"]) > 8 else ""))
+# Global Wishlist / Watchlist Manager in Sidebar
+st.sidebar.subheader(f"⭐ Wishlist Universe ({len(st.session_state['watchlist'])})")
 
+# 1. Quick Active Company Focus Switcher (Synchronizes across all tabs)
+if st.session_state["watchlist"]:
+    curr_active = st.session_state.get("active_ticker", st.session_state["watchlist"][0])
+    wl_options = list(st.session_state["watchlist"])
+    default_idx = wl_options.index(curr_active) if curr_active in wl_options else 0
+    picked_active_sym = st.sidebar.selectbox(
+        "🎯 Focus Company (All Tabs)",
+        options=wl_options,
+        index=default_idx,
+        help="Select any company in your wishlist to focus on it across DCF, Research, Charts, and Desks."
+    )
+    if picked_active_sym != st.session_state.get("active_ticker"):
+        st.session_state["active_ticker"] = picked_active_sym
+        st.session_state["opt_query_val"] = picked_active_sym
+        st.session_state["sb_query_val"] = picked_active_sym
+        st.session_state["eq_query_val"] = picked_active_sym
+        st.rerun()
+
+# 2. Add Single Company or Symbol
 with st.sidebar.form(key="sb_add_stock_form", clear_on_submit=True):
     sb_search_input = st.text_input(
         "Add Company or Symbol",
         placeholder="e.g. Tesla, Apple, TCS.NS, NVDA",
-        help="Type any company name or ticker and press Enter to add directly to your watchlist."
+        help="Type any company name or ticker and press Enter to add directly to your saved wishlist."
     )
-    sb_add_btn = st.form_submit_button("➕ Add to Watchlist", use_container_width=True)
+    sb_add_btn = st.form_submit_button("➕ Add to Wishlist", use_container_width=True)
     if sb_add_btn:
         if sb_search_input.strip():
             ok, msg, updated = add_to_watchlist(sb_search_input)
@@ -1016,6 +1036,35 @@ with st.sidebar.form(key="sb_add_stock_form", clear_on_submit=True):
                 st.sidebar.success(msg)
             else:
                 st.sidebar.warning(msg)
+            st.rerun()
+
+# 3. Manage & Bulk Edit Wishlist
+with st.sidebar.expander("⚙️ Manage / Bulk Edit Wishlist", expanded=False):
+    bulk_input = st.text_area(
+        "Edit Universe (comma-separated)",
+        value=", ".join(st.session_state["watchlist"]),
+        height=80,
+        help="Enter company names or tickers separated by commas to set your custom universe."
+    )
+    c_save_wl, c_reset_wl = st.columns(2)
+    with c_save_wl:
+        if st.button("💾 Save Wishlist", use_container_width=True):
+            updated_wl = set_watchlist(bulk_input)
+            st.session_state["watchlist"] = updated_wl
+            try:
+                get_shortlist_metrics_for_universe.clear()
+            except Exception:
+                pass
+            st.success(f"Saved {len(updated_wl)} companies!")
+            st.rerun()
+    with c_reset_wl:
+        if st.button("↺ Reset Defaults", use_container_width=True):
+            reset_wl = reset_watchlist()
+            st.session_state["watchlist"] = reset_wl
+            try:
+                get_shortlist_metrics_for_universe.clear()
+            except Exception:
+                pass
             st.rerun()
 
 # TradingView Desktop Application Launcher
@@ -1546,15 +1595,17 @@ elif "Intrinsic Valuation" in nav_choice:
             key="dcf_active_sym_input"
         ).strip().upper()
     with t_top2:
-        st.markdown("<div style='font-size:0.8rem; color:var(--text-muted); margin-bottom:4px;'>Quick Coverage Presets:</div>", unsafe_allow_html=True)
-        chip_cols = st.columns(6)
-        preset_chips = ["NVDA", "AAPL", "MSFT", "GOOGL", "TSLA", "TCS.NS"]
-        for idx, chip in enumerate(preset_chips):
-            with chip_cols[idx]:
-                if st.button(chip, key=f"dcf_chip_{chip}", use_container_width=True):
-                    custom_sym = chip
-                    st.session_state["active_ticker"] = chip
-                    st.rerun()
+        st.markdown("<div style='font-size:0.8rem; color:var(--text-muted); margin-bottom:4px;'>Select from Wishlist:</div>", unsafe_allow_html=True)
+        wl = st.session_state.get("watchlist", [])
+        if wl:
+            n_chips = min(len(wl), 8)
+            chip_cols = st.columns(n_chips)
+            for idx, chip in enumerate(wl[:n_chips]):
+                with chip_cols[idx]:
+                    if st.button(chip, key=f"dcf_chip_{chip}", use_container_width=True):
+                        custom_sym = chip
+                        st.session_state["active_ticker"] = chip
+                        st.rerun()
 
     # Load audited/live company profile
     profile = get_dcf_company_profile(custom_sym)
@@ -2415,6 +2466,17 @@ elif "Financial Copilot" in nav_choice:
             st.session_state["copilot_query_text"] = "Calculate a low-risk $50,000 allocation across GOOGL, MSFT, and AAPL using inverse volatility."
             st.session_state["copilot_trigger_run"] = True
             st.rerun()
+
+        wl = st.session_state.get("watchlist", [])
+        if wl:
+            st.caption("⭐ Query Your Wishlist Companies:")
+            wl_c_cols = st.columns(min(len(wl[:6]), 6))
+            for i, sym in enumerate(wl[:6]):
+                with wl_c_cols[i]:
+                    if st.button(f"🔎 {sym}", key=f"copilot_wl_btn_{sym}", use_container_width=True):
+                        st.session_state["copilot_query_text"] = f"Give me a fundamental snapshot, P/E ratio, operating margins, and latest financial health for {sym}."
+                        st.session_state["copilot_trigger_run"] = True
+                        st.rerun()
 
         with st.form(key="copilot_form", clear_on_submit=False):
             user_query = st.text_area(
@@ -3889,6 +3951,61 @@ elif "Investment Decision Journal" in nav_choice:
         st.markdown("### 📑 Portfolio Strategy & Retrospective Review")
         with open(review_md_path, "r", encoding="utf-8") as f:
             st.markdown(f.read())
+
+    # 4. INSTITUTIONAL PAPER-TRADING PERFORMANCE ANALYTICS
+    st.divider()
+    st.markdown("### 📊 Paper-Trading Performance Analytics & Expectancy")
+    st.caption("Quantitative audit of paper execution: return vs benchmark, maximum drawdown, win rate, expectancy, and non-parametric bootstrap confidence intervals.")
+
+    try:
+        pe = get_paper_trading_engine()
+        analytics = pe.get_analytics(benchmark="SPY")
+
+        if analytics.get("has_sample_size_warning"):
+            st.warning(analytics["sample_size_warning_message"])
+
+        c_a1, c_a2, c_a3, c_a4 = st.columns(4)
+        c_a1.metric(
+            "Return vs SPY",
+            f"{analytics['portfolio_return_pct']:+.2f}%",
+            delta=f"Alpha: {analytics['alpha_pct']:+.2f}% (SPY: {analytics['benchmark_return_pct']:+.2f}%)"
+        )
+        c_a2.metric(
+            "Max Drawdown",
+            f"{analytics['max_drawdown_pct']:.2f}%",
+            delta=f"${analytics['max_drawdown_usd']:,.2f} USD",
+            delta_color="inverse"
+        )
+        c_a3.metric(
+            "Hit Rate",
+            f"{analytics['hit_rate_pct']:.1f}%",
+            delta=f"{analytics['winning_trades']}W / {analytics['losing_trades']}L / {analytics['breakeven_trades']}E"
+        )
+        c_a4.metric(
+            "Expectancy",
+            f"${analytics['expectancy_usd']:+,.2f}/trade",
+            delta=f"Ratio: {analytics['expectancy_ratio']:+.2f}R | W/L: {analytics['win_loss_ratio']:.2f}"
+        )
+
+        col_det1, col_det2 = st.columns(2)
+        with col_det1:
+            st.markdown(f"• **Total Closed Trades:** `{analytics['number_of_trades']}` (Institutional threshold: `{analytics['min_trades_threshold']}` trades)")
+            st.markdown(f"• **Average Winning Trade:** `+${analytics['average_win_usd']:,.2f}` (`+{analytics['average_win_pct']:.2f}%`)")
+            st.markdown(f"• **Average Losing Trade:** `-${abs(analytics['average_loss_usd']):,.2f}` (`{analytics['average_loss_pct']:.2f}%`)")
+            st.markdown(f"• **Total Realized P&L:** `${analytics['total_realized_pnl']:+,.2f}`")
+            st.markdown(f"• **Starting Capital:** `${analytics['initial_capital']:,.2f}` | **Final Equity:** `${analytics['final_equity']:,.2f}`")
+
+        with col_det2:
+            b_ci = analytics.get("bootstrap_ci", {})
+            if b_ci.get("available"):
+                st.markdown(f"**Non-Parametric Bootstrap Confidence Intervals (95% CI, {b_ci['n_bootstraps']} rounds):**")
+                st.markdown(f"• **Mean Trade PnL:** `[${b_ci['mean_pnl_usd']['lower']:,.2f}, ${b_ci['mean_pnl_usd']['upper']:,.2f}]` (Median: `${b_ci['mean_pnl_usd']['median']:,.2f}`)")
+                st.markdown(f"• **Hit Rate:** `[{b_ci['hit_rate_pct']['lower']:.1f}%, {b_ci['hit_rate_pct']['upper']:.1f}%]` (Median: `{b_ci['hit_rate_pct']['median']:.1f}%`)")
+                st.markdown(f"• **Expectancy:** `[${b_ci['expectancy_usd']['lower']:,.2f}, ${b_ci['expectancy_usd']['upper']:,.2f}]`")
+            else:
+                st.info(f"Bootstrap CI: {b_ci.get('reason', 'Requires at least 2 closed trades.')}")
+    except Exception as e:
+        st.info(f"Analytics engine ready: {str(e)}")
 
 
 # --- MODULE 11: REGULATORY FILINGS & ALERTS ---

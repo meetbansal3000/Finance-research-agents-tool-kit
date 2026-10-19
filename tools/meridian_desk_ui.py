@@ -38,7 +38,7 @@ from tools.calc.probability_simulator import (
 )
 from plotly.subplots import make_subplots
 import yfinance as yf
-from tools.ticker_search import lookup_primary_ticker, search_company_tickers
+from tools.ticker_search import lookup_primary_ticker, search_company_tickers, load_saved_watchlist
 from tools.data_layer import get_data_layer
 from tools.multi_asset_data import MultiAssetDataEngine
 from tools.paper_trading import get_paper_trading_engine, INITIAL_PORTFOLIO_CASH
@@ -803,13 +803,16 @@ def render_meridian_multi_asset_desk():
                 st.write("")
                 opt_sync = st.button("🔄 Sync Live", key="opt_sync_quote_btn", use_container_width=True)
 
-            # Quick Pills
-            st.caption("Quick Select: ")
-            q_cols = st.columns(4)
-            for i, (q_label, q_sym) in enumerate([("MU", "MU"), ("NVDA", "NVDA"), ("AAPL", "AAPL"), ("TSLA", "TSLA")]):
-                if q_cols[i].button(q_label, key=f"qpill_opt_{q_sym}", use_container_width=True):
+            # Quick Pills from Wishlist
+            wl = load_saved_watchlist()
+            display_chips = wl[:6] if wl else ["MU", "NVDA", "AAPL", "TSLA"]
+            st.caption(f"⭐ Quick Select from Wishlist ({len(wl)} Equities):")
+            q_cols = st.columns(len(display_chips))
+            for i, q_sym in enumerate(display_chips):
+                if q_cols[i].button(q_sym, key=f"qpill_opt_{q_sym}", use_container_width=True):
                     opt_query = q_sym
                     st.session_state["opt_query_val"] = q_sym
+                    st.session_state["active_ticker"] = q_sym
                     st.rerun()
 
             # Resolve live market data
@@ -1159,6 +1162,18 @@ def render_meridian_multi_asset_desk():
                     st.write("")
                     st.write("")
                     sb_sync = st.button("🔄 Sync", key="sb_sync_btn", use_container_width=True)
+
+                wl = load_saved_watchlist()
+                if wl:
+                    st.caption(f"⭐ Quick Select from Wishlist ({len(wl)} Equities):")
+                    sb_display_chips = wl[:6]
+                    sb_q_cols = st.columns(len(sb_display_chips))
+                    for i, q_sym in enumerate(sb_display_chips):
+                        if sb_q_cols[i].button(q_sym, key=f"qpill_sb_{q_sym}", use_container_width=True):
+                            sb_query = q_sym
+                            st.session_state["sb_query_val"] = q_sym
+                            st.session_state["active_ticker"] = q_sym
+                            st.rerun()
 
                 sb_live = resolve_and_fetch_live_asset(sb_query)
                 st.session_state["sb_query_val"] = sb_live["symbol"]
@@ -1821,6 +1836,18 @@ def render_meridian_multi_asset_desk():
                 st.write("")
                 if st.button("🔄 Sync Live", key="eq_sync_btn", use_container_width=True):
                     st.rerun()
+
+            wl = load_saved_watchlist()
+            if wl:
+                st.caption(f"⭐ Quick Select from Wishlist ({len(wl)} Equities):")
+                eq_display_chips = wl[:6]
+                eq_q_cols = st.columns(len(eq_display_chips))
+                for i, q_sym in enumerate(eq_display_chips):
+                    if eq_q_cols[i].button(q_sym, key=f"qpill_eq_{q_sym}", use_container_width=True):
+                        eq_query = q_sym
+                        st.session_state["eq_query_val"] = q_sym
+                        st.session_state["active_ticker"] = q_sym
+                        st.rerun()
 
             eq_live = resolve_and_fetch_live_asset(eq_query)
             st.session_state["eq_query_val"] = eq_live["symbol"]
@@ -3096,13 +3123,18 @@ def render_meridian_multi_asset_desk():
             st.markdown("#### 🤖 Autonomous Positive-Expectancy Strategy Scanner")
             st.caption("Scans watchlists for trades with E[PnL] > 0, Cornish-Fisher POP >= 65%, and automated Investment Committee approval.")
 
+            wl = load_saved_watchlist()
             sc_c1, sc_c2 = st.columns([3, 1])
             with sc_c1:
+                default_scanner_uni = st.session_state.get("scan_tickers_in_val", ", ".join(wl) if wl else "SPY, QQQ, AAPL, MSFT, NVDA, AMZN, GOOGL, META, TSLA, GLD")
                 scan_tickers_in = st.text_input(
                     "Scanner Universe (comma-separated)",
-                    value="SPY, QQQ, AAPL, MSFT, NVDA, AMZN, GOOGL, META, TSLA, GLD",
+                    value=default_scanner_uni,
                     help="Asset symbols to screen for positive econometric edge."
                 )
+                if wl and st.button(f"⭐ Load My Saved Wishlist ({len(wl)} Equities)", key="btn_use_wl_scanner"):
+                    st.session_state["scan_tickers_in_val"] = ", ".join(wl)
+                    st.rerun()
             with sc_c2:
                 min_pop_slider = st.slider("Min Cornish-Fisher POP (%)", min_value=50, max_value=85, value=65, step=5)
 
