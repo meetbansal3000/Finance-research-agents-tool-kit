@@ -99,36 +99,39 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# Meridian Institutional Design Tokens (FactSet / Bloomberg aesthetic: high density, crisp lines, zero cartoon AI styling)
+# Meridian Institutional Design Tokens (Apple Obsidian & Antigravity Precision Standard)
 st.markdown("""
 <style>
     /* -------------------------------------------------------------
-       INSTITUTIONAL DESIGN SYSTEM (Dark Obsidian Terminal Standard)
-       Linear / Bloomberg / Koyfin aesthetic: high density, crisp lines,
-       tabular numerals, zero serif or unstyled HTML radio widgets.
+       INSTITUTIONAL DESIGN SYSTEM (Apple Obsidian & Antigravity)
+       Deep obsidian canvas, frosted glass luminescence, Apple blue/green
+       status accents, and precision tabular numerals.
        ------------------------------------------------------------- */
     :root {
         color-scheme: dark;
-        --bg-base: #0B0E14;
-        --bg-sidebar: #0E121A;
-        --bg-card: #121824;
-        --bg-elevated: #182030;
-        --border-subtle: #1E2638;
-        --border-strong: #2A364F;
-        --text-primary: #F8FAFC;
-        --text-secondary: #94A3B8;
-        --text-muted: #64748B;
-        --accent-emerald: #10B981;
-        --accent-emerald-subtle: rgba(16, 185, 129, 0.12);
-        --accent-cyan: #38BDF8;
-        --accent-cyan-subtle: rgba(56, 189, 248, 0.12);
-        --accent-amber: #F59E0B;
-        --accent-amber-subtle: rgba(245, 158, 11, 0.12);
-        --accent-rose: #F43F5E;
-        --accent-rose-subtle: rgba(244, 63, 94, 0.12);
-        --radius-sm: 6px;
-        --radius-md: 8px;
-        --font-sans: -apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        --bg-base: #000000;
+        --bg-sidebar: #08080A;
+        --bg-card: #0E0E12;
+        --bg-elevated: #16161C;
+        --bg-subtle: #1C1C24;
+        --border-subtle: rgba(255, 255, 255, 0.08);
+        --border-strong: rgba(255, 255, 255, 0.16);
+        --text-primary: #FFFFFF;
+        --text-secondary: #86868B;
+        --text-muted: #6E6E73;
+        --accent-blue: #2997FF;
+        --accent-blue-hover: #0077ED;
+        --accent-blue-subtle: rgba(41, 151, 255, 0.14);
+        --status-green: #30D158;
+        --status-green-subtle: rgba(48, 209, 88, 0.14);
+        --status-red: #FF453A;
+        --status-red-subtle: rgba(255, 69, 58, 0.14);
+        --status-amber: #FF9F0A;
+        --status-amber-subtle: rgba(255, 159, 10, 0.14);
+        --radius-sm: 8px;
+        --radius-md: 16px;
+        --radius-lg: 24px;
+        --font-sans: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Plus Jakarta Sans", "Inter", -apple-system, sans-serif;
         --font-mono: "JetBrains Mono", "SF Mono", Menlo, Consolas, monospace;
     }
 
@@ -138,6 +141,7 @@ st.markdown("""
         background-color: var(--bg-base) !important;
         color: var(--text-primary) !important;
         -webkit-font-smoothing: antialiased;
+        letter-spacing: -0.015em;
     }
 
     [data-testid="stAppViewContainer"], [data-testid="stMain"] {
@@ -146,8 +150,9 @@ st.markdown("""
     }
 
     [data-testid="stHeader"] {
-        background: rgba(11, 14, 20, 0.85) !important;
-        backdrop-filter: blur(12px) !important;
+        background: rgba(8, 8, 10, 0.78) !important;
+        backdrop-filter: blur(28px) !important;
+        -webkit-backdrop-filter: blur(28px) !important;
         border-bottom: 1px solid var(--border-subtle) !important;
     }
 
@@ -161,14 +166,14 @@ st.markdown("""
         font-family: var(--font-sans) !important;
         color: var(--text-primary) !important;
         font-weight: 700 !important;
-        letter-spacing: -0.02em !important;
+        letter-spacing: -0.025em !important;
     }
 
     .header-style {
-        font-size: 1.75rem !important;
+        font-size: 1.85rem !important;
         font-weight: 700 !important;
-        color: var(--text-primary) !important;
-        letter-spacing: -0.025em !important;
+        color: #FFFFFF !important;
+        letter-spacing: -0.03em !important;
         margin: 0 0 0.35rem 0 !important;
         line-height: 1.2 !important;
     }
@@ -198,38 +203,37 @@ st.markdown("""
     }
 
     section[data-testid="stSidebar"] [role="radiogroup"] {
-        gap: 2px !important;
+        gap: 4px !important;
     }
 
-    /* Modern Navigation Pill Styling */
+    /* Apple Floating Pill Navigation */
     section[data-testid="stSidebar"] [role="radiogroup"] label {
         display: flex !important;
         align-items: center !important;
         width: 100% !important;
         min-height: 2.35rem !important;
-        padding: 0.45rem 0.85rem !important;
-        border-radius: var(--radius-sm) !important;
+        padding: 0.5rem 0.95rem !important;
+        border-radius: 9999px !important;
         background: transparent !important;
         color: var(--text-secondary) !important;
         font-size: 0.86rem !important;
         font-weight: 500 !important;
         border: 1px solid transparent !important;
         cursor: pointer !important;
-        transition: all 0.15s ease !important;
+        transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1) !important;
     }
 
     section[data-testid="stSidebar"] [role="radiogroup"] label:hover {
-        background: rgba(255, 255, 255, 0.04) !important;
-        color: var(--text-primary) !important;
+        background: rgba(255, 255, 255, 0.06) !important;
+        color: #FFFFFF !important;
     }
 
     section[data-testid="stSidebar"] [role="radiogroup"] label:has(input:checked) {
-        background: var(--bg-elevated) !important;
+        background: rgba(255, 255, 255, 0.12) !important;
         color: #FFFFFF !important;
         font-weight: 600 !important;
-        border: 1px solid var(--border-strong) !important;
-        border-left: 3px solid var(--accent-emerald) !important;
-        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3) !important;
+        border: 1px solid rgba(255, 255, 255, 0.16) !important;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.4) !important;
     }
 
     section[data-testid="stSidebar"] hr {
@@ -237,34 +241,34 @@ st.markdown("""
         margin: 1rem 0 !important;
     }
 
-    /* Cards & Metric Panels */
+    /* Cards & Unboxed Surfaces */
     .meridian-card {
         background: var(--bg-card);
         border: 1px solid var(--border-subtle);
         border-radius: var(--radius-md);
-        padding: 1.15rem 1.35rem;
+        padding: 1.25rem 1.45rem;
         height: 100%;
-        transition: border-color 0.15s ease, box-shadow 0.15s ease;
+        transition: border-color 0.2s ease, box-shadow 0.2s ease;
     }
 
     .meridian-card:hover {
         border-color: var(--border-strong);
-        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+        box-shadow: 0 8px 30px rgba(0, 0, 0, 0.45);
     }
 
     .meridian-card-label {
         color: var(--text-secondary);
         font-size: 0.72rem;
         font-weight: 600;
-        letter-spacing: 0.08em;
+        letter-spacing: 0.06em;
         text-transform: uppercase;
     }
 
     .meridian-card-value {
-        color: var(--text-primary);
+        color: #FFFFFF;
         font-size: 1.85rem;
         font-weight: 700;
-        letter-spacing: -0.025em;
+        letter-spacing: -0.03em;
         margin: 0.35rem 0 0.15rem;
         font-variant-numeric: tabular-nums;
     }
@@ -275,13 +279,18 @@ st.markdown("""
         line-height: 1.45;
     }
 
-    /* Global Metric Styling & Ellipsis Truncation Prevention */
+    /* Global Metric Styling & Clean Tabular Display */
     div[data-testid="stMetric"] {
         background: var(--bg-card) !important;
-        padding: 0.65rem 0.85rem !important;
-        border-radius: var(--radius-sm) !important;
+        padding: 0.75rem 0.95rem !important;
+        border-radius: var(--radius-md) !important;
         border: 1px solid var(--border-subtle) !important;
         overflow: visible !important;
+        transition: border-color 0.2s ease !important;
+    }
+
+    div[data-testid="stMetric"]:hover {
+        border-color: var(--border-strong) !important;
     }
 
     div[data-testid="stMetricLabel"] {
@@ -290,8 +299,8 @@ st.markdown("""
     }
 
     div[data-testid="stMetricLabel"] p {
-        font-size: 0.76rem !important;
-        font-weight: 600 !important;
+        font-size: 0.75rem !important;
+        font-weight: 500 !important;
         color: var(--text-secondary) !important;
         text-transform: uppercase !important;
         letter-spacing: 0.04em !important;
@@ -307,10 +316,11 @@ st.markdown("""
     }
 
     div[data-testid="stMetricValue"] > div {
-        font-size: clamp(0.95rem, 1.35vw, 1.25rem) !important;
+        font-size: clamp(0.95rem, 1.35vw, 1.30rem) !important;
         font-weight: 700 !important;
         font-family: var(--font-mono) !important;
-        color: var(--text-primary) !important;
+        color: #FFFFFF !important;
+        font-variant-numeric: tabular-nums !important;
         overflow: visible !important;
         text-overflow: clip !important;
         white-space: nowrap !important;
@@ -325,30 +335,30 @@ st.markdown("""
     .badge {
         display: inline-block;
         font-size: 0.68rem;
-        font-weight: 700;
-        letter-spacing: 0.06em;
+        font-weight: 600;
+        letter-spacing: 0.04em;
         text-transform: uppercase;
-        padding: 0.2rem 0.55rem;
-        border-radius: 4px;
+        padding: 0.25rem 0.65rem;
+        border-radius: 9999px;
         margin-right: 0.4rem;
     }
 
     .badge-audited {
-        background: var(--accent-emerald-subtle);
-        color: var(--accent-emerald);
-        border: 1px solid rgba(16, 185, 129, 0.3);
+        background: var(--status-green-subtle);
+        color: var(--status-green);
+        border: 1px solid rgba(48, 209, 88, 0.3);
     }
 
     .badge-assumption {
-        background: var(--accent-amber-subtle);
-        color: var(--accent-amber);
-        border: 1px solid rgba(245, 158, 11, 0.3);
+        background: var(--status-amber-subtle);
+        color: var(--status-amber);
+        border: 1px solid rgba(255, 159, 10, 0.3);
     }
 
     .badge-estimated {
-        background: var(--accent-cyan-subtle);
-        color: var(--accent-cyan);
-        border: 1px solid rgba(56, 189, 248, 0.3);
+        background: var(--accent-blue-subtle);
+        color: var(--accent-blue);
+        border: 1px solid rgba(41, 151, 255, 0.3);
     }
 
     /* Streamlit Native Bordered Containers */
@@ -358,29 +368,38 @@ st.markdown("""
         border-radius: var(--radius-md) !important;
     }
 
-    /* Modern Tabs */
+    /* Apple Segmented Control Tabs */
     .stTabs [data-baseweb="tab-list"] {
-        border-bottom: 1px solid var(--border-subtle) !important;
-        background: transparent !important;
-        gap: 6px !important;
+        background: #141418 !important;
+        border-radius: 9999px !important;
+        padding: 4px !important;
+        border: 1px solid var(--border-subtle) !important;
+        gap: 4px !important;
+        margin-bottom: 1.25rem !important;
     }
 
     .stTabs [data-baseweb="tab"] {
-        height: 38px !important;
+        height: 34px !important;
         background: transparent !important;
-        border-radius: 6px 6px 0 0 !important;
+        border-radius: 9999px !important;
         color: var(--text-secondary) !important;
         font-weight: 500 !important;
-        font-size: 0.86rem !important;
-        padding: 0 16px !important;
-        border-bottom: 2px solid transparent !important;
+        font-size: 0.84rem !important;
+        padding: 0 18px !important;
+        border-bottom: none !important;
+        transition: all 0.15s ease !important;
+    }
+
+    .stTabs [data-baseweb="tab"]:hover {
+        color: #FFFFFF !important;
     }
 
     .stTabs [aria-selected="true"] {
-        background: transparent !important;
-        color: var(--accent-emerald) !important;
-        border-bottom: 2px solid var(--accent-emerald) !important;
+        background: #FFFFFF !important;
+        color: #000000 !important;
+        border-bottom: none !important;
         font-weight: 600 !important;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4) !important;
     }
 
     /* Form Inputs */
@@ -388,7 +407,7 @@ st.markdown("""
     [data-testid="stNumberInput"] input,
     [data-testid="stTextArea"] textarea,
     [data-baseweb="select"] > div {
-        background-color: #0A0D14 !important;
+        background-color: #0A0A0C !important;
         border: 1px solid var(--border-subtle) !important;
         color: var(--text-primary) !important;
         border-radius: var(--radius-sm) !important;
@@ -399,54 +418,57 @@ st.markdown("""
     [data-testid="stNumberInput"] input:focus,
     [data-testid="stTextArea"] textarea:focus,
     [data-baseweb="select"] > div:focus-within {
-        border-color: var(--accent-emerald) !important;
-        box-shadow: 0 0 0 1px var(--accent-emerald) !important;
+        border-color: var(--accent-blue) !important;
+        box-shadow: 0 0 0 1px var(--accent-blue) !important;
     }
 
-    /* Buttons */
+    /* Apple Tactile Buttons */
     div.stButton > button, [data-testid="stDownloadButton"] button {
         min-height: 2.35rem !important;
-        border-radius: var(--radius-sm) !important;
-        font-weight: 600 !important;
+        border-radius: 9999px !important;
+        font-weight: 500 !important;
         font-size: 0.85rem !important;
-        background: var(--bg-elevated) !important;
-        border: 1px solid var(--border-strong) !important;
-        color: var(--text-primary) !important;
-        transition: all 0.15s ease !important;
+        background: rgba(255, 255, 255, 0.07) !important;
+        border: 1px solid rgba(255, 255, 255, 0.10) !important;
+        color: #FFFFFF !important;
+        transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
     }
 
     div.stButton > button:hover, [data-testid="stDownloadButton"] button:hover {
-        background: #232D3F !important;
-        border-color: #435472 !important;
+        background: rgba(255, 255, 255, 0.14) !important;
+        border-color: rgba(255, 255, 255, 0.20) !important;
         color: #FFFFFF !important;
+        transform: scale(1.01) !important;
     }
 
     div.stButton > button[kind="primary"], [data-testid="stFormSubmitButton"] > button {
-        background: var(--accent-emerald) !important;
-        border: 1px solid var(--accent-emerald) !important;
-        color: #064E3B !important;
-        font-weight: 700 !important;
+        background: #FFFFFF !important;
+        border: 1px solid #FFFFFF !important;
+        color: #000000 !important;
+        font-weight: 600 !important;
+        border-radius: 9999px !important;
     }
 
     div.stButton > button[kind="primary"]:hover, [data-testid="stFormSubmitButton"] > button:hover {
-        background: #34D399 !important;
-        border-color: #34D399 !important;
-        color: #064E3B !important;
+        background: #E5E5EA !important;
+        border-color: #E5E5EA !important;
+        color: #000000 !important;
+        transform: scale(1.02) !important;
     }
 
     /* Popover */
     [data-testid="stPopoverBody"] {
-        background-color: var(--bg-card) !important;
+        background-color: #121216 !important;
         border: 1px solid var(--border-strong) !important;
         color: var(--text-primary) !important;
-        box-shadow: 0 12px 30px rgba(0, 0, 0, 0.6) !important;
+        box-shadow: 0 16px 40px rgba(0, 0, 0, 0.8) !important;
         border-radius: var(--radius-md) !important;
     }
 
     /* Dataframe & Tables */
     [data-testid="stDataFrame"], [data-testid="stTable"] {
         border: 1px solid var(--border-subtle) !important;
-        border-radius: var(--radius-sm) !important;
+        border-radius: var(--radius-md) !important;
         background: var(--bg-card) !important;
     }
 
@@ -456,7 +478,7 @@ st.markdown("""
         gap: 6px;
         font-size: 0.98rem;
         font-weight: 700;
-        color: var(--accent-emerald);
+        color: var(--accent-blue);
         margin-bottom: 0.4rem;
     }
 </style>
@@ -952,17 +974,17 @@ def render_tab_info_guide(
 # =============================================================================
 st.sidebar.markdown(
     """
-    <div style="padding: 2px 2px 10px 2px;">
-        <div style="display:flex; align-items:center; gap:8px;">
-            <div style="width:26px; height:26px; border-radius:6px; background:#10B981; display:flex; align-items:center; justify-content:center; color:#0B0E14; font-weight:900; font-size:14px;">◈</div>
+    <div style="padding: 4px 4px 14px 4px;">
+        <div style="display:flex; align-items:center; gap:10px;">
+            <div style="width:30px; height:30px; border-radius:50%; background:#FFFFFF; display:flex; align-items:center; justify-content:center; color:#000000; font-weight:700; font-size:13px; box-shadow:0 2px 8px rgba(0,0,0,0.4);">M</div>
             <div>
-                <div style="font-weight:700; font-size:1.15rem; color:#F8FAFC; letter-spacing:-0.02em; line-height:1.1;">MERIDIAN</div>
-                <div style="font-size:0.70rem; color:#64748B; letter-spacing:0.06em; text-transform:uppercase; font-weight:600;">Research Terminal</div>
+                <div style="font-weight:700; font-size:1.15rem; color:#FFFFFF; letter-spacing:-0.025em; line-height:1.1;">MERIDIAN</div>
+                <div style="font-size:0.68rem; color:#86868B; letter-spacing:0.04em; text-transform:uppercase; font-weight:500;">Antigravity Engine</div>
             </div>
         </div>
-        <div style="display:inline-flex; align-items:center; gap:6px; padding:3px 10px; border-radius:9999px; background:rgba(16,185,129,0.12); border:1px solid rgba(16,185,129,0.3); color:#34D399; font-size:0.72rem; font-weight:600; margin-top:10px;">
-            <span style="display:inline-block; width:6px; height:6px; border-radius:50%; background:#10B981;"></span>
-            SYSTEM ONLINE · AUDITED
+        <div style="display:inline-flex; align-items:center; gap:6px; padding:3px 10px; border-radius:9999px; background:rgba(48,209,88,0.12); border:1px solid rgba(48,209,88,0.25); color:#30D158; font-size:0.70rem; font-weight:500; margin-top:10px;">
+            <span style="display:inline-block; width:6px; height:6px; border-radius:50%; background:#30D158;"></span>
+            Online & Audited
         </div>
     </div>
     """,
@@ -972,24 +994,24 @@ st.sidebar.markdown(
 if "pending_page" in st.session_state:
     st.session_state["active_page"] = st.session_state.pop("pending_page")
 
-# Flat choices for Streamlit radio, cleanly grouped with headers
+# Clean, professional navigation choices
 NAV_CHOICES = [
-    # Domain 1: Market Intelligence
-    "⌂  Executive Summary",
-    "◎  Coverage & Screening",
-    "◒  Market Terminal & Charts",
+    # Domain 1: Market Intelligence & Screening
+    "Executive Summary",
+    "Coverage & Screening",
+    "Market Terminal & Charts",
     # Domain 2: Fundamental Research & Valuation
-    "◇  Intrinsic Valuation (DCF)",
-    "✦  Autonomous Research Studio",
-    "◈  Financial Copilot",
+    "Intrinsic Valuation (DCF)",
+    "Autonomous Research Studio",
+    "Financial Copilot",
     # Domain 3: Quantitative Risk & Portfolio
-    "🌐  Meridian Multi-Asset Desk",
-    "▤  Portfolio Construction Lab",
-    "↗  Supply Chain & Logistics Risk",
+    "Meridian Multi-Asset Desk",
+    "Portfolio Construction Lab",
+    "Supply Chain & Logistics Risk",
     # Domain 4: Audit, Governance & System
-    "↘  Interactive 3D Pipeline Map",
-    "▧  Investment Decision Journal",
-    "◉  Regulatory Filings & Alerts"
+    "Interactive 3D Pipeline Map",
+    "Investment Decision Journal",
+    "Regulatory Filings & Alerts"
 ]
 
 nav_choice = st.sidebar.radio(
@@ -1001,7 +1023,7 @@ nav_choice = st.sidebar.radio(
 st.sidebar.divider()
 
 # Global Wishlist / Watchlist Manager in Sidebar
-st.sidebar.subheader(f"⭐ Wishlist Universe ({len(st.session_state['watchlist'])})")
+st.sidebar.subheader(f"Wishlist Universe ({len(st.session_state['watchlist'])})")
 
 # 1. Quick Active Company Focus Switcher (Synchronizes across all tabs)
 if st.session_state["watchlist"]:
@@ -1208,7 +1230,7 @@ python -c "from tools.ticker_search import compute_ticker_scorecard_metrics; pri
 # =============================================================================
 
 # --- MODULE 1: EXECUTIVE SUMMARY ---
-if nav_choice == "⌂  Executive Summary":
+if "Executive Summary" in nav_choice:
     col_head, col_info = st.columns([4.2, 1.3])
     with col_head:
         st.markdown('<div class="header-style">Executive Summary & Terminal Home</div>', unsafe_allow_html=True)
@@ -1253,9 +1275,9 @@ if nav_choice == "⌂  Executive Summary":
     st.markdown("### Start an Institutional Workflow")
     action_cols = st.columns(3)
     quick_actions = [
-        ("✦  Run Research Committee", "Execute Analyst, Verifier, and Skeptic audit pipeline.", "✦  Autonomous Research Studio"),
-        ("◎  Screen Coverage Universe", "Filter by operating margins, leverage, and FCF conversion.", "◎  Coverage & Screening"),
-        ("◇  Explore Valuation Model", "Adjust DCF WACC, growth projections, and sensitivity grids.", "◇  Intrinsic Valuation (DCF)"),
+        ("Run Research Committee", "Execute Analyst, Verifier, and Skeptic audit pipeline.", "Autonomous Research Studio"),
+        ("Screen Coverage Universe", "Filter by operating margins, leverage, and FCF conversion.", "Coverage & Screening"),
+        ("Explore Valuation Model", "Adjust DCF WACC, growth projections, and sensitivity grids.", "Intrinsic Valuation (DCF)"),
     ]
     for col, (title, detail, target_page) in zip(action_cols, quick_actions):
         with col:
@@ -1281,7 +1303,7 @@ if nav_choice == "⌂  Executive Summary":
                     with col_d2:
                         if st.button("Inspect", key=f"view_{entry.name}", use_container_width=True):
                             st.session_state["inspected_report_dir"] = entry.path
-                            st.session_state["pending_page"] = "✦  Autonomous Research Studio"
+                            st.session_state["pending_page"] = "Autonomous Research Studio"
                             st.rerun()
         else:
             st.info("No research dossiers generated yet. Run your first research review in the Autonomous Research Studio.")
@@ -1295,7 +1317,7 @@ if nav_choice == "⌂  Executive Summary":
 
 
 # --- MODULE 2: COVERAGE & SCREENING ---
-elif nav_choice == "◎  Coverage & Screening":
+elif "Coverage & Screening" in nav_choice:
     col_head, col_info = st.columns([4.2, 1.3])
     with col_head:
         st.markdown('<div class="header-style">Coverage Universe & Scorecard</div>', unsafe_allow_html=True)
@@ -2440,7 +2462,6 @@ elif "Financial Copilot" in nav_choice:
         )
         if custom_key:
             st.session_state["gemini_custom_key"] = custom_key
-            os.environ["GEMINI_API_KEY"] = custom_key
 
     ag_tab1, ag_tab2, ag_tab3, ag_tab4 = st.tabs([
         "💬 Conversational Copilot",

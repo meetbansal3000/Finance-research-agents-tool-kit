@@ -42,7 +42,7 @@ def test_risk_sentry_healthy_baseline(temp_sentry_env):
 
     assert res["overall_status"] == "HEALTHY_WITHIN_BOUNDS"
     assert "HEALTHY" in res["status_badge"]
-    assert res["portfolio_metrics"]["total_equity_usd"] == 1_000_000.0
+    assert res["portfolio_metrics"]["total_equity_usd"] == sentry.paper_engine.initial_capital
     assert res["total_breaches_count"] == 0
 
     econo = res["econometric_risk_metrics"]
@@ -57,14 +57,18 @@ def test_risk_sentry_position_drawdown_breach(temp_sentry_env):
     sentry = temp_sentry_env["sentry"]
     paper = temp_sentry_env["paper_engine"]
 
-    # Execute a trade: Buy 100 shares of AAPL at $200
-    paper.execute_trade(
+    # Execute a trade: Buy 100 shares of AAPL at $200 (within 20% position size rule)
+    ok, msg, res_trade = paper.execute_trade(
         symbol="AAPL",
         asset_class="Equities",
         side="BUY",
-        quantity=100,
-        price=200.0
+        quantity=50,
+        price=200.0,
+        thesis="Institutional hardware supercycle and service margin expansion",
+        invalidation_condition="Services growth stalls below 5% YoY",
+        review_date="2027-01-01"
     )
+    assert ok is True, f"Trade execution failed: {msg}"
 
     # Shock price down to $150 (-25% drawdown)
     res = sentry.audit_portfolio_risk(
@@ -106,5 +110,5 @@ def test_risk_sentry_state_persistence(temp_sentry_env):
 
     state = sentry.load_latest_sentry_state()
     assert state["overall_status"] == audit["overall_status"]
-    assert state["total_equity_usd"] == 1_000_000.0
+    assert state["total_equity_usd"] == sentry.paper_engine.initial_capital
     assert state["last_audited_at"] is not None

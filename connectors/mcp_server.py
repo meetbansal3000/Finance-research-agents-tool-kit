@@ -598,9 +598,16 @@ def handle_execute_paper_trade(
     strategy_type: str = "Standard",
     multiplier: float = 1.0,
     margin_per_unit: float = 0.0,
-    notes: str = ""
+    notes: str = "",
+    thesis: Optional[str] = None,
+    invalidation_condition: Optional[str] = None,
+    review_date: Optional[Any] = None
 ) -> Dict[str, Any]:
     engine = get_paper_trading_engine()
+    clean_thesis = thesis or (notes if len(notes) >= 5 else f"Systematic execution thesis for {symbol}")
+    clean_inval = invalidation_condition or f"Market adverse regime shift or stop loss trigger for {symbol}"
+    clean_rev = review_date or (datetime.date.today() + datetime.timedelta(days=30)).isoformat()
+
     success, msg, pos = engine.execute_trade(
         symbol=symbol,
         asset_class=asset_class,
@@ -610,7 +617,10 @@ def handle_execute_paper_trade(
         strategy_type=strategy_type,
         multiplier=multiplier,
         margin_per_unit=margin_per_unit,
-        notes=notes
+        notes=notes,
+        thesis=clean_thesis,
+        invalidation_condition=clean_inval,
+        review_date=clean_rev
     )
     portfolio = engine.load_portfolio()
     return {
@@ -723,7 +733,10 @@ def dispatch_tool(tool_name: str, arguments: Dict[str, Any]) -> Dict[str, Any]:
             strategy_type=arguments.get("strategy_type", "Standard"),
             multiplier=float(arguments.get("multiplier", 1.0)),
             margin_per_unit=float(arguments.get("margin_per_unit", 0.0)),
-            notes=arguments.get("notes", "")
+            notes=arguments.get("notes", ""),
+            thesis=arguments.get("thesis"),
+            invalidation_condition=arguments.get("invalidation_condition"),
+            review_date=arguments.get("review_date")
         )
     elif tool_name == "get_paper_portfolio":
         return handle_get_paper_portfolio()

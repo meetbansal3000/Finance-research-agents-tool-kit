@@ -194,7 +194,10 @@ def test_dispatch_paper_trading_lifecycle(tmp_path):
             "quantity": 10.0,
             "price": 100.0,
             "strategy_type": "Long Stock",
-            "notes": "Connector test execution"
+            "notes": "Connector test execution",
+            "thesis": "High-bandwidth memory HBM3E demand inflection across AI server architectures",
+            "invalidation_condition": "DRAM spot contract pricing breaks lower by more than 15%",
+            "review_date": "2027-01-01"
         })
         assert trade_res["success"] is True
         assert trade_res["trade"]["symbol"] == "MU"
