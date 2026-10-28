@@ -996,6 +996,8 @@ if "pending_page" in st.session_state:
 
 # Clean, professional navigation choices
 NAV_CHOICES = [
+    # Flagship Apple Obsidian Interface
+    "◈  Obsidian Workstation (Apple UI)",
     # Domain 1: Market Intelligence & Screening
     "Executive Summary",
     "Coverage & Screening",
@@ -1229,8 +1231,18 @@ python -c "from tools.ticker_search import compute_ticker_scorecard_metrics; pri
 # DOMAIN 1: MARKET INTELLIGENCE & SCREENING
 # =============================================================================
 
+# --- MODULE 0: OBSIDIAN WORKSTATION (APPLE INTERFACE) ---
+if "Obsidian Workstation" in nav_choice:
+    obsidian_html_path = os.path.join(PROJECT_DIR, "web", "index.html")
+    if os.path.exists(obsidian_html_path):
+        with open(obsidian_html_path, "r", encoding="utf-8") as f:
+            html_bundle = f.read()
+        components.html(html_bundle, height=1400, scrolling=True)
+    else:
+        st.error("Apple Obsidian interface bundle not found at web/index.html")
+
 # --- MODULE 1: EXECUTIVE SUMMARY ---
-if "Executive Summary" in nav_choice:
+elif "Executive Summary" in nav_choice:
     col_head, col_info = st.columns([4.2, 1.3])
     with col_head:
         st.markdown('<div class="header-style">Executive Summary & Terminal Home</div>', unsafe_allow_html=True)

@@ -4,6 +4,21 @@ A modular stock, market, and financial research environment powered by **OpenBB 
 
 ---
 
+## ◈ Meridian Obsidian Terminal (Apple & Antigravity Precision UI)
+
+The toolkit features a next-generation **Apple Obsidian & Antigravity Precision Terminal** engineered for high-conviction institutional equity research and risk management:
+- **Obsidian Dark Canvas & Frosted Glass**: Built with Apple-inspired floating navigation, ultra-crisp typography (`-apple-system`, `SF Pro Display`), and luminescent status accents.
+- **Unified Workstations**:
+  1. **Spotlight & Valuation**: Real-time crosshair price chart, interactive DCF sensitivity corridor, autonomous agent trajectories, and pre-trade thesis gate.
+  2. **Financials & SEC Ledger**: Multi-year GAAP balance sheet, cash flows, operating margins, and SHA-256 cryptographic verification hashes.
+  3. **Trading Desk & Fill Model**: Realistic paper execution with cubic slippage, borrow cost, exchange fees, partial fills, and live metrics (Sharpe, Max DD, Hit Rate).
+  4. **Quantitative Risk & Portfolio**: NVIDIA cuOpt QP quadratic portfolio optimization, efficient frontier, and parametric VaR/CVaR.
+- **Dual Access**:
+  - **Standalone Interactive Web Terminal**: Open `index.html` or `web/index.html` in any browser or deploy on GitHub Pages.
+  - **Streamlit Enterprise Server**: Run `streamlit run dashboard.py` to access all interactive modules with real-time data backends. powered by **OpenBB Platform**, **yFinance**, **Federal Reserve (FRED)**, **SEC EDGAR**, **Calculation Toolkit**, **Verifier & Provenance Ledger**, and **Model Context Protocol (MCP)** servers.
+
+---
+
 ## ⚠️ Scope, Limitations, and Grounding
 
 To be explicit about the true capabilities and operational boundaries of this toolkit:
