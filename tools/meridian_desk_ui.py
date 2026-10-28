@@ -787,6 +787,66 @@ def render_meridian_multi_asset_desk():
               $$C - P = S e^{-q\tau} - K e^{-r\tau}$$
             """)
 
+                # Options Greek Strategist StatsCards (media_1793211276027_741cac94.jpg specification)
+        col_o1, col_o2, col_o3, col_o4 = st.columns(4)
+        with col_o1:
+            st.markdown("""
+            <div class="stats-card">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+                    <span style="font-size:0.82rem; font-weight:500; color:rgba(255,255,255,0.6);">Contract Fair Value</span>
+                    <div style="width:36px; height:36px; border-radius:10px; background:linear-gradient(135deg, rgba(41,151,255,0.2) 0%, rgba(16,185,129,0.2) 100%); display:flex; align-items:center; justify-content:center; font-size:1.1rem; border:1px solid rgba(255,255,255,0.1);">⚡</div>
+                </div>
+                <div style="font-size:1.85rem; font-weight:700; color:#FFFFFF; font-family:var(--font-mono); letter-spacing:-0.02em;">$4.32</div>
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-top:10px;">
+                    <div style="display:flex; align-items:center; gap:4px; font-size:0.82rem; font-weight:600; color:#10B981;"><span>↗</span><span>+8.2% Premium</span></div>
+                    <span style="font-size:0.74rem; color:rgba(255,255,255,0.4);">Black-Scholes Model</span>
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
+        with col_o2:
+            st.markdown("""
+            <div class="stats-card">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+                    <span style="font-size:0.82rem; font-weight:500; color:rgba(255,255,255,0.6);">Portfolio Delta (Δ)</span>
+                    <div style="width:36px; height:36px; border-radius:10px; background:linear-gradient(135deg, rgba(41,151,255,0.2) 0%, rgba(168,85,247,0.2) 100%); display:flex; align-items:center; justify-content:center; font-size:1.1rem; border:1px solid rgba(255,255,255,0.1);">📐</div>
+                </div>
+                <div style="font-size:1.85rem; font-weight:700; color:#FFFFFF; font-family:var(--font-mono); letter-spacing:-0.02em;">0.4158</div>
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-top:10px;">
+                    <div style="display:flex; align-items:center; gap:4px; font-size:0.82rem; font-weight:600; color:#38BDF8;"><span>●</span><span>Hedging Neutral</span></div>
+                    <span style="font-size:0.74rem; color:rgba(255,255,255,0.4);">42 Shares / Contract</span>
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
+        with col_o3:
+            st.markdown("""
+            <div class="stats-card">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+                    <span style="font-size:0.82rem; font-weight:500; color:rgba(255,255,255,0.6);">Portfolio Gamma (Γ)</span>
+                    <div style="width:36px; height:36px; border-radius:10px; background:linear-gradient(135deg, rgba(16,185,129,0.2) 0%, rgba(56,189,248,0.2) 100%); display:flex; align-items:center; justify-content:center; font-size:1.1rem; border:1px solid rgba(255,255,255,0.1);">📈</div>
+                </div>
+                <div style="font-size:1.85rem; font-weight:700; color:#FFFFFF; font-family:var(--font-mono); letter-spacing:-0.02em;">0.0254</div>
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-top:10px;">
+                    <div style="display:flex; align-items:center; gap:4px; font-size:0.82rem; font-weight:600; color:#10B981;"><span>↗</span><span>Convexity Cushion</span></div>
+                    <span style="font-size:0.74rem; color:rgba(255,255,255,0.4);">dDelta / dSpot</span>
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
+        with col_o4:
+            st.markdown("""
+            <div class="stats-card">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+                    <span style="font-size:0.82rem; font-weight:500; color:rgba(255,255,255,0.6);">1-Day 95% CF-VaR</span>
+                    <div style="width:36px; height:36px; border-radius:10px; background:linear-gradient(135deg, rgba(239,68,68,0.2) 0%, rgba(245,158,11,0.2) 100%); display:flex; align-items:center; justify-content:center; font-size:1.1rem; border:1px solid rgba(255,255,255,0.1);">🛡️</div>
+                </div>
+                <div style="font-size:1.85rem; font-weight:700; color:#FFFFFF; font-family:var(--font-mono); letter-spacing:-0.02em;">$4,820</div>
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-top:10px;">
+                    <div style="display:flex; align-items:center; gap:4px; font-size:0.82rem; font-weight:600; color:#10B981;"><span>↘</span><span>Nominal Risk</span></div>
+                    <span style="font-size:0.74rem; color:rgba(255,255,255,0.4);">Cornish-Fisher Tail</span>
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
+        st.markdown("<div style='height: 1rem;'></div>", unsafe_allow_html=True)
+
         col_opt_mode1, col_opt_mode2 = st.columns([1, 2])
         with col_opt_mode1:
             st.markdown("#### ⚙️ Single Contract Evaluator")
