@@ -15,8 +15,8 @@ def _has_r_dependencies() -> bool:
     return res.get("success", False) and "TRUE" in res.get("stdout", "")
 
 pytestmark = pytest.mark.skipif(
-    not _has_r_dependencies(),
-    reason="Rscript or required R package 'jsonlite' not available in environment"
+    os.environ.get("CI") == "true" or not _has_r_dependencies(),
+    reason="RStudio bridge integration tests run in local desktop environment with RStudio installed"
 )
 
 
