@@ -1,3 +1,4 @@
+from tools.ui_components import render_stat_card, render_mac_window_header
 """
 tools/meridian_desk_ui.py
 Institutional Streamlit Web Terminal Module for Meridian Multi-Asset Master Orchestrator:

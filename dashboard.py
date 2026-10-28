@@ -1270,56 +1270,7 @@ st.sidebar.markdown(
 # INSTITUTIONAL STATSCARD & MACOS WINDOW CHROME COMPONENT HELPERS
 # Derived from React JSX specifications (media_1793211276027_741cac94.jpg, media_1793211276048_dd2e871f.jpg)
 # =============================================================================
-def render_stat_card(
-    title: str,
-    value: str,
-    change: str,
-    icon: str = "📊",
-    is_positive: bool = True,
-    gradient: str = "linear-gradient(135deg, rgba(41,151,255,0.2) 0%, rgba(168,85,247,0.2) 100%)",
-    note: str = ""
-) -> str:
-    """Renders the institutional frosted glass StatsCard with hover lift physics."""
-    change_color = "#10B981" if is_positive else "#F43F5E"
-    arrow = "↗" if is_positive else "↘"
-    return f"""
-    <div class="stats-card">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
-            <span style="font-size:0.82rem; font-weight:500; color:rgba(255,255,255,0.6);">{title}</span>
-            <div style="width:36px; height:36px; border-radius:10px; background:{gradient}; display:flex; align-items:center; justify-content:center; font-size:1.1rem; border:1px solid rgba(255,255,255,0.1);">
-                {icon}
-            </div>
-        </div>
-        <div style="font-size:1.85rem; font-weight:700; color:#FFFFFF; font-family:var(--font-mono); letter-spacing:-0.02em;">
-            {value}
-        </div>
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-top:10px;">
-            <div style="display:flex; align-items:center; gap:4px; font-size:0.82rem; font-weight:600; color:{change_color};">
-                <span>{arrow}</span>
-                <span>{change}</span>
-            </div>
-            {f'<span style="font-size:0.74rem; color:rgba(255,255,255,0.4);">{note}</span>' if note else ''}
-        </div>
-    </div>
-    """
-
-def render_mac_window_header(title: str, tag: str = "jsx") -> str:
-    """Renders the macOS traffic light chrome bar."""
-    return f"""
-    <div style="background:rgba(255,255,255,0.03); border-bottom:1px solid rgba(255,255,255,0.08); padding:0.65rem 1rem; display:flex; align-items:center; justify-content:space-between; border-radius:1rem 1rem 0 0; margin:-1.25rem -1.5rem 1.25rem -1.5rem;">
-        <div style="display:flex; align-items:center; gap:7px;">
-            <span style="width:11px; height:11px; border-radius:50%; background:#FF5F56; display:inline-block;"></span>
-            <span style="width:11px; height:11px; border-radius:50%; background:#FFBD2E; display:inline-block;"></span>
-            <span style="width:11px; height:11px; border-radius:50%; background:#27C93F; display:inline-block;"></span>
-        </div>
-        <div style="font-family:var(--font-mono); font-size:0.80rem; color:rgba(255,255,255,0.7); display:flex; align-items:center; gap:6px;">
-            <span>📄 {title}</span>
-        </div>
-        <span style="background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.1); color:#8E9BAE; font-size:0.68rem; font-family:var(--font-mono); padding:2px 7px; border-radius:4px;">
-            {tag}
-        </span>
-    </div>
-    """
+from tools.ui_components import render_stat_card, render_mac_window_header
 
 
 if "pending_page" in st.session_state:
