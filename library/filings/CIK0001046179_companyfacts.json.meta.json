@@ -1,0 +1,8 @@
+{
+  "url": "https://data.sec.gov/api/xbrl/companyfacts/CIK0001046179.json",
+  "filename": "CIK0001046179_companyfacts.json",
+  "http_status": 200,
+  "size": 1943391,
+  "sha256": "16e4c076e1baf36589ae1b05790d56c433b16c4b06d29cafbdff001fdc0a9ab3",
+  "downloaded_at": "2026-10-06T16:30:00Z"
+}
