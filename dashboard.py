@@ -96,7 +96,7 @@ st.set_page_config(
     page_title="Meridian | Equity Research Terminal",
     page_icon="◈",
     layout="wide",
-    initial_sidebar_state="collapsed"
+    initial_sidebar_state="expanded"
 )
 
 # Meridian Institutional Design Tokens (Meridian Redesign Standard)
@@ -199,54 +199,129 @@ st.markdown("""
         margin-bottom: 1.25rem !important;
     }
 
-    /* Sidebar Hierarchy & Navigation Overhaul */
+    /* =========================================================================
+       SIDEBAR EXACT REPLICA OF USER REFERENCE (media_1792025956452_a11213e0.png)
+       ========================================================================= */
     section[data-testid="stSidebar"] {
-        background: var(--bg-sidebar) !important;
-        border-right: 1px solid var(--border-subtle) !important;
+        background-color: #070B12 !important;
+        border-right: 1px solid rgba(255, 255, 255, 0.08) !important;
+        width: 280px !important;
+        min-width: 280px !important;
     }
 
     section[data-testid="stSidebar"] > div {
-        padding: 1.2rem 0.9rem 1.6rem !important;
+        background-color: #070B12 !important;
+        padding: 1.25rem 0.85rem 2rem 0.85rem !important;
     }
 
-    /* HIDE NATIVE STREAMLIT RADIO BUTTON CIRCLES */
-    section[data-testid="stSidebar"] [role="radiogroup"] label div[data-testid="stWidgetSelection"],
-    section[data-testid="stSidebar"] [role="radiogroup"] label > div:first-child {
-        display: none !important;
+    /* Style the radiogroup container */
+    section[data-testid="stSidebar"] [data-testid="stRadio"] > div[role="radiogroup"] {
+        display: flex !important;
+        flex-direction: column !important;
+        gap: 6px !important;
     }
 
-    section[data-testid="stSidebar"] [role="radiogroup"] {
-        gap: 4px !important;
-    }
-
-    /* Floating Pill Navigation */
-    section[data-testid="stSidebar"] [role="radiogroup"] label {
+    /* Radio item label / row */
+    section[data-testid="stSidebar"] [data-testid="stRadio"] [role="radiogroup"] label {
         display: flex !important;
         align-items: center !important;
-        width: 100% !important;
-        min-height: 2.35rem !important;
-        padding: 0.5rem 0.95rem !important;
-        border-radius: 9999px !important;
+        padding: 8px 12px !important;
+        border-radius: 8px !important;
         background: transparent !important;
-        color: var(--text-secondary) !important;
-        font-size: 0.86rem !important;
-        font-weight: 500 !important;
         border: 1px solid transparent !important;
+        border-left: 3.5px solid transparent !important;
         cursor: pointer !important;
-        transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1) !important;
+        transition: all 0.15s ease-in-out !important;
+        margin-bottom: 2px !important;
+        width: 100% !important;
     }
 
-    section[data-testid="stSidebar"] [role="radiogroup"] label:hover {
-        background: rgba(255, 255, 255, 0.06) !important;
+    /* Unselected Label Text */
+    section[data-testid="stSidebar"] [data-testid="stRadio"] [role="radiogroup"] label div[data-testid="stMarkdownContainer"] p,
+    section[data-testid="stSidebar"] [data-testid="stRadio"] [role="radiogroup"] label span {
+        color: #8E9BAE !important;
+        font-size: 0.84rem !important;
+        font-weight: 500 !important;
+        letter-spacing: -0.01em !important;
+        margin: 0 !important;
+        line-height: 1.35 !important;
+        transition: color 0.15s ease !important;
+    }
+
+    /* Hover state for unselected */
+    section[data-testid="stSidebar"] [data-testid="stRadio"] [role="radiogroup"] label:hover {
+        background: rgba(255, 255, 255, 0.04) !important;
+    }
+    section[data-testid="stSidebar"] [data-testid="stRadio"] [role="radiogroup"] label:hover div[data-testid="stMarkdownContainer"] p {
         color: #FFFFFF !important;
     }
 
-    section[data-testid="stSidebar"] [role="radiogroup"] label:has(input:checked) {
-        background: rgba(255, 255, 255, 0.12) !important;
+    /* The Radio Button Circle Container (Ensure visible and positioned) */
+    section[data-testid="stSidebar"] [data-testid="stRadio"] [role="radiogroup"] label div[data-testid="stWidgetSelection"],
+    section[data-testid="stSidebar"] [data-testid="stRadio"] [role="radiogroup"] label > div:first-child {
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        margin-right: 11px !important;
+        min-width: 18px !important;
+        width: 18px !important;
+        height: 18px !important;
+    }
+
+    /* Hollow Circle for Unselected (Matches media_1792025956452_a11213e0.png) */
+    section[data-testid="stSidebar"] [data-testid="stRadio"] [role="radiogroup"] label div[data-testid="stWidgetSelection"] > div,
+    section[data-testid="stSidebar"] [data-testid="stRadio"] [role="radiogroup"] label > div:first-child > div {
+        border-color: rgba(255, 255, 255, 0.28) !important;
+        background-color: transparent !important;
+        width: 15px !important;
+        height: 15px !important;
+        min-width: 15px !important;
+        border-radius: 50% !important;
+        border-width: 1.5px !important;
+        border-style: solid !important;
+        transition: all 0.15s ease !important;
+    }
+
+    section[data-testid="stSidebar"] [data-testid="stRadio"] [role="radiogroup"] label:hover div[data-testid="stWidgetSelection"] > div,
+    section[data-testid="stSidebar"] [data-testid="stRadio"] [role="radiogroup"] label:hover > div:first-child > div {
+        border-color: rgba(255, 255, 255, 0.5) !important;
+    }
+
+    /* ACTIVE / SELECTED ROW (Matches media_1792025956452_a11213e0.png) */
+    section[data-testid="stSidebar"] [data-testid="stRadio"] [role="radiogroup"] label:has(input:checked) {
+        background: #111827 !important;
+        border: 1px solid rgba(255, 255, 255, 0.08) !important;
+        border-left: 3.5px solid #10B981 !important;
+        border-radius: 8px !important;
+        box-shadow: 0 4px 14px rgba(0, 0, 0, 0.5) !important;
+    }
+
+    section[data-testid="stSidebar"] [data-testid="stRadio"] [role="radiogroup"] label:has(input:checked) div[data-testid="stMarkdownContainer"] p {
         color: #FFFFFF !important;
         font-weight: 600 !important;
-        border: 1px solid rgba(255, 255, 255, 0.16) !important;
-        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.4) !important;
+    }
+
+    /* ACTIVE Radio Circle (Glowing green circle with white inner dot) */
+    section[data-testid="stSidebar"] [data-testid="stRadio"] [role="radiogroup"] label:has(input:checked) div[data-testid="stWidgetSelection"] > div,
+    section[data-testid="stSidebar"] [data-testid="stRadio"] [role="radiogroup"] label:has(input:checked) > div:first-child > div {
+        border-color: #10B981 !important;
+        background-color: #10B981 !important;
+        box-shadow: 0 0 10px rgba(16, 185, 129, 0.6) !important;
+        position: relative !important;
+    }
+
+    section[data-testid="stSidebar"] [data-testid="stRadio"] [role="radiogroup"] label:has(input:checked) div[data-testid="stWidgetSelection"] > div::after,
+    section[data-testid="stSidebar"] [data-testid="stRadio"] [role="radiogroup"] label:has(input:checked) > div:first-child > div::after {
+        content: "" !important;
+        display: block !important;
+        width: 5px !important;
+        height: 5px !important;
+        border-radius: 50% !important;
+        background: #FFFFFF !important;
+        position: absolute !important;
+        top: 50% !important;
+        left: 50% !important;
+        transform: translate(-50%, -50%) !important;
     }
 
     section[data-testid="stSidebar"] hr {
@@ -256,17 +331,21 @@ st.markdown("""
 
     /* Cards & Unboxed Surfaces */
     .meridian-card {
-        background: var(--bg-card);
-        border: 1px solid var(--border-subtle);
-        border-radius: var(--radius-md);
-        padding: 1.25rem 1.45rem;
+        background: rgba(14, 14, 18, 0.78);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 1.25rem;
+        padding: 1.5rem;
         height: 100%;
-        transition: border-color 0.2s ease, box-shadow 0.2s ease;
+        transition: transform 0.24s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.24s ease, box-shadow 0.24s ease;
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+        position: relative;
     }
 
     .meridian-card:hover {
-        border-color: var(--border-strong);
-        box-shadow: 0 8px 30px rgba(0, 0, 0, 0.45);
+        transform: translateY(-5px);
+        border-color: rgba(41, 151, 255, 0.35);
+        box-shadow: 0 16px 36px -10px rgba(0, 0, 0, 0.75), 0 0 24px rgba(41, 151, 255, 0.12);
     }
 
     .meridian-card-label {
@@ -1007,40 +1086,49 @@ st.sidebar.markdown(
 if "pending_page" in st.session_state:
     st.session_state["active_page"] = st.session_state.pop("pending_page")
 
-# Terminal Interface Presentation (Flagship Obsidian Terminal Default)
-workspace_mode = st.sidebar.radio(
-    "WORKSPACE VIEW",
-    ["◈ Unified Obsidian Terminal", "Legacy Detailed Views"],
-    index=0,
-    key="terminal_workspace_mode"
-)
+# Terminal Navigation Hierarchy (Exact replica of media_1792025956452_a11213e0.png)
+NAV_CHOICES = [
+    "⌂ Executive Summary",
+    "◎ Coverage & Screening",
+    "◓ Market Terminal & Charts",
+    "◇ Intrinsic Valuation (DCF)",
+    "✦ Autonomous Research Studio",
+    "◈ Financial Copilot",
+    "🌐 Meridian Multi-Asset Desk",
+    "🗂 Portfolio Construction Lab",
+    "↗ Supply Chain & Logistics Risk",
+    "↘ Interactive 3D Pipeline Map",
+    "▦ Investment Decision Journal",
+    "◉ Regulatory Filings & Alerts"
+]
 
-if workspace_mode == "Legacy Detailed Views":
-    NAV_CHOICES = [
-        # Domain 1: Market Intelligence & Screening
-        "Executive Summary",
-        "Coverage & Screening",
-        "Market Terminal & Charts",
-        # Domain 2: Fundamental Research & Valuation
-        "Intrinsic Valuation (DCF)",
-        "Autonomous Research Studio",
-        "Financial Copilot",
-        # Domain 3: Quantitative Risk & Portfolio
-        "Meridian Multi-Asset Desk",
-        "Portfolio Construction Lab",
-        "Supply Chain & Logistics Risk",
-        # Domain 4: Audit, Governance & System
-        "Interactive 3D Pipeline Map",
-        "Investment Decision Journal",
-        "Regulatory Filings & Alerts"
-    ]
-    nav_choice = st.sidebar.radio(
-        "LEGACY MODULES",
-        NAV_CHOICES,
-        key="active_page"
-    )
-else:
-    nav_choice = "Redesign"
+if "active_page" not in st.session_state:
+    st.session_state["active_page"] = NAV_CHOICES[0]
+
+if "pending_page" in st.session_state:
+    raw_pending = st.session_state.pop("pending_page")
+    for choice in NAV_CHOICES:
+        if raw_pending in choice or choice in raw_pending:
+            st.session_state["active_page"] = choice
+            break
+
+if st.session_state["active_page"] not in NAV_CHOICES:
+    cur = st.session_state["active_page"]
+    matched = False
+    for choice in NAV_CHOICES:
+        if cur in choice or any(w in choice for w in cur.split() if len(w) > 3):
+            st.session_state["active_page"] = choice
+            matched = True
+            break
+    if not matched:
+        st.session_state["active_page"] = NAV_CHOICES[0]
+
+nav_choice = st.sidebar.radio(
+    "NAVIGATION",
+    NAV_CHOICES,
+    key="active_page",
+    label_visibility="collapsed"
+)
 
 
 st.sidebar.divider()
@@ -1252,18 +1340,8 @@ python -c "from tools.ticker_search import compute_ticker_scorecard_metrics; pri
 # DOMAIN 1: MARKET INTELLIGENCE & SCREENING
 # =============================================================================
 
-# --- MODULE 0: UNIFIED OBSIDIAN TERMINAL ---
-if "Redesign" in nav_choice:
-    obsidian_html_path = os.path.join(PROJECT_DIR, "web", "index.html")
-    if os.path.exists(obsidian_html_path):
-        with open(obsidian_html_path, "r", encoding="utf-8") as f:
-            html_bundle = f.read()
-        components.html(html_bundle, height=1650, scrolling=False)
-    else:
-        st.error("Redesign interface bundle not found at web/index.html")
-
 # --- MODULE 1: EXECUTIVE SUMMARY ---
-elif "Executive Summary" in nav_choice:
+if "Executive Summary" in nav_choice:
     col_head, col_info = st.columns([4.2, 1.3])
     with col_head:
         st.markdown('<div class="header-style">Executive Summary & Terminal Home</div>', unsafe_allow_html=True)
