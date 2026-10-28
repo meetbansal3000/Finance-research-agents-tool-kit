@@ -7,9 +7,16 @@ import pytest
 from tools.r_bridge import RStudioBridge
 from tools.ledger import ProvenanceLedger
 
+def _has_r_dependencies() -> bool:
+    bridge = RStudioBridge()
+    if not bridge.is_available():
+        return False
+    res = bridge.execute_expression("cat(requireNamespace('jsonlite', quietly=TRUE))")
+    return res.get("success", False) and "TRUE" in res.get("stdout", "")
+
 pytestmark = pytest.mark.skipif(
-    not RStudioBridge().is_available(),
-    reason="Rscript runtime not installed in environment"
+    not _has_r_dependencies(),
+    reason="Rscript or required R package 'jsonlite' not available in environment"
 )
 
 

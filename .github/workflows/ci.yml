@@ -18,10 +18,10 @@ jobs:
           python-version: "3.12"
           cache: "pip"
 
-      - name: Install R Runtime
+      - name: Install R Runtime and Packages
         run: |
           sudo apt-get update -qq
-          sudo apt-get install -y --no-install-recommends r-base-core
+          sudo apt-get install -y --no-install-recommends r-base-core r-cran-jsonlite
 
       - name: Install Dependencies
         run: |

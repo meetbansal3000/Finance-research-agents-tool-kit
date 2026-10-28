@@ -61,6 +61,9 @@ class RStudioBridge:
     def execute_expression(self, expr: str, timeout: int = 30) -> Dict[str, Any]:
         """Execute an inline R expression and capture stdout/stderr."""
         try:
+            env = os.environ.copy()
+            env["PYTHON_EXE"] = sys.executable
+            env["PYTHONPATH"] = PROJECT_DIR + (os.pathsep + env.get("PYTHONPATH", "") if "PYTHONPATH" in env else "")
             res = subprocess.run(
                 [self.rscript_path, "-e", expr],
                 capture_output=True,
@@ -68,7 +71,8 @@ class RStudioBridge:
                 encoding="utf-8",
                 errors="replace",
                 timeout=timeout,
-                cwd=PROJECT_DIR
+                cwd=PROJECT_DIR,
+                env=env
             )
             return {
                 "success": (res.returncode == 0),

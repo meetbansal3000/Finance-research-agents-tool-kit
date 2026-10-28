@@ -10,13 +10,20 @@ suppressPackageStartupMessages({
 })
 
 .get_python_path <- function() {
+  env_py <- Sys.getenv("PYTHON_EXE", unset = "")
+  if (nzchar(env_py) && file.exists(env_py)) return(env_py)
+
   candidates <- c(
+    file.path(getwd(), ".venv", "bin", "python"),
     file.path(getwd(), ".venv", "Scripts", "python.exe"),
+    file.path(getwd(), "..", ".venv", "bin", "python"),
     file.path(getwd(), "..", ".venv", "Scripts", "python.exe"),
+    Sys.which("python3"),
+    Sys.which("python"),
     "D:/AI-Workspace/finance agents for research/.venv/Scripts/python.exe"
   )
   for (cand in candidates) {
-    if (file.exists(cand)) return(cand)
+    if (nzchar(cand) && file.exists(cand)) return(cand)
   }
   "python"
 }
