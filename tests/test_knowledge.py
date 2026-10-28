@@ -13,7 +13,13 @@ from tools.knowledge import LocalKnowledgeBase
 
 @pytest.fixture(scope="module")
 def kb():
-    return LocalKnowledgeBase()
+    kb_inst = LocalKnowledgeBase()
+    if kb_inst.status()["total_chunks"] == 0:
+        from tools.knowledge import FILINGS_DIR
+        aapl_doc = os.path.join(FILINGS_DIR, "AAPL_10K_FY2025.htm")
+        if os.path.exists(aapl_doc):
+            kb_inst.ingest_file(aapl_doc, document_type="filing", ticker="AAPL")
+    return kb_inst
 
 def test_knowledge_base_status_and_chunks(kb):
     status = kb.status()
