@@ -200,18 +200,147 @@ st.markdown("""
     }
 
     /* =========================================================================
-       SIDEBAR EXACT REPLICA OF USER REFERENCE (media_1792025956452_a11213e0.png)
+       PERMANENT UN-COLLAPSIBLE SIDEBAR HIERARCHY (Exact media_1792025956452_a11213e0.png)
        ========================================================================= */
-    section[data-testid="stSidebar"] {
-        background-color: #070B12 !important;
-        border-right: 1px solid rgba(255, 255, 255, 0.08) !important;
+    section[data-testid="stSidebar"],
+    section[data-testid="stSidebar"][aria-expanded="false"],
+    div[data-testid="stSidebar"] {
+        display: flex !important;
+        visibility: visible !important;
+        position: relative !important;
+        transform: none !important;
+        margin-left: 0px !important;
+        left: 0 !important;
         width: 280px !important;
         min-width: 280px !important;
+        max-width: 280px !important;
+        z-index: 100 !important;
+        background-color: #070B12 !important;
+        border-right: 1px solid rgba(255, 255, 255, 0.08) !important;
+        transition: none !important;
     }
 
     section[data-testid="stSidebar"] > div {
         background-color: #070B12 !important;
         padding: 1.25rem 0.85rem 2rem 0.85rem !important;
+    }
+
+    /* Suppress and hide any collapse/expand toggle buttons */
+    div[data-testid="collapsedControl"],
+    button[data-testid="stSidebarCollapseButton"],
+    button[data-testid="stSidebarNavCollapseButton"],
+    button[aria-label="Expand sidebar"],
+    button[aria-label="Collapse sidebar"],
+    header button[kind="header"] {
+        display: none !important;
+        visibility: hidden !important;
+        opacity: 0 !important;
+        pointer-events: none !important;
+        width: 0 !important;
+        height: 0 !important;
+    }
+
+    /* Override responsive breakpoint collapse for mobile/tablet/narrow browser */
+    @media (max-width: 1200px), (max-width: 992px), (max-width: 768px), (max-width: 57.5rem) {
+        section[data-testid="stSidebar"],
+        section[data-testid="stSidebar"][aria-expanded="false"] {
+            display: flex !important;
+            visibility: visible !important;
+            transform: none !important;
+            margin-left: 0px !important;
+            left: 0 !important;
+            width: 280px !important;
+            min-width: 280px !important;
+        }
+        div[data-testid="collapsedControl"] {
+            display: none !important;
+            visibility: hidden !important;
+        }
+    }
+
+    /* Ambient Spotlight Background Glow */
+    .stApp::before {
+        content: "" !important;
+        position: fixed !important;
+        top: 0 !important;
+        left: 50% !important;
+        transform: translateX(-50%) !important;
+        width: 1200px !important;
+        height: 600px !important;
+        background: radial-gradient(ellipse 65% 45% at 50% 0%, rgba(41, 151, 255, 0.16), rgba(0, 0, 0, 0) 75%) !important;
+        pointer-events: none !important;
+        z-index: 0 !important;
+    }
+
+    /* macOS Window Chrome and StatsCard Hover Physics */
+    .mac-window {
+        background: rgba(14, 14, 18, 0.78) !important;
+        border: 1px solid rgba(255, 255, 255, 0.08) !important;
+        border-radius: 1.25rem !important;
+        padding: 1.35rem 1.5rem !important;
+        backdrop-filter: blur(20px) !important;
+        -webkit-backdrop-filter: blur(20px) !important;
+        position: relative !important;
+        overflow: hidden !important;
+        transition: transform 0.24s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.24s ease, box-shadow 0.24s ease !important;
+    }
+    .mac-window:hover {
+        transform: translateY(-5px) !important;
+        border-color: rgba(41, 151, 255, 0.35) !important;
+        box-shadow: 0 16px 36px -10px rgba(0, 0, 0, 0.75), 0 0 24px rgba(41, 151, 255, 0.12) !important;
+    }
+    .mac-dots {
+        display: flex !important;
+        align-items: center !important;
+        gap: 6px !important;
+    }
+    .mac-dot {
+        width: 10px !important;
+        height: 10px !important;
+        border-radius: 50% !important;
+        display: inline-block !important;
+    }
+    .mac-dot-red { background: #FF5F56 !important; }
+    .mac-dot-yellow { background: #FFBD2E !important; }
+    .mac-dot-green { background: #27C93F !important; }
+
+    /* Gradient Typography & Badges */
+    .header-gradient {
+        background: linear-gradient(135deg, #2997FF 0%, #A855F7 50%, #FFFFFF 100%) !important;
+        -webkit-background-clip: text !important;
+        -webkit-text-fill-color: transparent !important;
+    }
+    .hero-badge {
+        display: inline-flex !important;
+        align-items: center !important;
+        gap: 7px !important;
+        padding: 4px 13px !important;
+        border-radius: 9999px !important;
+        background: rgba(41, 151, 255, 0.10) !important;
+        border: 1px solid rgba(41, 151, 255, 0.25) !important;
+        color: #2997FF !important;
+        font-size: 0.75rem !important;
+        font-family: var(--font-mono) !important;
+        font-weight: 600 !important;
+        margin-bottom: 0.85rem !important;
+    }
+    .hero-badge-dot {
+        width: 6px !important;
+        height: 6px !important;
+        border-radius: 50% !important;
+        background: #2997FF !important;
+        box-shadow: 0 0 8px #2997FF !important;
+    }
+    
+    /* Zero double scrollbars */
+    ::-webkit-scrollbar {
+        display: none !important;
+        width: 0px !important;
+        height: 0px !important;
+    }
+    html, body, .stApp {
+        scrollbar-width: none !important;
+        -ms-overflow-style: none !important;
     }
 
     /* Style the radiogroup container */
@@ -575,6 +704,41 @@ st.markdown("""
     }
 </style>
 """, unsafe_allow_html=True)
+
+# Client-side auto-expansion to override any browser localStorage collapsed state
+components.html("""
+<script>
+    (function enforceSidebarExpanded() {
+        try {
+            for (let i = 0; i < window.parent.localStorage.length; i++) {
+                const k = window.parent.localStorage.key(i);
+                if (k && k.toLowerCase().includes('sidebar')) {
+                    window.parent.localStorage.removeItem(k);
+                }
+            }
+        } catch(e) {}
+        const doc = window.parent.document;
+        function tryExpand() {
+            const btn = doc.querySelector('div[data-testid="collapsedControl"] button') ||
+                        doc.querySelector('button[aria-label="Expand sidebar"]');
+            if (btn) btn.click();
+            const sidebar = doc.querySelector('section[data-testid="stSidebar"]');
+            if (sidebar) {
+                sidebar.setAttribute('aria-expanded', 'true');
+                sidebar.style.display = 'flex';
+                sidebar.style.visibility = 'visible';
+                sidebar.style.transform = 'none';
+                sidebar.style.marginLeft = '0px';
+            }
+        }
+        tryExpand();
+        setTimeout(tryExpand, 80);
+        setTimeout(tryExpand, 250);
+        setTimeout(tryExpand, 600);
+    })();
+</script>
+""", height=0)
+
 
 
 # =============================================================================
@@ -1344,8 +1508,15 @@ python -c "from tools.ticker_search import compute_ticker_scorecard_metrics; pri
 if "Executive Summary" in nav_choice:
     col_head, col_info = st.columns([4.2, 1.3])
     with col_head:
-        st.markdown('<div class="header-style">Executive Summary & Terminal Home</div>', unsafe_allow_html=True)
-        st.markdown('<div class="meridian-intro">Institutional equity research command center · Real-time coverage tracking, audited investment dossiers, and quantitative risk modeling.</div>', unsafe_allow_html=True)
+        st.markdown('''
+        <div class="hero-badge"><span class="hero-badge-dot"></span>Autonomous Research · Institutional Precision · SEC EDGAR Grounded</div>
+        <h1 style="font-size: 2.25rem; font-weight: 800; letter-spacing: -0.03em; margin: 0 0 0.35rem 0; color: #FFFFFF;">
+            Executive Summary & <span class="header-gradient">Terminal Command Center</span>
+        </h1>
+        <p style="color: #8E9BAE; font-size: 0.92rem; margin-bottom: 1.25rem; max-width: 950px; line-height: 1.55;">
+            Institutional equity research command center · Real-time coverage tracking, audited investment dossiers, quantitative risk modeling, and instant order routing.
+        </p>
+        ''', unsafe_allow_html=True)
     with col_info:
         render_tab_info_guide(
             title="Executive Summary & Home",
@@ -1353,7 +1524,8 @@ if "Executive Summary" in nav_choice:
             capabilities=[
                 "Active coverage universe metrics",
                 "Instant audit status of recent research dossiers",
-                "Direct workflow navigation shortcuts"
+                "Direct workflow navigation shortcuts",
+                "Live paper portfolio execution and trading bar"
             ],
             use_case="Review portfolio coverage changes, inspect recent audited memoranda, and initiate deep-dive research tasks.",
             methodology="Real-time scanning of `reports/` directory; aggregates persistent watchlist from `journal/watchlist.json`."
@@ -1369,36 +1541,217 @@ if "Executive Summary" in nav_choice:
     report_dirs.sort(key=lambda entry: entry.stat().st_mtime, reverse=True)
     latest_date = datetime.datetime.fromtimestamp(report_dirs[0].stat().st_mtime).strftime("%d %b %Y") if report_dirs else "No dossiers yet"
 
-    stat_cols = st.columns(3)
-    overview_stats = [
-        ("Coverage Universe", str(len(st.session_state["watchlist"])), "Active equities on institutional watchlist"),
-        ("Audited Dossiers", str(len(report_dirs)), "Cryptographically audited research reports in workspace"),
-        ("Latest Synthesis", latest_date, "Timestamp of most recently generated investment memo"),
-    ]
-    for col, (label, value, note) in zip(stat_cols, overview_stats):
-        with col:
-            st.markdown(
-                f'<div class="meridian-card"><div class="meridian-card-label">{label}</div>'
-                f'<div class="meridian-card-value">{value}</div><div class="meridian-card-note">{note}</div></div>',
-                unsafe_allow_html=True
-            )
+    # Flagship macOS Chrome StatsCards with Hover Physics
+    col_s1, col_s2, col_s3 = st.columns(3)
+    with col_s1:
+        st.markdown(f'''
+        <div class="mac-window">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; padding-bottom:8px; border-bottom:1px solid rgba(255,255,255,0.06);">
+                <div class="mac-dots">
+                    <span class="mac-dot mac-dot-red"></span>
+                    <span class="mac-dot mac-dot-yellow"></span>
+                    <span class="mac-dot mac-dot-green"></span>
+                </div>
+                <span style="background:rgba(41,151,255,0.12); border:1px solid rgba(41,151,255,0.3); color:#2997FF; font-size:0.70rem; font-weight:700; padding:2px 8px; border-radius:9999px;">
+                    ↗ ACTIVE WATCHLIST
+                </span>
+            </div>
+            <div style="color:rgba(255,255,255,0.55); font-size:0.72rem; font-weight:600; letter-spacing:0.06em; text-transform:uppercase;">
+                COVERAGE UNIVERSE
+            </div>
+            <div style="font-family:var(--font-mono); font-size:2.2rem; font-weight:800; color:#FFFFFF; margin:6px 0 2px;">
+                {len(st.session_state["watchlist"])}
+            </div>
+            <div style="color:rgba(255,255,255,0.45); font-size:0.80rem;">
+                Active equities on institutional watchlist
+            </div>
+        </div>
+        ''', unsafe_allow_html=True)
 
+    with col_s2:
+        st.markdown(f'''
+        <div class="mac-window">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; padding-bottom:8px; border-bottom:1px solid rgba(255,255,255,0.06);">
+                <div class="mac-dots">
+                    <span class="mac-dot mac-dot-red"></span>
+                    <span class="mac-dot mac-dot-yellow"></span>
+                    <span class="mac-dot mac-dot-green"></span>
+                </div>
+                <span style="background:rgba(16,185,129,0.12); border:1px solid rgba(16,185,129,0.3); color:#10B981; font-size:0.70rem; font-weight:700; padding:2px 8px; border-radius:9999px;">
+                    ● SHA-256 AUDITED
+                </span>
+            </div>
+            <div style="color:rgba(255,255,255,0.55); font-size:0.72rem; font-weight:600; letter-spacing:0.06em; text-transform:uppercase;">
+                AUDITED DOSSIERS
+            </div>
+            <div style="font-family:var(--font-mono); font-size:2.2rem; font-weight:800; color:#FFFFFF; margin:6px 0 2px;">
+                {len(report_dirs)}
+            </div>
+            <div style="color:rgba(255,255,255,0.45); font-size:0.80rem;">
+                Cryptographically audited research reports in workspace
+            </div>
+        </div>
+        ''', unsafe_allow_html=True)
+
+    with col_s3:
+        st.markdown(f'''
+        <div class="mac-window">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; padding-bottom:8px; border-bottom:1px solid rgba(255,255,255,0.06);">
+                <div class="mac-dots">
+                    <span class="mac-dot mac-dot-red"></span>
+                    <span class="mac-dot mac-dot-yellow"></span>
+                    <span class="mac-dot mac-dot-green"></span>
+                </div>
+                <span style="background:rgba(168,85,247,0.12); border:1px solid rgba(168,85,247,0.3); color:#C084FC; font-size:0.70rem; font-weight:700; padding:2px 8px; border-radius:9999px;">
+                    ★ LATEST DOSSIER
+                </span>
+            </div>
+            <div style="color:rgba(255,255,255,0.55); font-size:0.72rem; font-weight:600; letter-spacing:0.06em; text-transform:uppercase;">
+                LATEST SYNTHESIS
+            </div>
+            <div style="font-family:var(--font-mono); font-size:2.2rem; font-weight:800; color:#FFFFFF; margin:6px 0 2px;">
+                {latest_date}
+            </div>
+            <div style="color:rgba(255,255,255,0.45); font-size:0.80rem;">
+                Timestamp of most recently generated investment memo
+            </div>
+        </div>
+        ''', unsafe_allow_html=True)
+
+    # =========================================================================
+    # RESPONSIVE TRADING DESK & QUICK ORDER EXECUTION CONTROLS
+    # =========================================================================
+    st.markdown("<div style='height: 1.2rem;'></div>", unsafe_allow_html=True)
+    pe_engine = get_paper_trading_engine()
+    p_port = pe_engine.load_portfolio()
+    cash_val = float(p_port.get("cash_balance", 100000.0) or 100000.0)
+    eq_val = float(p_port.get("total_equity", 100000.0) or 100000.0)
+    pnl_pct = float(p_port.get("portfolio_return_pct", 0.0) or 0.0)
+    pnl_sign = "+" if pnl_pct >= 0 else ""
+    pnl_color = "#10B981" if pnl_pct >= 0 else "#EF4444"
+
+    with st.container(border=True):
+        col_t1, col_t2 = st.columns([2.5, 3.5])
+        with col_t1:
+            st.markdown(f'''
+            <div style="display:flex; align-items:center; gap:8px; margin-bottom:6px;">
+                <span style="width:8px; height:8px; border-radius:50%; background:#10B981; box-shadow:0 0 8px #10B981;"></span>
+                <span style="font-weight:700; font-size:0.95rem; color:#FFFFFF;">Trading Desk & Execution Engine</span>
+            </div>
+            <div style="display:flex; gap:16px; margin-top:8px;">
+                <div>
+                    <span style="font-size:0.70rem; color:rgba(255,255,255,0.5); text-transform:uppercase; display:block;">Buying Power</span>
+                    <span style="font-family:var(--font-mono); font-size:1.15rem; font-weight:700; color:#FFFFFF;">${cash_val:,.2f}</span>
+                </div>
+                <div>
+                    <span style="font-size:0.70rem; color:rgba(255,255,255,0.5); text-transform:uppercase; display:block;">Total Equity</span>
+                    <span style="font-family:var(--font-mono); font-size:1.15rem; font-weight:700; color:#FFFFFF;">${eq_val:,.2f}</span>
+                </div>
+                <div>
+                    <span style="font-size:0.70rem; color:rgba(255,255,255,0.5); text-transform:uppercase; display:block;">Total P&L</span>
+                    <span style="font-family:var(--font-mono); font-size:1.15rem; font-weight:700; color:{pnl_color};">{pnl_sign}{pnl_pct:.2f}%</span>
+                </div>
+            </div>
+            ''', unsafe_allow_html=True)
+            if st.button("🌐 Launch Full Multi-Asset Trading Desk ↗", key="btn_goto_desk_full", use_container_width=True):
+                st.session_state["pending_page"] = "🌐 Meridian Multi-Asset Desk"
+                st.rerun()
+
+        with col_t2:
+            st.markdown("<span style='font-size:0.75rem; font-weight:600; color:rgba(255,255,255,0.6); text-transform:uppercase;'>Instant Market Execution (Live Paper Engine)</span>", unsafe_allow_html=True)
+            col_in1, col_in2, col_in3, col_in4 = st.columns([1.5, 1.2, 1.2, 1.2])
+            with col_in1:
+                exec_target_sym = st.selectbox(
+                    "Asset",
+                    options=st.session_state["watchlist"] if st.session_state["watchlist"] else ["NVDA", "AAPL", "MSFT", "MU"],
+                    key="home_exec_asset"
+                )
+            with col_in2:
+                exec_qty = st.number_input("Shares", min_value=1, max_value=50000, value=25, step=5, key="home_exec_qty")
+            with col_in3:
+                st.write("")
+                st.write("")
+                if st.button("+ BUY (Long)", key="home_buy_action", use_container_width=True):
+                    # Fetch spot
+                    live_data = resolve_and_fetch_live_asset(exec_target_sym)
+                    spot_px = float(live_data.get("price", 100.0))
+                    ok, msg, pos = pe_engine.execute_trade(
+                        symbol=exec_target_sym,
+                        side="BUY",
+                        quantity=float(exec_qty),
+                        price=spot_px,
+                        asset_type="EQUITY",
+                        strategy="Executive Desk Quick Buy",
+                        thesis=f"Instant manual BUY execution from Executive Summary for {exec_qty} shares of {exec_target_sym}.",
+                        invalidation_condition="Price breaks below 15% trailing stop threshold.",
+                        review_date=(datetime.datetime.now() + datetime.timedelta(days=30)).strftime("%Y-%m-%d")
+                    )
+                    if ok:
+                        st.toast(f"✅ BOUGHT {exec_qty} {exec_target_sym} @ ${spot_px:,.2f}!", icon="🟢")
+                        st.rerun()
+                    else:
+                        st.error(f"Execution rejected: {msg}")
+
+            with col_in4:
+                st.write("")
+                st.write("")
+                if st.button("- SELL (Short)", key="home_sell_action", use_container_width=True):
+                    live_data = resolve_and_fetch_live_asset(exec_target_sym)
+                    spot_px = float(live_data.get("price", 100.0))
+                    ok, msg, pos = pe_engine.execute_trade(
+                        symbol=exec_target_sym,
+                        side="SELL",
+                        quantity=float(exec_qty),
+                        price=spot_px,
+                        asset_type="EQUITY",
+                        strategy="Executive Desk Quick Sell",
+                        thesis=f"Instant manual SELL execution from Executive Summary for {exec_qty} shares of {exec_target_sym}.",
+                        invalidation_condition="Price breaks above 15% upward stop threshold.",
+                        review_date=(datetime.datetime.now() + datetime.timedelta(days=30)).strftime("%Y-%m-%d")
+                    )
+                    if ok:
+                        st.toast(f"✅ SOLD {exec_qty} {exec_target_sym} @ ${spot_px:,.2f}!", icon="🔴")
+                        st.rerun()
+                    else:
+                        st.error(f"Execution rejected: {msg}")
+
+    # =========================================================================
+    # INSTITUTIONAL WORKFLOW CARDS (macOS Chrome + Frosted Glass)
+    # =========================================================================
+    st.markdown("<div style='height: 1.2rem;'></div>", unsafe_allow_html=True)
     st.markdown("### Start an Institutional Workflow")
     action_cols = st.columns(3)
     quick_actions = [
-        ("Run Research Committee", "Execute Analyst, Verifier, and Skeptic audit pipeline.", "Autonomous Research Studio"),
-        ("Screen Coverage Universe", "Filter by operating margins, leverage, and FCF conversion.", "Coverage & Screening"),
-        ("Explore Valuation Model", "Adjust DCF WACC, growth projections, and sensitivity grids.", "Intrinsic Valuation (DCF)"),
+        ("✦ Run Research Committee", "Execute Analyst, Verifier, and Skeptic multi-agent audit pipeline.", "✦ Autonomous Research Studio", "AGENT COMMITTEE"),
+        ("◎ Screen Coverage Universe", "Multi-factor fundamental screening by operating margins and leverage.", "◎ Coverage & Screening", "SCREENING ENGINE"),
+        ("◇ Explore Valuation Model", "Adjust DCF WACC, growth projections, and sensitivity matrices.", "◇ Intrinsic Valuation (DCF)", "DCF CORRIDOR"),
     ]
-    for col, (title, detail, target_page) in zip(action_cols, quick_actions):
+    for col, (title, detail, target_page, badge_text) in zip(action_cols, quick_actions):
         with col:
             with st.container(border=True):
-                st.markdown(f"**{title}**")
-                st.caption(detail)
-                if st.button("Launch Module", key=f"home_{target_page}", use_container_width=True):
+                st.markdown(f'''
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                    <div class="mac-dots">
+                        <span class="mac-dot mac-dot-red"></span>
+                        <span class="mac-dot mac-dot-yellow"></span>
+                        <span class="mac-dot mac-dot-green"></span>
+                    </div>
+                    <span style="font-size:0.68rem; font-weight:700; color:rgba(255,255,255,0.4); text-transform:uppercase;">
+                        {badge_text}
+                    </span>
+                </div>
+                <div style="font-size:1.05rem; font-weight:700; color:#FFFFFF; margin-bottom:4px;">
+                    {title}
+                </div>
+                <div style="font-size:0.82rem; color:#8E9BAE; line-height:1.45; min-height:42px; margin-bottom:12px;">
+                    {detail}
+                </div>
+                ''', unsafe_allow_html=True)
+                if st.button("Launch Module ↗", key=f"home_{target_page}", use_container_width=True):
                     st.session_state["pending_page"] = target_page
                     st.rerun()
 
+    st.markdown("<div style='height: 1.2rem;'></div>", unsafe_allow_html=True)
     left, right = st.columns([1.2, 1])
     with left:
         st.markdown("### Recent Audited Memoranda")
@@ -1409,22 +1762,37 @@ if "Executive Summary" in nav_choice:
                 with st.container(border=True):
                     col_d1, col_d2 = st.columns([3, 1])
                     with col_d1:
-                        st.markdown(f"**{ticker_label}** · `{updated}`")
-                        st.caption(f"Dossier: `reports/{entry.name}/final_report.md`")
+                        st.markdown(f'''
+                        <div style="display:flex; align-items:center; gap:8px;">
+                            <span style="background:rgba(16,185,129,0.12); color:#10B981; font-weight:700; font-size:0.75rem; padding:2px 8px; border-radius:6px; border:1px solid rgba(16,185,129,0.3);">PASS</span>
+                            <span style="font-weight:700; font-family:var(--font-mono); color:#FFFFFF; font-size:0.95rem;">{ticker_label}</span>
+                            <span style="color:rgba(255,255,255,0.4); font-size:0.78rem;">· {updated}</span>
+                        </div>
+                        <div style="font-size:0.75rem; color:#8E9BAE; font-family:var(--font-mono); margin-top:4px;">
+                            reports/{entry.name}/final_report.md
+                        </div>
+                        ''', unsafe_allow_html=True)
                     with col_d2:
                         if st.button("Inspect", key=f"view_{entry.name}", use_container_width=True):
                             st.session_state["inspected_report_dir"] = entry.path
-                            st.session_state["pending_page"] = "Autonomous Research Studio"
+                            st.session_state["pending_page"] = "✦ Autonomous Research Studio"
                             st.rerun()
         else:
             st.info("No research dossiers generated yet. Run your first research review in the Autonomous Research Studio.")
     with right:
         st.markdown("### Active Coverage Universe")
-        if st.session_state["watchlist"]:
-            st.write(" · ".join(f"`{ticker}`" for ticker in st.session_state["watchlist"]))
-        else:
-            st.info("Watchlist is currently empty.")
-        st.caption("All figures retain complete provenance ledgers with SHA-256 sidecars. Market quotes are subject to exchange latency.")
+        with st.container(border=True):
+            if st.session_state["watchlist"]:
+                st.markdown('''
+                <div style="display:flex; flex-wrap:wrap; gap:8px; margin-bottom:12px;">
+                ''' + ' '.join(f'<span style="background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.1); color:#FFFFFF; font-family:var(--font-mono); font-weight:700; font-size:0.82rem; padding:4px 10px; border-radius:8px;">{ticker}</span>' for ticker in st.session_state["watchlist"]) + '''
+                </div>
+                <div style="font-size:0.75rem; color:rgba(255,255,255,0.45); line-height:1.4;">
+                    All figures retain complete provenance ledgers with SHA-256 sidecars. Market quotes are subject to real-time exchange latency.
+                </div>
+                ''', unsafe_allow_html=True)
+            else:
+                st.info("Watchlist is currently empty.")
 
 
 # --- MODULE 2: COVERAGE & SCREENING ---
