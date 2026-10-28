@@ -99,11 +99,11 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# Meridian Institutional Design Tokens (Apple Obsidian & Antigravity Precision Standard)
+# Meridian Institutional Design Tokens (Meridian Redesign Standard)
 st.markdown("""
 <style>
     /* -------------------------------------------------------------
-       INSTITUTIONAL DESIGN SYSTEM (Apple Obsidian & Antigravity)
+       INSTITUTIONAL DESIGN SYSTEM (Meridian Redesign)
        Deep obsidian canvas, frosted glass luminescence, Apple blue/green
        status accents, and precision tabular numerals.
        ------------------------------------------------------------- */
@@ -206,7 +206,7 @@ st.markdown("""
         gap: 4px !important;
     }
 
-    /* Apple Floating Pill Navigation */
+    /* Floating Pill Navigation */
     section[data-testid="stSidebar"] [role="radiogroup"] label {
         display: flex !important;
         align-items: center !important;
@@ -996,8 +996,8 @@ if "pending_page" in st.session_state:
 
 # Clean, professional navigation choices
 NAV_CHOICES = [
-    # Flagship Apple Obsidian Interface
-    "◈  Obsidian Workstation (Apple UI)",
+    # Flagship Redesign Interface
+    "◈  Redesign",
     # Domain 1: Market Intelligence & Screening
     "Executive Summary",
     "Coverage & Screening",
@@ -1231,15 +1231,15 @@ python -c "from tools.ticker_search import compute_ticker_scorecard_metrics; pri
 # DOMAIN 1: MARKET INTELLIGENCE & SCREENING
 # =============================================================================
 
-# --- MODULE 0: OBSIDIAN WORKSTATION (APPLE INTERFACE) ---
-if "Obsidian Workstation" in nav_choice:
+# --- MODULE 0: REDESIGN WORKSTATION ---
+if "Redesign" in nav_choice:
     obsidian_html_path = os.path.join(PROJECT_DIR, "web", "index.html")
     if os.path.exists(obsidian_html_path):
         with open(obsidian_html_path, "r", encoding="utf-8") as f:
             html_bundle = f.read()
         components.html(html_bundle, height=1400, scrolling=True)
     else:
-        st.error("Apple Obsidian interface bundle not found at web/index.html")
+        st.error("Redesign interface bundle not found at web/index.html")
 
 # --- MODULE 1: EXECUTIVE SUMMARY ---
 elif "Executive Summary" in nav_choice:

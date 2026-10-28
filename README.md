@@ -4,10 +4,10 @@ A modular stock, market, and financial research environment powered by **OpenBB 
 
 ---
 
-## ◈ Meridian Obsidian Terminal (Apple & Antigravity Precision UI)
+## ◈ Meridian Redesign Workstation
 
-The toolkit features a next-generation **Apple Obsidian & Antigravity Precision Terminal** engineered for high-conviction institutional equity research and risk management:
-- **Obsidian Dark Canvas & Frosted Glass**: Built with Apple-inspired floating navigation, ultra-crisp typography (`-apple-system`, `SF Pro Display`), and luminescent status accents.
+The toolkit features a next-generation **Meridian Redesign Workstation** engineered for high-conviction institutional equity research and risk management:
+- **Obsidian Dark Canvas & Frosted Glass**: Built with floating glass navigation, ultra-crisp typography (`-apple-system`, `SF Pro Display`), and luminescent status accents.
 - **Unified Workstations**:
   1. **Spotlight & Valuation**: Real-time crosshair price chart, interactive DCF sensitivity corridor, autonomous agent trajectories, and pre-trade thesis gate.
   2. **Financials & SEC Ledger**: Multi-year GAAP balance sheet, cash flows, operating margins, and SHA-256 cryptographic verification hashes.
