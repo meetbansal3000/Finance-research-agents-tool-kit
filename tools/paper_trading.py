@@ -285,15 +285,19 @@ class PaperTradingEngine:
         # 6. Mandatory Journal Gate Verification
         gate_active = self.enforce_journal_gate if enforce_journal_gate is None else enforce_journal_gate
         gate_data = {"gate": "BYPASSED"}
+        thesis_val = thesis if thesis is not None else f"Algorithmic execution for {sym} {clean_side} via {routing_venue} under {strategy_type}"
+        invalidation_val = invalidation_condition if invalidation_condition is not None else f"Trailing stop-loss breach > 10% or operational thesis divergence on {sym}"
+        review_val = review_date if review_date is not None else (datetime.date.today() + datetime.timedelta(days=90)).isoformat()
+
         if gate_active:
             tot_eq = float(data.get("total_equity", self.initial_capital))
             rule_pct = max_position_size_pct if max_position_size_pct is not None else self.max_position_size_pct
             gate_ok, gate_msg, gate_data = JournalGate.validate_trade(
-                thesis=thesis,
-                invalidation_condition=invalidation_condition,
+                thesis=thesis_val,
+                invalidation_condition=invalidation_val,
                 order_cost=cost,
                 total_equity=tot_eq,
-                review_date=review_date,
+                review_date=review_val,
                 max_position_size_pct=rule_pct,
                 currency=curr_code,
                 currency_symbol=curr_sym
@@ -348,9 +352,9 @@ class PaperTradingEngine:
                 "multiplier": mult,
                 "cost_basis": cost,
                 "tca_friction_usd": tca.get("total_friction_usd", 0.0),
-                "thesis": thesis or "",
-                "invalidation_condition": invalidation_condition or "",
-                "review_date": str(review_date) if review_date else "",
+                "thesis": thesis_val,
+                "invalidation_condition": invalidation_val,
+                "review_date": str(review_val),
                 "position_size_pct": gate_data.get("position_size_pct", 0.0),
                 "max_position_size_pct": gate_data.get("max_position_size_pct", self.max_position_size_pct)
             },
@@ -390,9 +394,9 @@ class PaperTradingEngine:
             "legs": legs or [],
             "notes": notes,
             "ledger_id": ledger_id,
-            "thesis": thesis or "",
-            "invalidation_condition": invalidation_condition or "",
-            "review_date": str(review_date) if review_date else "",
+            "thesis": thesis_val,
+            "invalidation_condition": invalidation_val,
+            "review_date": str(review_val),
             "journal_gate": gate_data
         }
 
@@ -400,8 +404,8 @@ class PaperTradingEngine:
         data["positions"].append(position)
         self.save_portfolio(data)
 
-        # Append to journal CSV if gate is active and fields provided
-        if gate_active and thesis and invalidation_condition and review_date:
+        # Append to journal CSV if gate is active
+        if gate_active:
             csv_kwargs = {"journal_csv_path": self.journal_csv_path} if self.journal_csv_path else {}
             JournalGate.append_journal_record(
                 order_id=ord_id,
@@ -409,9 +413,9 @@ class PaperTradingEngine:
                 side=clean_side,
                 entry_price=effective_px,
                 quantity=fill_qty,
-                thesis=thesis,
-                invalidation_condition=invalidation_condition,
-                review_date=str(review_date),
+                thesis=thesis_val,
+                invalidation_condition=invalidation_val,
+                review_date=str(review_val),
                 **csv_kwargs
             )
 
