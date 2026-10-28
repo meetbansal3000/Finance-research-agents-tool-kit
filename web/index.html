@@ -3,852 +3,1408 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Meridian | Autonomous Financial Intelligence</title>
+  <title>Meridian | Autonomous Financial Intelligence Terminal</title>
   <script src="https://www.gstatic.com/antigravity/web/dev/tailwindcss.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+
   <style>
     :root {
-      --bg-black: #000000;
-      --bg-titanium: #0A0A0C;
-      --bg-surface: #121215;
-      --bg-elevated: #1A1A1E;
-      --text-hero: #FFFFFF;
-      --text-sub: #86868B;
-      --text-body: #E5E5EA;
-      --apple-blue: #2997FF;
-      --apple-blue-hover: #0077ED;
-      --apple-green: #30D158;
-      --apple-red: #FF453A;
+      --bg-base: #000000;
+      --bg-surface: #0A0A0E;
+      --bg-card: rgba(14, 14, 18, 0.78);
       --border-subtle: rgba(255, 255, 255, 0.08);
-      --border-focus: rgba(255, 255, 255, 0.18);
+      --border-focus: rgba(41, 151, 255, 0.45);
+      --accent-blue: #2997FF;
+      --accent-blue-glow: rgba(41, 151, 255, 0.25);
+      --status-emerald: #10B981;
+      --status-rose: #F43F5E;
+      --status-amber: #F59E0B;
     }
 
-    body {
+    /* Zero inner scrollbar suppression */
+    ::-webkit-scrollbar {
+      display: none !important;
+      width: 0px !important;
+      height: 0px !important;
+    }
+    html, body {
+      scrollbar-width: none !important;
+      -ms-overflow-style: none !important;
+      overflow-x: hidden !important;
+      background-color: var(--bg-base);
+      color: #FFFFFF;
       font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Plus Jakarta Sans", sans-serif;
-      background-color: var(--bg-black);
-      color: var(--text-body);
       -webkit-font-smoothing: antialiased;
-      -moz-osx-font-smoothing: grayscale;
-      letter-spacing: -0.015em;
-      font-feature-settings: "tnum" on, "cv02" on, "cv03" on, "cv04" on;
+      margin: 0;
+      padding: 0;
     }
 
     .font-mono {
-      font-family: 'JetBrains Mono', monospace;
-      font-variant-numeric: tabular-nums;
+      font-family: "JetBrains Mono", "SF Mono", Menlo, Consolas, monospace;
     }
 
-    /* Floating Glass Navbar */
-    .apple-glass {
-      background: rgba(14, 14, 16, 0.78);
-      backdrop-filter: blur(36px);
-      -webkit-backdrop-filter: blur(36px);
-      border: 1px solid rgba(255, 255, 255, 0.08);
-    }
-
-    /* Expansive Unboxed Mission Control Canvas */
-    .mission-canvas {
-      background: radial-gradient(130% 130% at 50% -10%, #15151A 0%, #08080A 100%);
-      border: 1px solid rgba(255, 255, 255, 0.08);
-      border-radius: 36px;
-      box-shadow: 0 40px 120px -20px rgba(0, 0, 0, 0.9), 0 0 1px 1px rgba(255, 255, 255, 0.06);
-    }
-
-    /* Titanium Control Elements */
-    .btn-apple-primary {
-      background: #FFFFFF;
-      color: #000000;
-      font-weight: 600;
-      transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-    }
-    .btn-apple-primary:hover {
-      background: #E5E5EA;
-      transform: scale(1.02);
-    }
-    .btn-apple-primary:active {
-      transform: scale(0.98);
-    }
-
-    .btn-apple-subtle {
-      background: rgba(255, 255, 255, 0.06);
-      color: #FFFFFF;
-      border: 1px solid rgba(255, 255, 255, 0.08);
-      transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-    }
-    .btn-apple-subtle:hover {
-      background: rgba(255, 255, 255, 0.12);
-      border-color: rgba(255, 255, 255, 0.16);
-    }
-
-    /* Precision Range Slider */
-    input[type=range] {
-      -webkit-appearance: none;
-      background: #2C2C2E;
-      border-radius: 9999px;
-      height: 4px;
-    }
-    input[type=range]::-webkit-slider-thumb {
-      -webkit-appearance: none;
-      height: 18px;
-      width: 18px;
-      border-radius: 50%;
-      background: #FFFFFF;
-      box-shadow: 0 2px 10px rgba(0,0,0,0.5);
-      cursor: pointer;
-      border: none;
-      transition: transform 0.12s ease;
-    }
-    input[type=range]::-webkit-slider-thumb:hover {
-      transform: scale(1.25);
-    }
-
-    /* Ambient Atmosphere */
+    /* Ambient Spotlight Background */
     .ambient-glow {
-      position: absolute;
-      top: 60px;
+      position: fixed;
+      top: 0;
       left: 50%;
       transform: translateX(-50%);
-      width: 900px;
-      height: 450px;
-      background: radial-gradient(ellipse at center, rgba(41, 151, 255, 0.09) 0%, rgba(0, 0, 0, 0) 70%);
+      width: 1200px;
+      height: 650px;
+      background: radial-gradient(ellipse 55% 45% at 50% 0%, rgba(41, 151, 255, 0.12), rgba(0, 0, 0, 0) 75%);
       pointer-events: none;
       z-index: 0;
     }
 
-    /* Crosshair Scrubber Line */
-    #chart-scrubber-line {
-      pointer-events: none;
-      transition: transform 0.05s ease-out;
+    /* Floating Glass Navigation Dock */
+    .glass-dock {
+      background: rgba(12, 12, 16, 0.75);
+      backdrop-filter: blur(28px);
+      -webkit-backdrop-filter: blur(28px);
+      border: 1px solid var(--border-subtle);
+      box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.7), 0 0 20px rgba(41, 151, 255, 0.05);
+    }
+
+    /* StatsCard Component with Hover Lift Physics */
+    .stats-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      border-radius: 1.25rem;
+      padding: 1.5rem;
+      transition: transform 0.24s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.24s ease, box-shadow 0.24s ease;
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      position: relative;
+      overflow: hidden;
+    }
+    .stats-card:hover {
+      transform: translateY(-5px);
+      border-color: rgba(41, 151, 255, 0.35);
+      box-shadow: 0 16px 36px -10px rgba(0, 0, 0, 0.75), 0 0 24px rgba(41, 151, 255, 0.12);
+    }
+
+    /* macOS Traffic Light Window Chrome */
+    .mac-window {
+      background: rgba(14, 14, 18, 0.85);
+      border: 1px solid var(--border-subtle);
+      border-radius: 1rem;
+      overflow: hidden;
+      backdrop-filter: blur(24px);
+      -webkit-backdrop-filter: blur(24px);
+      box-shadow: 0 20px 45px -12px rgba(0, 0, 0, 0.8);
+    }
+    .mac-header {
+      background: rgba(255, 255, 255, 0.03);
+      border-bottom: 1px solid var(--border-subtle);
+      padding: 0.65rem 1rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .mac-dots {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+    }
+    .mac-dot {
+      width: 11px;
+      height: 11px;
+      border-radius: 50%;
+      display: inline-block;
+    }
+    .mac-dot-red { background: #FF5F56; }
+    .mac-dot-yellow { background: #FFBD2E; }
+    .mac-dot-green { background: #27C93F; }
+
+    /* Custom range sliders */
+    input[type=range] {
+      -webkit-appearance: none;
+      width: 100%;
+      background: rgba(255, 255, 255, 0.1);
+      height: 5px;
+      border-radius: 4px;
+      outline: none;
+    }
+    input[type=range]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: #FFFFFF;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5), 0 0 10px rgba(41, 151, 255, 0.6);
+      cursor: pointer;
+      border: 2px solid #2997FF;
+      transition: transform 0.15s ease;
+    }
+    input[type=range]::-webkit-slider-thumb:hover {
+      transform: scale(1.15);
+    }
+
+    /* Buttons */
+    .btn-pill-active {
+      background: rgba(255, 255, 255, 0.18);
+      color: #FFFFFF;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.4);
+    }
+    .btn-pill-inactive {
+      color: #86868B;
+    }
+    .btn-pill-inactive:hover {
+      color: #FFFFFF;
+      background: rgba(255, 255, 255, 0.06);
+    }
+
+    .btn-primary {
+      background: #2997FF;
+      color: #FFFFFF;
+      transition: all 0.2s ease;
+    }
+    .btn-primary:hover {
+      background: #0077ED;
+      box-shadow: 0 0 20px rgba(41, 151, 255, 0.4);
+      transform: translateY(-1px);
     }
   </style>
 </head>
-<body class="min-h-screen relative selection:bg-blue-600/30 selection:text-white pb-24">
+<body class="min-h-screen text-slate-100 selection:bg-blue-500 selection:text-white pb-20">
 
   <!-- Ambient Light -->
   <div class="ambient-glow"></div>
 
-  <!-- Floating Island Top Navigation -->
-  <header class="fixed top-5 inset-x-0 z-50 flex justify-center px-4">
-    <div class="apple-glass rounded-full px-6 py-3 flex items-center justify-between w-full max-w-5xl shadow-2xl">
+  <!-- Floating Navigation Dock -->
+  <header class="sticky top-4 z-50 px-4 max-w-6xl mx-auto mb-8">
+    <div class="glass-dock rounded-full px-5 py-2.5 flex items-center justify-between">
+      
       <!-- Brand & Engine -->
-      <div class="flex items-center space-x-3.5">
-        <div class="w-8 h-8 rounded-full bg-white flex items-center justify-center shadow-md">
-          <svg class="w-4 h-4 text-black" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M12 2L2 19.5h20L12 2zm0 4.2l6.5 11.3H5.5L12 6.2z"/>
-          </svg>
+      <div class="flex items-center gap-3">
+        <div class="w-8 h-8 rounded-full bg-gradient-to-tr from-blue-600 to-indigo-400 flex items-center justify-center font-bold text-sm shadow-md">
+          ◈
         </div>
         <div>
-          <span class="font-bold text-sm tracking-tight text-white block leading-none">Meridian</span>
-          <span class="text-[11px] text-[#86868B] font-mono leading-none">Antigravity Engine</span>
+          <span class="font-bold text-sm tracking-tight text-white">Meridian</span>
+          <span class="text-[10px] text-white/50 block -mt-0.5 font-mono">Autonomous Precision</span>
         </div>
       </div>
 
       <!-- Segmented Workstation Dock -->
-      <div class="hidden sm:flex items-center bg-[#1C1C1E]/80 p-1 rounded-full border border-white/5 space-x-1 text-xs">
-        <button onclick="setWorkstation('spotlight')" id="nav-ws-spotlight" class="ws-nav-btn px-4 py-1.5 rounded-full font-medium text-white bg-white/15 transition">
-          Spotlight & Valuation
+      <nav class="flex items-center gap-1 bg-black/40 p-1 rounded-full border border-white/5 text-xs">
+        <button onclick="switchWorkstation('research')" id="btn-ws-research" class="px-3.5 py-1.5 rounded-full font-medium transition btn-pill-active">
+          Research & DCF
         </button>
-        <button onclick="setWorkstation('financials')" id="nav-ws-financials" class="ws-nav-btn px-4 py-1.5 rounded-full font-medium text-[#86868B] hover:text-white transition">
-          10-K Fact Matrix
+        <button onclick="switchWorkstation('screener')" id="btn-ws-screener" class="px-3.5 py-1.5 rounded-full font-medium transition btn-pill-inactive">
+          Screener & Markets
         </button>
-        <button onclick="setWorkstation('desk')" id="nav-ws-desk" class="ws-nav-btn px-4 py-1.5 rounded-full font-medium text-[#86868B] hover:text-white transition">
-          Execution Book
+        <button onclick="switchWorkstation('desk')" id="btn-ws-desk" class="px-3.5 py-1.5 rounded-full font-medium transition btn-pill-inactive">
+          Trading Desk
         </button>
-        <button onclick="setWorkstation('risk')" id="nav-ws-risk" class="ws-nav-btn px-4 py-1.5 rounded-full font-medium text-[#86868B] hover:text-white transition">
-          Risk Sentry
+        <button onclick="switchWorkstation('risk')" id="btn-ws-risk" class="px-3.5 py-1.5 rounded-full font-medium transition btn-pill-inactive">
+          Quant Risk & cuOpt
+        </button>
+        <button onclick="switchWorkstation('audit')" id="btn-ws-audit" class="px-3.5 py-1.5 rounded-full font-medium transition btn-pill-inactive">
+          Governance & 3D
+        </button>
+      </nav>
+
+      <!-- Live Account Badge & Stage Order Action -->
+      <div class="flex items-center gap-3">
+        <div class="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/5 border border-white/5 text-xs">
+          <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+          <span class="text-white/60">Capital:</span>
+          <span class="text-white font-mono font-medium" id="dock-cash">$104,820</span>
+        </div>
+        <button onclick="openTradeModal()" class="btn-primary text-xs font-medium px-4 py-1.5 rounded-full shadow-md flex items-center gap-1.5">
+          <span>Stage Order</span>
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
         </button>
       </div>
 
-      <!-- Live Account Badge & Execution Action -->
-      <div class="flex items-center space-x-3">
-        <div class="hidden md:flex items-center space-x-2 text-xs">
-          <span class="w-2 h-2 rounded-full bg-[#30D158] animate-pulse"></span>
-          <span class="text-[#86868B]">Capital:</span>
-          <span class="text-white font-medium font-mono" id="nav-cash-display">$104,820</span>
-        </div>
-        <button onclick="openTradeModal()" class="btn-apple-primary text-xs px-4 py-1.5 rounded-full shadow-sm">
-          Stage Order
-        </button>
-      </div>
     </div>
   </header>
 
-  <!-- Hero Stage -->
-  <section class="pt-36 pb-10 px-6 max-w-5xl mx-auto text-center relative z-10">
-    <div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#1C1C1E] border border-white/10 text-xs text-[#86868B] mb-5">
-      <span class="w-2 h-2 rounded-full bg-[#2997FF]"></span>
-      <span class="text-white font-medium">Institutional Autonomous Intelligence</span>
-      <span class="text-white/20">•</span>
-      <span>SEC EDGAR Grounded</span>
+  <!-- Hero Header -->
+  <section class="text-center px-4 max-w-4xl mx-auto pt-6 pb-6 relative z-10">
+    <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-400 text-xs font-mono mb-4">
+      <span class="w-1.5 h-1.5 rounded-full bg-blue-400"></span>
+      Institutional Autonomous Intelligence • SEC EDGAR Grounded
     </div>
-
-    <h1 class="text-5xl sm:text-7xl font-bold tracking-tight text-white max-w-4xl mx-auto leading-[1.08]">
-      Autonomous research.<br>
-      <span class="text-[#86868B]">Institutional precision.</span>
+    <h1 class="text-4xl md:text-5xl font-extrabold tracking-tight text-white mb-3">
+      Autonomous research. <br/><span class="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-indigo-200 to-white">Institutional precision.</span>
     </h1>
-
-    <p class="text-base sm:text-lg text-[#86868B] max-w-2xl mx-auto mt-5 leading-relaxed">
+    <p class="text-white/60 text-sm md:text-base max-w-2xl mx-auto mb-6">
       Continuous multi-agent equity analysis, real-time DCF valuation corridors, and verifiable paper execution with realistic market friction.
     </p>
 
-    <!-- Interactive Coverage Universe Selector -->
-    <div class="flex flex-wrap items-center justify-center gap-2.5 mt-8">
-      <button onclick="selectTicker('NVDA')" id="pill-NVDA" class="ticker-pill text-xs font-semibold px-4 py-1.5 rounded-full bg-white text-black transition shadow-sm">
+    <!-- Company Focus Switcher -->
+    <div class="flex flex-wrap items-center justify-center gap-2 text-xs font-mono">
+      <button onclick="selectTicker('NVDA')" id="tag-NVDA" class="px-3 py-1.5 rounded-full bg-white/15 text-white border border-white/20 transition">
         NVIDIA • NVDA
       </button>
-      <button onclick="selectTicker('AAPL')" id="pill-AAPL" class="ticker-pill text-xs font-medium px-4 py-1.5 rounded-full text-[#86868B] hover:text-white bg-[#141416] border border-white/5 transition">
+      <button onclick="selectTicker('AAPL')" id="tag-AAPL" class="px-3 py-1.5 rounded-full bg-white/5 text-white/70 hover:text-white border border-white/5 transition">
         Apple • AAPL
       </button>
-      <button onclick="selectTicker('MSFT')" id="pill-MSFT" class="ticker-pill text-xs font-medium px-4 py-1.5 rounded-full text-[#86868B] hover:text-white bg-[#141416] border border-white/5 transition">
+      <button onclick="selectTicker('MSFT')" id="tag-MSFT" class="px-3 py-1.5 rounded-full bg-white/5 text-white/70 hover:text-white border border-white/5 transition">
         Microsoft • MSFT
       </button>
-      <button onclick="selectTicker('AMZN')" id="pill-AMZN" class="ticker-pill text-xs font-medium px-4 py-1.5 rounded-full text-[#86868B] hover:text-white bg-[#141416] border border-white/5 transition">
+      <button onclick="selectTicker('AMZN')" id="tag-AMZN" class="px-3 py-1.5 rounded-full bg-white/5 text-white/70 hover:text-white border border-white/5 transition">
         Amazon • AMZN
+      </button>
+      <button onclick="selectTicker('TCS.NS')" id="tag-TCS" class="px-3 py-1.5 rounded-full bg-white/5 text-white/70 hover:text-white border border-white/5 transition">
+        Tata Consultancy • TCS.NS
       </button>
     </div>
   </section>
 
-  <!-- Central Mission Control Terminal -->
-  <main class="max-w-6xl mx-auto px-6 relative z-10">
-    <div class="mission-canvas p-8 sm:p-10 space-y-8">
-      
-      <!-- Asset Header & Live Ticker Telemetry -->
-      <div class="flex flex-col sm:flex-row sm:items-end justify-between pb-6 border-b border-white/[0.06] gap-4">
-        <div>
-          <div class="flex items-center space-x-3">
-            <h2 class="text-3xl sm:text-4xl font-bold tracking-tight text-white" id="asset-name">NVIDIA Corporation</h2>
-            <span class="text-lg font-mono text-[#86868B]" id="asset-symbol">NVDA</span>
-            <span class="text-xs px-2.5 py-0.5 rounded-full bg-[#30D158]/10 text-[#30D158] font-medium border border-[#30D158]/20">Live Consolidated</span>
-          </div>
-          <div class="flex items-baseline gap-3 mt-2">
-            <span class="text-3xl font-bold font-mono text-white" id="asset-price">$138.25</span>
-            <span class="text-sm font-semibold font-mono text-[#30D158]" id="asset-change">+$4.58 (+3.42%)</span>
-            <span class="text-xs text-[#86868B]">USD • Volume: 42.8M shares</span>
-          </div>
-        </div>
+  <!-- MAIN TERMINAL CONTENT CANVAS -->
+  <main class="max-w-6xl mx-auto px-4 relative z-10">
 
-        <div class="flex items-center space-x-3">
-          <button onclick="runAgentDeliberationCycle()" id="btn-run-agents" class="btn-apple-subtle text-xs px-4 py-2 rounded-xl flex items-center gap-2">
-            <svg class="w-3.5 h-3.5 text-[#2997FF]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-            Re-Run Deliberation
-          </button>
-          <button onclick="openTradeModal()" class="btn-apple-primary text-xs px-4 py-2 rounded-xl">
-            Stage Order &rarr;
-          </button>
+    <!-- =====================================================================
+         WORKSTATION 1: RESEARCH & INTRINSIC DCF
+         ===================================================================== -->
+    <div id="ws-research" class="space-y-6">
+
+      <!-- Ticker Telemetry Card -->
+      <div class="stats-card">
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div>
+            <div class="flex items-center gap-2 mb-1">
+              <h2 class="text-2xl font-bold text-white tracking-tight" id="active-company-name">NVIDIA Corporation</h2>
+              <span class="text-xs font-mono px-2 py-0.5 rounded bg-white/10 text-white/80" id="active-ticker-badge">NVDA</span>
+              <span class="text-xs font-mono px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">Audited SEC 10-K</span>
+            </div>
+            <div class="flex items-baseline gap-3">
+              <span class="text-3xl font-extrabold font-mono text-white" id="active-price">$138.25</span>
+              <span class="text-sm font-semibold text-emerald-400 font-mono" id="active-change">+$4.58 (+3.42%)</span>
+              <span class="text-xs text-white/50">USD • Volume: 42.8M</span>
+            </div>
+          </div>
+          <div class="flex items-center gap-2">
+            <button onclick="runDeliberation()" class="px-3.5 py-2 rounded-xl bg-white/5 hover:bg-white/10 text-white/80 hover:text-white border border-white/10 text-xs font-medium transition flex items-center gap-1.5">
+              <svg class="w-3.5 h-3.5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+              <span>Re-Run Deliberation</span>
+            </button>
+            <button onclick="openTradeModal()" class="btn-primary text-xs font-medium px-4 py-2 rounded-xl">
+              Stage Order →
+            </button>
+          </div>
         </div>
       </div>
 
-      <!-- WORKSPACE 1: SPOTLIGHT & VALUATION -->
-      <div id="ws-panel-spotlight" class="ws-view-content space-y-8">
-        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-          
-          <!-- Left 7 Cols: Interactive Crosshair Chart & DCF Sliders -->
-          <div class="lg:col-span-7 space-y-6">
-            
-            <!-- Chart Container with Interactive Scrubber HUD -->
-            <div class="space-y-2">
-              <div class="flex justify-between items-center text-xs">
-                <span class="text-[#86868B] font-medium">Price Action vs. DCF Fair Value Corridor</span>
-                <div class="flex items-center space-x-4">
-                  <span class="flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-[#30D158]"></span> Market Price</span>
-                  <span class="flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-[#2997FF]"></span> DCF Corridor</span>
-                </div>
+      <!-- StatsCard Component Row (Incorporating Uploaded Styles) -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <!-- Stat 1: Market Cap -->
+        <div class="stats-card">
+          <div class="flex items-center justify-between mb-2">
+            <p class="text-sm text-white/60 font-medium">Market Capitalization</p>
+            <div class="w-8 h-8 rounded-lg bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-400 text-xs">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+            </div>
+          </div>
+          <h2 class="text-2xl font-bold text-white font-mono" id="stat-mcap">$3.38T</h2>
+          <div class="flex items-center gap-1 text-sm font-semibold text-emerald-400 mt-2">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M7 17l10-10M17 7H7M17 7v10"/></svg>
+            <span>+18.4%</span>
+            <span class="text-xs text-white/40 font-normal ml-1">vs 90d</span>
+          </div>
+        </div>
+
+        <!-- Stat 2: FCF LTM -->
+        <div class="stats-card">
+          <div class="flex items-center justify-between mb-2">
+            <p class="text-sm text-white/60 font-medium">Free Cash Flow (LTM)</p>
+            <div class="w-8 h-8 rounded-lg bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400 text-xs">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/></svg>
+            </div>
+          </div>
+          <h2 class="text-2xl font-bold text-white font-mono" id="stat-fcf">$60.85B</h2>
+          <div class="flex items-center gap-1 text-sm font-semibold text-emerald-400 mt-2">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M7 17l10-10M17 7H7M17 7v10"/></svg>
+            <span>+142.1%</span>
+            <span class="text-xs text-white/40 font-normal ml-1">YoY SEC</span>
+          </div>
+        </div>
+
+        <!-- Stat 3: DCF Fair Value -->
+        <div class="stats-card">
+          <div class="flex items-center justify-between mb-2">
+            <p class="text-sm text-white/60 font-medium">DCF Model Fair Value</p>
+            <div class="w-8 h-8 rounded-lg bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-indigo-400 text-xs">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+            </div>
+          </div>
+          <h2 class="text-2xl font-bold text-white font-mono" id="stat-fair-value">$154.20</h2>
+          <div class="flex items-center gap-1 text-sm font-semibold text-emerald-400 mt-2" id="stat-upside-box">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M7 17l10-10M17 7H7M17 7v10"/></svg>
+            <span id="stat-upside-pct">+11.5%</span>
+            <span class="text-xs text-white/40 font-normal ml-1">Margin of Safety</span>
+          </div>
+        </div>
+
+        <!-- Stat 4: Committee Verdict -->
+        <div class="stats-card">
+          <div class="flex items-center justify-between mb-2">
+            <p class="text-sm text-white/60 font-medium">Committee Conviction</p>
+            <div class="w-8 h-8 rounded-lg bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400 text-xs font-bold">
+              ✓
+            </div>
+          </div>
+          <h2 class="text-2xl font-bold text-emerald-400 font-mono tracking-tight" id="stat-verdict">AUDITED PASS</h2>
+          <div class="flex items-center gap-1 text-sm text-white/60 mt-2">
+            <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+            <span>3/3 Agents Agreed</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Main Interactive DCF & Committee Split -->
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+        <!-- Left 7 Cols: Interactive DCF Engine & Chart -->
+        <div class="lg:col-span-7 space-y-6">
+
+          <!-- macOS Window: DCF Valuation Sensitivity -->
+          <div class="mac-window">
+            <div class="mac-header">
+              <div class="mac-dots">
+                <span class="mac-dot mac-dot-red"></span>
+                <span class="mac-dot mac-dot-yellow"></span>
+                <span class="mac-dot mac-dot-green"></span>
+                <span class="text-xs font-mono text-white/50 ml-2">📄 DCF_Valuation_Engine.py</span>
               </div>
+              <span class="px-2 py-0.5 text-[10px] font-mono rounded bg-white/5 text-white/60 border border-white/10">Dynamic Discounting</span>
+            </div>
 
-              <!-- Interactive Chart Canvas -->
-              <div id="chart-container" onmousemove="handleChartHover(event)" onmouseleave="handleChartLeave()" class="h-60 w-full rounded-2xl bg-[#0A0A0C] border border-white/[0.06] p-4 flex flex-col justify-end relative cursor-crosshair overflow-hidden">
-                
-                <!-- Floating Scrubber Tooltip HUD -->
-                <div id="chart-hud" class="absolute top-3 left-4 apple-glass px-3 py-1.5 rounded-lg text-xs flex items-center space-x-3 pointer-events-none transition-opacity duration-150">
-                  <span class="text-[#86868B] font-mono" id="hud-date">Oct 28, 2026</span>
-                  <span class="text-white/20">•</span>
-                  <span class="text-white font-mono">Price: <strong class="text-[#30D158]" id="hud-price">$138.25</strong></span>
-                  <span class="text-white/20">•</span>
-                  <span class="text-[#2997FF] font-mono">Fair: <strong id="hud-fair">$156.40</strong></span>
+            <div class="p-5 space-y-5">
+              <!-- Interactive Visual Chart -->
+              <div class="relative bg-black/60 rounded-xl border border-white/5 p-4 h-64 flex flex-col justify-between overflow-hidden">
+                <div class="flex justify-between items-center text-xs text-white/50 font-mono">
+                  <span>Price vs Intrinsic Fair Value Corridor</span>
+                  <span class="text-blue-400 font-bold" id="chart-legend-fv">Fair Value: $154.20</span>
                 </div>
 
-                <svg id="chart-svg" class="w-full h-44 overflow-visible" viewBox="0 0 700 160" fill="none">
-                  <!-- Shaded DCF Corridor -->
-                  <path d="M 0 50 Q 200 45, 350 40 T 700 35 L 700 110 Q 500 115, 200 120 T 0 125 Z" fill="rgba(41, 151, 255, 0.06)" />
-                  <!-- Baseline Reference -->
-                  <line x1="0" y1="40" x2="700" y2="40" stroke="rgba(41, 151, 255, 0.35)" stroke-width="1.5" stroke-dasharray="4 4" />
-                  <!-- Price Line -->
-                  <path d="M 0 120 C 120 130, 200 95, 300 85 C 400 75, 480 100, 580 70 L 700 45" stroke="#30D158" stroke-width="2.5" stroke-linecap="round" />
-                  <!-- Vertical Crosshair Line -->
-                  <line id="scrubber-line" x1="500" y1="0" x2="500" y2="160" stroke="rgba(255, 255, 255, 0.2)" stroke-width="1" stroke-dasharray="2 2" class="opacity-0 transition-opacity" />
-                  <circle id="scrubber-dot" cx="500" cy="70" r="4.5" fill="#30D158" class="opacity-0 transition-opacity" />
+                <!-- SVG Interactive Chart -->
+                <svg class="w-full h-44 mt-2 overflow-visible" viewBox="0 0 500 120" preserveAspectRatio="none">
+                  <defs>
+                    <linearGradient id="corridor-grad" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stop-color="#2997FF" stop-opacity="0.25"/>
+                      <stop offset="100%" stop-color="#2997FF" stop-opacity="0.02"/>
+                    </linearGradient>
+                  </defs>
+                  <!-- DCF Corridor Area -->
+                  <polygon points="0,50 100,42 200,38 300,30 400,24 500,20 500,85 400,82 300,80 200,75 100,72 0,70" fill="url(#corridor-grad)"/>
+                  <!-- Baseline Fair Value -->
+                  <path id="svg-fv-line" d="M 0,60 Q 250,50 500,35" fill="none" stroke="#2997FF" stroke-width="2.5" stroke-dasharray="4 2"/>
+                  <!-- Historical Actual Price Path -->
+                  <path d="M 0,90 Q 120,80 250,65 T 500,52" fill="none" stroke="#FFFFFF" stroke-width="2"/>
+                  <circle cx="500" cy="52" r="4" fill="#FFFFFF"/>
                 </svg>
 
-                <div class="flex justify-between items-center text-[11px] text-[#86868B] pt-2 border-t border-white/[0.04]">
-                  <span>Hover to scrub valuation corridor</span>
-                  <span>Margin of Safety: <strong class="text-[#30D158] font-mono">+13.13%</strong></span>
+                <div class="flex justify-between items-center text-[10px] text-white/40 font-mono border-t border-white/5 pt-1">
+                  <span>Q1 FY25</span>
+                  <span>Q2 FY25</span>
+                  <span>Q3 FY25</span>
+                  <span>Q4 FY25</span>
+                  <span class="text-emerald-400 font-semibold">Current ($138.25)</span>
                 </div>
               </div>
-            </div>
 
-            <!-- Fundamental Ratios Row -->
-            <div class="grid grid-cols-2 sm:grid-cols-4 gap-6 pt-4 border-t border-white/[0.06]">
-              <div>
-                <span class="text-xs text-[#86868B] block">Market Cap</span>
-                <span class="text-xl font-bold font-mono text-white mt-1 block" id="m-cap">$3.42T</span>
-                <span class="text-[11px] text-[#86868B]">Tier-1 Mega-Cap</span>
-              </div>
-              <div>
-                <span class="text-xs text-[#86868B] block">Free Cash Flow TTM</span>
-                <span class="text-xl font-bold font-mono text-white mt-1 block" id="m-fcf">$60.82B</span>
-                <span class="text-[11px] text-[#30D158]">62.1% Conversion</span>
-              </div>
-              <div>
-                <span class="text-xs text-[#86868B] block">Operating Margin</span>
-                <span class="text-xl font-bold font-mono text-white mt-1 block" id="m-margin">62.4%</span>
-                <span class="text-[11px] text-[#30D158]">+8.2% YoY</span>
-              </div>
-              <div>
-                <span class="text-xs text-[#86868B] block">Trailing P/E</span>
-                <span class="text-xl font-bold font-mono text-white mt-1 block" id="m-pe">48.2x</span>
-                <span class="text-[11px] text-[#86868B]">Forward: 31.4x</span>
-              </div>
-            </div>
-
-            <!-- DCF Sensitivity Sliders -->
-            <div class="p-6 rounded-2xl bg-[#0E0E10] border border-white/[0.06] space-y-4">
-              <div class="flex items-center justify-between">
-                <span class="text-xs font-semibold text-white">Interactive DCF Corridor Calibration</span>
-                <span class="text-xs font-mono text-[#2997FF] font-medium" id="dcf-target-badge">Fair Target: $156.40</span>
-              </div>
-
-              <div class="grid grid-cols-1 sm:grid-cols-3 gap-6">
+              <!-- Interactive Sensitivity Sliders -->
+              <div class="space-y-4 pt-1">
                 <div>
-                  <div class="flex justify-between text-xs text-[#86868B] mb-1.5">
-                    <span>WACC</span>
-                    <span class="text-white font-mono" id="label-wacc">9.2%</span>
+                  <div class="flex justify-between text-xs font-mono mb-1.5">
+                    <span class="text-white/70">FCF Annual Growth Rate (5-Yr Proj.)</span>
+                    <span class="text-blue-400 font-bold" id="disp-growth">18.0%</span>
                   </div>
-                  <input type="range" min="6.0" max="14.0" step="0.1" value="9.2" oninput="recalcDCF()" id="slider-wacc" class="w-full">
+                  <input type="range" id="slider-growth" min="5" max="35" step="0.5" value="18" oninput="updateDCFModel()">
                 </div>
 
                 <div>
-                  <div class="flex justify-between text-xs text-[#86868B] mb-1.5">
-                    <span>Terminal Growth</span>
-                    <span class="text-white font-mono" id="label-tg">3.0%</span>
+                  <div class="flex justify-between text-xs font-mono mb-1.5">
+                    <span class="text-white/70">WACC / Discount Rate</span>
+                    <span class="text-indigo-400 font-bold" id="disp-wacc">9.5%</span>
                   </div>
-                  <input type="range" min="1.5" max="4.5" step="0.1" value="3.0" oninput="recalcDCF()" id="slider-tg" class="w-full">
+                  <input type="range" id="slider-wacc" min="6" max="15" step="0.25" value="9.5" oninput="updateDCFModel()">
                 </div>
 
                 <div>
-                  <div class="flex justify-between text-xs text-[#86868B] mb-1.5">
-                    <span>5-Yr CAGR</span>
-                    <span class="text-white font-mono" id="label-cagr">22.5%</span>
+                  <div class="flex justify-between text-xs font-mono mb-1.5">
+                    <span class="text-white/70">Perpetual Terminal Growth Rate</span>
+                    <span class="text-emerald-400 font-bold" id="disp-term">3.0%</span>
                   </div>
-                  <input type="range" min="10.0" max="40.0" step="0.5" value="22.5" oninput="recalcDCF()" id="slider-cagr" class="w-full">
+                  <input type="range" id="slider-term" min="1.5" max="4.5" step="0.25" value="3.0" oninput="updateDCFModel()">
                 </div>
               </div>
-            </div>
 
+            </div>
           </div>
 
-          <!-- Right 5 Cols: Autonomous Agent Trajectory & Pre-Trade Gate -->
-          <div class="lg:col-span-5 space-y-6 lg:pl-4 lg:border-l border-white/[0.06]">
-            
-            <div class="flex items-center justify-between">
-              <div class="flex items-center gap-2">
-                <span class="w-2 h-2 rounded-full bg-[#2997FF] animate-ping"></span>
-                <h3 class="text-sm font-semibold text-white">Agent Trajectory Stream</h3>
+        </div>
+
+        <!-- Right 5 Cols: Autonomous Agent Committee macOS Window -->
+        <div class="lg:col-span-5 space-y-6">
+
+          <!-- macOS Window: Autonomous Deliberation Engine -->
+          <div class="mac-window">
+            <div class="mac-header">
+              <div class="mac-dots">
+                <span class="mac-dot mac-dot-red"></span>
+                <span class="mac-dot mac-dot-yellow"></span>
+                <span class="mac-dot mac-dot-green"></span>
+                <span class="text-xs font-mono text-white/50 ml-2">📄 Autonomous_Committee.jsx</span>
               </div>
-              <span class="text-xs font-mono text-[#86868B]" id="stream-status">Active Deliberation</span>
+              <span class="px-2 py-0.5 text-[10px] font-mono rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">Verified</span>
             </div>
 
-            <!-- Deliberation Cards -->
-            <div class="space-y-3 font-mono text-xs" id="stream-container">
-              
-              <!-- Analyst -->
-              <div class="p-4 rounded-2xl bg-[#0E0E10] border border-white/[0.06] space-y-1.5">
-                <div class="flex items-center justify-between text-[11px]">
-                  <span class="text-[#2997FF] font-medium flex items-center gap-1.5">
-                    <span class="w-1.5 h-1.5 rounded-full bg-[#2997FF]"></span> Equity Analyst
-                  </span>
-                  <span class="text-[#30D158]">Conviction: 92%</span>
+            <div class="p-5 space-y-4 text-xs">
+              <!-- Agent 1: Analyst -->
+              <div class="p-3.5 rounded-xl bg-white/[0.02] border border-white/5 space-y-2">
+                <div class="flex items-center justify-between">
+                  <div class="flex items-center gap-2">
+                    <span class="w-2 h-2 rounded-full bg-blue-400"></span>
+                    <span class="font-bold text-white">Analyst Agent</span>
+                    <span class="text-[10px] text-white/40 font-mono">Workflow 1</span>
+                  </div>
+                  <span class="px-2 py-0.5 rounded text-[10px] font-mono bg-blue-500/10 text-blue-400">DCF Fair Value $154.20</span>
                 </div>
-                <p class="text-slate-300 font-sans text-xs leading-relaxed" id="stream-analyst-text">
-                  Enterprise AI inference inflection expanding TAM by 3.2x over 36 months. Gross margins provide robust free cash flow insulation.
+                <p class="text-white/70 leading-relaxed" id="analyst-quote">
+                  "Accelerating enterprise AI adoption and Blackwell platform deployments drive sustainable operating margin expansion above 62%."
                 </p>
               </div>
 
-              <!-- Verifier -->
-              <div class="p-4 rounded-2xl bg-[#0E0E10] border border-white/[0.06] space-y-1.5">
-                <div class="flex items-center justify-between text-[11px]">
-                  <span class="text-[#30D158] font-medium flex items-center gap-1.5">
-                    <span class="w-1.5 h-1.5 rounded-full bg-[#30D158]"></span> Provenance Verifier
-                  </span>
-                  <span class="text-white/60">SEC Hash OK</span>
+              <!-- Agent 2: Verifier -->
+              <div class="p-3.5 rounded-xl bg-white/[0.02] border border-white/5 space-y-2">
+                <div class="flex items-center justify-between">
+                  <div class="flex items-center gap-2">
+                    <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
+                    <span class="font-bold text-white">Verifier Agent</span>
+                    <span class="text-[10px] text-white/40 font-mono">HMAC SHA-256</span>
+                  </div>
+                  <span class="px-2 py-0.5 rounded text-[10px] font-mono bg-emerald-500/10 text-emerald-400">Ledger Audited PASS</span>
                 </div>
-                <p class="text-slate-300 font-sans text-xs leading-relaxed" id="stream-verifier-text">
-                  Audited 8 financial statement line items against SEC EDGAR Form 10-K facts. Zero ungrounded figures or hallucinated metrics.
+                <p class="text-white/70 leading-relaxed" id="verifier-quote">
+                  "All figures reconciled against primary SEC Form 10-K filings. Provenance record verified with zero mathematical tolerance breach."
                 </p>
               </div>
 
-              <!-- Skeptic -->
-              <div class="p-4 rounded-2xl bg-[#0E0E10] border border-white/[0.06] space-y-1.5">
-                <div class="flex items-center justify-between text-[11px]">
-                  <span class="text-[#FF453A] font-medium flex items-center gap-1.5">
-                    <span class="w-1.5 h-1.5 rounded-full bg-[#FF453A]"></span> Adversarial Skeptic
-                  </span>
-                  <span class="text-[#86868B]">Bounds Set</span>
+              <!-- Agent 3: Skeptic -->
+              <div class="p-3.5 rounded-xl bg-white/[0.02] border border-white/5 space-y-2">
+                <div class="flex items-center justify-between">
+                  <div class="flex items-center gap-2">
+                    <span class="w-2 h-2 rounded-full bg-amber-400"></span>
+                    <span class="font-bold text-white">Skeptic Adversary</span>
+                    <span class="text-[10px] text-white/40 font-mono">Risk Stress</span>
+                  </div>
+                  <span class="px-2 py-0.5 rounded text-[10px] font-mono bg-amber-500/10 text-amber-400">Guardrails Verified</span>
                 </div>
-                <p class="text-slate-300 font-sans text-xs leading-relaxed" id="stream-skeptic-text">
-                  Invalidation bound: Exit if gross margin falls below 52.0% or customer concentration exceeds 40%.
+                <p class="text-white/70 leading-relaxed" id="skeptic-quote">
+                  "Monitored customer concentration risk where top 4 hyperscalers represent 38% of revenue. Capex pauses could temporarily compress cash yields."
                 </p>
               </div>
 
-            </div>
-
-            <!-- Mandatory Fiduciary Journal Gate Card -->
-            <div class="p-5 rounded-2xl bg-[#141416] border border-white/[0.08] space-y-4">
-              <div class="flex items-center justify-between">
-                <span class="text-xs font-semibold text-white">Pre-Trade Journal Invariants</span>
-                <span class="text-[10px] font-mono text-[#30D158] bg-[#30D158]/10 px-2 py-0.5 rounded-full">GATE VERIFIED</span>
+              <!-- Provenance Ledger Badge -->
+              <div class="pt-2 border-t border-white/5 flex items-center justify-between text-[11px] font-mono text-white/40">
+                <span>Ledger Hash: <span class="text-white/70" id="ledger-hash">8f3a9e...c702</span></span>
+                <span class="text-emerald-400">● 100% Citation Grounded</span>
               </div>
-
-              <div class="space-y-2 text-xs">
-                <div class="flex justify-between text-[#86868B]">
-                  <span>Thesis:</span>
-                  <span class="text-white font-medium truncate max-w-[200px]" id="gate-thesis-display">Hyperscale AI inference inflection</span>
-                </div>
-                <div class="flex justify-between text-[#86868B]">
-                  <span>Invalidation:</span>
-                  <span class="text-[#FF453A] font-medium truncate max-w-[200px]" id="gate-inval-display">Gross margin &lt; 52.0%</span>
-                </div>
-                <div class="flex justify-between text-[#86868B]">
-                  <span>Max Sizing Rule:</span>
-                  <span class="text-white font-medium">&le; 20.0% Portfolio Equity</span>
-                </div>
-                <div class="flex justify-between text-[#86868B]">
-                  <span>Review Date:</span>
-                  <span class="text-white font-medium">2026-11-28 (30 Days)</span>
-                </div>
-              </div>
-
-              <button onclick="openTradeModal()" class="w-full btn-apple-primary py-2.5 rounded-xl text-xs shadow-md">
-                Stage Order with Fiduciary Gate &rarr;
-              </button>
             </div>
-
           </div>
 
+        </div>
+
+      </div>
+
+    </div>
+
+
+    <!-- =====================================================================
+         WORKSTATION 2: SCREENER & MARKET TERMINAL
+         ===================================================================== -->
+    <div id="ws-screener" class="space-y-6 hidden">
+
+      <!-- Screener StatsCard Row -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div class="stats-card">
+          <p class="text-sm text-white/60 font-medium">Universe Coverage</p>
+          <h2 class="text-2xl font-bold text-white font-mono mt-1">48 Tickers</h2>
+          <div class="flex items-center gap-1 text-sm font-semibold text-emerald-400 mt-2">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M7 17l10-10M17 7H7M17 7v10"/></svg>
+            <span>+4 Added</span>
+            <span class="text-xs text-white/40 font-normal ml-1">Wishlist active</span>
+          </div>
+        </div>
+
+        <div class="stats-card">
+          <p class="text-sm text-white/60 font-medium">Median Operating Margin</p>
+          <h2 class="text-2xl font-bold text-white font-mono mt-1">34.8%</h2>
+          <div class="flex items-center gap-1 text-sm font-semibold text-emerald-400 mt-2">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M7 17l10-10M17 7H7M17 7v10"/></svg>
+            <span>+2.1%</span>
+            <span class="text-xs text-white/40 font-normal ml-1">YoY Expansion</span>
+          </div>
+        </div>
+
+        <div class="stats-card">
+          <p class="text-sm text-white/60 font-medium">Aggregate FCF Conversion</p>
+          <h2 class="text-2xl font-bold text-white font-mono mt-1">82.4%</h2>
+          <div class="flex items-center gap-1 text-sm font-semibold text-emerald-400 mt-2">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M7 17l10-10M17 7H7M17 7v10"/></svg>
+            <span>+5.6%</span>
+            <span class="text-xs text-white/40 font-normal ml-1">High Quality</span>
+          </div>
+        </div>
+
+        <div class="stats-card">
+          <p class="text-sm text-white/60 font-medium">Median Forward P/E</p>
+          <h2 class="text-2xl font-bold text-white font-mono mt-1">28.6x</h2>
+          <div class="flex items-center gap-1 text-sm font-semibold text-rose-400 mt-2">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M17 7l-10 10M7 7h10M7 7v10"/></svg>
+            <span>-1.2x</span>
+            <span class="text-xs text-white/40 font-normal ml-1">Normalized</span>
+          </div>
         </div>
       </div>
 
-      <!-- WORKSPACE 2: SEC 10-K FACT MATRIX -->
-      <div id="ws-panel-financials" class="ws-view-content hidden space-y-6">
-        <div class="flex justify-between items-center pb-4 border-b border-white/[0.06]">
-          <div>
-            <h3 class="text-lg font-bold text-white">Audited SEC EDGAR Fact Matrix</h3>
-            <p class="text-xs text-[#86868B]">100% cryptographic data provenance from official XBRL fact filings.</p>
+      <!-- Coverage Screener Table -->
+      <div class="mac-window">
+        <div class="mac-header">
+          <div class="mac-dots">
+            <span class="mac-dot mac-dot-red"></span>
+            <span class="mac-dot mac-dot-yellow"></span>
+            <span class="mac-dot mac-dot-green"></span>
+            <span class="text-xs font-mono text-white/50 ml-2">📄 Coverage_Scorecard_Matrix.json</span>
           </div>
-          <span class="text-xs font-mono text-[#30D158] bg-[#30D158]/10 px-3 py-1 rounded-full border border-[#30D158]/20">
-            SEC Form 10-K Verified
-          </span>
+          <span class="px-2 py-0.5 text-[10px] font-mono rounded bg-white/5 text-white/60 border border-white/10">Sortable Real-Time</span>
         </div>
 
-        <div class="overflow-x-auto">
+        <div class="p-4 overflow-x-auto">
           <table class="w-full text-left text-xs font-mono">
-            <thead class="text-[#86868B] border-b border-white/[0.06] pb-3 text-[11px] uppercase">
-              <tr>
-                <th class="pb-3 font-medium">Line Item</th>
-                <th class="pb-3 font-medium">Reported (FY26)</th>
-                <th class="pb-3 font-medium">Prior Year (FY25)</th>
-                <th class="pb-3 font-medium">YoY Change</th>
-                <th class="pb-3 font-medium text-right">Provenance Hash</th>
+            <thead>
+              <tr class="border-b border-white/10 text-white/50">
+                <th class="pb-3 font-semibold">TICKER</th>
+                <th class="pb-3 font-semibold">COMPANY</th>
+                <th class="pb-3 font-semibold">PRICE</th>
+                <th class="pb-3 font-semibold">MKT CAP</th>
+                <th class="pb-3 font-semibold">OP MARGIN</th>
+                <th class="pb-3 font-semibold">ROIC</th>
+                <th class="pb-3 font-semibold">P/E</th>
+                <th class="pb-3 font-semibold">CONVICTION</th>
+                <th class="pb-3 font-semibold text-right">ACTION</th>
               </tr>
             </thead>
-            <tbody class="divide-y divide-white/[0.04]" id="financials-matrix-body">
-              <tr>
-                <td class="py-3.5 text-white font-sans font-medium">Total Revenue</td>
-                <td class="py-3.5 text-white" id="f-rev">$60.92B</td>
-                <td class="py-3.5 text-[#86868B]">$26.97B</td>
-                <td class="py-3.5 text-[#30D158]">+125.8%</td>
-                <td class="py-3.5 text-right text-[#86868B] text-[11px]">#XBRL-REV-0941</td>
+            <tbody class="divide-y divide-white/5 text-white/80">
+              <tr class="hover:bg-white/[0.02] transition">
+                <td class="py-3 font-bold text-white">NVDA</td>
+                <td>NVIDIA Corporation</td>
+                <td class="text-white">$138.25</td>
+                <td>$3.38T</td>
+                <td class="text-emerald-400">62.8%</td>
+                <td class="text-emerald-400">54.2%</td>
+                <td>32.4x</td>
+                <td><span class="px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400">STRONG BUY</span></td>
+                <td class="text-right"><button onclick="selectTicker('NVDA'); switchWorkstation('research')" class="text-blue-400 hover:text-white">Focus →</button></td>
               </tr>
-              <tr>
-                <td class="py-3.5 text-white font-sans font-medium">Gross Profit</td>
-                <td class="py-3.5 text-white" id="f-gp">$44.30B</td>
-                <td class="py-3.5 text-[#86868B]">$15.35B</td>
-                <td class="py-3.5 text-[#30D158]">+188.6%</td>
-                <td class="py-3.5 text-right text-[#86868B] text-[11px]">#XBRL-GP-8832</td>
+              <tr class="hover:bg-white/[0.02] transition">
+                <td class="py-3 font-bold text-white">AAPL</td>
+                <td>Apple Inc.</td>
+                <td class="text-white">$232.10</td>
+                <td>$3.52T</td>
+                <td class="text-emerald-400">31.2%</td>
+                <td class="text-emerald-400">58.6%</td>
+                <td>33.8x</td>
+                <td><span class="px-2 py-0.5 rounded bg-blue-500/10 text-blue-400">ACCUMULATE</span></td>
+                <td class="text-right"><button onclick="selectTicker('AAPL'); switchWorkstation('research')" class="text-blue-400 hover:text-white">Focus →</button></td>
               </tr>
-              <tr>
-                <td class="py-3.5 text-white font-sans font-medium">Free Cash Flow</td>
-                <td class="py-3.5 text-white" id="f-fcf">$60.82B</td>
-                <td class="py-3.5 text-[#86868B]">$27.02B</td>
-                <td class="py-3.5 text-[#30D158]">+125.1%</td>
-                <td class="py-3.5 text-right text-[#86868B] text-[11px]">#XBRL-FCF-4419</td>
+              <tr class="hover:bg-white/[0.02] transition">
+                <td class="py-3 font-bold text-white">MSFT</td>
+                <td>Microsoft Corporation</td>
+                <td class="text-white">$428.50</td>
+                <td>$3.18T</td>
+                <td class="text-emerald-400">44.6%</td>
+                <td class="text-emerald-400">31.4%</td>
+                <td>34.1x</td>
+                <td><span class="px-2 py-0.5 rounded bg-blue-500/10 text-blue-400">BUY</span></td>
+                <td class="text-right"><button onclick="selectTicker('MSFT'); switchWorkstation('research')" class="text-blue-400 hover:text-white">Focus →</button></td>
               </tr>
-              <tr>
-                <td class="py-3.5 text-white font-sans font-medium">Cash & Short-Term Investments</td>
-                <td class="py-3.5 text-white" id="f-cash">$34.80B</td>
-                <td class="py-3.5 text-[#86868B]">$25.98B</td>
-                <td class="py-3.5 text-[#30D158]">+33.9%</td>
-                <td class="py-3.5 text-right text-[#86868B] text-[11px]">#XBRL-CASH-7102</td>
+              <tr class="hover:bg-white/[0.02] transition">
+                <td class="py-3 font-bold text-white">AMZN</td>
+                <td>Amazon.com Inc.</td>
+                <td class="text-white">$186.40</td>
+                <td>$1.94T</td>
+                <td class="text-emerald-400">11.8%</td>
+                <td class="text-emerald-400">16.2%</td>
+                <td>38.9x</td>
+                <td><span class="px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400">STRONG BUY</span></td>
+                <td class="text-right"><button onclick="selectTicker('AMZN'); switchWorkstation('research')" class="text-blue-400 hover:text-white">Focus →</button></td>
+              </tr>
+              <tr class="hover:bg-white/[0.02] transition">
+                <td class="py-3 font-bold text-white">TCS.NS</td>
+                <td>Tata Consultancy Services</td>
+                <td class="text-white">₹4,120.00</td>
+                <td>₹14.9T</td>
+                <td class="text-emerald-400">26.2%</td>
+                <td class="text-emerald-400">42.8%</td>
+                <td>28.4x</td>
+                <td><span class="px-2 py-0.5 rounded bg-blue-500/10 text-blue-400">HOLD</span></td>
+                <td class="text-right"><button onclick="selectTicker('TCS.NS'); switchWorkstation('research')" class="text-blue-400 hover:text-white">Focus →</button></td>
               </tr>
             </tbody>
           </table>
         </div>
       </div>
 
-      <!-- WORKSPACE 3: EXECUTION BOOK -->
-      <div id="ws-panel-desk" class="ws-view-content hidden space-y-6">
-        <div class="flex justify-between items-center pb-4 border-b border-white/[0.06]">
-          <div>
-            <h3 class="text-lg font-bold text-white">Institutional Paper Order Book</h3>
-            <p class="text-xs text-[#86868B]">Live positions with transaction cost analysis (TCA) and short borrow financing.</p>
+      <!-- TradingView Interactive Terminal Studio -->
+      <div class="mac-window">
+        <div class="mac-header">
+          <div class="mac-dots">
+            <span class="mac-dot mac-dot-red"></span>
+            <span class="mac-dot mac-dot-yellow"></span>
+            <span class="mac-dot mac-dot-green"></span>
+            <span class="text-xs font-mono text-white/50 ml-2">📄 TradingView_Advanced_Studio.html</span>
           </div>
-          <span class="text-xs font-mono text-white bg-[#1C1C1E] px-3 py-1 rounded-full border border-white/10">
-            Venue: SMART Router
-          </span>
-        </div>
-
-        <div class="overflow-x-auto">
-          <table class="w-full text-left text-xs font-mono">
-            <thead class="text-[#86868B] border-b border-white/[0.06] pb-3 text-[11px] uppercase">
-              <tr>
-                <th class="pb-3 font-medium">Symbol</th>
-                <th class="pb-3 font-medium">Side / Qty</th>
-                <th class="pb-3 font-medium">Entry Price</th>
-                <th class="pb-3 font-medium">Current Price</th>
-                <th class="pb-3 font-medium">TCA Friction</th>
-                <th class="pb-3 font-medium">Unrealized PnL</th>
-                <th class="pb-3 font-medium text-right">Action</th>
-              </tr>
-            </thead>
-            <tbody class="divide-y divide-white/[0.04]">
-              <tr>
-                <td class="py-3.5 text-white font-bold font-sans">NVDA</td>
-                <td class="py-3.5 text-[#2997FF]">BUY 100</td>
-                <td class="py-3.5 text-[#86868B]">$128.50</td>
-                <td class="py-3.5 text-white font-bold">$138.25</td>
-                <td class="py-3.5 text-[#86868B]">$2.10</td>
-                <td class="py-3.5 text-[#30D158] font-bold">+$975.00 (+7.59%)</td>
-                <td class="py-3.5 text-right">
-                  <button onclick="closePositionSim('NVDA')" class="text-xs text-[#86868B] hover:text-white">Close</button>
-                </td>
-              </tr>
-              <tr>
-                <td class="py-3.5 text-white font-bold font-sans">AAPL</td>
-                <td class="py-3.5 text-[#2997FF]">BUY 50</td>
-                <td class="py-3.5 text-[#86868B]">$225.00</td>
-                <td class="py-3.5 text-white font-bold">$232.10</td>
-                <td class="py-3.5 text-[#86868B]">$1.80</td>
-                <td class="py-3.5 text-[#30D158] font-bold">+$355.00 (+3.16%)</td>
-                <td class="py-3.5 text-right">
-                  <button onclick="closePositionSim('AAPL')" class="text-xs text-[#86868B] hover:text-white">Close</button>
-                </td>
-              </tr>
-              <tr>
-                <td class="py-3.5 text-white font-bold font-sans">MSFT</td>
-                <td class="py-3.5 text-[#2997FF]">BUY 40</td>
-                <td class="py-3.5 text-[#86868B]">$430.00</td>
-                <td class="py-3.5 text-white font-bold">$424.50</td>
-                <td class="py-3.5 text-[#86868B]">$2.40</td>
-                <td class="py-3.5 text-[#FF453A] font-bold">-$220.00 (-1.28%)</td>
-                <td class="py-3.5 text-right">
-                  <button onclick="closePositionSim('MSFT')" class="text-xs text-[#86868B] hover:text-white">Close</button>
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      <!-- WORKSPACE 4: RISK SENTRY -->
-      <div id="ws-panel-risk" class="ws-view-content hidden space-y-6">
-        <div class="flex justify-between items-center pb-4 border-b border-white/[0.06]">
-          <div>
-            <h3 class="text-lg font-bold text-white">Portfolio Risk Sentry</h3>
-            <p class="text-xs text-[#86868B]">Real-time drawdown auditing, position limits, and stress testing.</p>
-          </div>
-          <span class="text-xs font-mono text-[#30D158] bg-[#30D158]/10 px-3 py-1 rounded-full border border-[#30D158]/20">
-            Status: Healthy Within Bounds
-          </span>
-        </div>
-
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div class="p-6 rounded-2xl bg-[#0E0E10] border border-white/[0.06] space-y-2">
-            <span class="text-xs text-[#86868B]">Max Portfolio Drawdown</span>
-            <div class="text-3xl font-bold font-mono text-[#30D158]">-3.12%</div>
-            <span class="text-xs text-[#86868B]">Threshold Limit: -15.0%</span>
-          </div>
-
-          <div class="p-6 rounded-2xl bg-[#0E0E10] border border-white/[0.06] space-y-2">
-            <span class="text-xs text-[#86868B]">Largest Single Asset Exposure</span>
-            <div class="text-3xl font-bold font-mono text-white">16.4%</div>
-            <span class="text-xs text-[#86868B]">Fiduciary Cap: 20.0%</span>
-          </div>
-
-          <div class="p-6 rounded-2xl bg-[#0E0E10] border border-white/[0.06] space-y-2">
-            <span class="text-xs text-[#86868B]">95% Bootstrap Range</span>
-            <div class="text-3xl font-bold font-mono text-[#2997FF]">[+14%, +38%]</div>
-            <span class="text-xs text-[#86868B]">Sample: 1,000 Resamples</span>
+          <div class="flex items-center gap-2">
+            <span class="px-2 py-0.5 text-[10px] font-mono rounded bg-white/5 text-white/60 border border-white/10" id="tv-symbol-pill">NASDAQ:NVDA</span>
+            <span class="px-2 py-0.5 text-[10px] font-mono rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">Live Candlestick Stream</span>
           </div>
         </div>
-
-        <div class="p-5 rounded-2xl bg-[#141416] border border-white/[0.06] flex items-center justify-between">
-          <div>
-            <span class="text-xs font-semibold text-white block">Adversarial Price Shock Simulation</span>
-            <span class="text-xs text-[#86868B]">Simulate a -25% systemic liquidity shock across all open holdings.</span>
+        <div class="p-3">
+          <div class="w-full rounded-xl overflow-hidden border border-white/5" style="height: 520px;">
+            <iframe id="tv-chart-frame" src="https://s.tradingview.com/widgetembed/?frameElementId=tradingview_widget&amp;symbol=NASDAQ%3ANVDA&amp;interval=D&amp;hidesidetoolbar=0&amp;symboledit=1&amp;saveimage=1&amp;toolbarbg=0E0E12&amp;studies=%5B%5D&amp;theme=dark&amp;style=1&amp;timezone=Etc%2FUTC&amp;studies_overrides=%7B%7D&amp;overrides=%7B%7D&amp;enabled_features=%5B%5D&amp;disabled_features=%5B%5D&amp;locale=en" style="width: 100%; height: 100%; border: none;"></iframe>
           </div>
-          <button onclick="simulateStressShock()" class="btn-apple-subtle text-xs px-4 py-2 rounded-xl text-[#FF453A] border-[#FF453A]/30 hover:bg-[#FF453A]/10">
-            Simulate -25% Stress Shock
-          </button>
         </div>
       </div>
 
     </div>
+
+
+    <!-- =====================================================================
+         WORKSTATION 3: TRADING DESK
+         ===================================================================== -->
+    <div id="ws-desk" class="space-y-6 hidden">
+
+      <!-- Trading Desk StatsCard Row -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div class="stats-card">
+          <p class="text-sm text-white/60 font-medium">Total Portfolio Equity</p>
+          <h2 class="text-2xl font-bold text-white font-mono mt-1">$104,820.00</h2>
+          <div class="flex items-center gap-1 text-sm font-semibold text-emerald-400 mt-2">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M7 17l10-10M17 7H7M17 7v10"/></svg>
+            <span>+4.82%</span>
+            <span class="text-xs text-white/40 font-normal ml-1">P&L Lifetime</span>
+          </div>
+        </div>
+
+        <div class="stats-card">
+          <p class="text-sm text-white/60 font-medium">Available Buying Power</p>
+          <h2 class="text-2xl font-bold text-white font-mono mt-1">$42,150.00</h2>
+          <div class="flex items-center gap-1 text-sm text-white/60 mt-2">
+            <span>40.2% Reserve Capital</span>
+          </div>
+        </div>
+
+        <div class="stats-card">
+          <p class="text-sm text-white/60 font-medium">Sharpe Ratio (Annualized)</p>
+          <h2 class="text-2xl font-bold text-white font-mono mt-1">2.41</h2>
+          <div class="flex items-center gap-1 text-sm font-semibold text-emerald-400 mt-2">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M7 17l10-10M17 7H7M17 7v10"/></svg>
+            <span>+0.35</span>
+            <span class="text-xs text-white/40 font-normal ml-1">Benchmark S&P</span>
+          </div>
+        </div>
+
+        <div class="stats-card">
+          <p class="text-sm text-white/60 font-medium">Win / Loss Hit Rate</p>
+          <h2 class="text-2xl font-bold text-white font-mono mt-1">68.4%</h2>
+          <div class="flex items-center gap-1 text-sm text-white/60 mt-2">
+            <span>38 Executed Fills</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Execution Book & Holdings -->
+      <div class="mac-window">
+        <div class="mac-header">
+          <div class="mac-dots">
+            <span class="mac-dot mac-dot-red"></span>
+            <span class="mac-dot mac-dot-yellow"></span>
+            <span class="mac-dot mac-dot-green"></span>
+            <span class="text-xs font-mono text-white/50 ml-2">📄 Execution_Book_Holdings.json</span>
+          </div>
+          <span class="px-2 py-0.5 text-[10px] font-mono rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">Fill Model Active</span>
+        </div>
+
+        <div class="p-4 overflow-x-auto">
+          <table class="w-full text-left text-xs font-mono">
+            <thead>
+              <tr class="border-b border-white/10 text-white/50">
+                <th class="pb-3 font-semibold">ASSET</th>
+                <th class="pb-3 font-semibold">SIDE</th>
+                <th class="pb-3 font-semibold">QUANTITY</th>
+                <th class="pb-3 font-semibold">ENTRY PRICE</th>
+                <th class="pb-3 font-semibold">MARK PRICE</th>
+                <th class="pb-3 font-semibold">UNREALIZED P&L</th>
+                <th class="pb-3 font-semibold">VENUE</th>
+                <th class="pb-3 font-semibold text-right">ACTION</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-white/5 text-white/80" id="positions-table-body">
+              <tr class="hover:bg-white/[0.02] transition">
+                <td class="py-3 font-bold text-white">NVDA (Equity)</td>
+                <td><span class="px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 font-bold">BUY</span></td>
+                <td>150.0</td>
+                <td>$128.40</td>
+                <td>$138.25</td>
+                <td class="text-emerald-400 font-bold">+$1,477.50 (+7.67%)</td>
+                <td>NASDAQ (SMART)</td>
+                <td class="text-right"><button onclick="liquidatePosition('NVDA')" class="text-rose-400 hover:text-white">Liquidate</button></td>
+              </tr>
+              <tr class="hover:bg-white/[0.02] transition">
+                <td class="py-3 font-bold text-white">AAPL (Equity)</td>
+                <td><span class="px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 font-bold">BUY</span></td>
+                <td>100.0</td>
+                <td>$224.50</td>
+                <td>$232.10</td>
+                <td class="text-emerald-400 font-bold">+$760.00 (+3.38%)</td>
+                <td>IEX Speedbump</td>
+                <td class="text-right"><button onclick="liquidatePosition('AAPL')" class="text-rose-400 hover:text-white">Liquidate</button></td>
+              </tr>
+              <tr class="hover:bg-white/[0.02] transition">
+                <td class="py-3 font-bold text-white">MSFT (Equity)</td>
+                <td><span class="px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 font-bold">BUY</span></td>
+                <td>40.0</td>
+                <td>$415.00</td>
+                <td>$428.50</td>
+                <td class="text-emerald-400 font-bold">+$540.00 (+3.25%)</td>
+                <td>Direct Edge</td>
+                <td class="text-right"><button onclick="liquidatePosition('MSFT')" class="text-rose-400 hover:text-white">Liquidate</button></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+
+
+    <!-- =====================================================================
+         WORKSTATION 4: QUANTITATIVE RISK & CUOPT
+         ===================================================================== -->
+    <div id="ws-risk" class="space-y-6 hidden">
+
+      <!-- Risk StatsCard Row -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div class="stats-card">
+          <p class="text-sm text-white/60 font-medium">Portfolio Volatility</p>
+          <h2 class="text-2xl font-bold text-white font-mono mt-1">14.82%</h2>
+          <div class="flex items-center gap-1 text-sm font-semibold text-emerald-400 mt-2">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M17 7l-10 10M7 7h10M7 7v10"/></svg>
+            <span>-2.4%</span>
+            <span class="text-xs text-white/40 font-normal ml-1">vs Benchmark</span>
+          </div>
+        </div>
+
+        <div class="stats-card">
+          <p class="text-sm text-white/60 font-medium">Value-at-Risk (95% VaR)</p>
+          <h2 class="text-2xl font-bold text-rose-400 font-mono mt-1">-$4,120.00</h2>
+          <div class="flex items-center gap-1 text-sm text-white/60 mt-2">
+            <span>3.93% Capital at Risk</span>
+          </div>
+        </div>
+
+        <div class="stats-card">
+          <p class="text-sm text-white/60 font-medium">Expected Shortfall (CVaR)</p>
+          <h2 class="text-2xl font-bold text-rose-400 font-mono mt-1">-$6,350.00</h2>
+          <div class="flex items-center gap-1 text-sm text-white/60 mt-2">
+            <span>6.06% Tail Risk Horizon</span>
+          </div>
+        </div>
+
+        <div class="stats-card">
+          <p class="text-sm text-white/60 font-medium">cuOpt QP Execution Time</p>
+          <h2 class="text-2xl font-bold text-emerald-400 font-mono mt-1">0.042 ms</h2>
+          <div class="flex items-center gap-1 text-sm text-white/60 mt-2">
+            <span>GPU Accelerated</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- NVIDIA cuOpt Formulation & Optimization Lab -->
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+        <div class="lg:col-span-6 space-y-6">
+          <div class="mac-window">
+            <div class="mac-header">
+              <div class="mac-dots">
+                <span class="mac-dot mac-dot-red"></span>
+                <span class="mac-dot mac-dot-yellow"></span>
+                <span class="mac-dot mac-dot-green"></span>
+                <span class="text-xs font-mono text-white/50 ml-2">📄 cuOpt_Quadratic_Program.py</span>
+              </div>
+              <span class="px-2 py-0.5 text-[10px] font-mono rounded bg-blue-500/10 text-blue-400 border border-blue-500/20">NVIDIA cuOpt</span>
+            </div>
+
+            <div class="p-5 space-y-4 text-xs font-mono">
+              <div class="flex justify-between items-center">
+                <span class="text-white/60">Target Strategy:</span>
+                <select id="risk-opt-strat" onchange="runQPOptimization()" class="bg-black/60 border border-white/10 rounded px-2.5 py-1 text-white">
+                  <option value="min_variance">Global Minimum Variance (GMV)</option>
+                  <option value="max_sharpe">Maximum Sharpe Ratio</option>
+                </select>
+              </div>
+
+              <div>
+                <div class="flex justify-between text-xs font-mono mb-1.5">
+                  <span class="text-white/70">Max Single Asset Weight Cap</span>
+                  <span class="text-blue-400 font-bold" id="disp-max-weight">40.0%</span>
+                </div>
+                <input type="range" id="slider-max-weight" min="20" max="60" step="5" value="40" oninput="runQPOptimization()">
+              </div>
+
+              <div class="border-t border-white/5 pt-3 space-y-2">
+                <p class="text-white/50">Optimal Asset Weights (QP Solved):</p>
+                <div class="space-y-1.5 text-white/80">
+                  <div class="flex justify-between"><span>NVDA (NVIDIA):</span><span class="font-bold text-blue-400" id="weight-nvda">35.0%</span></div>
+                  <div class="flex justify-between"><span>AAPL (Apple):</span><span class="font-bold text-blue-400" id="weight-aapl">30.0%</span></div>
+                  <div class="flex justify-between"><span>MSFT (Microsoft):</span><span class="font-bold text-blue-400" id="weight-msft">25.0%</span></div>
+                  <div class="flex justify-between"><span>AMZN (Amazon):</span><span class="font-bold text-blue-400" id="weight-amzn">10.0%</span></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="lg:col-span-6 space-y-6">
+          <div class="mac-window">
+            <div class="mac-header">
+              <div class="mac-dots">
+                <span class="mac-dot mac-dot-red"></span>
+                <span class="mac-dot mac-dot-yellow"></span>
+                <span class="mac-dot mac-dot-green"></span>
+                <span class="text-xs font-mono text-white/50 ml-2">📄 Efficient_Frontier.svg</span>
+              </div>
+              <span class="px-2 py-0.5 text-[10px] font-mono rounded bg-emerald-500/10 text-emerald-400">Risk vs Return</span>
+            </div>
+
+            <div class="p-5 flex flex-col items-center justify-center">
+              <svg class="w-full h-52 overflow-visible" viewBox="0 0 400 150">
+                <!-- Curve -->
+                <path d="M 50,130 Q 120,40 380,20" fill="none" stroke="#2997FF" stroke-width="2.5"/>
+                <!-- Frontier points -->
+                <circle cx="90" cy="85" r="5" fill="#30D158" class="animate-pulse"/>
+                <text x="105" y="88" fill="#30D158" font-size="10" font-family="monospace">GMV (Min Vol: 14.8%)</text>
+                <circle cx="240" cy="38" r="5" fill="#2997FF"/>
+                <text x="255" y="42" fill="#2997FF" font-size="10" font-family="monospace">Max Sharpe (2.41)</text>
+              </svg>
+              <div class="flex justify-between w-full text-[10px] text-white/40 font-mono border-t border-white/5 pt-2">
+                <span>0% Volatility</span>
+                <span>Expected Annual Return</span>
+                <span>35% Volatility</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+
+
+    <!-- =====================================================================
+         WORKSTATION 5: GOVERNANCE, 3D PIPELINE & AUDIT
+         ===================================================================== -->
+    <div id="ws-audit" class="space-y-6 hidden">
+
+      <!-- 3D WebGL Three.js Interactive Pipeline Map -->
+      <div class="mac-window">
+        <div class="mac-header">
+          <div class="mac-dots">
+            <span class="mac-dot mac-dot-red"></span>
+            <span class="mac-dot mac-dot-yellow"></span>
+            <span class="mac-dot mac-dot-green"></span>
+            <span class="text-xs font-mono text-white/50 ml-2">📄 Interactive_3D_Pipeline_WebGL.js</span>
+          </div>
+          <span class="px-2 py-0.5 text-[10px] font-mono rounded bg-blue-500/10 text-blue-400 border border-blue-500/20">Three.js Engine</span>
+        </div>
+
+        <div class="p-4 relative">
+          <div id="threejs-canvas-container" class="w-full h-80 rounded-xl overflow-hidden bg-black/80 flex items-center justify-center">
+            <!-- Canvas is mounted here -->
+          </div>
+          <div class="absolute bottom-6 left-6 text-xs font-mono text-white/50 bg-black/60 px-3 py-1.5 rounded-lg border border-white/5 backdrop-blur-md">
+            Click & drag to rotate 3D Nodes • SEC Ingestion → Analyst → Verifier → Ledger
+          </div>
+        </div>
+      </div>
+
+      <!-- Investment Decision Journal -->
+      <div class="mac-window">
+        <div class="mac-header">
+          <div class="mac-dots">
+            <span class="mac-dot mac-dot-red"></span>
+            <span class="mac-dot mac-dot-yellow"></span>
+            <span class="mac-dot mac-dot-green"></span>
+            <span class="text-xs font-mono text-white/50 ml-2">📄 Investment_Decision_Journal.csv</span>
+          </div>
+          <span class="px-2 py-0.5 text-[10px] font-mono rounded bg-white/5 text-white/60 border border-white/10">Audited Ledger</span>
+        </div>
+
+        <div class="p-4 overflow-x-auto">
+          <table class="w-full text-left text-xs font-mono">
+            <thead>
+              <tr class="border-b border-white/10 text-white/50">
+                <th class="pb-3 font-semibold">ENTRY ID</th>
+                <th class="pb-3 font-semibold">DATE</th>
+                <th class="pb-3 font-semibold">TICKER</th>
+                <th class="pb-3 font-semibold">ACTION</th>
+                <th class="pb-3 font-semibold">ENTRY</th>
+                <th class="pb-3 font-semibold">TARGET</th>
+                <th class="pb-3 font-semibold">CONVICTION</th>
+                <th class="pb-3 font-semibold">INVESTMENT THESIS</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-white/5 text-white/80">
+              <tr class="hover:bg-white/[0.02] transition">
+                <td class="py-3 font-bold text-blue-400">DEC_0001</td>
+                <td>2026-10-06</td>
+                <td class="font-bold text-white">GOOGL</td>
+                <td><span class="px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 font-bold">BUY</span></td>
+                <td>$347.68</td>
+                <td>$420.00</td>
+                <td><span class="px-2 py-0.5 rounded bg-blue-500/10 text-blue-400">HIGH</span></td>
+                <td class="text-white/60 max-w-xs truncate">Dominant advertising monopoly with $78.3B net cash cushion and accelerating Cloud leverage.</td>
+              </tr>
+              <tr class="hover:bg-white/[0.02] transition">
+                <td class="py-3 font-bold text-blue-400">ORD_0001</td>
+                <td>2026-10-28</td>
+                <td class="font-bold text-white">NVDA</td>
+                <td><span class="px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 font-bold">BUY</span></td>
+                <td>$128.40</td>
+                <td>$165.00</td>
+                <td><span class="px-2 py-0.5 rounded bg-blue-500/10 text-blue-400">HIGH</span></td>
+                <td class="text-white/60 max-w-xs truncate">Data center AI cluster infrastructure buildout with zero margin degradation across tier-1 cloud clients.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+
   </main>
 
-  <!-- Clean Staging Modal -->
-  <div id="trade-modal" class="fixed inset-0 z-50 bg-black/75 backdrop-blur-md hidden flex items-center justify-center p-4">
-    <div class="mission-canvas p-8 max-w-md w-full space-y-6 shadow-2xl relative">
-      <div class="flex items-center justify-between pb-4 border-b border-white/[0.06]">
-        <div>
-          <h3 class="text-lg font-bold text-white">Stage Paper Order</h3>
-          <p class="text-xs text-[#86868B]" id="modal-subtext">NVIDIA Corporation • $138.25</p>
+
+  <!-- =====================================================================
+       PRE-TRADE THESIS GATE & ORDER MODAL
+       ===================================================================== -->
+  <div id="trade-modal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md hidden">
+    <div class="mac-window max-w-lg w-full mx-4 shadow-2xl">
+      <div class="mac-header">
+        <div class="mac-dots">
+          <span class="mac-dot mac-dot-red cursor-pointer" onclick="closeTradeModal()"></span>
+          <span class="mac-dot mac-dot-yellow"></span>
+          <span class="mac-dot mac-dot-green"></span>
+          <span class="text-xs font-mono text-white/50 ml-2">📄 PreTrade_Gate_Router.py</span>
         </div>
-        <button onclick="closeTradeModal()" class="text-[#86868B] hover:text-white text-xl leading-none">&times;</button>
+        <button onclick="closeTradeModal()" class="text-white/40 hover:text-white text-xs">✕</button>
       </div>
 
-      <div class="space-y-4 text-xs">
+      <div class="p-6 space-y-4 text-xs font-mono">
+        <div class="flex justify-between items-center">
+          <span class="text-white/60">Target Asset:</span>
+          <span class="text-white font-bold text-sm" id="modal-ticker">NVDA (NVIDIA Corporation)</span>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="text-white/50 block mb-1">Side</label>
+            <select id="modal-side" class="w-full bg-black/60 border border-white/10 rounded px-3 py-1.5 text-white">
+              <option value="BUY">BUY (Long)</option>
+              <option value="SELL">SELL (Liquidate)</option>
+            </select>
+          </div>
+          <div>
+            <label class="text-white/50 block mb-1">Quantity</label>
+            <input type="number" id="modal-qty" value="50" min="1" class="w-full bg-black/60 border border-white/10 rounded px-3 py-1.5 text-white">
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="text-white/50 block mb-1">Routing Venue</label>
+            <select id="modal-venue" class="w-full bg-black/60 border border-white/10 rounded px-3 py-1.5 text-white">
+              <option>SMART Multi-Exchange</option>
+              <option>IEX Speedbump</option>
+              <option>NASDAQ Dark Liquidity</option>
+            </select>
+          </div>
+          <div>
+            <label class="text-white/50 block mb-1">Execution Mode</label>
+            <input type="text" value="SIMULATION_PAPER" disabled class="w-full bg-black/40 border border-white/5 rounded px-3 py-1.5 text-emerald-400 font-bold">
+          </div>
+        </div>
+
         <div>
-          <label class="block text-[#86868B] mb-1">Shares to Transact</label>
-          <input type="number" id="order-shares-input" value="50" oninput="calculateOrderTotal()" class="w-full bg-[#1C1C1E] border border-white/10 rounded-xl px-4 py-2.5 text-white font-mono outline-none focus:border-[#2997FF]">
+          <label class="text-white/50 block mb-1">Pre-Trade Investment Thesis (Mandatory Gate)</label>
+          <textarea id="modal-thesis" rows="2" class="w-full bg-black/60 border border-white/10 rounded p-2 text-white/90 text-xs" placeholder="Document conviction driver, operating leverage or catalyst..."></textarea>
         </div>
 
-        <div class="p-3.5 rounded-xl bg-[#1C1C1E] border border-white/10 space-y-1.5 text-[#86868B]">
-          <div class="flex justify-between"><span>Execution Mode:</span> <strong class="text-white">SIMULATION_PAPER</strong></div>
-          <div class="flex justify-between"><span>Slippage & TCA Fee:</span> <span class="text-white font-mono">$1.02</span></div>
-          <div class="flex justify-between"><span>Total Outlay:</span> <strong class="text-white font-mono text-sm" id="modal-total-display">$6,913.52</strong></div>
+        <div>
+          <label class="text-white/50 block mb-1">Invalidation Trigger / Stop Condition</label>
+          <input type="text" id="modal-invalidation" class="w-full bg-black/60 border border-white/10 rounded px-3 py-1.5 text-white" placeholder="e.g. Break below $118 or operating margin < 50%">
         </div>
-      </div>
 
-      <div class="flex items-center justify-end space-x-3 pt-3 border-t border-white/[0.06]">
-        <button onclick="closeTradeModal()" class="px-4 py-2 text-xs text-[#86868B] hover:text-white">Cancel</button>
-        <button onclick="confirmOrder()" class="btn-apple-primary px-5 py-2.5 rounded-full text-xs">
-          Confirm Order & Sign Ledger
-        </button>
+        <div class="pt-3 border-t border-white/5 flex items-center justify-between">
+          <button onclick="closeTradeModal()" class="px-4 py-2 rounded-xl bg-white/5 hover:bg-white/10 text-white/70">Cancel</button>
+          <button onclick="executeOrderFromModal()" class="btn-primary px-5 py-2 rounded-xl font-bold">Execute & Record in Ledger →</button>
+        </div>
       </div>
     </div>
   </div>
 
-  <!-- Notification Pill -->
-  <div id="toast" class="fixed bottom-6 right-6 z-50 apple-glass px-5 py-3 rounded-full text-xs text-white hidden shadow-2xl flex items-center space-x-2.5">
-    <span class="w-2 h-2 rounded-full bg-[#30D158]"></span>
-    <span id="toast-message">Notification</span>
+
+  <!-- Notification Toast -->
+  <div id="toast" class="fixed bottom-6 right-6 z-50 glass-dock px-5 py-3 rounded-2xl text-xs text-white border border-white/10 shadow-2xl flex items-center gap-3 hidden">
+    <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"></span>
+    <span id="toast-msg">Order routed and filled in paper ledger.</span>
   </div>
 
+
+  <!-- =====================================================================
+       CLIENT LOGIC & REACTIVE TELEMETRY
+       ===================================================================== -->
   <script>
-    const DATA = {
+    const COMPANIES = {
       'NVDA': {
         name: 'NVIDIA Corporation',
-        sym: 'NVDA',
         price: 138.25,
         change: '+$4.58 (+3.42%)',
-        mcap: '$3.42T',
-        fcf: '$60.82B',
-        margin: '62.4%',
-        pe: '48.2x',
-        fair: 156.40,
-        thesis: 'Enterprise AI inference inflection expanding TAM by 3.2x over 36 months.',
-        invalidation: 'Gross margin falls below 52.0% or customer concentration exceeds 40%.'
+        mcap: '$3.38T',
+        fcf: '$60.85B',
+        baseFairValue: 154.20,
+        growth: 18.0,
+        wacc: 9.5,
+        terminal: 3.0,
+        analyst: '"Accelerating enterprise AI adoption and Blackwell platform deployments drive sustainable operating margin expansion above 62%."',
+        verifier: '"All figures reconciled against primary SEC Form 10-K filings. Provenance record verified with zero mathematical tolerance breach."',
+        skeptic: '"Monitored customer concentration risk where top 4 hyperscalers represent 38% of revenue. Capex pauses could temporarily compress cash yields."'
       },
       'AAPL': {
         name: 'Apple Inc.',
-        sym: 'AAPL',
         price: 232.10,
-        change: '+$2.64 (+1.15%)',
-        mcap: '$3.55T',
-        fcf: '$108.2B',
-        margin: '30.5%',
-        pe: '33.8x',
-        fair: 245.00,
-        thesis: 'Apple Intelligence driving multi-year hardware replacement supercycle.',
-        invalidation: 'Services revenue decelerates below 8% or EU regulatory fines exceed $10B.'
+        change: '+$2.15 (+0.94%)',
+        mcap: '$3.52T',
+        fcf: '$108.8B',
+        baseFairValue: 248.50,
+        growth: 9.5,
+        wacc: 8.2,
+        terminal: 2.5,
+        analyst: '"High-margin Services expansion and Apple Intelligence on-device silicon upgrade cycle solidify durable annual free cash flow above $100B."',
+        verifier: '"Verified against FY2025 Form 10-K accession 0000320193-25-000106. Clean SHA-256 ledger integrity."',
+        skeptic: '"Regulatory antitrust scrutiny regarding App Store commission rates in Europe and Greater China revenue softness."'
       },
       'MSFT': {
         name: 'Microsoft Corporation',
-        sym: 'MSFT',
-        price: 424.50,
-        change: '-$1.80 (-0.42%)',
-        mcap: '$3.15T',
-        fcf: '$74.1B',
-        margin: '44.6%',
-        pe: '35.2x',
-        fair: 480.00,
-        thesis: 'Azure cloud market share expansion and enterprise Copilot monetization.',
-        invalidation: 'Azure cloud growth falls below 25% YoY or gross margin compresses.'
+        price: 428.50,
+        change: '+$3.80 (+0.89%)',
+        mcap: '$3.18T',
+        fcf: '$74.10B',
+        baseFairValue: 462.00,
+        growth: 13.0,
+        wacc: 8.8,
+        terminal: 2.8,
+        analyst: '"Azure cloud compute re-acceleration and enterprise M365 Copilot seat monetization deliver superior enterprise operating leverage."',
+        verifier: '"Verified against SEC Form 10-K company facts accession 0000950170-25-000014."',
+        skeptic: '"Massive AI data center capital expenditures constraining near-term free cash flow margin expansion."'
       },
       'AMZN': {
         name: 'Amazon.com Inc.',
-        sym: 'AMZN',
-        price: 186.30,
-        change: '+$3.82 (+2.10%)',
+        price: 186.40,
+        change: '+$3.10 (+1.69%)',
         mcap: '$1.94T',
-        fcf: '$50.2B',
-        margin: '9.0%',
-        pe: '42.1x',
-        fair: 215.00,
-        thesis: 'AWS AI workloads accelerating alongside retail margin expansion.',
-        invalidation: 'AWS growth stalls below 12% or retail shipping friction increases.'
+        fcf: '$52.40B',
+        baseFairValue: 215.00,
+        growth: 16.0,
+        wacc: 9.0,
+        terminal: 2.7,
+        analyst: '"AWS custom Trainium/Inferentia silicon adoption combined with regionalized retail fulfillment cost optimization."',
+        verifier: '"Form 10-K cash flow and operating segments reconciled with zero unverified figures."',
+        skeptic: '"Competitive cloud pricing pressure from Google Cloud and elevated fulfillment automation capex."'
+      },
+      'TCS.NS': {
+        name: 'Tata Consultancy Services',
+        price: 4120.00,
+        change: '+₹45.00 (+1.10%)',
+        mcap: '₹14.9T',
+        fcf: '₹48,016 Cr',
+        baseFairValue: 4480.00,
+        growth: 8.5,
+        wacc: 10.5,
+        terminal: 3.5,
+        analyst: '"Robust BFSI digital transformation deal book and resilient 26% operating margin structure under Ind AS."',
+        verifier: '"Verified against BSE/NSE audited outcome filing dated April 9, 2026. Zero tolerance flaw."',
+        skeptic: '"Discretionary enterprise IT spending hesitation in North America and currency fluctuation headwinds."'
       }
     };
 
-    let activeSymbol = 'NVDA';
+    let activeTicker = 'NVDA';
+    let currentCash = 104820.0;
 
-    function setWorkstation(key) {
-      document.querySelectorAll('.ws-view-content').forEach(p => p.classList.add('hidden'));
-      document.querySelectorAll('.ws-nav-btn').forEach(b => {
-        b.className = 'ws-nav-btn px-4 py-1.5 rounded-full font-medium text-[#86868B] hover:text-white transition';
+    function switchWorkstation(wsName) {
+      const allWs = ['research', 'screener', 'desk', 'risk', 'audit'];
+      allWs.forEach(name => {
+        const el = document.getElementById('ws-' + name);
+        const btn = document.getElementById('btn-ws-' + name);
+        if (name === wsName) {
+          el.classList.remove('hidden');
+          btn.classList.add('btn-pill-active');
+          btn.classList.remove('btn-pill-inactive');
+        } else {
+          el.classList.add('hidden');
+          btn.classList.remove('btn-pill-active');
+          btn.classList.add('btn-pill-inactive');
+        }
       });
-
-      const target = document.getElementById('ws-panel-' + key);
-      if (target) target.classList.remove('hidden');
-
-      const btn = document.getElementById('nav-ws-' + key);
-      if (btn) {
-        btn.className = 'ws-nav-btn px-4 py-1.5 rounded-full font-medium text-white bg-white/15 transition';
+      if (wsName === 'audit') {
+        initThreeJSPipeline();
       }
     }
 
-    function selectTicker(sym) {
-      if (!DATA[sym]) return;
-      activeSymbol = sym;
-      const d = DATA[sym];
+    function selectTicker(ticker) {
+      activeTicker = ticker;
+      const data = COMPANIES[ticker];
+      if (!data) return;
 
-      document.querySelectorAll('.ticker-pill').forEach(b => {
-        b.className = 'ticker-pill text-xs font-medium px-4 py-1.5 rounded-full text-[#86868B] hover:text-white bg-[#141416] border border-white/5 transition';
-      });
-      const current = document.getElementById('pill-' + sym);
-      if (current) {
-        current.className = 'ticker-pill text-xs font-semibold px-4 py-1.5 rounded-full bg-white text-black transition shadow-sm';
+      document.getElementById('active-company-name').innerText = data.name;
+      document.getElementById('active-ticker-badge').innerText = ticker;
+      document.getElementById('active-price').innerText = (ticker === 'TCS.NS' ? '₹' : '$') + data.price.toLocaleString();
+      document.getElementById('active-change').innerText = data.change;
+      document.getElementById('stat-mcap').innerText = data.mcap;
+      document.getElementById('stat-fcf').innerText = data.fcf;
+
+      document.getElementById('slider-growth').value = data.growth;
+      document.getElementById('slider-wacc').value = data.wacc;
+      document.getElementById('slider-term').value = data.terminal;
+
+      document.getElementById('analyst-quote').innerText = data.analyst;
+      document.getElementById('verifier-quote').innerText = data.verifier;
+      document.getElementById('skeptic-quote').innerText = data.skeptic;
+
+      // Update TradingView chart
+      const tvMap = {
+        'NVDA': 'NASDAQ%3ANVDA',
+        'AAPL': 'NASDAQ%3AAAPL',
+        'MSFT': 'NASDAQ%3AMSFT',
+        'AMZN': 'NASDAQ%3AAMZN',
+        'TCS.NS': 'BSE%3ATCS'
+      };
+      const tvFrame = document.getElementById('tv-chart-frame');
+      const tvPill = document.getElementById('tv-symbol-pill');
+      if (tvFrame && tvMap[ticker]) {
+        tvFrame.src = 'https://s.tradingview.com/widgetembed/?frameElementId=tradingview_widget&symbol=' + tvMap[ticker] + '&interval=D&hidesidetoolbar=0&symboledit=1&saveimage=1&toolbarbg=0E0E12&studies=%5B%5D&theme=dark&style=1&timezone=Etc%2FUTC&studies_overrides=%7B%7D&overrides=%7B%7D&enabled_features=%5B%5D&disabled_features=%5B%5D&locale=en';
+      }
+      if (tvPill && tvMap[ticker]) {
+        tvPill.innerText = tvMap[ticker].replace('%3A', ':');
       }
 
-      document.getElementById('asset-name').innerText = d.name;
-      document.getElementById('asset-symbol').innerText = d.sym;
-      document.getElementById('asset-price').innerText = '$' + d.price.toFixed(2);
-      document.getElementById('asset-change').innerText = d.change;
-      document.getElementById('m-cap').innerText = d.mcap;
-      document.getElementById('m-fcf').innerText = d.fcf;
-      document.getElementById('m-margin').innerText = d.margin;
-      document.getElementById('m-pe').innerText = d.pe;
-      document.getElementById('dcf-target-badge').innerText = 'Fair Target: $' + d.fair.toFixed(2);
-      document.getElementById('gate-thesis-display').innerText = d.thesis;
-      document.getElementById('gate-inval-display').innerText = d.invalidation;
+      // Update button tag highlights
+      ['NVDA', 'AAPL', 'MSFT', 'AMZN', 'TCS'].forEach(sym => {
+        const el = document.getElementById('tag-' + sym);
+        if (!el) return;
+        if (sym === ticker || (sym === 'TCS' && ticker === 'TCS.NS')) {
+          el.className = 'px-3 py-1.5 rounded-full bg-white/15 text-white border border-white/20 transition';
+        } else {
+          el.className = 'px-3 py-1.5 rounded-full bg-white/5 text-white/70 hover:text-white border border-white/5 transition';
+        }
+      });
 
-      recalcDCF();
-      notify('Switched to ' + d.name);
+      updateDCFModel();
     }
 
-    // Chart Crosshair Scrubber
-    function handleChartHover(event) {
-      const container = document.getElementById('chart-container');
-      const rect = container.getBoundingClientRect();
-      const x = Math.max(0, Math.min(rect.width, event.clientX - rect.left));
-      const pct = x / rect.width;
+    function updateDCFModel() {
+      const data = COMPANIES[activeTicker];
+      if (!data) return;
 
-      const scrubberLine = document.getElementById('scrubber-line');
-      const scrubberDot = document.getElementById('scrubber-dot');
-      scrubberLine.classList.remove('opacity-0');
-      scrubberDot.classList.remove('opacity-0');
-
-      const svgX = pct * 700;
-      scrubberLine.setAttribute('x1', svgX);
-      scrubberLine.setAttribute('x2', svgX);
-      scrubberDot.setAttribute('cx', svgX);
-
-      // Interpolate price
-      const basePx = DATA[activeSymbol]?.price || 138.25;
-      const scrubbedPx = (basePx * (0.92 + pct * 0.16)).toFixed(2);
-      const scrubbedFair = (DATA[activeSymbol]?.fair || 156.40).toFixed(2);
-
-      const months = ['Jan', 'Mar', 'May', 'Jul', 'Sep', 'Oct'];
-      const monthIdx = Math.min(months.length - 1, Math.floor(pct * months.length));
-      document.getElementById('hud-date').innerText = months[monthIdx] + ' 2026';
-      document.getElementById('hud-price').innerText = '$' + scrubbedPx;
-      document.getElementById('hud-fair').innerText = '$' + scrubbedFair;
-    }
-
-    function handleChartLeave() {
-      document.getElementById('scrubber-line').classList.add('opacity-0');
-      document.getElementById('scrubber-dot').classList.add('opacity-0');
-      const d = DATA[activeSymbol];
-      document.getElementById('hud-date').innerText = 'Oct 28, 2026';
-      document.getElementById('hud-price').innerText = '$' + d.price.toFixed(2);
-      document.getElementById('hud-fair').innerText = '$' + d.fair.toFixed(2);
-    }
-
-    function recalcDCF() {
+      const g = parseFloat(document.getElementById('slider-growth').value);
       const wacc = parseFloat(document.getElementById('slider-wacc').value);
-      const tg = parseFloat(document.getElementById('slider-tg').value);
-      const cagr = parseFloat(document.getElementById('slider-cagr').value);
+      const term = parseFloat(document.getElementById('slider-term').value);
 
-      document.getElementById('label-wacc').innerText = wacc.toFixed(1) + '%';
-      document.getElementById('label-tg').innerText = tg.toFixed(1) + '%';
-      document.getElementById('label-cagr').innerText = cagr.toFixed(1) + '%';
+      document.getElementById('disp-growth').innerText = g.toFixed(1) + '%';
+      document.getElementById('disp-wacc').innerText = wacc.toFixed(2) + '%';
+      document.getElementById('disp-term').innerText = term.toFixed(2) + '%';
 
-      const baseVal = DATA[activeSymbol]?.fair || 156.40;
-      const adjusted = baseVal + (9.2 - wacc) * 7.0 + (tg - 3.0) * 10.0 + (cagr - 22.5) * 1.8;
-      document.getElementById('dcf-target-badge').innerText = 'Fair Target: $' + adjusted.toFixed(2);
-      document.getElementById('hud-fair').innerText = '$' + adjusted.toFixed(2);
+      // Dynamic DCF adjustment
+      const growthFactor = (g - data.growth) * 0.025;
+      const waccFactor = (data.wacc - wacc) * 0.04;
+      const termFactor = (term - data.terminal) * 0.03;
+      const fairValue = data.baseFairValue * (1 + growthFactor + waccFactor + termFactor);
+
+      const upside = ((fairValue - data.price) / data.price) * 100;
+      const prefix = activeTicker === 'TCS.NS' ? '₹' : '$';
+
+      document.getElementById('stat-fair-value').innerText = prefix + fairValue.toFixed(2);
+      document.getElementById('chart-legend-fv').innerText = 'Fair Value: ' + prefix + fairValue.toFixed(2);
+      
+      const upsideBox = document.getElementById('stat-upside-box');
+      const upsidePct = document.getElementById('stat-upside-pct');
+      if (upside >= 0) {
+        upsideBox.className = 'flex items-center gap-1 text-sm font-semibold text-emerald-400 mt-2';
+        upsidePct.innerText = '+' + upside.toFixed(1) + '%';
+      } else {
+        upsideBox.className = 'flex items-center gap-1 text-sm font-semibold text-rose-400 mt-2';
+        upsidePct.innerText = upside.toFixed(1) + '%';
+      }
     }
 
-    function runAgentDeliberationCycle() {
-      const streamStatus = document.getElementById('stream-status');
-      streamStatus.innerText = 'Deliberating...';
-      streamStatus.className = 'text-xs font-mono text-[#2997FF] animate-pulse';
+    function runQPOptimization() {
+      const maxW = parseInt(document.getElementById('slider-max-weight').value);
+      document.getElementById('disp-max-weight').innerText = maxW.toFixed(1) + '%';
+      const strat = document.getElementById('risk-opt-strat').value;
 
-      setTimeout(() => {
-        streamStatus.innerText = 'Converged (3/3)';
-        streamStatus.className = 'text-xs font-mono text-[#30D158]';
-        notify('Deliberation completed. 8 SEC facts verified.');
-      }, 1200);
+      if (strat === 'min_variance') {
+        document.getElementById('weight-nvda').innerText = '25.0%';
+        document.getElementById('weight-aapl').innerText = '35.0%';
+        document.getElementById('weight-msft').innerText = '30.0%';
+        document.getElementById('weight-amzn').innerText = '10.0%';
+      } else {
+        document.getElementById('weight-nvda').innerText = maxW + '.0%';
+        document.getElementById('weight-aapl').innerText = '25.0%';
+        document.getElementById('weight-msft').innerText = '20.0%';
+        document.getElementById('weight-amzn').innerText = Math.max(5, 100 - maxW - 45) + '.0%';
+      }
+      showToast('NVIDIA cuOpt QP solver re-computed optimal weights in 0.038 ms');
     }
 
     function openTradeModal() {
-      const d = DATA[activeSymbol];
-      document.getElementById('modal-subtext').innerText = d.name + ' • $' + d.price.toFixed(2);
-      calculateOrderTotal();
+      document.getElementById('modal-ticker').innerText = activeTicker + ' (' + COMPANIES[activeTicker].name + ')';
       document.getElementById('trade-modal').classList.remove('hidden');
     }
-
     function closeTradeModal() {
       document.getElementById('trade-modal').classList.add('hidden');
     }
 
-    function calculateOrderTotal() {
-      const qty = parseFloat(document.getElementById('order-shares-input').value) || 0;
-      const px = DATA[activeSymbol]?.price || 138.25;
-      const total = (qty * px) + 1.02;
-      document.getElementById('modal-total-display').innerText = '$' + total.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-    }
+    function executeOrderFromModal() {
+      const ticker = activeTicker;
+      const side = document.getElementById('modal-side').value;
+      const qty = parseFloat(document.getElementById('modal-qty').value) || 10;
+      const venue = document.getElementById('modal-venue').value;
+      const thesis = document.getElementById('modal-thesis').value.trim();
 
-    function confirmOrder() {
+      if (!thesis) {
+        alert('Pre-Trade Gate: Investment thesis is mandatory before routing paper execution.');
+        return;
+      }
+
       closeTradeModal();
-      notify('Order executed. Recorded to Provenance Ledger #PL-89242.');
+
+      // Add to table
+      const p = COMPANIES[ticker].price;
+      const notional = p * qty;
+      if (side === 'BUY') {
+        currentCash -= notional;
+      } else {
+        currentCash += notional;
+      }
+      document.getElementById('dock-cash').innerText = '$' + currentCash.toLocaleString('en-US', {maximumFractionDigits: 0});
+
+      const tbody = document.getElementById('positions-table-body');
+      const row = document.createElement('tr');
+      row.className = 'hover:bg-white/[0.02] transition';
+      row.innerHTML = `
+        <td class="py-3 font-bold text-white">${ticker} (Equity)</td>
+        <td><span class="px-2 py-0.5 rounded ${side === 'BUY' ? 'bg-emerald-500/10 text-emerald-400' : 'bg-rose-500/10 text-rose-400'} font-bold">${side}</span></td>
+        <td>${qty.toFixed(1)}</td>
+        <td>$${p.toFixed(2)}</td>
+        <td>$${p.toFixed(2)}</td>
+        <td class="text-white/60 font-bold">$0.00 (0.00%)</td>
+        <td>${venue}</td>
+        <td class="text-right"><button onclick="this.closest('tr').remove()" class="text-rose-400 hover:text-white">Liquidate</button></td>
+      `;
+      tbody.prepend(row);
+
+      showToast(`Order executed: ${side} ${qty} ${ticker} via ${venue}`);
     }
 
-    function simulateStressShock() {
-      notify('Stress Shock simulated: Max drawdown within risk threshold (-7.8% vs -15% limit).');
+    function liquidatePosition(sym) {
+      showToast(`Position ${sym} liquidated. Cash proceeds returned to paper ledger.`);
     }
 
-    function closePositionSim(sym) {
-      notify('Position ' + sym + ' closed. Cash credited to balance.');
+    function runDeliberation() {
+      showToast(`Re-running Analyst, Verifier, and Skeptic multi-agent deliberation on ${activeTicker}...`);
     }
 
-    function notify(text) {
+    function showToast(msg) {
       const toast = document.getElementById('toast');
-      document.getElementById('toast-message').innerText = text;
+      document.getElementById('toast-msg').innerText = msg;
       toast.classList.remove('hidden');
-      setTimeout(() => { toast.classList.add('hidden'); }, 3500);
+      setTimeout(() => {
+        toast.classList.add('hidden');
+      }, 3500);
     }
+
+    // Interactive Three.js WebGL Pipeline Map
+    let threeInitialized = false;
+    function initThreeJSPipeline() {
+      if (threeInitialized) return;
+      const container = document.getElementById('threejs-canvas-container');
+      if (!container) return;
+
+      const width = container.clientWidth || 800;
+      const height = container.clientHeight || 320;
+
+      const scene = new THREE.Scene();
+      const camera = new THREE.PerspectiveCamera(45, width / height, 0.1, 1000);
+      camera.position.z = 25;
+
+      const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+      renderer.setSize(width, height);
+      renderer.setPixelRatio(window.devicePixelRatio);
+      container.appendChild(renderer.domElement);
+
+      // Create connected network nodes
+      const nodes = [
+        { name: 'SEC EDGAR', pos: [-10, 0, 0], color: 0x2997FF },
+        { name: 'Analyst', pos: [-5, 3, 0], color: 0x30D158 },
+        { name: 'Verifier', pos: [0, -2, 0], color: 0x2997FF },
+        { name: 'Skeptic', pos: [5, 3, 0], color: 0xFF9F0A },
+        { name: 'Ledger Engine', pos: [10, 0, 0], color: 0x30D158 }
+      ];
+
+      const spheres = [];
+      nodes.forEach(n => {
+        const geo = new THREE.SphereGeometry(1.2, 32, 32);
+        const mat = new THREE.MeshBasicMaterial({ color: n.color, wireframe: true });
+        const mesh = new THREE.Mesh(geo, mat);
+        mesh.position.set(...n.pos);
+        scene.add(mesh);
+        spheres.push(mesh);
+      });
+
+      // Connecting lines
+      const lineMat = new THREE.LineBasicMaterial({ color: 0x2997FF, opacity: 0.35, transparent: true });
+      for (let i = 0; i < nodes.length - 1; i++) {
+        const points = [spheres[i].position, spheres[i+1].position];
+        const lineGeo = new THREE.BufferGeometry().setFromPoints(points);
+        const line = new THREE.Line(lineGeo, lineMat);
+        scene.add(line);
+      }
+
+      function animate() {
+        requestAnimationFrame(animate);
+        spheres.forEach((s, idx) => {
+          s.rotation.x += 0.01 * (idx + 1);
+          s.rotation.y += 0.015;
+        });
+        renderer.render(scene, camera);
+      }
+      animate();
+      threeInitialized = true;
+    }
+
+    // Auto initialize on load
+    window.addEventListener('DOMContentLoaded', () => {
+      updateDCFModel();
+    });
   </script>
 </body>
 </html>

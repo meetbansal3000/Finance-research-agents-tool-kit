@@ -96,7 +96,7 @@ st.set_page_config(
     page_title="Meridian | Equity Research Terminal",
     page_icon="◈",
     layout="wide",
-    initial_sidebar_state="expanded"
+    initial_sidebar_state="collapsed"
 )
 
 # Meridian Institutional Design Tokens (Meridian Redesign Standard)
@@ -157,8 +157,21 @@ st.markdown("""
     }
 
     .main .block-container {
-        max-width: 1560px !important;
-        padding: 1.5rem 2.2rem 4rem !important;
+        max-width: 100% !important;
+        padding: 0.25rem 0.5rem 2rem !important;
+    }
+
+    header[data-testid="stHeader"] {
+        background: transparent !important;
+        border-bottom: none !important;
+    }
+
+    footer { display: none !important; }
+    #MainMenu { visibility: hidden !important; }
+
+    iframe {
+        border: none !important;
+        overflow: hidden !important;
     }
 
     /* Headings */
@@ -994,33 +1007,41 @@ st.sidebar.markdown(
 if "pending_page" in st.session_state:
     st.session_state["active_page"] = st.session_state.pop("pending_page")
 
-# Clean, professional navigation choices
-NAV_CHOICES = [
-    # Flagship Redesign Interface
-    "◈  Redesign",
-    # Domain 1: Market Intelligence & Screening
-    "Executive Summary",
-    "Coverage & Screening",
-    "Market Terminal & Charts",
-    # Domain 2: Fundamental Research & Valuation
-    "Intrinsic Valuation (DCF)",
-    "Autonomous Research Studio",
-    "Financial Copilot",
-    # Domain 3: Quantitative Risk & Portfolio
-    "Meridian Multi-Asset Desk",
-    "Portfolio Construction Lab",
-    "Supply Chain & Logistics Risk",
-    # Domain 4: Audit, Governance & System
-    "Interactive 3D Pipeline Map",
-    "Investment Decision Journal",
-    "Regulatory Filings & Alerts"
-]
-
-nav_choice = st.sidebar.radio(
-    "TERMINAL MODULES",
-    NAV_CHOICES,
-    key="active_page"
+# Terminal Interface Presentation (Flagship Obsidian Terminal Default)
+workspace_mode = st.sidebar.radio(
+    "WORKSPACE VIEW",
+    ["◈ Unified Obsidian Terminal", "Legacy Detailed Views"],
+    index=0,
+    key="terminal_workspace_mode"
 )
+
+if workspace_mode == "Legacy Detailed Views":
+    NAV_CHOICES = [
+        # Domain 1: Market Intelligence & Screening
+        "Executive Summary",
+        "Coverage & Screening",
+        "Market Terminal & Charts",
+        # Domain 2: Fundamental Research & Valuation
+        "Intrinsic Valuation (DCF)",
+        "Autonomous Research Studio",
+        "Financial Copilot",
+        # Domain 3: Quantitative Risk & Portfolio
+        "Meridian Multi-Asset Desk",
+        "Portfolio Construction Lab",
+        "Supply Chain & Logistics Risk",
+        # Domain 4: Audit, Governance & System
+        "Interactive 3D Pipeline Map",
+        "Investment Decision Journal",
+        "Regulatory Filings & Alerts"
+    ]
+    nav_choice = st.sidebar.radio(
+        "LEGACY MODULES",
+        NAV_CHOICES,
+        key="active_page"
+    )
+else:
+    nav_choice = "Redesign"
+
 
 st.sidebar.divider()
 
@@ -1231,13 +1252,13 @@ python -c "from tools.ticker_search import compute_ticker_scorecard_metrics; pri
 # DOMAIN 1: MARKET INTELLIGENCE & SCREENING
 # =============================================================================
 
-# --- MODULE 0: REDESIGN WORKSTATION ---
+# --- MODULE 0: UNIFIED OBSIDIAN TERMINAL ---
 if "Redesign" in nav_choice:
     obsidian_html_path = os.path.join(PROJECT_DIR, "web", "index.html")
     if os.path.exists(obsidian_html_path):
         with open(obsidian_html_path, "r", encoding="utf-8") as f:
             html_bundle = f.read()
-        components.html(html_bundle, height=1400, scrolling=True)
+        components.html(html_bundle, height=1650, scrolling=False)
     else:
         st.error("Redesign interface bundle not found at web/index.html")
 
