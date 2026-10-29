@@ -344,14 +344,19 @@ st.markdown("""
     }
 
     /* Style the radiogroup container */
-    section[data-testid="stSidebar"] [data-testid="stRadio"] > div[role="radiogroup"] {
+    section[data-testid="stSidebar"] [data-testid="stRadio"] > div,
+    section[data-testid="stSidebar"] [role="radiogroup"],
+    section[data-testid="stSidebar"] .e1dm8mpf0 {
         display: flex !important;
         flex-direction: column !important;
-        gap: 6px !important;
+        gap: 4px !important;
     }
 
-    /* Radio item label / row */
-    section[data-testid="stSidebar"] [data-testid="stRadio"] [role="radiogroup"] label {
+    /* Option item / row */
+    section[data-testid="stSidebar"] [data-testid="stRadioOption"],
+    section[data-testid="stSidebar"] .e1dm8mpf1,
+    section[data-testid="stSidebar"] .e1dm8mpf2,
+    section[data-testid="stSidebar"] [role="radiogroup"] label {
         display: flex !important;
         align-items: center !important;
         padding: 8px 12px !important;
@@ -363,13 +368,17 @@ st.markdown("""
         transition: all 0.15s ease-in-out !important;
         margin-bottom: 2px !important;
         width: 100% !important;
+        box-sizing: border-box !important;
     }
 
     /* Unselected Label Text */
-    section[data-testid="stSidebar"] [data-testid="stRadio"] [role="radiogroup"] label div[data-testid="stMarkdownContainer"] p,
-    section[data-testid="stSidebar"] [data-testid="stRadio"] [role="radiogroup"] label span {
+    section[data-testid="stSidebar"] [data-testid="stRadioOption"] p,
+    section[data-testid="stSidebar"] [data-testid="stRadioOption"] span,
+    section[data-testid="stSidebar"] .e1dm8mpf2 p,
+    section[data-testid="stSidebar"] [role="radiogroup"] label div[data-testid="stMarkdownContainer"] p,
+    section[data-testid="stSidebar"] [role="radiogroup"] label span {
         color: #8E9BAE !important;
-        font-size: 0.84rem !important;
+        font-size: 0.85rem !important;
         font-weight: 500 !important;
         letter-spacing: -0.01em !important;
         margin: 0 !important;
@@ -378,46 +387,55 @@ st.markdown("""
     }
 
     /* Hover state for unselected */
-    section[data-testid="stSidebar"] [data-testid="stRadio"] [role="radiogroup"] label:hover {
+    section[data-testid="stSidebar"] [data-testid="stRadioOption"]:hover,
+    section[data-testid="stSidebar"] .e1dm8mpf2:hover,
+    section[data-testid="stSidebar"] [role="radiogroup"] label:hover {
         background: rgba(255, 255, 255, 0.04) !important;
     }
-    section[data-testid="stSidebar"] [data-testid="stRadio"] [role="radiogroup"] label:hover div[data-testid="stMarkdownContainer"] p {
+    section[data-testid="stSidebar"] [data-testid="stRadioOption"]:hover p,
+    section[data-testid="stSidebar"] .e1dm8mpf2:hover p,
+    section[data-testid="stSidebar"] [role="radiogroup"] label:hover div[data-testid="stMarkdownContainer"] p {
         color: #FFFFFF !important;
     }
 
-    /* The Radio Button Circle Container (Ensure visible and positioned) */
-    section[data-testid="stSidebar"] [data-testid="stRadio"] [role="radiogroup"] label div[data-testid="stWidgetSelection"],
-    section[data-testid="stSidebar"] [data-testid="stRadio"] [role="radiogroup"] label > div:first-child {
-        display: flex !important;
-        align-items: center !important;
-        justify-content: center !important;
-        margin-right: 11px !important;
-        min-width: 18px !important;
-        width: 18px !important;
-        height: 18px !important;
-    }
-
     /* Hollow Circle for Unselected (Matches media_1792025956452_a11213e0.png) */
-    section[data-testid="stSidebar"] [data-testid="stRadio"] [role="radiogroup"] label div[data-testid="stWidgetSelection"] > div,
-    section[data-testid="stSidebar"] [data-testid="stRadio"] [role="radiogroup"] label > div:first-child > div {
+    section[data-testid="stSidebar"] .e1dm8mpf4,
+    section[data-testid="stSidebar"] [data-testid="stRadioOption"] div:first-child > div:first-child,
+    section[data-testid="stSidebar"] [role="radiogroup"] label div[data-testid="stWidgetSelection"] > div,
+    section[data-testid="stSidebar"] [role="radiogroup"] label > div:first-child > div {
         border-color: rgba(255, 255, 255, 0.28) !important;
         background-color: transparent !important;
-        width: 15px !important;
-        height: 15px !important;
-        min-width: 15px !important;
+        width: 14px !important;
+        height: 14px !important;
+        min-width: 14px !important;
+        max-width: 14px !important;
         border-radius: 50% !important;
         border-width: 1.5px !important;
         border-style: solid !important;
+        box-shadow: none !important;
         transition: all 0.15s ease !important;
+        margin-right: 11px !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
     }
 
-    section[data-testid="stSidebar"] [data-testid="stRadio"] [role="radiogroup"] label:hover div[data-testid="stWidgetSelection"] > div,
-    section[data-testid="stSidebar"] [data-testid="stRadio"] [role="radiogroup"] label:hover > div:first-child > div {
-        border-color: rgba(255, 255, 255, 0.5) !important;
+    section[data-testid="stSidebar"] [data-testid="stRadioOption"]:hover .e1dm8mpf4,
+    section[data-testid="stSidebar"] [role="radiogroup"] label:hover div[data-testid="stWidgetSelection"] > div {
+        border-color: rgba(255, 255, 255, 0.55) !important;
+    }
+
+    /* Hide inner dot when unselected */
+    section[data-testid="stSidebar"] .e1dm8mpf5 {
+        display: none !important;
     }
 
     /* ACTIVE / SELECTED ROW (Matches media_1792025956452_a11213e0.png) */
-    section[data-testid="stSidebar"] [data-testid="stRadio"] [role="radiogroup"] label:has(input:checked) {
+    section[data-testid="stSidebar"] [data-testid="stRadioOption"]:has(input:checked),
+    section[data-testid="stSidebar"] .e1dm8mpf1:has(input:checked),
+    section[data-testid="stSidebar"] .e1dm8mpf2:has(input:checked),
+    section[data-testid="stSidebar"] [role="radiogroup"] label:has(input:checked),
+    section[data-testid="stSidebar"] .meridian-active-nav {
         background: #111827 !important;
         border: 1px solid rgba(255, 255, 255, 0.08) !important;
         border-left: 3.5px solid #10B981 !important;
@@ -425,26 +443,31 @@ st.markdown("""
         box-shadow: 0 4px 14px rgba(0, 0, 0, 0.5) !important;
     }
 
-    section[data-testid="stSidebar"] [data-testid="stRadio"] [role="radiogroup"] label:has(input:checked) div[data-testid="stMarkdownContainer"] p {
+    section[data-testid="stSidebar"] [data-testid="stRadioOption"]:has(input:checked) p,
+    section[data-testid="stSidebar"] .e1dm8mpf2:has(input:checked) p,
+    section[data-testid="stSidebar"] [role="radiogroup"] label:has(input:checked) div[data-testid="stMarkdownContainer"] p,
+    section[data-testid="stSidebar"] .meridian-active-nav p {
         color: #FFFFFF !important;
         font-weight: 600 !important;
     }
 
     /* ACTIVE Radio Circle (Glowing green circle with white inner dot) */
-    section[data-testid="stSidebar"] [data-testid="stRadio"] [role="radiogroup"] label:has(input:checked) div[data-testid="stWidgetSelection"] > div,
-    section[data-testid="stSidebar"] [data-testid="stRadio"] [role="radiogroup"] label:has(input:checked) > div:first-child > div {
+    section[data-testid="stSidebar"] [data-testid="stRadioOption"]:has(input:checked) .e1dm8mpf4,
+    section[data-testid="stSidebar"] .e1dm8mpf2:has(input:checked) .e1dm8mpf4,
+    section[data-testid="stSidebar"] [role="radiogroup"] label:has(input:checked) div[data-testid="stWidgetSelection"] > div,
+    section[data-testid="stSidebar"] .meridian-active-nav .e1dm8mpf4 {
         border-color: #10B981 !important;
         background-color: #10B981 !important;
         box-shadow: 0 0 10px rgba(16, 185, 129, 0.6) !important;
         position: relative !important;
     }
 
-    section[data-testid="stSidebar"] [data-testid="stRadio"] [role="radiogroup"] label:has(input:checked) div[data-testid="stWidgetSelection"] > div::after,
-    section[data-testid="stSidebar"] [data-testid="stRadio"] [role="radiogroup"] label:has(input:checked) > div:first-child > div::after {
-        content: "" !important;
+    section[data-testid="stSidebar"] [data-testid="stRadioOption"]:has(input:checked) .e1dm8mpf5,
+    section[data-testid="stSidebar"] .e1dm8mpf2:has(input:checked) .e1dm8mpf5,
+    section[data-testid="stSidebar"] .meridian-active-nav .e1dm8mpf5 {
         display: block !important;
-        width: 5px !important;
-        height: 5px !important;
+        width: 4px !important;
+        height: 4px !important;
         border-radius: 50% !important;
         background: #FFFFFF !important;
         position: absolute !important;
@@ -726,7 +749,7 @@ st.markdown("""
 # Client-side auto-expansion to override any browser localStorage collapsed state
 components.html("""
 <script>
-    (function enforceSidebarExpanded() {
+    (function initSidebarSupervisor() {
         try {
             for (let i = 0; i < window.parent.localStorage.length; i++) {
                 const k = window.parent.localStorage.key(i);
@@ -735,24 +758,96 @@ components.html("""
                 }
             }
         } catch(e) {}
+        
         const doc = window.parent.document;
-        function tryExpand() {
-            const btn = doc.querySelector('div[data-testid="collapsedControl"] button') ||
-                        doc.querySelector('button[aria-label="Expand sidebar"]');
-            if (btn) btn.click();
-            const sidebar = doc.querySelector('section[data-testid="stSidebar"]');
-            if (sidebar) {
-                sidebar.setAttribute('aria-expanded', 'true');
-                sidebar.style.display = 'flex';
-                sidebar.style.visibility = 'visible';
-                sidebar.style.transform = 'none';
-                sidebar.style.marginLeft = '0px';
-            }
+        
+        function enforceExpand() {
+            try {
+                const btn = doc.querySelector('div[data-testid="collapsedControl"] button') ||
+                            doc.querySelector('button[aria-label="Expand sidebar"]');
+                if (btn) btn.click();
+                const sidebar = doc.querySelector('section[data-testid="stSidebar"]');
+                if (sidebar) {
+                    sidebar.setAttribute('aria-expanded', 'true');
+                    sidebar.style.display = 'flex';
+                    sidebar.style.visibility = 'visible';
+                    sidebar.style.transform = 'none';
+                    sidebar.style.marginLeft = '0px';
+                }
+            } catch(e) {}
         }
-        tryExpand();
-        setTimeout(tryExpand, 80);
-        setTimeout(tryExpand, 250);
-        setTimeout(tryExpand, 600);
+        
+        function syncSidebarNavigation() {
+            try {
+                const sidebar = doc.querySelector('section[data-testid="stSidebar"]');
+                if (!sidebar) return;
+                
+                const options = sidebar.querySelectorAll('[data-testid="stRadioOption"], .e1dm8mpf1, .e1dm8mpf2, div[role="radiogroup"] label');
+                options.forEach(opt => {
+                    const input = opt.querySelector('input[type="radio"]');
+                    const isSelected = (input && input.checked) || opt.getAttribute('data-selected') === 'true' || opt.getAttribute('aria-checked') === 'true';
+                    
+                    if (isSelected) {
+                        opt.classList.add('meridian-active-nav');
+                        opt.style.setProperty('background', '#111827', 'important');
+                        opt.style.setProperty('border-left', '3.5px solid #10B981', 'important');
+                        opt.style.setProperty('border-radius', '8px', 'important');
+                        opt.style.setProperty('box-shadow', '0 4px 14px rgba(0,0,0,0.5)', 'important');
+                        
+                        const textEl = opt.querySelector('p, span');
+                        if (textEl) {
+                            textEl.style.setProperty('color', '#FFFFFF', 'important');
+                            textEl.style.setProperty('font-weight', '600', 'important');
+                        }
+                        
+                        const circle = opt.querySelector('.e1dm8mpf4') || opt.querySelector('div:first-child > div:first-child');
+                        if (circle) {
+                            circle.style.setProperty('border-color', '#10B981', 'important');
+                            circle.style.setProperty('background-color', '#10B981', 'important');
+                            circle.style.setProperty('box-shadow', '0 0 10px rgba(16,185,129,0.7)', 'important');
+                        }
+                        
+                        const dot = opt.querySelector('.e1dm8mpf5');
+                        if (dot) {
+                            dot.style.setProperty('display', 'block', 'important');
+                            dot.style.setProperty('background-color', '#FFFFFF', 'important');
+                            dot.style.setProperty('width', '4px', 'important');
+                            dot.style.setProperty('height', '4px', 'important');
+                            dot.style.setProperty('border-radius', '50%', 'important');
+                        }
+                    } else {
+                        opt.classList.remove('meridian-active-nav');
+                        opt.style.removeProperty('background');
+                        opt.style.removeProperty('border-left');
+                        opt.style.removeProperty('border-radius');
+                        opt.style.removeProperty('box-shadow');
+                        
+                        const textEl = opt.querySelector('p, span');
+                        if (textEl) {
+                            textEl.style.setProperty('color', '#8E9BAE', 'important');
+                            textEl.style.setProperty('font-weight', '500', 'important');
+                        }
+                        
+                        const circle = opt.querySelector('.e1dm8mpf4') || opt.querySelector('div:first-child > div:first-child');
+                        if (circle) {
+                            circle.style.setProperty('border-color', 'rgba(255,255,255,0.28)', 'important');
+                            circle.style.setProperty('background-color', 'transparent', 'important');
+                            circle.style.removeProperty('box-shadow');
+                        }
+                        
+                        const dot = opt.querySelector('.e1dm8mpf5');
+                        if (dot) {
+                            dot.style.setProperty('display', 'none', 'important');
+                        }
+                    }
+                });
+            } catch(e) {}
+        }
+        
+        enforceExpand();
+        syncSidebarNavigation();
+        setInterval(enforceExpand, 400);
+        setInterval(syncSidebarNavigation, 120);
     })();
 </script>
 """, height=0)
@@ -1248,17 +1343,17 @@ def render_tab_info_guide(
 # =============================================================================
 st.sidebar.markdown(
     """
-    <div style="padding: 4px 4px 14px 4px;">
+    <div style="padding: 6px 2px 14px 2px; margin-bottom: 8px; border-bottom: 1px solid rgba(255,255,255,0.08);">
         <div style="display:flex; align-items:center; gap:10px;">
-            <div style="width:30px; height:30px; border-radius:50%; background:#FFFFFF; display:flex; align-items:center; justify-content:center; color:#000000; font-weight:700; font-size:13px; box-shadow:0 2px 8px rgba(0,0,0,0.4);">M</div>
+            <div style="width:32px; height:32px; border-radius:8px; background:linear-gradient(135deg, #10B981 0%, #059669 100%); display:flex; align-items:center; justify-content:center; color:#FFFFFF; font-weight:800; font-size:14px; box-shadow:0 0 14px rgba(16,185,129,0.45);">◈</div>
             <div>
-                <div style="font-weight:700; font-size:1.15rem; color:#FFFFFF; letter-spacing:-0.025em; line-height:1.1;">MERIDIAN</div>
-                <div style="font-size:0.68rem; color:#86868B; letter-spacing:0.04em; text-transform:uppercase; font-weight:500;">Antigravity Engine</div>
+                <div style="font-weight:800; font-size:1.10rem; color:#FFFFFF; letter-spacing:-0.02em; line-height:1.15; font-family:var(--font-sans);">MERIDIAN</div>
+                <div style="font-size:0.66rem; color:#8E9BAE; letter-spacing:0.06em; text-transform:uppercase; font-family:var(--font-mono); font-weight:600;">finance-research-agent</div>
             </div>
         </div>
-        <div style="display:inline-flex; align-items:center; gap:6px; padding:3px 10px; border-radius:9999px; background:rgba(48,209,88,0.12); border:1px solid rgba(48,209,88,0.25); color:#30D158; font-size:0.70rem; font-weight:500; margin-top:10px;">
-            <span style="display:inline-block; width:6px; height:6px; border-radius:50%; background:#30D158;"></span>
-            Online & Audited
+        <div style="display:inline-flex; align-items:center; gap:6px; padding:3px 10px; border-radius:9999px; background:rgba(16,185,129,0.12); border:1px solid rgba(16,185,129,0.3); color:#10B981; font-size:0.70rem; font-weight:600; margin-top:10px; font-family:var(--font-mono);">
+            <span style="display:inline-block; width:6px; height:6px; border-radius:50%; background:#10B981; box-shadow:0 0 6px #10B981;"></span>
+            SYSTEM OPERATIONAL
         </div>
     </div>
     """,
@@ -1278,18 +1373,18 @@ if "pending_page" in st.session_state:
 
 # Terminal Navigation Hierarchy (Exact replica of media_1792025956452_a11213e0.png)
 NAV_CHOICES = [
-    "⌂ Executive Summary",
-    "◎ Coverage & Screening",
-    "◓ Market Terminal & Charts",
-    "◇ Intrinsic Valuation (DCF)",
-    "✦ Autonomous Research Studio",
-    "◈ Financial Copilot",
-    "🌐 Meridian Multi-Asset Desk",
-    "🗂 Portfolio Construction Lab",
-    "↗ Supply Chain & Logistics Risk",
-    "↘ Interactive 3D Pipeline Map",
-    "▦ Investment Decision Journal",
-    "◉ Regulatory Filings & Alerts"
+    "Executive Summary",
+    "Coverage & Screening",
+    "Market Terminal & Charts",
+    "Intrinsic Valuation (DCF)",
+    "Autonomous Research Studio",
+    "Financial Copilot",
+    "Meridian Multi-Asset Desk",
+    "Portfolio Construction Lab",
+    "Supply Chain & Logistics Risk",
+    "Interactive 3D Pipeline Map",
+    "Investment Decision Journal",
+    "Regulatory Filings & Alerts"
 ]
 
 if "active_page" not in st.session_state:
@@ -1680,7 +1775,7 @@ if "Executive Summary" in nav_choice:
             </div>
             ''', unsafe_allow_html=True)
             if st.button("🌐 Launch Full Multi-Asset Trading Desk ↗", key="btn_goto_desk_full", use_container_width=True):
-                st.session_state["pending_page"] = "🌐 Meridian Multi-Asset Desk"
+                st.session_state["pending_page"] = "Meridian Multi-Asset Desk"
                 st.rerun()
 
         with col_t2:
@@ -1801,7 +1896,7 @@ if "Executive Summary" in nav_choice:
                     with col_d2:
                         if st.button("Inspect", key=f"view_{entry.name}", use_container_width=True):
                             st.session_state["inspected_report_dir"] = entry.path
-                            st.session_state["pending_page"] = "✦ Autonomous Research Studio"
+                            st.session_state["pending_page"] = "Autonomous Research Studio"
                             st.rerun()
         else:
             st.info("No research dossiers generated yet. Run your first research review in the Autonomous Research Studio.")
